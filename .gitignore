@@ -1,0 +1,28 @@
+# ===== IntelliJ IDEA =====
+.idea/
+*.iml
+out/
+
+# ===== Java =====
+*.class
+*.jar
+*.war
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+dist/
+.pytest_cache/
+
+# ===== Runtime / Generated =====
+python/ontology/memory/
+
+# ===== Claude Code =====
+.claude/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
