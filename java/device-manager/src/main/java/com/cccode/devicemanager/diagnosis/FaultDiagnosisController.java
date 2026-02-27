@@ -57,22 +57,34 @@ public class FaultDiagnosisController {
         return ResponseEntity.noContent().build();
     }
 
-    /** 获取知识图谱中的所有症状（供前端多选） */
-    @GetMapping("/symptoms")
-    public List<Map<String, Object>> getSymptoms() {
-        return knowledgeService.allSymptoms();
+    /** 获取所有现象级问题（供前端下拉选择） */
+    @GetMapping("/phenomena")
+    public List<Map<String, Object>> getPhenomena() {
+        return knowledgeService.allPhenomena();
     }
 
-    /** 获取知识图谱中的所有故障类型 */
-    @GetMapping("/fault-types")
-    public List<Map<String, Object>> getFaultTypes() {
-        return knowledgeService.allFaultTypes();
+    /** 搜索现象（支持关键词） */
+    @GetMapping("/phenomena/search")
+    public List<Map<String, Object>> searchPhenomena(@RequestParam String q) {
+        return knowledgeService.searchPhenomena(q);
     }
 
-    /** 根据设备类型查询常见故障 */
-    @GetMapping("/fault-types/by-device")
-    public List<Map<String, Object>> getFaultsByDevice(@RequestParam String deviceType) {
-        return knowledgeService.listDeviceFaults(deviceType);
+    /** 获取现象的完整诊断路径（子现象 + 排查点 + 原因 + 解决方案） */
+    @GetMapping("/phenomena/{id}/detail")
+    public Map<String, Object> getPhenomenonDetail(@PathVariable String id) {
+        return knowledgeService.getPhenomenonDetail(id);
+    }
+
+    /** 获取现象/子现象的排查点 */
+    @GetMapping("/checkpoints")
+    public List<Map<String, Object>> getCheckpoints(@RequestParam String nodeId) {
+        return knowledgeService.getCheckpoints(nodeId);
+    }
+
+    /** 获取子现象的原因和解决方案 */
+    @GetMapping("/causes-solutions")
+    public Map<String, Object> getCausesAndSolutions(@RequestParam String subPhenId) {
+        return knowledgeService.getCausesAndSolutions(subPhenId);
     }
 
     /** 返回完整知识图谱数据（节点 + 边），供前端可视化 */

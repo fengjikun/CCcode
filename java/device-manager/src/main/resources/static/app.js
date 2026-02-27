@@ -1,16 +1,13 @@
-const API = '/api/devices';
+const API      = '/api/devices';
 const DIAG_API = '/api/diagnosis';
 
 let deleteTargetId = null;
-let searchTimer = null;
-let selectedSymptoms = new Set();
-let allDevices = [];
+let searchTimer    = null;
+let allDevices     = [];
 
-const STATUS_LABEL = {
-  ONLINE: '在线', OFFLINE: '离线', MAINTENANCE: '维修中', FAULT: '故障'
-};
-const SEV_LABEL = { LOW: '低', MEDIUM: '中', HIGH: '高', CRITICAL: '紧急' };
-const SEV_CLASS = { LOW: 'sev-low', MEDIUM: 'sev-medium', HIGH: 'sev-high', CRITICAL: 'sev-critical' };
+const STATUS_LABEL = { ONLINE: '在线', OFFLINE: '离线', MAINTENANCE: '维修中', FAULT: '故障' };
+const SEV_LABEL    = { LOW: '低', MEDIUM: '中', HIGH: '高', CRITICAL: '紧急' };
+const SEV_CLASS    = { LOW: 'sev-low', MEDIUM: 'sev-medium', HIGH: 'sev-high', CRITICAL: 'sev-critical' };
 
 // ===== 初始化 =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -27,11 +24,8 @@ function switchTab(tab, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + tab).classList.add('active');
   btn.classList.add('active');
-  if (tab === 'diagnosis') {
-    loadFaultRecords();
-  } else if (tab === 'graph') {
-    if (!graphInited) { graphInited = true; initGraph(); }
-  }
+  if (tab === 'diagnosis') loadFaultRecords();
+  else if (tab === 'graph' && !graphInited) { graphInited = true; initGraph(); }
 }
 
 // ===== 设备管理 =====
@@ -44,8 +38,7 @@ async function loadDevices() {
   const keyword = document.getElementById('searchInput').value.trim();
   const status  = document.getElementById('filterStatus').value;
   const type    = document.getElementById('filterType').value;
-
-  const params = new URLSearchParams();
+  const params  = new URLSearchParams();
   if (keyword) params.append('keyword', keyword);
   if (status)  params.append('status', status);
   if (type)    params.append('type', type);
@@ -59,27 +52,21 @@ async function loadDevices() {
 async function loadTypes() {
   const types = await fetchJSON(`${API}/types`);
   const sel = document.getElementById('filterType');
-  const current = sel.value;
+  const cur = sel.value;
   sel.innerHTML = '<option value="">全部类型</option>';
   types.forEach(t => {
     const opt = document.createElement('option');
     opt.value = t; opt.textContent = t;
     sel.appendChild(opt);
   });
-  sel.value = current;
+  sel.value = cur;
 }
 
 function renderTable(devices) {
   const tbody = document.getElementById('deviceTableBody');
   const empty = document.getElementById('emptyTip');
-
-  if (!devices.length) {
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
-    return;
-  }
+  if (!devices.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
-
   tbody.innerHTML = devices.map(d => `
     <tr>
       <td>${d.id}</td>
@@ -96,49 +83,36 @@ function renderTable(devices) {
           <button class="btn btn-sm btn-danger" onclick="openDeleteModal(${d.id}, '${esc(d.name)}')">删除</button>
         </div>
       </td>
-    </tr>
-  `).join('');
+    </tr>`).join('');
 }
 
 function renderStats(devices) {
   const counts = { total: devices.length, ONLINE: 0, FAULT: 0, OFFLINE: 0 };
-  devices.forEach(d => {
-    if (d.status in counts) counts[d.status]++;
-  });
+  devices.forEach(d => { if (d.status in counts) counts[d.status]++; });
   document.getElementById('statsRow').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-icon total">&#128196;</div>
-      <div><div class="stat-label">设备总数</div><div class="stat-value">${counts.total}</div></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon online">&#9679;</div>
-      <div><div class="stat-label">在线</div><div class="stat-value">${counts.ONLINE}</div></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon fault">&#9888;</div>
-      <div><div class="stat-label">故障</div><div class="stat-value">${counts.FAULT}</div></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon offline">&#9675;</div>
-      <div><div class="stat-label">离线</div><div class="stat-value">${counts.OFFLINE}</div></div>
-    </div>
-  `;
+    <div class="stat-card"><div class="stat-icon total">&#128196;</div>
+      <div><div class="stat-label">设备总数</div><div class="stat-value">${counts.total}</div></div></div>
+    <div class="stat-card"><div class="stat-icon online">&#9679;</div>
+      <div><div class="stat-label">在线</div><div class="stat-value">${counts.ONLINE}</div></div></div>
+    <div class="stat-card"><div class="stat-icon fault">&#9888;</div>
+      <div><div class="stat-label">故障</div><div class="stat-value">${counts.FAULT}</div></div></div>
+    <div class="stat-card"><div class="stat-icon offline">&#9675;</div>
+      <div><div class="stat-label">离线</div><div class="stat-value">${counts.OFFLINE}</div></div></div>`;
 }
 
 // ===== 新增/编辑弹窗 =====
 async function openModal(id = null) {
   document.getElementById('deviceForm').reset();
   document.getElementById('deviceId').value = '';
-
   if (id) {
     document.getElementById('modalTitle').textContent = '编辑设备';
     const d = await fetchJSON(`${API}/${id}`);
-    document.getElementById('deviceId').value   = d.id;
-    document.getElementById('fName').value      = d.name || '';
-    document.getElementById('fType').value      = d.type || '';
-    document.getElementById('fLocation').value  = d.location || '';
-    document.getElementById('fStatus').value    = d.status;
-    document.getElementById('fDesc').value      = d.description || '';
+    document.getElementById('deviceId').value  = d.id;
+    document.getElementById('fName').value     = d.name || '';
+    document.getElementById('fType').value     = d.type || '';
+    document.getElementById('fLocation').value = d.location || '';
+    document.getElementById('fStatus').value   = d.status;
+    document.getElementById('fDesc').value     = d.description || '';
   } else {
     document.getElementById('modalTitle').textContent = '新增设备';
   }
@@ -160,16 +134,10 @@ async function submitForm(e) {
     status:      document.getElementById('fStatus').value,
     description: document.getElementById('fDesc').value.trim(),
   };
-
-  if (id) {
-    await fetchJSON(`${API}/${id}`, 'PUT', payload);
-  } else {
-    await fetchJSON(API, 'POST', payload);
-  }
-
+  if (id) await fetchJSON(`${API}/${id}`, 'PUT', payload);
+  else    await fetchJSON(API, 'POST', payload);
   document.getElementById('modalOverlay').classList.remove('active');
-  loadDevices();
-  loadTypes();
+  loadDevices(); loadTypes();
 }
 
 // ===== 删除弹窗 =====
@@ -178,20 +146,17 @@ function openDeleteModal(id, name) {
   document.getElementById('deleteDeviceName').textContent = name;
   document.getElementById('deleteOverlay').classList.add('active');
 }
-
 function closeDeleteModal(event) {
   if (event && event.target !== document.getElementById('deleteOverlay')) return;
   document.getElementById('deleteOverlay').classList.remove('active');
   deleteTargetId = null;
 }
-
 async function confirmDelete() {
   if (!deleteTargetId) return;
   await fetchJSON(`${API}/${deleteTargetId}`, 'DELETE');
   document.getElementById('deleteOverlay').classList.remove('active');
   deleteTargetId = null;
-  loadDevices();
-  loadTypes();
+  loadDevices(); loadTypes();
 }
 
 // ===== 从设备列表跳转到诊断 =====
@@ -199,7 +164,7 @@ function startDiagFromDevice(deviceId) {
   const device = allDevices.find(d => d.id === deviceId);
   switchTab('diagnosis', document.querySelector('.tab-btn:nth-child(2)'));
   if (device) {
-    document.getElementById('dDeviceId').value = deviceId;
+    document.getElementById('dDeviceId').value   = deviceId;
     document.getElementById('dDeviceName').value = device.name || '';
     document.getElementById('dDeviceType').value = device.type || '';
   }
@@ -207,48 +172,78 @@ function startDiagFromDevice(deviceId) {
 
 // ===== 故障诊断面板初始化 =====
 async function initDiagnosisPanel() {
-  await loadSymptomGrid();
-  await loadFaultTypeList();
+  await loadPhenomenaSelector();
+  await loadPhenomenaList();
 }
 
-async function loadSymptomGrid() {
-  const grid = document.getElementById('symptomGrid');
+/** 加载现象选择器（下拉 + 子现象多选） */
+async function loadPhenomenaSelector() {
+  const wrap = document.getElementById('symptomGrid');
   try {
-    const symptoms = await fetchJSON(`${DIAG_API}/symptoms`);
-    grid.innerHTML = symptoms.map(s => {
-      const props = s.properties || {};
-      return `
-        <label class="symptom-chip" title="${esc(props.description || '')}">
-          <input type="checkbox" value="${esc(props.name || '')}" onchange="toggleSymptom(this)">
-          <span>${esc(props.name || '')}</span>
-        </label>`;
-    }).join('');
+    const phenomena = await fetchJSON(`${DIAG_API}/phenomena`);
+    wrap.innerHTML = `
+      <div class="phen-select-wrap">
+        <select id="dPhenomenonId" onchange="onPhenomenonSelect()" style="width:100%;padding:8px 10px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px">
+          <option value="">— 请选择故障现象 —</option>
+          ${phenomena.map(p => `<option value="${p.id}">${esc(String(p.label || ''))}</option>`).join('')}
+        </select>
+      </div>
+      <div id="subPhenWrap" style="margin-top:8px;display:none">
+        <div style="font-size:12px;color:#666;margin-bottom:4px">细分子现象（可选，帮助精准诊断）：</div>
+        <div id="subPhenGrid" class="sub-phen-grid"></div>
+      </div>`;
   } catch (e) {
-    grid.innerHTML = '<div class="symptom-loading" style="color:#e53935">症状列表加载失败</div>';
+    wrap.innerHTML = '<div class="symptom-loading" style="color:#e53935">现象列表加载失败</div>';
   }
 }
 
-function toggleSymptom(cb) {
-  if (cb.checked) selectedSymptoms.add(cb.value);
-  else selectedSymptoms.delete(cb.value);
+/** 现象选择变化 */
+async function onPhenomenonSelect() {
+  const phenId = document.getElementById('dPhenomenonId').value;
+  const wrap   = document.getElementById('subPhenWrap');
+  const grid   = document.getElementById('subPhenGrid');
+
+  if (!phenId) { wrap.style.display = 'none'; grid.innerHTML = ''; return; }
+
+  try {
+    const subPhens = await fetchJSON(`${DIAG_API}/phenomena/${phenId}/detail`)
+      .then(d => d.subPhenomena || []);
+    if (!subPhens.length) { wrap.style.display = 'none'; return; }
+
+    grid.innerHTML = subPhens.map(sp => `
+      <label class="symptom-chip">
+        <input type="checkbox" value="${sp.id}" name="subPhen">
+        <span>${esc(String(sp.label || ''))}</span>
+      </label>`).join('');
+    wrap.style.display = 'block';
+  } catch (e) {
+    wrap.style.display = 'none';
+  }
 }
 
-async function loadFaultTypeList() {
+/** 加载左侧现象列表卡片 */
+async function loadPhenomenaList() {
   const el = document.getElementById('faultTypeList');
   try {
-    const types = await fetchJSON(`${DIAG_API}/fault-types`);
-    const SEV_COLORS = { HIGH: '#e53935', MEDIUM: '#fb8c00', LOW: '#43a047', CRITICAL: '#7b1fa2' };
-    el.innerHTML = types.map(t => {
-      const p = t.properties || {};
-      const color = SEV_COLORS[p.severity] || '#666';
-      return `<div class="ft-chip" style="border-left:3px solid ${color}">
-        <strong>${esc(p.name || '')}</strong>
-        <span class="ft-cat">${esc(p.category || '')}</span>
+    const phenomena = await fetchJSON(`${DIAG_API}/phenomena`);
+    const COLORS = ['#e53935', '#fb8c00', '#1565c0', '#2e7d32'];
+    el.innerHTML = phenomena.map((p, i) => {
+      const props = p.properties || {};
+      return `<div class="ft-chip" style="border-left:3px solid ${COLORS[i % COLORS.length]};cursor:pointer"
+          onclick="quickSelectPhenomenon('${p.id}')">
+        <strong>${esc(String(p.label || ''))}</strong>
+        <span class="ft-cat">${esc(props.code || '')}</span>
       </div>`;
     }).join('');
   } catch (e) {
     el.innerHTML = '<div style="color:#999;padding:8px">加载失败</div>';
   }
+}
+
+/** 快速选择现象 */
+function quickSelectPhenomenon(phenId) {
+  const sel = document.getElementById('dPhenomenonId');
+  if (sel) { sel.value = phenId; onPhenomenonSelect(); }
 }
 
 function populateDeviceSelect(devices) {
@@ -285,8 +280,9 @@ function initSeverityBtns() {
 }
 
 function resetDiagForm() {
-  selectedSymptoms.clear();
-  document.querySelectorAll('#symptomGrid input[type=checkbox]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('[name=subPhen]').forEach(cb => cb.checked = false);
+  document.getElementById('dPhenomenonId').value = '';
+  document.getElementById('subPhenWrap').style.display = 'none';
   document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('.sev-btn[data-val="MEDIUM"]').classList.add('active');
   document.getElementById('dSeverity').value = 'MEDIUM';
@@ -297,26 +293,29 @@ function resetDiagForm() {
 async function submitDiagnosis(e) {
   e.preventDefault();
 
-  if (selectedSymptoms.size === 0) {
-    alert('请至少选择一个故障症状');
-    return;
-  }
+  const phenId = document.getElementById('dPhenomenonId').value;
+  if (!phenId) { alert('请选择故障现象'); return; }
+
+  const checkedSubPhens = Array.from(
+    document.querySelectorAll('[name=subPhen]:checked')
+  ).map(cb => cb.value);
 
   const deviceIdVal = document.getElementById('dDeviceId').value;
   const payload = {
-    deviceId:    deviceIdVal ? parseInt(deviceIdVal) : null,
-    deviceName:  document.getElementById('dDeviceName').value.trim(),
-    deviceType:  document.getElementById('dDeviceType').value.trim(),
-    symptoms:    Array.from(selectedSymptoms),
-    description: document.getElementById('dDescription').value.trim(),
-    severity:    document.getElementById('dSeverity').value,
+    deviceId:     deviceIdVal ? parseInt(deviceIdVal) : null,
+    deviceName:   document.getElementById('dDeviceName').value.trim(),
+    deviceType:   document.getElementById('dDeviceType').value.trim(),
+    phenomenonId: phenId,
+    symptoms:     checkedSubPhens,
+    description:  document.getElementById('dDescription').value.trim(),
+    severity:     document.getElementById('dSeverity').value,
   };
 
   const submitBtn = document.getElementById('diagSubmitBtn');
   submitBtn.disabled = true;
   submitBtn.textContent = '分析中…';
   document.getElementById('diagResultCard').style.display = 'none';
-  document.getElementById('diagAnalyzing').style.display = 'flex';
+  document.getElementById('diagAnalyzing').style.display  = 'flex';
 
   try {
     const record = await fetchJSON(`${DIAG_API}/analyze`, 'POST', payload);
@@ -327,7 +326,7 @@ async function submitDiagnosis(e) {
     document.getElementById('diagAnalyzing').style.display = 'none';
     alert('诊断请求失败，请检查后端服务');
   } finally {
-    submitBtn.disabled = false;
+    submitBtn.disabled  = false;
     submitBtn.textContent = '&#129302; 开始诊断';
   }
 }
@@ -338,73 +337,82 @@ function closeResult() {
 
 function renderDiagResult(record) {
   const card = document.getElementById('diagResultCard');
-  const el = document.getElementById('diagResult');
+  const el   = document.getElementById('diagResult');
 
-  let result = {};
-  try {
-    result = JSON.parse(record.diagnosisResult || '{}');
-  } catch (e) { result = {}; }
+  let r = {};
+  try { r = JSON.parse(record.diagnosisResult || '{}'); } catch (e) {}
 
-  const sevClass = SEV_CLASS[result.urgency] || 'sev-medium';
-  const confClass = result.confidence === 'HIGH' ? 'conf-high' : result.confidence === 'LOW' ? 'conf-low' : 'conf-medium';
+  const confClass = r.confidence === 'HIGH' ? 'conf-high' : r.confidence === 'LOW' ? 'conf-low' : 'conf-medium';
+  const sevClass  = SEV_CLASS[r.urgency] || 'sev-medium';
+
+  // 兼容新旧两种结果格式
+  const phenomenon = r.phenomenon || r.fault_type || '未知';
+  const causes     = r.causes || r.root_causes || [];
+  const checkpoints = r.checkpoints || r.troubleshooting_steps || [];
+  const solutions  = r.solutions || [];
 
   el.innerHTML = `
     <div class="result-summary">
       <div class="result-fault-type">
-        <span class="result-label">诊断故障</span>
-        <strong class="result-fault-name">${esc(result.fault_type || '未知')}</strong>
-        <span class="conf-badge ${confClass}">置信度：${esc(result.confidence || '未知')}</span>
-        <span class="sev-badge ${sevClass}">紧急度：${esc(result.urgency || '—')}</span>
+        <span class="result-label">故障现象</span>
+        <strong class="result-fault-name">${esc(phenomenon)}</strong>
+        <span class="conf-badge ${confClass}">置信度：${esc(r.confidence || '—')}</span>
+        <span class="sev-badge ${sevClass}">紧急度：${esc(r.urgency || '—')}</span>
       </div>
-      <p class="result-text">${esc(result.summary || '')}</p>
-      ${result.note ? `<div class="result-note">&#8505; ${esc(result.note)}</div>` : ''}
+      <p class="result-text">${esc(r.summary || '')}</p>
+      ${r.note ? `<div class="result-note">&#8505; ${esc(r.note)}</div>` : ''}
     </div>
 
-    ${result.root_causes?.length ? `
+    ${r.matched_sub_phenomena?.length ? `
     <div class="result-section">
-      <div class="result-section-title">&#128270; 根本原因分析</div>
-      <ul class="result-list">
-        ${result.root_causes.map(c => `<li>${esc(c)}</li>`).join('')}
-      </ul>
+      <div class="result-section-title">&#128270; 匹配子现象</div>
+      <div class="alt-faults">${r.matched_sub_phenomena.map(s => `<span class="alt-badge">${esc(s)}</span>`).join('')}</div>
     </div>` : ''}
 
-    ${result.troubleshooting_steps?.length ? `
+    ${causes.length ? `
     <div class="result-section">
-      <div class="result-section-title">&#128295; 排查处理步骤</div>
+      <div class="result-section-title">&#9888; 故障原因分析</div>
+      <ul class="result-list">${causes.map(c => `<li>${esc(String(c))}</li>`).join('')}</ul>
+    </div>` : ''}
+
+    ${checkpoints.length ? `
+    <div class="result-section">
+      <div class="result-section-title">&#128295; 排查步骤</div>
       <div class="steps-list">
-        ${result.troubleshooting_steps.map(s => `
+        ${checkpoints.map(s => `
           <div class="step-item">
-            <div class="step-num">${s.step}</div>
+            <div class="step-num">${s.step || s.priority || ''}</div>
             <div class="step-body">
-              <div class="step-action">${esc(s.action || '')}</div>
-              <div class="step-detail">${esc(s.detail || '')}</div>
-              ${s.tool ? `<div class="step-tool">&#128295; 所需工具：${esc(s.tool)}</div>` : ''}
+              <div class="step-action">${esc(s.checkpoint || s.action || '')}</div>
+              <div class="step-detail">${esc(s.method || s.detail || '')}</div>
+              ${s.expected ? `<div class="step-tool">&#9989; 预期结果：${esc(s.expected)}</div>` : ''}
             </div>
           </div>`).join('')}
       </div>
     </div>` : ''}
 
+    ${solutions.length ? `
+    <div class="result-section">
+      <div class="result-section-title">&#128161; 解决方案</div>
+      ${solutions.map((sol, idx) => {
+        const steps = String(sol.steps || sol.detail || '').split(';').filter(Boolean);
+        return `
+        <div class="solution-card" style="margin-bottom:12px;padding:12px;background:#f8fff8;border:1px solid #c8e6c9;border-radius:8px">
+          <div style="font-weight:600;color:#2e7d32;margin-bottom:8px">
+            ${idx + 1}. ${esc(sol.title || sol.action || '方案')}
+            ${sol.estimated_time ? `<span style="font-weight:400;font-size:12px;color:#666;margin-left:8px">&#9200; ${esc(sol.estimated_time)}</span>` : ''}
+            ${sol.risk_level === 'HIGH' ? `<span style="font-size:11px;color:#e53935;margin-left:4px">&#9888; 高风险</span>` : ''}
+          </div>
+          ${steps.length ? `<ol style="margin:0;padding-left:18px;font-size:13px;color:#333">
+            ${steps.map(st => `<li style="margin-bottom:4px">${esc(st.replace(/^\d+\./,'').trim())}</li>`).join('')}
+          </ol>` : ''}
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
     <div class="result-meta-row">
-      ${result.estimated_time ? `<div class="result-meta-item"><span>&#9200; 预计时间</span><strong>${esc(result.estimated_time)}</strong></div>` : ''}
-      ${result.required_tools?.length ? `<div class="result-meta-item"><span>&#128295; 所需工具</span><strong>${result.required_tools.map(t => esc(t)).join('、')}</strong></div>` : ''}
-    </div>
-
-    ${result.prevention_tips?.length ? `
-    <div class="result-section">
-      <div class="result-section-title">&#9989; 预防建议</div>
-      <ul class="result-list">
-        ${result.prevention_tips.map(t => `<li>${esc(t)}</li>`).join('')}
-      </ul>
-    </div>` : ''}
-
-    ${result.alternative_faults?.length ? `
-    <div class="result-section">
-      <div class="result-section-title">&#8505; 其他可能故障</div>
-      <div class="alt-faults">
-        ${result.alternative_faults.map(f => `<span class="alt-badge">${esc(f)}</span>`).join('')}
-      </div>
-    </div>` : ''}
-  `;
+      ${r.estimated_time ? `<div class="result-meta-item"><span>&#9200; 预计时间</span><strong>${esc(r.estimated_time)}</strong></div>` : ''}
+    </div>`;
 
   card.style.display = 'block';
   card.scrollIntoView({ behavior: 'smooth' });
@@ -416,13 +424,11 @@ async function loadFaultRecords() {
   el.innerHTML = '<div style="padding:16px;color:#999">加载中…</div>';
   try {
     const records = await fetchJSON(`${DIAG_API}/records`);
-    if (!records.length) {
-      el.innerHTML = '<div style="padding:16px;color:#999">暂无诊断记录</div>';
-      return;
-    }
+    if (!records.length) { el.innerHTML = '<div style="padding:16px;color:#999">暂无诊断记录</div>'; return; }
     el.innerHTML = records.map(r => {
       let result = {};
       try { result = JSON.parse(r.diagnosisResult || '{}'); } catch (e) {}
+      const phen = result.phenomenon || result.fault_type || '';
       return `
         <div class="record-item" onclick="showRecordDetail(${r.id})">
           <div class="record-header">
@@ -436,7 +442,7 @@ async function loadFaultRecords() {
             <span>${formatDate(r.reportedAt)}</span>
           </div>
           <div class="record-symptoms">${esc(r.symptoms || '')}</div>
-          ${result.fault_type ? `<div class="record-result">诊断：${esc(result.fault_type)}</div>` : ''}
+          ${phen ? `<div class="record-result">诊断：${esc(phen)}</div>` : ''}
         </div>`;
     }).join('');
   } catch (e) {
@@ -446,15 +452,7 @@ async function loadFaultRecords() {
 
 async function showRecordDetail(id) {
   const record = await fetchJSON(`${DIAG_API}/records/${id}`);
-  let result = {};
-  try { result = JSON.parse(record.diagnosisResult || '{}'); } catch (e) {}
-
   const el = document.getElementById('recordDetailContent');
-
-  // 重用 renderDiagResult 的渲染逻辑
-  const tmpRecord = { diagnosisResult: record.diagnosisResult };
-  const tmp = document.createElement('div');
-  document.body.appendChild(tmp);
 
   el.innerHTML = `
     <div style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #eee">
@@ -464,25 +462,20 @@ async function showRecordDetail(id) {
         <span><strong>时间：</strong>${formatDate(record.reportedAt)}</span>
         <span class="badge badge-${record.severity === 'HIGH' || record.severity === 'CRITICAL' ? 'FAULT' : 'MAINTENANCE'}">${SEV_LABEL[record.severity] || record.severity}</span>
       </div>
-      <div><strong>症状：</strong>${esc(record.symptoms || '—')}</div>
+      <div><strong>现象：</strong>${esc(record.symptoms || '—')}</div>
       ${record.description ? `<div style="margin-top:4px"><strong>说明：</strong>${esc(record.description)}</div>` : ''}
-    </div>
-  `;
+    </div>`;
 
-  // 渲染诊断结果
   const resultDiv = document.createElement('div');
   el.appendChild(resultDiv);
 
-  // 临时替换容器渲染
-  const origCard = document.getElementById('diagResultCard');
+  // 借用渲染函数
   const origEl = document.getElementById('diagResult');
   const fakeEl = document.createElement('div');
-  origEl.parentNode.replaceChild(fakeEl, origEl);
   fakeEl.id = 'diagResult';
-
+  origEl.parentNode.replaceChild(fakeEl, origEl);
   renderDiagResult(record);
   resultDiv.innerHTML = fakeEl.innerHTML;
-
   fakeEl.parentNode.replaceChild(origEl, fakeEl);
 
   document.getElementById('recordDetailOverlay').classList.add('active');
@@ -509,10 +502,8 @@ async function fetchJSON(url, method = 'GET', body = null) {
 
 function esc(str) {
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function formatDate(iso) {

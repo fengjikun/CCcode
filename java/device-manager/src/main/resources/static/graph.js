@@ -4,18 +4,25 @@
 
 // ===== 配置 =====
 const NODE_CONFIG = {
-  FaultType:  { color: '#e53935', stroke: '#b71c1c', radius: 22, label: '故障类型', shape: 'hexagon' },
-  Symptom:    { color: '#fb8c00', stroke: '#e65100', radius: 16, label: '症  状',   shape: 'circle'  },
-  Cause:      { color: '#8e24aa', stroke: '#4a148c', radius: 16, label: '原  因',   shape: 'circle'  },
-  Solution:   { color: '#2e7d32', stroke: '#1b5e20', radius: 16, label: '解决方案', shape: 'circle'  },
-  DeviceType: { color: '#1565c0', stroke: '#0d47a1', radius: 20, label: '设备类型', shape: 'rect'    },
+  Equipment:      { color: '#1565c0', stroke: '#0d47a1', radius: 24, label: '设  备',   shape: 'rect'    },
+  Phenomenon:     { color: '#e53935', stroke: '#b71c1c', radius: 22, label: '现象问题', shape: 'hexagon' },
+  SubPhenomenon:  { color: '#f57c00', stroke: '#e65100', radius: 17, label: '子现象',   shape: 'hexagon' },
+  Checkpoint:     { color: '#00838f', stroke: '#006064', radius: 16, label: '排查点',   shape: 'diamond' },
+  Cause:          { color: '#8e24aa', stroke: '#4a148c', radius: 15, label: '原  因',   shape: 'circle'  },
+  Solution:       { color: '#2e7d32', stroke: '#1b5e20', radius: 15, label: '解决方案', shape: 'circle'  },
+  Component:      { color: '#455a64', stroke: '#263238', radius: 14, label: '部  件',   shape: 'rect'    },
+  Parameter:      { color: '#0097a7', stroke: '#006064', radius: 12, label: '参  数',   shape: 'circle'  },
 };
 
 const LINK_CONFIG = {
-  has_symptom:  { color: '#fb8c00', label: '有症状',  dash: ''    },
-  caused_by:    { color: '#8e24aa', label: '由...引起', dash: '6,3' },
-  resolved_by:  { color: '#2e7d32', label: '可解决',  dash: '3,3' },
-  prone_to:     { color: '#1565c0', label: '易发生',  dash: '8,4' },
+  prone_to:    { color: '#1565c0', label: '易发生',   dash: '8,4'  },
+  contains:    { color: '#f57c00', label: '包含',     dash: '5,3'  },
+  needs_check: { color: '#00838f', label: '需排查',   dash: ''     },
+  discovers:   { color: '#0097a7', label: '发现',     dash: '4,2'  },
+  located_at:  { color: '#455a64', label: '位于',     dash: '2,4'  },
+  caused_by:   { color: '#8e24aa', label: '其原因是', dash: '6,3'  },
+  solved_by:   { color: '#2e7d32', label: '解决方案', dash: '3,3'  },
+  supports:    { color: '#78909c', label: '采集参数', dash: '1,3'  },
 };
 
 let simulation, svg, g, zoom;
@@ -94,9 +101,13 @@ function renderGraph(nodes, links) {
   // Force simulation
   simulation = d3.forceSimulation(simNodes)
     .force('link', d3.forceLink(simLinks).id(d => d.id).distance(d => {
-      if (d.rel === 'prone_to') return 130;
-      if (d.rel === 'resolved_by') return 120;
-      return 90;
+      if (d.rel === 'prone_to')    return 140;
+      if (d.rel === 'contains')    return 100;
+      if (d.rel === 'needs_check') return 110;
+      if (d.rel === 'solved_by')   return 120;
+      if (d.rel === 'located_at')  return 90;
+      if (d.rel === 'supports')    return 80;
+      return 95;
     }).strength(0.4))
     .force('charge', d3.forceManyBody().strength(-280))
     .force('center', d3.forceCenter(W / 2, H / 2))
@@ -153,26 +164,33 @@ function renderGraph(nodes, links) {
     const el = d3.select(this);
     const cfg = NODE_CONFIG[d.type] || { color: '#999', radius: 14 };
     const r = nodeRadius(d);
+    const shape = cfg.shape || 'circle';
 
-    if (d.type === 'DeviceType') {
+    if (shape === 'rect') {
       el.append('rect')
-        .attr('x', -r).attr('y', -r * 0.8)
-        .attr('width', r * 2).attr('height', r * 1.6)
-        .attr('rx', 5).attr('ry', 5)
+        .attr('x', -r).attr('y', -r * 0.75)
+        .attr('width', r * 2).attr('height', r * 1.5)
+        .attr('rx', 4).attr('ry', 4)
         .attr('fill', cfg.color)
-        .attr('stroke', cfg.stroke)
+        .attr('stroke', cfg.stroke || '#555')
         .attr('stroke-width', 2);
-    } else if (d.type === 'FaultType') {
+    } else if (shape === 'hexagon') {
       el.append('polygon')
         .attr('points', hexPoints(r))
         .attr('fill', cfg.color)
-        .attr('stroke', cfg.stroke)
+        .attr('stroke', cfg.stroke || '#555')
+        .attr('stroke-width', 2);
+    } else if (shape === 'diamond') {
+      el.append('polygon')
+        .attr('points', `0,${-r} ${r},0 0,${r} ${-r},0`)
+        .attr('fill', cfg.color)
+        .attr('stroke', cfg.stroke || '#555')
         .attr('stroke-width', 2);
     } else {
       el.append('circle')
         .attr('r', r)
         .attr('fill', cfg.color)
-        .attr('stroke', cfg.stroke)
+        .attr('stroke', cfg.stroke || '#555')
         .attr('stroke-width', 2);
     }
   });
@@ -468,7 +486,16 @@ function targetPoint(d) {
 }
 
 function nodeIcon(type) {
-  return { FaultType: '⚠', Symptom: '◎', Cause: '●', Solution: '✔', DeviceType: '▣' }[type] || '●';
+  return {
+    Equipment:     '▣',
+    Phenomenon:    '⚠',
+    SubPhenomenon: '◈',
+    Checkpoint:    '◇',
+    Cause:         '●',
+    Solution:      '✔',
+    Component:     '■',
+    Parameter:     '◎',
+  }[type] || '●';
 }
 
 function truncate(str, len) {
