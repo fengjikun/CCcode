@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>设备管理系统</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="logo">&#9881; 设备管理系统</span>
+    <div class="header-actions">
+      <button class="btn btn-primary" onclick="openModal()">+ 新增设备</button>
+    </div>
+  </div>
+</header>
+
+<!-- 标签导航 -->
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('devices', this)">&#128196; 设备管理</button>
+  <button class="tab-btn" onclick="switchTab('diagnosis', this)">&#128736; 故障诊断</button>
+  <button class="tab-btn" onclick="switchTab('graph', this)">&#128209; 故障图谱</button>
+</nav>
+
+<main>
+
+  <!-- ========== 设备管理面板 ========== -->
+  <div id="panel-devices" class="tab-panel active">
+    <!-- 统计卡片 -->
+    <div class="stats-row" id="statsRow"></div>
+
+    <!-- 搜索 & 筛选 -->
+    <div class="toolbar">
+      <input id="searchInput" type="text" placeholder="搜索设备名称、类型、位置…" oninput="delayedSearch()">
+      <select id="filterStatus" onchange="loadDevices()">
+        <option value="">全部状态</option>
+        <option value="ONLINE">在线</option>
+        <option value="OFFLINE">离线</option>
+        <option value="MAINTENANCE">维修中</option>
+        <option value="FAULT">故障</option>
+      </select>
+      <select id="filterType" onchange="loadDevices()">
+        <option value="">全部类型</option>
+      </select>
+    </div>
+
+    <!-- 设备表格 -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>设备名称</th>
+            <th>类型</th>
+            <th>位置</th>
+            <th>状态</th>
+            <th>描述</th>
+            <th>更新时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="deviceTableBody"></tbody>
+      </table>
+      <div id="emptyTip" class="empty-tip" style="display:none">暂无设备数据</div>
+    </div>
+  </div>
+
+  <!-- ========== 故障诊断面板 ========== -->
+  <div id="panel-diagnosis" class="tab-panel">
+
+    <div class="diagnosis-layout">
+
+      <!-- 左：新建故障诊断 -->
+      <div class="diag-left">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#128736; 提交故障诊断</span>
+          </div>
+          <form id="diagForm" onsubmit="submitDiagnosis(event)">
+            <div class="form-row">
+              <label>关联设备</label>
+              <select id="dDeviceId" onchange="onDeviceSelect()">
+                <option value="">— 不关联设备 —</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>设备名称</label>
+              <input type="text" id="dDeviceName" placeholder="设备名称（可手动填写）">
+            </div>
+            <div class="form-row">
+              <label>设备类型</label>
+              <input type="text" id="dDeviceType" placeholder="如：温度传感器、PLC控制器、变频器…">
+            </div>
+            <div class="form-row">
+              <label>故障症状 <span class="required">*</span></label>
+              <div class="symptom-grid" id="symptomGrid">
+                <!-- 动态加载 -->
+                <div class="symptom-loading">加载症状列表…</div>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>严重程度</label>
+              <div class="severity-btns" id="severityBtns">
+                <button type="button" class="sev-btn" data-val="LOW">低</button>
+                <button type="button" class="sev-btn active" data-val="MEDIUM">中</button>
+                <button type="button" class="sev-btn sev-high" data-val="HIGH">高</button>
+                <button type="button" class="sev-btn sev-critical" data-val="CRITICAL">紧急</button>
+              </div>
+              <input type="hidden" id="dSeverity" value="MEDIUM">
+            </div>
+            <div class="form-row">
+              <label>补充说明</label>
+              <textarea id="dDescription" rows="3" placeholder="详细描述故障现象、发生时间、频率等…"></textarea>
+            </div>
+            <div class="form-actions">
+              <button type="reset" class="btn btn-secondary" onclick="resetDiagForm()">重置</button>
+              <button type="submit" class="btn btn-primary" id="diagSubmitBtn">&#129302; 开始诊断</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 知识图谱概览 -->
+        <div class="card" style="margin-top:16px">
+          <div class="card-header"><span class="card-title">&#128218; 故障类型知识图谱</span></div>
+          <div id="faultTypeList" class="fault-type-list">加载中…</div>
+        </div>
+      </div>
+
+      <!-- 右：诊断结果 & 历史 -->
+      <div class="diag-right">
+
+        <!-- 诊断结果 -->
+        <div class="card" id="diagResultCard" style="display:none">
+          <div class="card-header">
+            <span class="card-title">&#128269; 诊断结果</span>
+            <button class="btn btn-sm btn-secondary" onclick="closeResult()">关闭</button>
+          </div>
+          <div id="diagResult"></div>
+        </div>
+
+        <!-- 等待状态 -->
+        <div class="card diag-analyzing" id="diagAnalyzing" style="display:none">
+          <div class="analyzing-spinner"></div>
+          <div class="analyzing-text">Agent 正在分析故障…<br><small>调用知识图谱 + Claude AI 深度推理</small></div>
+        </div>
+
+        <!-- 历史记录 -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#128203; 历史诊断记录</span>
+            <button class="btn btn-sm btn-secondary" onclick="loadFaultRecords()">&#8635; 刷新</button>
+          </div>
+          <div id="faultRecordList" class="fault-record-list">加载中…</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========== 知识图谱面板 ========== -->
+  <div id="panel-graph" class="tab-panel">
+    <div class="graph-layout">
+
+      <!-- 左侧控制栏 -->
+      <div class="graph-sidebar">
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#128269; 搜索节点</span></div>
+          <div style="padding:12px">
+            <input type="text" id="graphSearchInput" placeholder="输入节点名称…"
+              oninput="onGraphSearch(this.value)"
+              style="width:100%;padding:7px 10px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px;outline:none">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#127912; 节点类型</span></div>
+          <div id="graphLegendTypes" class="legend-list" style="padding:10px 14px"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#8594; 关系类型</span></div>
+          <div id="graphLegendRels" class="legend-rel-list" style="padding:10px 14px"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#9881; 显示选项</span></div>
+          <div style="padding:10px 14px;display:flex;flex-direction:column;gap:8px">
+            <label class="legend-item">
+              <input type="checkbox" id="toggleEdgeLabels" onchange="toggleEdgeLabels(this.checked)">
+              <span>显示边标签</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">&#128202; 图谱统计</span></div>
+          <div id="graphStats" style="padding:10px 14px;display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+
+      </div>
+
+      <!-- 图谱主画布 -->
+      <div class="graph-main">
+        <div class="graph-toolbar">
+          <button class="btn btn-sm btn-secondary" onclick="graphZoomIn()"  title="放大">&#43;</button>
+          <button class="btn btn-sm btn-secondary" onclick="graphZoomOut()" title="缩小">&#8722;</button>
+          <button class="btn btn-sm btn-secondary" onclick="graphZoomReset()" title="重置视图">&#8635;</button>
+          <button class="btn btn-sm btn-secondary" onclick="toggleSimulation(true)" title="重新布局">&#9654; 布局</button>
+          <span class="graph-tip">拖拽节点 · 滚轮缩放 · 点击查看详情</span>
+        </div>
+
+        <div id="graphContainer" class="graph-canvas">
+          <!-- D3 SVG 注入此处 -->
+          <div id="graphLoading" class="graph-loading">
+            <div class="analyzing-spinner"></div>
+            <span>加载知识图谱…</span>
+          </div>
+        </div>
+
+        <!-- 悬浮 Tooltip -->
+        <div id="graphTooltip" class="graph-tooltip" style="display:none"></div>
+
+        <!-- 节点详情面板 -->
+        <div id="nodeDetailPanel" class="node-detail-panel" style="display:none"></div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- 新增/编辑设备弹窗 -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span id="modalTitle">新增设备</span>
+      <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <form id="deviceForm" onsubmit="submitForm(event)">
+      <input type="hidden" id="deviceId">
+      <div class="form-row">
+        <label>设备名称 <span class="required">*</span></label>
+        <input type="text" id="fName" placeholder="请输入设备名称" required>
+      </div>
+      <div class="form-row">
+        <label>设备类型</label>
+        <input type="text" id="fType" placeholder="如：服务器、交换机、传感器">
+      </div>
+      <div class="form-row">
+        <label>位置</label>
+        <input type="text" id="fLocation" placeholder="如：机房A、楼层B">
+      </div>
+      <div class="form-row">
+        <label>状态</label>
+        <select id="fStatus">
+          <option value="ONLINE">在线</option>
+          <option value="OFFLINE">离线</option>
+          <option value="MAINTENANCE">维修中</option>
+          <option value="FAULT">故障</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>描述</label>
+        <textarea id="fDesc" rows="3" placeholder="设备描述（选填）"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button type="submit" class="btn btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div class="modal-overlay" id="deleteOverlay" onclick="closeDeleteModal(event)">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span>确认删除</span>
+      <button class="modal-close" onclick="closeDeleteModal()">&#x2715;</button>
+    </div>
+    <p style="padding:16px 0;color:#555">确定要删除设备 <strong id="deleteDeviceName"></strong> 吗？此操作不可恢复。</p>
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">取消</button>
+      <button type="button" class="btn btn-danger" onclick="confirmDelete()">删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- 历史详情弹窗 -->
+<div class="modal-overlay" id="recordDetailOverlay" onclick="closeRecordDetail(event)">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span>故障诊断详情</span>
+      <button class="modal-close" onclick="closeRecordDetail()">&#x2715;</button>
+    </div>
+    <div id="recordDetailContent"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script src="graph.js"></script>
+</body>
+</html>

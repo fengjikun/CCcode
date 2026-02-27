@@ -20,6 +20,14 @@ dist/
 # ===== Runtime / Generated =====
 python/ontology/memory/
 
+# ===== Maven build =====
+java/**/target/
+
+# ===== H2 Database =====
+**/*.mv.db
+**/*.trace.db
+**/*.lock.db
+
 # ===== Claude Code =====
 .claude/
 
