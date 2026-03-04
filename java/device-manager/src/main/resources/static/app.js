@@ -11,21 +11,67 @@ const SEV_CLASS    = { LOW: 'sev-low', MEDIUM: 'sev-medium', HIGH: 'sev-high', C
 
 // ===== 初始化 =====
 document.addEventListener('DOMContentLoaded', () => {
+  ontologyInited = true;
+  initOntology();
   loadDevices();
   loadTypes();
   initDiagnosisPanel();
   initSeverityBtns();
 });
 
-// ===== 标签切换 =====
-let graphInited = false;
-function switchTab(tab, btn) {
+// ===== 抽屉菜单 =====
+let graphInited    = false;
+let ontologyInited = false;
+let sceneExpanded  = false;
+let currentPanel   = 'ontology';
+
+const PAGE_TITLES = {
+  ontology:  '本体管理',
+  devices:   '设备管理',
+  diagnosis: '故障诊断',
+  graph:     '图谱检索',
+};
+
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+}
+
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+
+function toggleScene() {
+  sceneExpanded = !sceneExpanded;
+  document.getElementById('sceneSub').classList.toggle('open', sceneExpanded);
+  document.getElementById('sceneChevron').classList.toggle('rotated', sceneExpanded);
+}
+
+function switchPanel(name) {
+  currentPanel = name;
+  const isScene = name === 'devices' || name === 'diagnosis';
+
+  // 子菜单项激活
+  document.querySelectorAll('.menu-item[data-panel]').forEach(el =>
+    el.classList.toggle('active', el.dataset.panel === name));
+  // 智能场景父项激活
+  document.getElementById('sceneToggle').classList.toggle('active', isScene);
+  // 切换到子面板时自动展开
+  if (isScene && !sceneExpanded) {
+    sceneExpanded = true;
+    document.getElementById('sceneSub').classList.add('open');
+    document.getElementById('sceneChevron').classList.add('rotated');
+  }
+
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel-' + tab).classList.add('active');
-  btn.classList.add('active');
-  if (tab === 'diagnosis') loadFaultRecords();
-  else if (tab === 'graph' && !graphInited) { graphInited = true; initGraph(); }
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('headerAddDevice').style.display = (name === 'devices') ? '' : 'none';
+  document.getElementById('headerPage').textContent = PAGE_TITLES[name] || '';
+  if (name === 'graph'    && !graphInited)    { graphInited = true; initGraph(); }
+  if (name === 'ontology' && !ontologyInited) { ontologyInited = true; initOntology(); }
+  if (name === 'diagnosis') loadFaultRecords();
+  closeDrawer();
 }
 
 // ===== 设备管理 =====
@@ -162,7 +208,7 @@ async function confirmDelete() {
 // ===== 从设备列表跳转到诊断 =====
 function startDiagFromDevice(deviceId) {
   const device = allDevices.find(d => d.id === deviceId);
-  switchTab('diagnosis', document.querySelector('.tab-btn:nth-child(2)'));
+  switchPanel('diagnosis');
   if (device) {
     document.getElementById('dDeviceId').value   = deviceId;
     document.getElementById('dDeviceName').value = device.name || '';
