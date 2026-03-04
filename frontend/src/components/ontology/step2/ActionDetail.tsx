@@ -42,8 +42,10 @@ const BasicInfoTab: React.FC<{ at: ActionType; objectTypes: ObjectType[]; onRefr
       await updateActionType(at.id, { displayName, description, targetObjectTypeId: targetOT })
       message.success('已保存')
       onRefresh()
-    } catch {}
-    setSaving(false)
+    } catch {
+    } finally {
+      setSaving(false)
+    }
   }
 
   const toggleStatus = async () => {
@@ -109,7 +111,7 @@ const ParametersTab: React.FC<{ atId: number }> = ({ atId }) => {
   const load = useCallback(async () => {
     setLoading(true)
     try { setParams(await getActionParameters(atId)) } catch {}
-    setLoading(false)
+    finally { setLoading(false) }
   }, [atId])
 
   useEffect(() => { load() }, [load])
@@ -126,9 +128,11 @@ const ParametersTab: React.FC<{ atId: number }> = ({ atId }) => {
   }
 
   const handleDelete = async (id: number) => {
-    await deleteActionParameter(id)
-    message.success('已删除')
-    load()
+    try {
+      await deleteActionParameter(id)
+      message.success('已删除')
+      load()
+    } catch { /* error shown by fetchJSON */ }
   }
 
   const columns = [
@@ -170,8 +174,8 @@ const ParametersTab: React.FC<{ atId: number }> = ({ atId }) => {
               ))}
             </Select>
           </Form.Item>
-          <Form.Item name="required" valuePropName="checked" label="是否必填">
-            <Select defaultValue={false}>
+          <Form.Item name="required" label="是否必填" initialValue={false}>
+            <Select>
               <Select.Option value={true}>是</Select.Option>
               <Select.Option value={false}>否</Select.Option>
             </Select>
@@ -202,7 +206,7 @@ const RulesTab: React.FC<{ atId: number }> = ({ atId }) => {
       setRules(r)
       setExecutions(e)
     } catch {}
-    setLoading(false)
+    finally { setLoading(false) }
   }, [atId])
 
   useEffect(() => { load() }, [load])
@@ -219,9 +223,11 @@ const RulesTab: React.FC<{ atId: number }> = ({ atId }) => {
   }
 
   const handleDeleteRule = async (id: number) => {
-    await deleteActionRule(id)
-    message.success('已删除')
-    load()
+    try {
+      await deleteActionRule(id)
+      message.success('已删除')
+      load()
+    } catch { /* error shown by fetchJSON */ }
   }
 
   const handleExecute = async () => {

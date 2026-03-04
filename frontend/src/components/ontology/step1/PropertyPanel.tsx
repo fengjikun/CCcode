@@ -24,7 +24,7 @@ const PropertyPanel: React.FC<Props> = ({ objectTypeId, objectTypeName }) => {
     try {
       setProperties(await getProperties(objectTypeId))
     } catch {}
-    setLoading(false)
+    finally { setLoading(false) }
   }, [objectTypeId])
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 // antd components used by sub-components
 import {
   AppstoreOutlined, ApartmentOutlined, ThunderboltOutlined, CodeOutlined,
@@ -52,14 +52,15 @@ export default function OntologyPage() {
   // When action type is refreshed, update selectedAT with latest data
   const handleRefreshStep2 = () => {
     refreshStep2()
-    if (selectedAT) {
-      // Re-select from refreshed list on next render
-      setTimeout(() => {
-        const updated = actionTypes.data.find(a => a.id === selectedAT.id)
-        if (updated) setSelectedAT(updated)
-      }, 500)
-    }
   }
+
+  // Sync selectedAT with latest data after reload
+  useEffect(() => {
+    if (selectedAT && actionTypes.data.length > 0) {
+      const updated = actionTypes.data.find(a => a.id === selectedAT.id)
+      if (updated && updated !== selectedAT) setSelectedAT(updated)
+    }
+  }, [actionTypes.data]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div style={styles.page}>

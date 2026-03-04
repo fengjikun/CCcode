@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { Button, Typography } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
@@ -13,12 +13,12 @@ const { Title } = Typography
 /** Debounce helper */
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value)
-  const ref = useMemo(() => ({ timer: 0 as unknown as ReturnType<typeof setTimeout> }), [])
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  useMemo(() => {
-    clearTimeout(ref.timer)
-    ref.timer = setTimeout(() => setDebounced(value), delay)
-  }, [value, delay, ref])
+  useEffect(() => {
+    timerRef.current = setTimeout(() => setDebounced(value), delay)
+    return () => clearTimeout(timerRef.current)
+  }, [value, delay])
 
   return debounced
 }

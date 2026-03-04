@@ -15,8 +15,9 @@ export function useGraphData() {
       setError(null)
     } catch (e: any) {
       setError(e.message)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [])
 
   useEffect(() => { load() }, [load])

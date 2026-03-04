@@ -9,7 +9,7 @@ export function useObjectTypes() {
   const load = useCallback(async () => {
     setLoading(true)
     try { setData(await getObjectTypes()) } catch {}
-    setLoading(false)
+    finally { setLoading(false) }
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -23,7 +23,7 @@ export function useLinkTypes() {
   const load = useCallback(async () => {
     setLoading(true)
     try { setData(await getLinkTypes()) } catch {}
-    setLoading(false)
+    finally { setLoading(false) }
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -37,7 +37,7 @@ export function useActionTypes() {
   const load = useCallback(async () => {
     setLoading(true)
     try { setData(await getActionTypes()) } catch {}
-    setLoading(false)
+    finally { setLoading(false) }
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -51,7 +51,7 @@ export function useOntologyFunctions() {
   const load = useCallback(async () => {
     setLoading(true)
     try { setData(await getFunctions()) } catch {}
-    setLoading(false)
+    finally { setLoading(false) }
   }, [])
 
   useEffect(() => { load() }, [load])

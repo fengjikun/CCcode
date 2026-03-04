@@ -41,20 +41,15 @@ const NotebookPanel: React.FC<Props> = ({ functions, onRefresh, loading }) => {
   }
 
   const updateCellState = (id: number, patch: Partial<CellState>) => {
-    setCellStates(prev => ({
-      ...prev,
-      [id]: { ...getCellStateById(id, functions), ...prev[id], ...patch },
-    }))
-  }
-
-  const getCellStateById = (id: number, fns: OntologyFunction[]): CellState => {
-    const fn = fns.find(f => f.id === id)
-    return cellStates[id] || {
-      scriptContent: fn?.scriptContent || '',
-      output: '',
-      running: false,
-      saving: false,
-    }
+    setCellStates(prev => {
+      const existing = prev[id] || {
+        scriptContent: functions.find(f => f.id === id)?.scriptContent || '',
+        output: '',
+        running: false,
+        saving: false,
+      }
+      return { ...prev, [id]: { ...existing, ...patch } }
+    })
   }
 
   const handleCreate = async () => {

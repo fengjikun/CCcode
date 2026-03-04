@@ -25,7 +25,7 @@ export function useFaultRecords() {
     try {
       setData(await getDiagnosisRecords())
     } catch {}
-    setLoading(false)
+    finally { setLoading(false) }
   }, [])
 
   useEffect(() => { load() }, [load])

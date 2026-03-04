@@ -25,7 +25,11 @@ interface LinkDatum extends d3.SimulationLinkDatum<NodeDatum> {
 
 const OntologyGraph: React.FC<Props> = ({ objectTypes, linkTypes, selectedOTId, onSelectOT }) => {
   const svgRef = useRef<SVGSVGElement>(null)
+  const nodeSelRef = useRef<d3.Selection<SVGGElement, NodeDatum, SVGGElement, unknown> | null>(null)
+  const onSelectOTRef = useRef(onSelectOT)
+  onSelectOTRef.current = onSelectOT
 
+  // Build graph only when data changes (not on selection change)
   useEffect(() => {
     const svg = d3.select(svgRef.current)
     svg.selectAll('*').remove()
@@ -143,6 +147,8 @@ const OntologyGraph: React.FC<Props> = ({ objectTypes, linkTypes, selectedOTId, 
           })
       )
 
+    nodeSelRef.current = node
+
     // Glow circle (behind)
     node
       .append('circle')
@@ -154,9 +160,10 @@ const OntologyGraph: React.FC<Props> = ({ objectTypes, linkTypes, selectedOTId, 
     // Main circle
     node
       .append('circle')
+      .attr('class', 'main-circle')
       .attr('r', 16)
       .attr('fill', d => d.color)
-      .attr('stroke', d => (d.id === selectedOTId ? '#fff' : 'transparent'))
+      .attr('stroke', 'transparent')
       .attr('stroke-width', 2.5)
 
     // Label
@@ -170,7 +177,7 @@ const OntologyGraph: React.FC<Props> = ({ objectTypes, linkTypes, selectedOTId, 
 
     node.on('click', (_event, d) => {
       const ot = objectTypes.find(o => o.id === d.id)
-      if (ot) onSelectOT(ot)
+      if (ot) onSelectOTRef.current(ot)
     })
 
     simulation.on('tick', () => {
@@ -190,7 +197,15 @@ const OntologyGraph: React.FC<Props> = ({ objectTypes, linkTypes, selectedOTId, 
     return () => {
       simulation.stop()
     }
-  }, [objectTypes, linkTypes, selectedOTId, onSelectOT])
+  }, [objectTypes, linkTypes])
+
+  // Update selection highlight without rebuilding the graph
+  useEffect(() => {
+    const nodeSel = nodeSelRef.current
+    if (!nodeSel) return
+    nodeSel.select('.main-circle')
+      .attr('stroke', (d: NodeDatum) => (d.id === selectedOTId ? '#fff' : 'transparent'))
+  }, [selectedOTId])
 
   return (
     <div style={{ flex: 1, background: '#1a1d23', borderRadius: 8, overflow: 'hidden', minHeight: 400 }}>

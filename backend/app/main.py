@@ -15,11 +15,11 @@ from app.services import fault_knowledge_service
 
 app = FastAPI(title="大族智控设备故障诊断系统", version="2.0.0")
 
-# CORS - allow all origins
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -49,8 +49,8 @@ if _frontend_dist.is_dir():
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         """Serve React SPA — all non-API routes fall back to index.html."""
-        file_path = _frontend_dist / full_path
-        if full_path and file_path.is_file():
+        file_path = (_frontend_dist / full_path).resolve()
+        if full_path and file_path.is_relative_to(_frontend_dist) and file_path.is_file():
             return FileResponse(str(file_path))
         return FileResponse(str(_frontend_dist / "index.html"))
 else:
