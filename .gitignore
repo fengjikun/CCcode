@@ -17,6 +17,12 @@ venv/
 dist/
 .pytest_cache/
 
+# ===== Environment =====
+backend/.env
+
+# ===== SQLite Database =====
+backend/data/*.sqlite
+
 # ===== Runtime / Generated =====
 python/ontology/memory/
 
