@@ -1,16 +1,16 @@
-import os
 from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
-from app.database import Base
+from app.database import SessionLocal
 from app.models import *  # noqa: F401, F403 - ensure all models are imported
-from app.routers import devices, diagnosis, ontology_schema, ontology_objects, ontology_actions, ontology_functions
+from app.routers import auth, devices, diagnosis, ontology_schema, ontology_objects, ontology_actions, ontology_functions
+from app.security import bootstrap_default_user, get_current_user
 from app.services import fault_knowledge_service
 
 app = FastAPI(title="大族智控设备故障诊断系统", version="2.0.0")
@@ -25,12 +25,14 @@ app.add_middleware(
 )
 
 # Register routers
-app.include_router(devices.router)
-app.include_router(diagnosis.router)
-app.include_router(ontology_schema.router)
-app.include_router(ontology_objects.router)
-app.include_router(ontology_actions.router)
-app.include_router(ontology_functions.router)
+_protected = [Depends(get_current_user)]
+app.include_router(auth.router)
+app.include_router(devices.router, dependencies=_protected)
+app.include_router(diagnosis.router, dependencies=_protected)
+app.include_router(ontology_schema.router, dependencies=_protected)
+app.include_router(ontology_objects.router, dependencies=_protected)
+app.include_router(ontology_actions.router, dependencies=_protected)
+app.include_router(ontology_functions.router, dependencies=_protected)
 
 
 @app.on_event("startup")
@@ -41,6 +43,13 @@ def on_startup():
 
     alembic_cfg = Config(str(Path(__file__).resolve().parent.parent / "alembic.ini"))
     command.upgrade(alembic_cfg, "head")
+
+    # Bootstrap an initial admin account when user table is empty.
+    db = SessionLocal()
+    try:
+        bootstrap_default_user(db)
+    finally:
+        db.close()
 
     # Load fault knowledge graph
     fault_knowledge_service.load()

@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Layout, Menu } from 'antd'
+import { Button, Layout, Menu } from 'antd'
 import {
   GlobalOutlined,
   SearchOutlined,
   DesktopOutlined,
   ToolOutlined,
+  LogoutOutlined,
+  UserOutlined,
 } from '@ant-design/icons'
+import { clearAuthSession, getAuthUser } from '../../auth/session'
 
 const { Sider, Content, Header } = Layout
 
@@ -28,6 +31,12 @@ export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const currentUser = getAuthUser()
+
+  const handleLogout = () => {
+    clearAuthSession()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -64,12 +73,22 @@ export default function AppLayout() {
           padding: '0 24px',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           borderBottom: '1px solid #f0f0f0',
           height: 48,
         }}>
           <span style={{ fontWeight: 600, fontSize: 16 }}>
             {PAGE_TITLES[location.pathname] || ''}
           </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ color: '#595959', fontSize: 13 }}>
+              <UserOutlined style={{ marginRight: 6 }} />
+              {currentUser?.username || '未知用户'}
+            </span>
+            <Button type="text" icon={<LogoutOutlined />} onClick={handleLogout}>
+              退出
+            </Button>
+          </div>
         </Header>
         <Content style={{ margin: 16, minHeight: 280 }}>
           <Outlet />

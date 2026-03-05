@@ -42,7 +42,15 @@ cd ../frontend && npm install
 LLM_API_KEY=your_key
 LLM_BASE_URL=https://your-openai-compatible-endpoint/v1
 LLM_MODEL=your_model
+
+# 认证配置（可选）
+AUTH_SECRET_KEY=replace-with-a-strong-random-secret
+AUTH_TOKEN_EXPIRE_MINUTES=480
+AUTH_DEFAULT_USERNAME=admin
+AUTH_DEFAULT_PASSWORD=admin123456
 ```
+
+首次启动时如 `users` 表为空，会自动创建默认管理员账号（可通过上述环境变量覆盖）。
 
 启动：
 
@@ -58,6 +66,7 @@ cd frontend && npm run dev
 访问：
 - 前端：http://localhost:9002
 - API 文档：http://localhost:9000/docs
+- 默认登录账号：`admin` / `admin123456`（请在生产环境修改）
 
 ### Docker 部署
 
@@ -92,6 +101,7 @@ docs/       项目文档
 - `/api/ontology/objects`
 - `/api/ontology/actions`
 - `/api/ontology/functions`
+- `/api/auth`
 
 ## License
 
