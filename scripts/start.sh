@@ -31,20 +31,20 @@ if [ ! -d "$FRONTEND_DIR/node_modules" ]; then
 fi
 
 # 启动后端 (FastAPI)
-echo "启动后端服务 (http://localhost:8000)..."
-(cd "$BACKEND_DIR" && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000) &
+echo "启动后端服务 (http://localhost:9000)..."
+(cd "$BACKEND_DIR" && uvicorn app.main:app --reload --host 0.0.0.0 --port 9000) &
 BACKEND_PID=$!
 
 # 启动前端 (React + Vite)
-echo "启动前端服务 (http://localhost:5173)..."
+echo "启动前端服务 (http://localhost:9002)..."
 (cd "$FRONTEND_DIR" && npm run dev) &
 FRONTEND_PID=$!
 
 echo ""
 echo "====================================="
-echo "  后端: http://localhost:8000"
-echo "  前端: http://localhost:5173"
-echo "  API文档: http://localhost:8000/docs"
+echo "  后端: http://localhost:9000"
+echo "  前端: http://localhost:9002"
+echo "  API文档: http://localhost:9000/docs"
 echo "====================================="
 echo "按 Ctrl+C 停止所有服务"
 echo ""

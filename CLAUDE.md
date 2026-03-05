@@ -22,7 +22,7 @@ pip install -r requirements.txt
 # Requires Node 18+. Use nvm if system node is old:
 export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use 22
 
-# Dev server (proxies /api → localhost:8000)
+# Dev server (proxies /api → localhost:9000)
 npm run dev
 
 # Type-check + production build
@@ -67,7 +67,7 @@ React 18 + TypeScript + Vite. Uses Ant Design 5 for UI components and D3.js v7 f
 - `components/graph/ForceGraph.tsx` uses `forwardRef` + `useImperativeHandle` to expose zoom/layout controls
 
 ### Data Flow
-Vite dev proxy (`/api` → `http://localhost:8000`) enables frontend dev without CORS issues. The backend has CORS `allow_origins=["*"]` as fallback.
+Vite dev proxy (`/api` → `http://localhost:9000`) enables frontend dev without CORS issues. The backend has CORS `allow_origins=["*"]` as fallback.
 
 ## Conventions
 

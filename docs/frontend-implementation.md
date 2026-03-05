@@ -10,7 +10,7 @@
 |------|------|------|
 | React | 18 | UI 框架 |
 | TypeScript | - | 类型安全 |
-| Vite | - | 构建工具，开发代理 `/api` → `localhost:8000` |
+| Vite | - | 构建工具，开发代理 `/api` → `localhost:9000` |
 | Ant Design | 5 | UI 组件库 |
 | D3.js | v7 | 力导向图可视化 |
 | React Router | v6 | 客户端路由 |

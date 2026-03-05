@@ -65,18 +65,18 @@ npm install
 **分别启动：**
 
 ```bash
-# 后端 (端口 8000)
+# 后端 (端口 9000)
 cd backend
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --port 9000
 
-# 前端 (端口 5173)
+# 前端 (端口 9002)
 cd frontend
 npm run dev
 ```
 
 启动后访问：
-- 前端界面：http://localhost:5173
-- API 文档：http://localhost:8000/docs
+- 前端界面：http://localhost:9002
+- API 文档：http://localhost:9000/docs
 
 ## 项目结构
 
