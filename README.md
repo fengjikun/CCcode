@@ -113,6 +113,7 @@ cp deploy/.env.example deploy/.env
 数据持久化说明：
 - 容器内数据库路径：`/app/backend/data/devicedb.sqlite`
 - 已通过 `docker-compose.yml` 挂载到宿主机 `./backend/data`
+- 详细步骤见：`docs/docker-deployment.md`
 
 ## 项目结构
 
