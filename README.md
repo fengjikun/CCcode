@@ -62,6 +62,12 @@ npm install
 ./scripts/start.sh
 ```
 
+Docker 启动（同一脚本入口）：
+
+```bash
+./scripts/start.sh docker
+```
+
 **分别启动：**
 
 ```bash
@@ -77,6 +83,36 @@ npm run dev
 启动后访问：
 - 前端界面：http://localhost:9002
 - API 文档：http://localhost:9000/docs
+
+### 5. Docker 部署（生产推荐）
+
+项目生产态由 FastAPI 同时提供 API 和前端静态资源（`frontend/dist`），默认只暴露一个端口 `9000`。
+
+```bash
+# 1) 准备环境变量（LLM 可选）
+cp deploy/.env.example deploy/.env
+
+# 2) 构建并启动
+./scripts/start.sh docker up deploy/.env
+
+# 3) 查看状态/日志
+./scripts/start.sh docker ps deploy/.env
+./scripts/start.sh docker logs deploy/.env
+```
+
+访问地址：
+- 应用入口（前端 + API）：http://localhost:9000
+- API 文档：http://localhost:9000/docs
+
+停止服务：
+
+```bash
+./scripts/start.sh docker down deploy/.env
+```
+
+数据持久化说明：
+- 容器内数据库路径：`/app/backend/data/devicedb.sqlite`
+- 已通过 `docker-compose.yml` 挂载到宿主机 `./backend/data`
 
 ## 项目结构
 
