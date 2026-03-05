@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react'
-import { Card, Typography, Spin, message, List, Tag } from 'antd'
+import { Alert, Button, Card, Typography, Spin, message, List, Tag } from 'antd'
 import {
   ExperimentOutlined,
   HistoryOutlined,
   LoadingOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons'
 import { useDevices } from '../hooks/useDevices'
 import { usePhenomena, useFaultRecords } from '../hooks/useDiagnosis'
@@ -17,8 +18,8 @@ const { Title, Text } = Typography
 
 export default function DiagnosisPage() {
   const { data: devices } = useDevices()
-  const { data: phenomena, loading: phenomenaLoading } = usePhenomena()
-  const { data: records, loading: recordsLoading, reload: reloadRecords } = useFaultRecords()
+  const { data: phenomena, loading: phenomenaLoading, error: phenomenaError, reload: reloadPhenomena } = usePhenomena()
+  const { data: records, loading: recordsLoading, error: recordsError, reload: reloadRecords } = useFaultRecords()
 
   const [analyzing, setAnalyzing] = useState(false)
   const [currentRecord, setCurrentRecord] = useState<DiagnosisRecord | null>(null)
@@ -50,6 +51,22 @@ export default function DiagnosisPage() {
       <Title level={4} style={{ marginBottom: 16 }}>
         <ExperimentOutlined /> 故障诊断
       </Title>
+
+      {(phenomenaError || recordsError) && (
+        <Alert
+          type="error"
+          showIcon
+          closable
+          message="数据加载失败"
+          description={[phenomenaError, recordsError].filter(Boolean).join('；')}
+          action={
+            <Button size="small" icon={<ReloadOutlined />} onClick={() => { reloadPhenomena(); reloadRecords() }}>
+              重试
+            </Button>
+          }
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
       <div
         style={{

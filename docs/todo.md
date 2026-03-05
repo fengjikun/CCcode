@@ -83,21 +83,21 @@
 ## 前端 — 高优先级
 
 ### 错误处理完善
-- [ ] `useOntology` 系列 Hook 增加 `error` 状态返回（当前静默失败，用户无感知）
-- [ ] 本体编辑器页面增加错误状态 UI 展示（Toast 或 Alert）
-- [ ] API 请求失败时提供重试按钮（至少在页面级别）
-- [ ] `fetchJSON` 增加网络断开检测，提示用户检查网络
+- [x] `useOntology` 系列 Hook 增加 `error` 状态返回（当前静默失败，用户无感知）
+- [x] 本体编辑器页面增加错误状态 UI 展示（Toast 或 Alert）
+- [x] API 请求失败时提供重试按钮（至少在页面级别）
+- [x] `fetchJSON` 增加网络断开检测，提示用户检查网络
 
 ### 前端表单验证
-- [ ] DeviceForm 增加字段长度/格式校验（名称、位置等）
-- [ ] ActionDetail 参数编辑增加类型约束校验
-- [ ] NotebookPanel 函数名唯一性前端校验
-- [ ] DiagnosisForm 问题描述最小长度限制
+- [x] DeviceForm 增加字段长度/格式校验（名称、位置等）
+- [x] ActionDetail 参数编辑增加类型约束校验
+- [x] NotebookPanel 函数名唯一性前端校验
+- [x] DiagnosisForm 问题描述最小长度限制
 
 ### 前端删除保护
-- [ ] EntitiesAndLinks 中 LinkType 删除增加确认弹窗
-- [ ] ActionDetail 中参数/规则删除增加确认提示
-- [ ] 批量关联检查：删除 ObjectType 前提示关联的 Object/Link 数量
+- [x] EntitiesAndLinks 中 LinkType 删除增加确认弹窗
+- [x] ActionDetail 中参数/规则删除增加确认提示
+- [x] 批量关联检查：删除 ObjectType 前提示关联的 Object/Link 数量
 
 ---
 
@@ -191,5 +191,5 @@
 | 无外键约束 | 部分关联字段（如 device_id）未设置数据库级外键 |
 | Agent 循环硬编码 | 最大轮次、模型名称等配置分散在代码中 |
 | 前端无全局状态管理 | 数据依赖组件级 state 传递，复杂交互场景可能需引入 Context 或 Zustand |
-| Hook 错误处理不一致 | useDevices/useGraphData 返回 error，useOntology 系列静默吞掉错误 |
+| ~~Hook 错误处理不一致~~ | ~~已修复：所有 Hook 均返回 error 状态~~ |
 | 无测试覆盖 | 前后端均无单元/集成测试 |

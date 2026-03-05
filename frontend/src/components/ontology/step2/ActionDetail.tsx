@@ -165,7 +165,18 @@ const ParametersTab: React.FC<{ atId: number }> = ({ atId }) => {
       <Table dataSource={params} columns={columns} rowKey="id" loading={loading} size="small" pagination={false} />
       <Modal title="添加参数" open={modalOpen} onOk={handleCreate} onCancel={() => { setModalOpen(false); form.resetFields() }} destroyOnClose>
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="代码名称" rules={[{ required: true }]}><Input /></Form.Item>
+          <Form.Item name="name" label="代码名称" rules={[
+            { required: true, message: '请输入参数名称' },
+            { pattern: /^[a-zA-Z_][a-zA-Z0-9_]*$/, message: '参数名须为合法标识符（字母/下划线开头）' },
+            {
+              validator: (_, value) => {
+                if (value && params.some(p => p.name === value)) {
+                  return Promise.reject('参数名称已存在')
+                }
+                return Promise.resolve()
+              },
+            },
+          ]}><Input /></Form.Item>
           <Form.Item name="displayName" label="显示名称" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name="dataType" label="数据类型" rules={[{ required: true }]}>
             <Select placeholder="选择">
