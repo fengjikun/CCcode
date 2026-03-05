@@ -74,4 +74,3 @@ Vite dev proxy (`/api` → `http://localhost:9000`) enables frontend dev without
 - UI language is Chinese (zh-CN)
 - API field naming: camelCase in JSON, snake_case in Python
 - Complex ontology data (validation rules, trigger configs) stored as JSON strings in SQLite TEXT columns
-- The `java/` directory is the legacy pre-migration codebase (Spring Boot + vanilla JS) — kept for reference only
