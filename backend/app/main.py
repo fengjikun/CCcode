@@ -8,8 +8,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
-from app.database import engine, Base
-from app.models import *  # noqa: F401, F403 - ensure all models are imported for create_all
+from app.database import Base
+from app.models import *  # noqa: F401, F403 - ensure all models are imported
 from app.routers import devices, diagnosis, ontology_schema, ontology_objects, ontology_actions, ontology_functions
 from app.services import fault_knowledge_service
 
@@ -35,8 +35,13 @@ app.include_router(ontology_functions.router)
 
 @app.on_event("startup")
 def on_startup():
-    # Create all database tables
-    Base.metadata.create_all(bind=engine)
+    # Run Alembic migrations to ensure database schema is up to date
+    from alembic.config import Config
+    from alembic import command
+
+    alembic_cfg = Config(str(Path(__file__).resolve().parent.parent / "alembic.ini"))
+    command.upgrade(alembic_cfg, "head")
+
     # Load fault knowledge graph
     fault_knowledge_service.load()
 
