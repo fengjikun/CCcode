@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-大族智控设备故障诊断系统 — A full-stack device fault diagnosis system with an ontology-based knowledge graph. Backend is Python FastAPI, frontend is React + TypeScript + Ant Design. The system manages devices, runs AI-powered fault diagnosis (using Claude API), and provides a visual ontology editor.
+大族智控设备故障诊断系统 — A full-stack device fault diagnosis system with an ontology-based knowledge graph. Backend is Python FastAPI, frontend is React + TypeScript + Ant Design. The system manages devices, runs AI-powered fault diagnosis (using OpenAI-compatible Responses API), and provides a visual ontology editor.
 
 ## Commands
 
@@ -33,7 +33,7 @@ npm run lint
 ```
 
 ### Environment
-Backend requires a `.env` file in `backend/` with `CLAUDE_API_KEY` for AI diagnosis features. The database is SQLite at `./data/devicedb.sqlite`, auto-created on startup.
+Backend requires a `.env` file in `backend/` with `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL` for AI diagnosis features. The database is SQLite at `./data/devicedb.sqlite`, auto-created on startup.
 
 ## Architecture
 
@@ -42,7 +42,7 @@ Backend requires a `.env` file in `backend/` with `CLAUDE_API_KEY` for AI diagno
 FastAPI with SQLAlchemy 2.0 ORM on SQLite. Layered as routers → services → models.
 
 - **Routers** (`routers/`): 6 routers — `devices`, `diagnosis`, `ontology_schema`, `ontology_objects`, `ontology_actions`, `ontology_functions`. All under `/api/` prefix.
-- **Services** (`services/`): Business logic. `diagnosis_service.py` integrates the Anthropic Claude API for AI-powered fault analysis. `fault_knowledge_service.py` loads the knowledge graph on startup.
+- **Services** (`services/`): Business logic. `diagnosis_service.py` integrates the OpenAI-compatible Responses API for AI-powered fault analysis. `fault_knowledge_service.py` loads the knowledge graph on startup.
 - **Models** (`models/`): SQLAlchemy models. `ontology.py` has 11+ models forming the ontology system (ObjectType, Property, LinkType, Object, Link, ActionType, ActionParameter, ActionRule, ActionExecution, Function, FunctionLog).
 - **Schemas** (`schemas/`): Pydantic v2 models with camelCase aliasing (`alias_generator=to_camel`) for JSON API contracts.
 - **DB sessions**: Injected via `Depends(get_db)` from `database.py`.

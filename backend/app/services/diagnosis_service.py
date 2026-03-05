@@ -1,16 +1,16 @@
 import json
 import os
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 
 from sqlalchemy.orm import Session
 
 from app.models.fault_record import FaultRecord
 from app.services import fault_knowledge_service as knowledge
 
-# Claude API config
-CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY", "")
-CLAUDE_BASE_URL = os.getenv("CLAUDE_BASE_URL", "")
-CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-opus-4-6")
+# LLM API config (OpenAI-compatible Responses API)
+LLM_API_KEY = os.getenv("LLM_API_KEY", "")
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "")
+LLM_MODEL = os.getenv("LLM_MODEL", "")
 MAX_AGENT_ROUNDS = 8
 
 
@@ -49,70 +49,92 @@ def diagnose(db: Session, request: Dict[str, Any]) -> FaultRecord:
 
 
 def _run_agent(request: Dict[str, Any]) -> str:
-    if not CLAUDE_API_KEY:
+    if not LLM_API_KEY or not LLM_BASE_URL or not LLM_MODEL:
         return _run_local_diagnosis(request)
 
     try:
-        import anthropic
+        from openai import OpenAI
     except ImportError:
         return _run_local_diagnosis(request)
 
-    client_kwargs = {"api_key": CLAUDE_API_KEY}
-    if CLAUDE_BASE_URL:
-        client_kwargs["base_url"] = CLAUDE_BASE_URL
-    client = anthropic.Anthropic(**client_kwargs)
-    messages = [_build_user_message(request)]
+    base_url = LLM_BASE_URL.rstrip("/")
+    if not base_url.endswith("/v1"):
+        base_url += "/v1"
+
+    client = OpenAI(api_key=LLM_API_KEY, base_url=base_url)
+
+    input_items = [
+        {"role": "developer", "content": _build_system_prompt()},
+        _build_user_message(request),
+    ]
+    tools = _build_tool_definitions()
     diagnosis_conclusion = None
 
     for round_ in range(MAX_AGENT_ROUNDS):
-        response = client.messages.create(
-            model=CLAUDE_MODEL,
-            max_tokens=4096,
-            system=_build_system_prompt(),
-            tools=_build_tool_definitions(),
-            messages=messages,
+        response = client.responses.create(
+            model=LLM_MODEL,
+            input=input_items,
+            tools=tools,
+            max_output_tokens=4096,
         )
 
-        # Build assistant message content
-        assistant_content = []
-        for block in response.content:
-            if block.type == "text":
-                assistant_content.append({"type": "text", "text": block.text})
-            elif block.type == "tool_use":
-                assistant_content.append({
-                    "type": "tool_use",
-                    "id": block.id,
-                    "name": block.name,
-                    "input": block.input,
-                })
+        function_calls = [
+            item for item in response.output if item.type == "function_call"
+        ]
 
-        messages.append({"role": "assistant", "content": assistant_content})
-
-        if response.stop_reason == "end_turn":
+        # No function calls — model returned final text
+        if not function_calls:
             if diagnosis_conclusion is not None:
                 return diagnosis_conclusion
-            text = _extract_text(response.content)
+            text = _extract_text_from_response(response)
             return _extract_json_from_text(text)
 
-        if response.stop_reason == "tool_use":
-            tool_results = []
-            for block in response.content:
-                if block.type != "tool_use":
-                    continue
-                if block.name == "record_diagnosis":
-                    diagnosis_conclusion = json.dumps(block.input, ensure_ascii=False)
-                result = _execute_tool(block.name, block.input)
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
-                    "content": result,
+        # Append model output (messages + function_calls) to conversation history
+        for item in response.output:
+            if item.type == "message":
+                for c in item.content:
+                    if hasattr(c, "text") and c.text:
+                        input_items.append({"role": "assistant", "content": c.text})
+            elif item.type == "function_call":
+                input_items.append({
+                    "type": "function_call",
+                    "id": item.id,
+                    "call_id": item.call_id,
+                    "name": item.name,
+                    "arguments": item.arguments,
                 })
-            messages.append({"role": "user", "content": tool_results})
 
-            if diagnosis_conclusion is not None and round_ >= MAX_AGENT_ROUNDS - 2:
-                return diagnosis_conclusion
+        # Execute each tool and append results
+        for fc in function_calls:
+            try:
+                input_data = json.loads(fc.arguments)
+            except json.JSONDecodeError:
+                input_data = {}
+
+            if fc.name == "record_diagnosis":
+                diagnosis_conclusion = json.dumps(input_data, ensure_ascii=False)
+
+            result = _execute_tool(fc.name, input_data)
+            input_items.append({
+                "type": "function_call_output",
+                "call_id": fc.call_id,
+                "output": result,
+            })
+
+        # Early exit once diagnosis is recorded and we're near the round limit
+        if diagnosis_conclusion is not None and round_ >= MAX_AGENT_ROUNDS - 2:
+            return diagnosis_conclusion
 
     return diagnosis_conclusion if diagnosis_conclusion else _run_local_diagnosis(request)
+
+
+def _extract_text_from_response(response) -> str:
+    for item in response.output:
+        if item.type == "message":
+            for c in item.content:
+                if hasattr(c, "text") and c.text:
+                    return c.text
+    return "{}"
 
 
 def _execute_tool(tool_name: str, input_data: Dict[str, Any]) -> str:
@@ -198,9 +220,10 @@ def _build_system_prompt() -> str:
 def _build_tool_definitions() -> list:
     return [
         {
+            "type": "function",
             "name": "search_phenomena",
             "description": "搜索与用户描述的故障症状匹配的现象级问题（Phenomenon）",
-            "input_schema": {
+            "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {"type": "string", "description": "故障描述关键词，如'W轴限位报警'"},
@@ -211,9 +234,10 @@ def _build_tool_definitions() -> list:
             },
         },
         {
+            "type": "function",
             "name": "get_sub_phenomena",
             "description": "获取某现象级问题（Phenomenon）的所有子现象（SubPhenomenon）",
-            "input_schema": {
+            "parameters": {
                 "type": "object",
                 "properties": {
                     "phenomenon_id": {"type": "string", "description": "现象级问题的ID，如 phen_w_limit"},
@@ -222,9 +246,10 @@ def _build_tool_definitions() -> list:
             },
         },
         {
+            "type": "function",
             "name": "get_checkpoints",
             "description": "获取某现象或子现象的所有排查点（Checkpoint），按优先级排序",
-            "input_schema": {
+            "parameters": {
                 "type": "object",
                 "properties": {
                     "node_id": {"type": "string", "description": "现象或子现象的ID"},
@@ -233,9 +258,10 @@ def _build_tool_definitions() -> list:
             },
         },
         {
+            "type": "function",
             "name": "get_causes_and_solutions",
             "description": "获取某子现象（SubPhenomenon）的可能原因（Cause）和解决方案（Solution）",
-            "input_schema": {
+            "parameters": {
                 "type": "object",
                 "properties": {
                     "sub_phenomenon_id": {"type": "string", "description": "子现象的ID，如 sp_io_no_purple"},
@@ -244,9 +270,10 @@ def _build_tool_definitions() -> list:
             },
         },
         {
+            "type": "function",
             "name": "get_parameter_config",
             "description": "获取某排查点（Checkpoint）关联的设备参数采集配置（Parameter）",
-            "input_schema": {
+            "parameters": {
                 "type": "object",
                 "properties": {
                     "checkpoint_id": {"type": "string", "description": "排查点的ID"},
@@ -255,9 +282,10 @@ def _build_tool_definitions() -> list:
             },
         },
         {
+            "type": "function",
             "name": "record_diagnosis",
             "description": "记录最终诊断结论，包含排查步骤和解决方案",
-            "input_schema": {
+            "parameters": {
                 "type": "object",
                 "properties": {
                     "phenomenon": {"type": "string", "description": "现象名称"},
@@ -304,7 +332,6 @@ def _build_local_result(phen_id: str, detail: Dict[str, Any], request: Dict[str,
     checkpoints = detail.get("checkpoints", [])
     sub_phens = detail.get("subPhenomena", [])
 
-    # Build checkpoint steps
     cp_steps = []
     for step_num, cp in enumerate(checkpoints, 1):
         props = cp.get("properties", {})
@@ -317,7 +344,6 @@ def _build_local_result(phen_id: str, detail: Dict[str, Any], request: Dict[str,
             "priority": cp.get("priority", 99),
         })
 
-    # Collect causes and solutions
     all_causes = []
     all_solutions = []
     for sp in sub_phens:
@@ -352,16 +378,9 @@ def _build_local_result(phen_id: str, detail: Dict[str, Any], request: Dict[str,
         "solutions": all_solutions,
         "estimated_time": estimated_time,
         "urgency": request.get("severity") or "MEDIUM",
-        "note": "当前为本地知识图谱诊断模式，如需AI深度分析请配置 claude.api.key",
+        "note": "当前为本地知识图谱诊断模式，如需AI深度分析请配置 LLM_API_KEY",
     }
     return json.dumps(result, ensure_ascii=False)
-
-
-def _extract_text(content) -> str:
-    for block in content:
-        if block.type == "text":
-            return block.text
-    return "{}"
 
 
 def _extract_json_from_text(text: str) -> str:
