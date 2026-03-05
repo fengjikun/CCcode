@@ -1,14 +1,12 @@
 import { useState, useCallback } from 'react'
-import { Form, Select, Input, Radio, Button, Space } from 'antd'
+import { Form, Input, Radio, Button, Space } from 'antd'
 import { SearchOutlined, ClearOutlined } from '@ant-design/icons'
-import type { Device } from '../../types/device'
 import type { Phenomenon, Severity, DiagnosisPayload } from '../../types/diagnosis'
 import PhenomenonSelector from './PhenomenonSelector'
 
 const { TextArea } = Input
 
 interface DiagnosisFormProps {
-  devices: Device[]
   phenomena: Phenomenon[]
   phenomenaLoading?: boolean
   onSubmit: (payload: DiagnosisPayload) => void
@@ -23,7 +21,6 @@ const severityOptions: { label: string; value: Severity }[] = [
 ]
 
 export default function DiagnosisForm({
-  devices,
   phenomena,
   phenomenaLoading,
   onSubmit,
@@ -35,20 +32,6 @@ export default function DiagnosisForm({
     symptoms: string[]
   }>({ phenomenonId: '', symptoms: [] })
 
-  // When a device is selected, auto-fill name and type
-  const handleDeviceChange = useCallback(
-    (deviceId: number) => {
-      const device = devices.find((d) => d.id === deviceId)
-      if (device) {
-        form.setFieldsValue({
-          deviceName: device.name,
-          deviceType: device.type ?? '',
-        })
-      }
-    },
-    [devices, form],
-  )
-
   const handleReset = useCallback(() => {
     form.resetFields()
     setPhenomenonValue({ phenomenonId: '', symptoms: [] })
@@ -57,7 +40,7 @@ export default function DiagnosisForm({
   const handleFinish = useCallback(
     (values: any) => {
       const payload: DiagnosisPayload = {
-        deviceId: values.deviceId ?? null,
+        deviceId: null,
         deviceName: values.deviceName || '',
         deviceType: values.deviceType || '',
         phenomenonId: phenomenonValue.phenomenonId,
@@ -78,20 +61,6 @@ export default function DiagnosisForm({
       initialValues={{ severity: 'MEDIUM' }}
       size="middle"
     >
-      <Form.Item label="选择设备" name="deviceId">
-        <Select
-          placeholder="选择已有设备（可选）"
-          allowClear
-          showSearch
-          optionFilterProp="label"
-          onChange={handleDeviceChange}
-          options={devices.map((d) => ({
-            label: `${d.name}${d.type ? ' (' + d.type + ')' : ''}`,
-            value: d.id,
-          }))}
-        />
-      </Form.Item>
-
       <Form.Item
         label="设备名称"
         name="deviceName"

@@ -6,7 +6,6 @@ import {
   LoadingOutlined,
   ReloadOutlined,
 } from '@ant-design/icons'
-import { useDevices } from '../hooks/useDevices'
 import { usePhenomena, useFaultRecords } from '../hooks/useDiagnosis'
 import { analyzeDiagnosis } from '../api/diagnosis'
 import DiagnosisForm from '../components/diagnosis/DiagnosisForm'
@@ -17,7 +16,6 @@ import type { DiagnosisPayload, DiagnosisRecord } from '../types/diagnosis'
 const { Title, Text } = Typography
 
 export default function DiagnosisPage() {
-  const { data: devices } = useDevices()
   const { data: phenomena, loading: phenomenaLoading, error: phenomenaError, reload: reloadPhenomena } = usePhenomena()
   const { data: records, loading: recordsLoading, error: recordsError, reload: reloadRecords } = useFaultRecords()
 
@@ -80,7 +78,6 @@ export default function DiagnosisPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Card title="诊断表单" size="small">
             <DiagnosisForm
-              devices={devices}
               phenomena={phenomena}
               phenomenaLoading={phenomenaLoading}
               onSubmit={handleSubmit}

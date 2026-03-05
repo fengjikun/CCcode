@@ -4,26 +4,26 @@ import { Button, Layout, Menu } from 'antd'
 import {
   GlobalOutlined,
   SearchOutlined,
-  DesktopOutlined,
   ToolOutlined,
   LogoutOutlined,
   UserOutlined,
+  ProjectOutlined,
 } from '@ant-design/icons'
 import { clearAuthSession, getAuthUser } from '../../auth/session'
 
 const { Sider, Content, Header } = Layout
 
 const menuItems = [
+  { key: '/projects', icon: <ProjectOutlined />, label: '项目管理' },
   { key: '/ontology', icon: <GlobalOutlined />, label: '本体管理' },
   { key: '/graph', icon: <SearchOutlined />, label: '图谱检索' },
-  { key: '/devices', icon: <DesktopOutlined />, label: '设备管理' },
   { key: '/diagnosis', icon: <ToolOutlined />, label: '故障诊断' },
 ]
 
 const PAGE_TITLES: Record<string, string> = {
+  '/projects': '项目管理',
   '/ontology': '本体管理',
   '/graph': '图谱检索',
-  '/devices': '设备管理',
   '/diagnosis': '故障诊断',
 }
 
@@ -32,6 +32,14 @@ export default function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const currentUser = getAuthUser()
+  const selectedMenu = menuItems.find(item =>
+    location.pathname === item.key || location.pathname.startsWith(`${item.key}/`),
+  )
+  const pageTitle = location.pathname.startsWith('/projects/') && location.pathname.endsWith('/graph')
+    ? '项目图谱展示'
+    : location.pathname.startsWith('/projects/')
+      ? '项目工作台'
+    : (PAGE_TITLES[selectedMenu?.key || location.pathname] || '')
 
   const handleLogout = () => {
     clearAuthSession()
@@ -62,7 +70,7 @@ export default function AppLayout() {
         <Menu
           theme="dark"
           mode="inline"
-          selectedKeys={[location.pathname]}
+          selectedKeys={[selectedMenu?.key || location.pathname]}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
         />
@@ -78,7 +86,7 @@ export default function AppLayout() {
           height: 48,
         }}>
           <span style={{ fontWeight: 600, fontSize: 16 }}>
-            {PAGE_TITLES[location.pathname] || ''}
+            {pageTitle}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ color: '#595959', fontSize: 13 }}>

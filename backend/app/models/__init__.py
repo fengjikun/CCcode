@@ -1,4 +1,3 @@
-from .device import Device
 from .fault_record import FaultRecord
 from .user import User
 from .ontology import (

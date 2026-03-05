@@ -2,10 +2,12 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from './components/layout/AppLayout'
 import RequireAuth from './components/auth/RequireAuth'
 import OntologyPage from './pages/OntologyPage'
-import DevicesPage from './pages/DevicesPage'
 import DiagnosisPage from './pages/DiagnosisPage'
 import GraphPage from './pages/GraphPage'
 import LoginPage from './pages/LoginPage'
+import ProjectsPage from './pages/ProjectsPage'
+import ProjectWorkspacePage from './pages/ProjectWorkspacePage'
+import ProjectGraphPage from './pages/ProjectGraphPage'
 
 export default function App() {
   return (
@@ -18,11 +20,13 @@ export default function App() {
           </RequireAuth>
         )}
       >
+        <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/projects/:projectId" element={<ProjectWorkspacePage />} />
+        <Route path="/projects/:projectId/graph" element={<ProjectGraphPage />} />
         <Route path="/ontology" element={<OntologyPage />} />
-        <Route path="/devices" element={<DevicesPage />} />
         <Route path="/diagnosis" element={<DiagnosisPage />} />
         <Route path="/graph" element={<GraphPage />} />
-        <Route path="/" element={<Navigate to="/ontology" replace />} />
+        <Route path="/" element={<Navigate to="/projects" replace />} />
       </Route>
     </Routes>
   )
