@@ -117,7 +117,20 @@ const EntitiesAndLinks: React.FC<Props> = ({
                   <div style={styles.itemName}>{ot.displayName || ot.name}</div>
                   <div style={styles.itemCode}>{ot.name}</div>
                 </div>
-                <Popconfirm title="确认删除？" onConfirm={(e) => { e?.stopPropagation(); handleDeleteOT(ot.id) }}>
+                <Popconfirm
+                  title="确认删除实体类型？"
+                  description={(() => {
+                    const relatedLinks = linkTypes.filter(
+                      lt => lt.sourceObjectTypeId === ot.id || lt.targetObjectTypeId === ot.id
+                    )
+                    return relatedLinks.length > 0
+                      ? `该实体类型关联了 ${relatedLinks.length} 个关系类型，删除后相关关系也将受到影响。`
+                      : undefined
+                  })()}
+                  onConfirm={(e) => { e?.stopPropagation(); handleDeleteOT(ot.id) }}
+                  okText="删除"
+                  okType="danger"
+                >
                   <Button
                     type="text"
                     size="small"
@@ -156,7 +169,13 @@ const EntitiesAndLinks: React.FC<Props> = ({
                     {lt.cardinality ? ` (${lt.cardinality})` : ''}
                   </div>
                 </div>
-                <Popconfirm title="确认删除？" onConfirm={() => handleDeleteLT(lt.id)}>
+                <Popconfirm
+                  title="确认删除此关系类型？"
+                  description={`将删除关系「${lt.displayName || lt.name}」(${otNameMap[lt.sourceObjectTypeId] || '?'} → ${otNameMap[lt.targetObjectTypeId] || '?'})。`}
+                  onConfirm={() => handleDeleteLT(lt.id)}
+                  okText="删除"
+                  okType="danger"
+                >
                   <Button type="text" size="small" danger icon={<DeleteOutlined />} />
                 </Popconfirm>
               </div>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-// antd components used by sub-components
+import { Alert, Button } from 'antd'
 import {
   AppstoreOutlined, ApartmentOutlined, ThunderboltOutlined, CodeOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons'
 import StepNav from '../components/ontology/StepNav'
 import EntitiesAndLinks from '../components/ontology/step1/EntitiesAndLinks'
@@ -62,8 +63,41 @@ export default function OntologyPage() {
     }
   }, [actionTypes.data]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Aggregate errors from all hooks
+  const errors = [
+    objectTypes.error && `实体类型: ${objectTypes.error}`,
+    linkTypes.error && `关系类型: ${linkTypes.error}`,
+    actionTypes.error && `动作类型: ${actionTypes.error}`,
+    functions.error && `函数: ${functions.error}`,
+  ].filter(Boolean) as string[]
+
+  const handleRetry = () => {
+    objectTypes.reload()
+    linkTypes.reload()
+    actionTypes.reload()
+    functions.reload()
+    reloadStats()
+  }
+
   return (
     <div style={styles.page}>
+      {/* Error Alert */}
+      {errors.length > 0 && (
+        <Alert
+          type="error"
+          showIcon
+          closable
+          message="数据加载失败"
+          description={errors.join('；')}
+          action={
+            <Button size="small" icon={<ReloadOutlined />} onClick={handleRetry}>
+              重试
+            </Button>
+          }
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
       {/* Stats Bar */}
       <div style={styles.statsBar}>
         {STAT_ITEMS.map(item => (

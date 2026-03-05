@@ -121,8 +121,14 @@ export default function DiagnosisForm({
         <Radio.Group options={severityOptions} optionType="button" buttonStyle="solid" />
       </Form.Item>
 
-      <Form.Item label="问题描述" name="description">
-        <TextArea rows={4} placeholder="详细描述故障表现..." />
+      <Form.Item
+        label="问题描述"
+        name="description"
+        rules={[
+          { min: 10, message: '问题描述至少需要10个字符，请详细描述故障表现' },
+        ]}
+      >
+        <TextArea rows={4} placeholder="详细描述故障表现（至少10个字符）..." showCount />
       </Form.Item>
 
       <Form.Item>

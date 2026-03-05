@@ -136,7 +136,22 @@ const NotebookPanel: React.FC<Props> = ({ functions, onRefresh, loading }) => {
         destroyOnClose
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="函数名称" rules={[{ required: true, message: '请输入' }]}>
+          <Form.Item
+            name="name"
+            label="函数名称"
+            rules={[
+              { required: true, message: '请输入' },
+              { pattern: /^[a-zA-Z_][a-zA-Z0-9_]*$/, message: '函数名须为合法标识符（字母/下划线开头）' },
+              {
+                validator: (_, value) => {
+                  if (value && functions.some(f => f.name === value)) {
+                    return Promise.reject('函数名称已存在，请使用其他名称')
+                  }
+                  return Promise.resolve()
+                },
+              },
+            ]}
+          >
             <Input placeholder="e.g. calculateHealth" />
           </Form.Item>
           <Form.Item name="displayName" label="显示名称" rules={[{ required: true, message: '请输入' }]}>

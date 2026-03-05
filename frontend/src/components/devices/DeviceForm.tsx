@@ -77,9 +77,13 @@ export default function DeviceForm({
         <Form.Item
           name="name"
           label="设备名称"
-          rules={[{ required: true, message: '请输入设备名称' }]}
+          rules={[
+            { required: true, message: '请输入设备名称' },
+            { max: 100, message: '设备名称不能超过100个字符' },
+            { whitespace: true, message: '设备名称不能为空白字符' },
+          ]}
         >
-          <Input placeholder="请输入设备名称" />
+          <Input placeholder="请输入设备名称" maxLength={100} showCount />
         </Form.Item>
 
         <Form.Item name="type" label="设备类型">
@@ -90,8 +94,14 @@ export default function DeviceForm({
           />
         </Form.Item>
 
-        <Form.Item name="location" label="设备位置">
-          <Input placeholder="请输入设备位置" />
+        <Form.Item
+          name="location"
+          label="设备位置"
+          rules={[
+            { max: 200, message: '设备位置不能超过200个字符' },
+          ]}
+        >
+          <Input placeholder="请输入设备位置" maxLength={200} />
         </Form.Item>
 
         <Form.Item name="status" label="状态" initialValue="ONLINE">
