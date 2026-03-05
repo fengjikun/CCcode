@@ -9,6 +9,7 @@ from app.services import fault_knowledge_service as knowledge
 
 # Claude API config
 CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY", "")
+CLAUDE_BASE_URL = os.getenv("CLAUDE_BASE_URL", "")
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-opus-4-6")
 MAX_AGENT_ROUNDS = 8
 
@@ -56,7 +57,10 @@ def _run_agent(request: Dict[str, Any]) -> str:
     except ImportError:
         return _run_local_diagnosis(request)
 
-    client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
+    client_kwargs = {"api_key": CLAUDE_API_KEY}
+    if CLAUDE_BASE_URL:
+        client_kwargs["base_url"] = CLAUDE_BASE_URL
+    client = anthropic.Anthropic(**client_kwargs)
     messages = [_build_user_message(request)]
     diagnosis_conclusion = None
 

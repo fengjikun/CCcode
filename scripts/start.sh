@@ -35,6 +35,11 @@ echo "启动后端服务 (http://localhost:9000)..."
 (cd "$BACKEND_DIR" && uvicorn app.main:app --reload --host 0.0.0.0 --port 9000) &
 BACKEND_PID=$!
 
+# 加载 nvm（前端需要 Node 18+）
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+nvm use 22 2>/dev/null || echo "警告: 未找到 Node 22，使用当前版本"
+
 # 启动前端 (React + Vite)
 echo "启动前端服务 (http://localhost:9002)..."
 (cd "$FRONTEND_DIR" && npm run dev) &
