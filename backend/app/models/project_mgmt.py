@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, LargeBinary, String, Text
 
 from app.database import Base
 
@@ -127,6 +127,8 @@ class Skill(Base):
     blocked = Column(Boolean, nullable=False, default=False)
     missing = Column(String(255))
     file_name = Column(String(255))
+    metadata_json = Column(Text)
+    package_blob = Column(LargeBinary)
     package_path = Column(Text)
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)

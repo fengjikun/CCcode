@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
@@ -126,7 +126,7 @@ class DataSourceUpsertRequest(_CamelModel):
     host: str
     port: int
     database: str
-    schema: Optional[str] = None
+    db_schema: Optional[str] = Field(None, alias="schema")
     username: str
     password: Optional[str] = None
     ssl_enabled: bool = False
@@ -146,7 +146,7 @@ class ProjectDataSource(_CamelModel):
     host: str
     port: int
     database: str
-    schema: Optional[str] = None
+    db_schema: Optional[str] = Field(None, alias="schema")
     username: str
     password_masked: Optional[str] = None
     ssl_enabled: bool
@@ -234,6 +234,7 @@ class SkillConfig(_CamelModel):
     blocked: bool = False
     missing: Optional[str] = None
     file_name: Optional[str] = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: Optional[datetime] = None
 
 
@@ -305,6 +306,7 @@ class ExtractionRun(_CamelModel):
     stage: Optional[str] = None
     current_document: Optional[str] = None
     logs: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
     error_message: Optional[str] = None
     review_items: list[ReviewItem] = Field(default_factory=list)
 

@@ -117,6 +117,7 @@ MAX_EXTRACTION_DOCS = 6
 MAX_EXTRACTION_DOC_CHARS = 4000
 MAX_EXTRACTION_ENTITIES = 360
 MAX_EXTRACTION_RELATIONS = 360
+MAX_SKILL_PACKAGE_BYTES = 10 * 1024 * 1024
 EXTRACTION_LLM_MAX_TOKENS_DEFAULT = 32768
 EXTRACTION_CONCURRENCY_DEFAULT = 3
 
@@ -188,26 +189,34 @@ BUILT_IN_SKILL_DEFAULTS = [
     {
         "id": "skill_data_processing",
         "code": "data_processing",
-        "name": "数据处理",
-        "description": "负责清洗、切分、归一化文档内容",
+        "name": "数据清洗与标准化",
+        "description": "面向文档与表格原始数据，执行格式统一、噪声过滤、字段映射与结构化切分，为后续图谱抽取提供可用输入。",
         "enabled": True,
         "prompt": "",
         "source": "built_in",
-        "tags": ["openclaw-bundled"],
+        "tags": ["openclaw-bundled", "pipeline", "preprocessing"],
         "blocked": True,
-        "missing": "bin:op",
+        "missing": "runtime:openclaw-processor",
+        "metadata": {
+            "package_format": "builtin",
+            "capabilities": ["格式清洗", "字段标准化", "切分与分块"],
+        },
     },
     {
         "id": "skill_graph_synthesis",
         "code": "graph_synthesis",
-        "name": "图谱合成",
-        "description": "负责实体关系抽取与对齐入图",
+        "name": "图谱抽取与融合",
+        "description": "负责实体识别、关系抽取、别名对齐与增量入图，将结构化候选结果融合为可检索的知识图谱。",
         "enabled": True,
         "prompt": "",
         "source": "built_in",
-        "tags": ["openclaw-bundled"],
+        "tags": ["openclaw-bundled", "pipeline", "graph"],
         "blocked": False,
         "missing": "",
+        "metadata": {
+            "package_format": "builtin",
+            "capabilities": ["实体抽取", "关系抽取", "别名融合入图"],
+        },
     },
 ]
 
@@ -1243,10 +1252,46 @@ def _run_ai_instance_extraction_llm(
     if not document_payload.get("documents") and not document_payload.get("xlsx_entity_seed"):
         return {"entities": [], "relations": [], "warnings": ["缺少可供抽取的文档内容"]}
 
+    allowed_entity_types = [
+        _safe_schema_name(item.get("name"), fallback="")
+        for item in (schema_payload.get("entity_types") or [])
+        if isinstance(item, dict)
+    ]
+    allowed_entity_types = [name for name in allowed_entity_types if name]
+    allowed_relation_signatures: list[str] = []
+    first_relation: tuple[str, str, str] | None = None
+    for item in (schema_payload.get("relation_types") or []):
+        if not isinstance(item, dict):
+            continue
+        relation_name = _safe_schema_name(item.get("name"), fallback="")
+        domain_name = _safe_schema_name(item.get("domain"), fallback="")
+        range_name = _safe_schema_name(item.get("range"), fallback="")
+        if not relation_name or not domain_name or not range_name:
+            continue
+        if first_relation is None:
+            first_relation = (relation_name, domain_name, range_name)
+        allowed_relation_signatures.append(f"{relation_name}: {domain_name} -> {range_name}")
+
+    first_entity_type = allowed_entity_types[0] if allowed_entity_types else "Entity"
+    if first_relation is None:
+        sample_relation_name = "related_to"
+        sample_relation_domain = first_entity_type
+        sample_relation_range = first_entity_type
+    else:
+        sample_relation_name, sample_relation_domain, sample_relation_range = first_relation
+
+    strict_schema_rules = (
+        f"允许实体类型白名单：{', '.join(allowed_entity_types) if allowed_entity_types else '无'}。"
+        f"允许关系签名白名单：{'; '.join(allowed_relation_signatures) if allowed_relation_signatures else '无'}。"
+        "仅可使用白名单中的实体类型与关系类型；关系的 domain_type/range_type 必须与该关系签名完全一致。"
+        "若证据无法映射到白名单类型或关系，必须跳过该候选，并在 warnings 说明“超出 schema 范围已忽略”。"
+    )
+
     developer_prompt = (
         "你是工业知识图谱实例抽取助手。"
         "任务：基于输入文档和给定 schema 提取实体实例与关系实例。"
         "必须严格遵守 schema 中的实体类型与关系类型，禁止创造 schema 外的类型。"
+        f"{strict_schema_rules}"
         "输出必须是 JSON 对象，且只包含 entities、relations、warnings 三个字段。"
         "entities[*] 字段：type,name,evidence,confidence。"
         "relations[*] 字段：relation,domain_type,domain_name,range_type,range_name,evidence,confidence。"
@@ -1279,19 +1324,19 @@ def _run_ai_instance_extraction_llm(
             "output_schema_hint": {
                 "entities": [
                     {
-                        "type": "Person",
-                        "name": "张三",
+                        "type": sample_relation_domain,
+                        "name": f"{sample_relation_domain}_实例1",
                         "evidence": "文档中的证据片段",
                         "confidence": 0.92,
                     }
                 ],
                 "relations": [
                     {
-                        "relation": "works_for",
-                        "domain_type": "Person",
-                        "domain_name": "张三",
-                        "range_type": "Org",
-                        "range_name": "华星科技",
+                        "relation": sample_relation_name,
+                        "domain_type": sample_relation_domain,
+                        "domain_name": f"{sample_relation_domain}_实例1",
+                        "range_type": sample_relation_range,
+                        "range_name": f"{sample_relation_range}_实例1",
                         "evidence": "关系证据片段",
                         "confidence": 0.88,
                     }
@@ -1551,12 +1596,12 @@ def _generate_ai_review_items_for_run(
 
     def _extract_single_doc(
         idx: int, doc: ProjectDocument
-    ) -> tuple[int, str, list[dict[str, Any]], list[dict[str, Any]], str | None]:
-        """在线程中执行单个文档的 LLM 抽取，返回 (idx, doc.name, entities, relations, error_msg)"""
+    ) -> tuple[int, str, list[dict[str, Any]], list[dict[str, Any]], list[str], str | None]:
+        """在线程中执行单个文档的 LLM 抽取，返回 (idx, doc.name, entities, relations, warnings, error_msg)"""
         doc_xlsx_inputs = _collect_xlsx_insight_inputs([doc])
         document_payload = _build_extraction_document_payload([doc], xlsx_inputs=doc_xlsx_inputs)
         if not document_payload.get("documents") and not document_payload.get("xlsx_entity_seed"):
-            return idx, doc.name, [], [], "SKIP"
+            return idx, doc.name, [], [], [], "SKIP"
         try:
             raw_output = _run_ai_instance_extraction_llm(
                 project=project,
@@ -1569,9 +1614,16 @@ def _generate_ai_review_items_for_run(
                 raw_output=raw_output,
                 schema_payload=schema_payload,
             )
-            return idx, doc.name, parsed_output["entity_instances"], parsed_output["relation_instances"], None
+            return (
+                idx,
+                doc.name,
+                parsed_output["entity_instances"],
+                parsed_output["relation_instances"],
+                parsed_output["warnings"],
+                None,
+            )
         except ValueError as exc:
-            return idx, doc.name, [], [], str(exc)
+            return idx, doc.name, [], [], [], str(exc)
 
     concurrency = _resolve_extraction_concurrency()
     with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:
@@ -1580,7 +1632,7 @@ def _generate_ai_review_items_for_run(
             for idx, doc in enumerate(enabled_docs)
         }
         for future in concurrent.futures.as_completed(future_to_doc):
-            idx, doc_name, entity_list, relation_list, error_msg = future.result()
+            idx, doc_name, entity_list, relation_list, warning_list, error_msg = future.result()
 
             with merge_lock:
                 processed_count += 1
@@ -1689,6 +1741,16 @@ def _generate_ai_review_items_for_run(
 
                 for row in doc_rows:
                     db.add(row)
+                if run is not None:
+                    for warning in warning_list:
+                        line = _normalize_text(warning)
+                        if not line:
+                            continue
+                        _set_run_runtime_meta(
+                            run,
+                            append_warning=f"{doc_name}：{line}",
+                            append_log=f"抽取告警：{doc_name}：{line}",
+                        )
                 if run is not None:
                     _recalc_run_stats(db, run)
                 if run is not None:
@@ -2042,6 +2104,117 @@ def _parse_json_list(raw: str | None, *, fallback: list[str] | None = None) -> l
     return result
 
 
+def _parse_json_dict(raw: str | None, *, fallback: dict[str, Any] | None = None) -> dict[str, Any]:
+    if not raw:
+        return dict(fallback or {})
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return dict(fallback or {})
+    if not isinstance(parsed, dict):
+        return dict(fallback or {})
+    return parsed
+
+
+def _parse_skill_front_matter(text: str) -> tuple[dict[str, str], str]:
+    if not text.startswith("---"):
+        return {}, text
+    lines = text.splitlines()
+    if not lines:
+        return {}, text
+    end_index: int | None = None
+    for idx in range(1, len(lines)):
+        if lines[idx].strip() == "---":
+            end_index = idx
+            break
+    if end_index is None:
+        return {}, text
+
+    meta: dict[str, str] = {}
+    for line in lines[1:end_index]:
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        normalized_key = _normalize_text(key).lower()
+        normalized_value = _normalize_text(value)
+        if normalized_key and normalized_value:
+            meta[normalized_key] = normalized_value
+    body = "\n".join(lines[end_index + 1 :]).strip()
+    return meta, body
+
+
+def _extract_skill_package_metadata(filename: str, content: bytes) -> dict[str, Any]:
+    if len(content) > MAX_SKILL_PACKAGE_BYTES:
+        raise ValueError("Skill 包过大，最大支持 10MB")
+    if not content:
+        raise ValueError("Skill 包内容为空")
+
+    try:
+        with ZipFile(BytesIO(content)) as zf:
+            file_list = [
+                name
+                for name in zf.namelist()
+                if name and not name.endswith("/") and not name.startswith("__MACOSX/")
+            ]
+            if not file_list:
+                raise ValueError("Skill 包内容为空")
+
+            skill_md_path = next(
+                (name for name in file_list if name.lower().endswith("/skill.md")),
+                "",
+            )
+            if not skill_md_path:
+                skill_md_path = next(
+                    (name for name in file_list if name.lower() == "skill.md"),
+                    "",
+                )
+            if not skill_md_path:
+                raise ValueError("Skill 包缺少 SKILL.md，请按 Claude Skill 标准包上传")
+
+            skill_md_bytes = zf.read(skill_md_path)
+    except BadZipFile as exc:
+        raise ValueError("Skill 包格式无效，请上传正确的 zip 文件") from exc
+
+    skill_md_text = skill_md_bytes.decode("utf-8", errors="replace")
+    front_matter, body_text = _parse_skill_front_matter(skill_md_text)
+    title_line = next((line.strip() for line in body_text.splitlines() if line.strip().startswith("#")), "")
+    title = _normalize_text(title_line.lstrip("#").strip()) if title_line else ""
+    description = _normalize_text(front_matter.get("description")) or ""
+    if not description:
+        for line in body_text.splitlines():
+            cleaned = _normalize_text(line)
+            if not cleaned or cleaned.startswith("#"):
+                continue
+            description = cleaned
+            break
+    if not description:
+        description = "用户上传 Skill，包含标准 SKILL.md。"
+
+    display_name = (
+        _normalize_text(front_matter.get("name"))
+        or title
+        or _normalize_text(Path(filename).stem)
+        or "自定义 Skill"
+    )
+
+    tags = ["user-uploaded", "claude-skill", "zip-package"]
+    if front_matter.get("name"):
+        tags.append("with-front-matter")
+
+    return {
+        "display_name": display_name,
+        "description": description,
+        "tags": tags,
+        "metadata": {
+            "package_format": "claude-skill-zip",
+            "package_size": len(content),
+            "package_entries": len(file_list),
+            "skill_md_path": skill_md_path,
+            "has_skill_md": True,
+        },
+    }
+
+
 def _to_schema_property_response(prop: SchemaProperty) -> dict[str, Any]:
     return {
         "id": prop.id,
@@ -2074,9 +2247,11 @@ def _to_skill_response(
             "blocked": bool(default.get("blocked", False)),
             "missing": default.get("missing") or "",
             "file_name": default.get("file_name") or "",
+            "metadata": dict(default.get("metadata") or {}),
             "created_at": default.get("created_at"),
         }
 
+    metadata = _parse_json_dict(row.metadata_json, fallback={})
     return {
         "id": row.id,
         "code": row.code,
@@ -2089,6 +2264,7 @@ def _to_skill_response(
         "blocked": bool(row.blocked),
         "missing": row.missing or "",
         "file_name": row.file_name or "",
+        "metadata": metadata,
         "created_at": row.created_at,
     }
 
@@ -2114,6 +2290,7 @@ def _default_run_runtime_meta() -> dict[str, Any]:
         "stage": "",
         "current_document": "",
         "logs": [],
+        "warnings": [],
         "processed_documents": 0,
         "total_documents": 0,
         "error_message": "",
@@ -2135,6 +2312,7 @@ def _parse_run_runtime_meta(raw: str | None) -> dict[str, Any]:
     stage = _normalize_text(parsed.get("stage"))
     current_document = _normalize_text(parsed.get("current_document"))
     logs_raw = parsed.get("logs")
+    warnings_raw = parsed.get("warnings")
     processed_raw = parsed.get("processed_documents")
     total_raw = parsed.get("total_documents")
     error_text = _normalize_text(parsed.get("error_message"))
@@ -2145,6 +2323,12 @@ def _parse_run_runtime_meta(raw: str | None) -> dict[str, Any]:
             line = _normalize_text(item)
             if line:
                 logs.append(line)
+    warnings: list[str] = []
+    if isinstance(warnings_raw, list):
+        for item in warnings_raw[-120:]:
+            line = _normalize_text(item)
+            if line:
+                warnings.append(line)
 
     processed_documents = 0
     total_documents = 0
@@ -2162,6 +2346,7 @@ def _parse_run_runtime_meta(raw: str | None) -> dict[str, Any]:
             "stage": stage,
             "current_document": current_document,
             "logs": logs,
+            "warnings": warnings,
             "processed_documents": processed_documents,
             "total_documents": total_documents,
             "error_message": error_text,
@@ -2176,6 +2361,7 @@ def _set_run_runtime_meta(
     stage: str | None = None,
     current_document: str | None = None,
     append_log: str | None = None,
+    append_warning: str | None = None,
     processed_documents: int | None = None,
     total_documents: int | None = None,
     error_message: str | None = None,
@@ -2191,6 +2377,21 @@ def _set_run_runtime_meta(
             logs = list(meta.get("logs") or [])
             logs.append(line)
             meta["logs"] = logs[-120:]
+    if append_warning is not None:
+        line = _normalize_text(append_warning)
+        if line:
+            warnings = list(meta.get("warnings") or [])
+            warnings.append(line)
+            # Keep latest unique warnings while preserving order.
+            seen: set[str] = set()
+            deduped: list[str] = []
+            for warning in reversed(warnings):
+                if warning in seen:
+                    continue
+                seen.add(warning)
+                deduped.append(warning)
+            deduped.reverse()
+            meta["warnings"] = deduped[-120:]
     if processed_documents is not None:
         meta["processed_documents"] = max(int(processed_documents), 0)
     if total_documents is not None:
@@ -2515,6 +2716,7 @@ def _to_run_response(db: Session, run: ExtractionRun) -> dict[str, Any]:
         "stage": runtime_meta.get("stage") or None,
         "current_document": runtime_meta.get("current_document") or None,
         "logs": list(runtime_meta.get("logs") or []),
+        "warnings": list(runtime_meta.get("warnings") or []),
         "error_message": runtime_meta.get("error_message") or None,
         "review_items": [_to_review_item_response(item) for item in review_items],
     }
@@ -2784,7 +2986,7 @@ def _validate_data_source_payload(payload: dict[str, Any], *, for_update: bool) 
     name = _normalize_text(payload.get("name"))
     host = _normalize_text(payload.get("host"))
     database = _normalize_text(payload.get("database"))
-    schema = _normalize_text(payload.get("schema"))
+    schema = _normalize_text(payload.get("db_schema"))
     username = _normalize_text(payload.get("username"))
     password = payload.get("password")
     extract_mode = payload.get("extract_mode") or "TABLE"
@@ -3738,6 +3940,8 @@ def update_schema_prompts(db: Session, user_id: int, project_id: str, payload: d
         row.missing = (
             _normalize_text(missing_raw) if missing_raw is not None else default["missing"]
         )
+        row.metadata_json = json.dumps(default.get("metadata") or {}, ensure_ascii=False)
+        row.package_blob = None
         row.file_name = ""
         row.source = "built_in"
         row.code = code
@@ -3766,6 +3970,8 @@ def update_schema_prompts(db: Session, user_id: int, project_id: str, payload: d
             tags = [_normalize_text(str(tag)) for tag in tags_raw if _normalize_text(str(tag))]
         if not tags:
             tags = ["user-uploaded"]
+        metadata_raw = item.get("metadata")
+        metadata = metadata_raw if isinstance(metadata_raw, dict) else _parse_json_dict(row.metadata_json, fallback={})
 
         row.code = "custom"
         row.source = "uploaded"
@@ -3777,6 +3983,7 @@ def update_schema_prompts(db: Session, user_id: int, project_id: str, payload: d
         row.blocked = bool(item.get("blocked", False))
         row.missing = _normalize_text(item.get("missing"))
         row.file_name = _normalize_text(item.get("file_name")) or row.file_name or ""
+        row.metadata_json = json.dumps(metadata, ensure_ascii=False)
         row.updated_at = now
         kept_custom_ids.add(row.id)
 
@@ -3803,12 +4010,9 @@ def upload_custom_skill(db: Session, user_id: int, project_id: str, filename: st
     if Path(name).suffix.lower() != ".zip":
         raise ValueError("仅支持上传 zip 格式的 Skill 包")
 
+    package_profile = _extract_skill_package_metadata(name, content)
     now = _now()
     skill_id = _new_id("skill")
-    dest_dir = ASSET_ROOT / project.id / "skills"
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    dest_path = dest_dir / f"{skill_id}.zip"
-    dest_path.write_bytes(content)
 
     custom_count = (
         db.query(func.count(Skill.id))
@@ -3825,16 +4029,18 @@ def upload_custom_skill(db: Session, user_id: int, project_id: str, filename: st
         id=skill_id,
         project_id=project.id,
         code="custom",
-        name=base_name or f"自定义Skill_{int(custom_count) + 1}",
-        description="用户上传的 Skill 包（zip），目录结构参考 skills/ontology-generator。",
+        name=package_profile.get("display_name") or base_name or f"自定义Skill_{int(custom_count) + 1}",
+        description=package_profile.get("description") or "用户上传 Skill 包",
         enabled=True,
         prompt="",
         source="uploaded",
-        tags_json=json.dumps(["user-uploaded", "zip-skill"], ensure_ascii=False),
+        tags_json=json.dumps(package_profile.get("tags") or ["user-uploaded", "zip-skill"], ensure_ascii=False),
         blocked=False,
         missing="",
         file_name=name,
-        package_path=str(dest_path),
+        metadata_json=json.dumps(package_profile.get("metadata") or {}, ensure_ascii=False),
+        package_blob=content,
+        package_path="",
         created_at=now,
         updated_at=now,
     )
