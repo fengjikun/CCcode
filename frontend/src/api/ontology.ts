@@ -51,6 +51,10 @@ export function deleteLinkType(id: number): Promise<void> {
   return fetchJSON(`${API}/link-types/${id}`, 'DELETE')
 }
 
+export function deleteAllSchema(): Promise<void> {
+  return fetchJSON(`${API}/schema`, 'DELETE')
+}
+
 // Action Types
 export function getActionTypes(): Promise<ActionType[]> {
   return fetchJSON(`${API}/action-types`)
