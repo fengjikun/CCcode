@@ -56,10 +56,11 @@ function mapDocumentStatus(status: ApiDocumentStatus): ProjectDocument['status']
 }
 
 function mapProjectDocument(doc: any): ProjectDocument {
+  const fileType = String(doc.fileType || '').toLowerCase()
   return {
     id: String(doc.id),
     name: String(doc.name || ''),
-    fileType: String(doc.fileType || '').toLowerCase() === 'docx' ? 'docx' : 'md',
+    fileType: fileType === 'docx' || fileType === 'md' || fileType === 'xlsx' ? fileType : 'md',
     size: Number(doc.size || 0),
     status: mapDocumentStatus(doc.status as ApiDocumentStatus),
     enabled: Boolean(doc.enabled),

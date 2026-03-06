@@ -47,12 +47,29 @@ function parseEntity(item: ReviewItem): { type: string; name: string } | null {
   return { type, name }
 }
 
-function parseRelation(item: ReviewItem): { domain: string; rel: string; range: string } | null {
-  const match = item.title.match(/^(.+)\s-\[(.+)\]->\s(.+)$/)
-  if (!match) return null
-  const domain = match[1].trim()
-  const rel = match[2].trim()
-  const range = match[3].trim()
+function parseRelation(item: ReviewItem): {
+  domain: string
+  rel: string
+  range: string
+  domainName?: string
+  rangeName?: string
+} | null {
+  const detailMatch = item.title.match(/^(.+?)::(.+?)\s-\[(.+?)\]->\s(.+?)::(.+)$/)
+  if (detailMatch) {
+    const domain = detailMatch[1].trim()
+    const domainName = detailMatch[2].trim()
+    const rel = detailMatch[3].trim()
+    const range = detailMatch[4].trim()
+    const rangeName = detailMatch[5].trim()
+    if (!domain || !domainName || !rel || !range || !rangeName) return null
+    return { domain, rel, range, domainName, rangeName }
+  }
+
+  const typeMatch = item.title.match(/^(.+)\s-\[(.+)\]->\s(.+)$/)
+  if (!typeMatch) return null
+  const domain = typeMatch[1].trim()
+  const rel = typeMatch[2].trim()
+  const range = typeMatch[3].trim()
   if (!domain || !rel || !range) return null
   return { domain, rel, range }
 }
@@ -121,16 +138,24 @@ function buildGraphFromReviews(
   for (const item of relationCandidates) {
     const parsed = parseRelation(item)
     if (!parsed) continue
-    const domainNodes = typeBuckets.get(parsed.domain) || []
-    const rangeNodes = typeBuckets.get(parsed.range) || []
-    if (domainNodes.length === 0 || rangeNodes.length === 0) continue
+    let source = ''
+    let target = ''
+    if (parsed.domainName && parsed.rangeName) {
+      source = keyToNodeId.get(`${parsed.domain}::${parsed.domainName}`) || ''
+      target = keyToNodeId.get(`${parsed.range}::${parsed.rangeName}`) || ''
+    }
 
     const cursorKey = `${parsed.domain}_${parsed.rel}_${parsed.range}`
     const cursor = relTypeCursor.get(cursorKey) || 0
     relTypeCursor.set(cursorKey, cursor + 1)
 
-    const source = domainNodes[cursor % domainNodes.length]
-    const target = rangeNodes[cursor % rangeNodes.length]
+    if (!source || !target) {
+      const domainNodes = typeBuckets.get(parsed.domain) || []
+      const rangeNodes = typeBuckets.get(parsed.range) || []
+      if (domainNodes.length === 0 || rangeNodes.length === 0) continue
+      source = domainNodes[cursor % domainNodes.length]
+      target = rangeNodes[cursor % rangeNodes.length]
+    }
 
     links.push({
       source,

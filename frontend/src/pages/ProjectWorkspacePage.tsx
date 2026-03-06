@@ -305,7 +305,7 @@ export default function ProjectWorkspacePage() {
     try {
       for (const file of Array.from(fileList)) {
         const lower = file.name.toLowerCase()
-        if (!lower.endsWith('.docx') && !lower.endsWith('.md')) {
+        if (!lower.endsWith('.docx') && !lower.endsWith('.md') && !lower.endsWith('.xlsx')) {
           message.warning(`${file.name} 非支持格式，已跳过`)
           continue
         }
@@ -1318,13 +1318,13 @@ export default function ProjectWorkspacePage() {
                 <Card>
                   <Space direction="vertical" style={{ width: '100%' }} size={16}>
                     <Space style={{ justifyContent: 'space-between', width: '100%' }}>
-                      <Text type="secondary">支持上传多个 .docx/.md，后续抽取使用“启用中”文档集合。</Text>
+                      <Text type="secondary">支持上传多个 .docx/.md/.xlsx，后续抽取使用“启用中”文档集合。</Text>
                       <div>
                         <input
                           ref={fileInputRef}
                           type="file"
                           multiple
-                          accept=".docx,.md"
+                          accept=".docx,.md,.xlsx"
                           style={{ display: 'none' }}
                           onChange={(event) => {
                             void handlePickFiles(event)

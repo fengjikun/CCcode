@@ -11,7 +11,7 @@ export type DataSourceSyncMode = 'FULL' | 'INCREMENTAL'
 export interface ProjectDocument {
   id: string
   name: string
-  fileType: 'docx' | 'md'
+  fileType: 'docx' | 'md' | 'xlsx'
   size: number
   status: DocumentStatus
   enabled: boolean

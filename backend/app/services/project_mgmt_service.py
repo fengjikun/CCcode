@@ -256,6 +256,1070 @@ AI_RELATION_TEMPLATES = [
 ]
 
 
+def _header_key(value: str | None) -> str:
+    text = _normalize_text(value)
+    return "".join(ch for ch in text.lower() if ch.isalnum())
+
+
+def _safe_schema_name(value: str | None, *, fallback: str, max_len: int = 64) -> str:
+    text = _normalize_text(value) or fallback
+    text = " ".join(text.split())
+    if not text:
+        text = fallback
+    if len(text) > max_len:
+        text = text[:max_len]
+    return text
+
+
+def _find_header_index(header_keys: list[str], aliases: set[str]) -> int | None:
+    for idx, key in enumerate(header_keys):
+        if key in aliases:
+            return idx
+    return None
+
+
+def _cell_text(row: list[str], index: int | None) -> str:
+    if index is None:
+        return ""
+    if index < 0 or index >= len(row):
+        return ""
+    return _normalize_text(row[index])
+
+
+def _build_unique_headers(row: list[str]) -> list[str]:
+    headers: list[str] = []
+    used: dict[str, int] = {}
+    for idx, cell in enumerate(row):
+        base = _normalize_text(cell) or f"column_{idx + 1}"
+        count = used.get(base, 0) + 1
+        used[base] = count
+        if count > 1:
+            headers.append(f"{base}_{count}")
+        else:
+            headers.append(base)
+    return headers
+
+
+def _is_empty_row(row: list[str]) -> bool:
+    return all(not _normalize_text(cell) for cell in row)
+
+
+def _is_truthy_text(value: str | None) -> bool:
+    token = _normalize_text(value).lower()
+    if not token:
+        return False
+    return token in {
+        "1",
+        "true",
+        "yes",
+        "y",
+        "required",
+        "notnull",
+        "是",
+        "必填",
+        "非空",
+    }
+
+
+def _is_falsey_text(value: str | None) -> bool:
+    token = _normalize_text(value).lower()
+    if token == "":
+        return True
+    return token in {"0", "false", "no", "n", "nullable", "optional", "否", "可空"}
+
+
+def _looks_like_int(value: str) -> bool:
+    return bool(re.fullmatch(r"[-+]?\d+", value))
+
+
+def _looks_like_float(value: str) -> bool:
+    return bool(re.fullmatch(r"[-+]?\d+(\.\d+)?", value))
+
+
+def _looks_like_date(value: str) -> bool:
+    return bool(re.fullmatch(r"\d{4}[-/]\d{1,2}[-/]\d{1,2}", value))
+
+
+def _looks_like_datetime(value: str) -> bool:
+    return bool(re.fullmatch(r"\d{4}[-/]\d{1,2}[-/]\d{1,2}[ T]\d{1,2}:\d{1,2}(:\d{1,2})?", value))
+
+
+def _looks_like_json(value: str) -> bool:
+    text = value.strip()
+    if not text:
+        return False
+    if not ((text.startswith("{") and text.endswith("}")) or (text.startswith("[") and text.endswith("]"))):
+        return False
+    try:
+        json.loads(text)
+        return True
+    except json.JSONDecodeError:
+        return False
+
+
+def _infer_data_type_from_samples(values: list[str]) -> str:
+    samples = [
+        _normalize_text(value)
+        for value in values
+        if _normalize_text(value).lower() not in {"", "-", "null", "none", "nan"}
+    ]
+    if not samples:
+        return "STRING"
+    if all(_is_truthy_text(v) or _is_falsey_text(v) for v in samples):
+        return "BOOLEAN"
+    if all(_looks_like_int(v) for v in samples):
+        return "INTEGER"
+    if all(_looks_like_float(v) for v in samples):
+        return "FLOAT"
+    if all(_looks_like_datetime(v) for v in samples):
+        return "DATETIME"
+    if all(_looks_like_date(v) for v in samples):
+        return "DATE"
+    if all(_looks_like_json(v) for v in samples):
+        return "JSON"
+    if any(len(v) >= 80 for v in samples):
+        return "TEXT"
+    return "STRING"
+
+
+def _infer_data_type_from_default(default_value: str) -> str:
+    text = _normalize_text(default_value)
+    if text in {"", "-", "—"}:
+        return "STRING"
+    if _is_truthy_text(text) or _is_falsey_text(text):
+        return "BOOLEAN"
+    if _looks_like_int(text):
+        return "INTEGER"
+    if _looks_like_float(text):
+        return "FLOAT"
+    if _looks_like_datetime(text):
+        return "DATETIME"
+    if _looks_like_date(text):
+        return "DATE"
+    if _looks_like_json(text):
+        return "JSON"
+    if len(text) >= 80:
+        return "TEXT"
+    return "STRING"
+
+
+def _normalize_generated_properties(raw_properties: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
+    used_names: set[str] = set()
+    for idx, item in enumerate(raw_properties):
+        if not isinstance(item, dict):
+            continue
+        name = _safe_schema_name(item.get("name"), fallback=f"field_{idx + 1}")
+        if name in used_names:
+            continue
+        used_names.add(name)
+
+        data_type = str(item.get("data_type") or "STRING").upper()
+        if data_type not in ALLOWED_PROPERTY_DATA_TYPES:
+            data_type = "STRING"
+
+        default_value = _normalize_text(item.get("default_value"))
+        if default_value in {"-", "—"}:
+            default_value = ""
+
+        normalized.append(
+            {
+                "id": _normalize_text(item.get("id")) or _new_id("prop"),
+                "name": name,
+                "display_name": _safe_schema_name(item.get("display_name"), fallback=name),
+                "data_type": data_type,
+                "required": bool(item.get("required")),
+                "default_value": default_value,
+                "description": _normalize_text(item.get("description")),
+                "sort_order": idx,
+            }
+        )
+    return normalized
+
+
+def _xlsx_col_index(ref: str) -> int:
+    match = re.match(r"([A-Z]+)", ref.upper())
+    if not match:
+        return 0
+    letters = match.group(1)
+    result = 0
+    for ch in letters:
+        result = result * 26 + (ord(ch) - 64)
+    return max(result - 1, 0)
+
+
+def _xlsx_cell_value(cell: ElementTree.Element, shared_strings: list[str]) -> str:
+    cell_type = cell.attrib.get("t")
+    if cell_type == "inlineStr":
+        parts = [text.text or "" for text in cell.findall(".//{*}t")]
+        return _normalize_text("".join(parts))
+
+    raw_value = cell.findtext("{*}v") or ""
+    if cell_type == "s":
+        try:
+            idx = int(raw_value)
+        except (TypeError, ValueError):
+            return ""
+        if 0 <= idx < len(shared_strings):
+            return _normalize_text(shared_strings[idx])
+        return ""
+    if cell_type == "b":
+        return "TRUE" if raw_value in {"1", "true", "TRUE"} else "FALSE"
+    return _normalize_text(raw_value)
+
+
+def _xlsx_shared_strings(archive: ZipFile) -> list[str]:
+    try:
+        data = archive.read("xl/sharedStrings.xml")
+    except KeyError:
+        return []
+
+    root = ElementTree.fromstring(data)
+    values: list[str] = []
+    for item in root.findall(".//{*}si"):
+        parts = [part.text or "" for part in item.findall(".//{*}t")]
+        values.append("".join(parts))
+    return values
+
+
+def _xlsx_sheet_paths(archive: ZipFile) -> list[tuple[str, str]]:
+    workbook_xml = archive.read("xl/workbook.xml")
+    rels_xml = archive.read("xl/_rels/workbook.xml.rels")
+    workbook_root = ElementTree.fromstring(workbook_xml)
+    rels_root = ElementTree.fromstring(rels_xml)
+
+    rid_to_target: dict[str, str] = {}
+    for rel in rels_root.findall(".//{*}Relationship"):
+        rid = rel.attrib.get("Id")
+        target = rel.attrib.get("Target")
+        if rid and target:
+            rid_to_target[rid] = target
+
+    result: list[tuple[str, str]] = []
+    for sheet in workbook_root.findall(".//{*}sheet"):
+        name = _normalize_text(sheet.attrib.get("name")) or "Sheet"
+        rid = sheet.attrib.get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id")
+        if not rid:
+            continue
+        target = rid_to_target.get(rid)
+        if not target:
+            continue
+        if target.startswith("/"):
+            full_path = posixpath.normpath(target.lstrip("/"))
+        else:
+            full_path = posixpath.normpath(posixpath.join("xl", target))
+        result.append((name, full_path))
+    return result
+
+
+def _xlsx_sheet_rows(archive: ZipFile, path: str, shared_strings: list[str]) -> list[list[str]]:
+    sheet_xml = archive.read(path)
+    root = ElementTree.fromstring(sheet_xml)
+    rows: list[list[str]] = []
+    for row in root.findall(".//{*}sheetData/{*}row"):
+        values_by_idx: dict[int, str] = {}
+        max_idx = -1
+        fallback_idx = 0
+        for cell in row.findall("{*}c"):
+            ref = cell.attrib.get("r") or ""
+            col_idx = _xlsx_col_index(ref) if ref else fallback_idx
+            fallback_idx = col_idx + 1
+            value = _xlsx_cell_value(cell, shared_strings)
+            values_by_idx[col_idx] = value
+            max_idx = max(max_idx, col_idx)
+        if max_idx < 0:
+            continue
+        row_values = ["" for _ in range(max_idx + 1)]
+        for idx, value in values_by_idx.items():
+            row_values[idx] = value
+        if _is_empty_row(row_values):
+            continue
+        rows.append(row_values)
+    return rows
+
+
+def _parse_xlsx_tables(content: bytes) -> list[dict[str, Any]]:
+    try:
+        with ZipFile(BytesIO(content)) as archive:
+            shared_strings = _xlsx_shared_strings(archive)
+            sheets = _xlsx_sheet_paths(archive)
+            tables: list[dict[str, Any]] = []
+            for sheet_name, sheet_path in sheets:
+                try:
+                    rows = _xlsx_sheet_rows(archive, sheet_path, shared_strings)
+                except KeyError:
+                    continue
+                tables.append(
+                    {
+                        "name": sheet_name,
+                        "rows": rows,
+                    }
+                )
+            if not tables:
+                raise ValueError("xlsx 中未找到可读取的工作表")
+            return tables
+    except (BadZipFile, KeyError, ElementTree.ParseError) as exc:
+        raise ValueError(f"xlsx 解析失败: {exc}") from exc
+
+
+def _sheet_with_headers(table: dict[str, Any]) -> dict[str, Any] | None:
+    rows = table.get("rows") or []
+    if not isinstance(rows, list):
+        return None
+    header_idx = None
+    for idx, row in enumerate(rows[:10]):
+        if isinstance(row, list) and not _is_empty_row([_normalize_text(str(cell)) for cell in row]):
+            header_idx = idx
+            break
+    if header_idx is None:
+        return None
+
+    raw_header = rows[header_idx] if isinstance(rows[header_idx], list) else []
+    header = _build_unique_headers([_normalize_text(str(cell)) for cell in raw_header])
+    if not header:
+        return None
+
+    normalized_rows: list[list[str]] = []
+    for raw in rows[header_idx + 1 :]:
+        if not isinstance(raw, list):
+            continue
+        row = [_normalize_text(str(cell)) for cell in raw]
+        if len(row) < len(header):
+            row.extend([""] * (len(header) - len(row)))
+        else:
+            row = row[: len(header)]
+        if _is_empty_row(row):
+            continue
+        normalized_rows.append(row)
+    return {
+        "sheet_name": _normalize_text(table.get("name")) or "Sheet",
+        "header": header,
+        "header_keys": [_header_key(item) for item in header],
+        "rows": normalized_rows,
+        "header_row_no": header_idx + 1,
+    }
+
+
+def _parse_entity_schema_sheet(sheet: dict[str, Any]) -> list[dict[str, Any]]:
+    header_keys = sheet["header_keys"]
+    entity_idx = _find_header_index(header_keys, ENTITY_HEADER_ALIASES)
+    prop_idx = _find_header_index(header_keys, PROPERTY_NAME_HEADER_ALIASES)
+    if entity_idx is None or prop_idx is None:
+        return []
+
+    desc_idx = _find_header_index(header_keys, ENTITY_DESC_HEADER_ALIASES)
+    nullable_idx = _find_header_index(header_keys, PROPERTY_NULLABLE_HEADER_ALIASES)
+    default_idx = _find_header_index(header_keys, PROPERTY_DEFAULT_HEADER_ALIASES)
+    prop_desc_idx = _find_header_index(header_keys, PROPERTY_DESC_HEADER_ALIASES)
+
+    nullable_mode = False
+    if nullable_idx is not None:
+        nullable_key = header_keys[nullable_idx]
+        nullable_mode = "nullable" in nullable_key or "可为空" in nullable_key
+
+    entities: dict[str, dict[str, Any]] = {}
+    current_entity = ""
+    current_desc = ""
+    for row_no_offset, row in enumerate(sheet["rows"]):
+        row_no = sheet["header_row_no"] + row_no_offset + 1
+        row_entity = _cell_text(row, entity_idx)
+        row_desc = _cell_text(row, desc_idx)
+        if row_entity:
+            current_entity = _safe_schema_name(row_entity, fallback="Entity")
+        if row_desc:
+            current_desc = row_desc
+        if not current_entity:
+            continue
+
+        entity = entities.setdefault(
+            current_entity,
+            {
+                "name": current_entity,
+                "description": current_desc,
+                "properties": [],
+                "_prop_names": set(),
+            },
+        )
+        if current_desc and not entity["description"]:
+            entity["description"] = current_desc
+
+        prop_name = _cell_text(row, prop_idx)
+        if not prop_name:
+            continue
+        prop_name = _safe_schema_name(prop_name, fallback=f"field_{row_no}")
+        if prop_name in entity["_prop_names"]:
+            continue
+        entity["_prop_names"].add(prop_name)
+
+        required = False
+        nullable_value = _cell_text(row, nullable_idx)
+        if nullable_idx is not None:
+            required = not _is_truthy_text(nullable_value) if nullable_mode else _is_truthy_text(nullable_value)
+
+        default_value = _cell_text(row, default_idx)
+        data_type = _infer_data_type_from_default(default_value)
+        prop_desc = _cell_text(row, prop_desc_idx)
+        entity["properties"].append(
+            {
+                "name": prop_name,
+                "display_name": prop_name,
+                "data_type": data_type,
+                "required": required,
+                "default_value": "" if default_value in {"-", "—"} else default_value,
+                "description": prop_desc,
+            }
+        )
+
+    result: list[dict[str, Any]] = []
+    for item in entities.values():
+        item.pop("_prop_names", None)
+        result.append(item)
+    return result
+
+
+def _parse_relation_schema_sheet(sheet: dict[str, Any]) -> list[dict[str, Any]]:
+    header_keys = sheet["header_keys"]
+    relation_idx = _find_header_index(header_keys, RELATION_HEADER_ALIASES)
+    source_idx = _find_header_index(header_keys, RELATION_SOURCE_HEADER_ALIASES)
+    target_idx = _find_header_index(header_keys, RELATION_TARGET_HEADER_ALIASES)
+    if relation_idx is None or source_idx is None or target_idx is None:
+        return []
+
+    desc_idx = _find_header_index(header_keys, RELATION_DESC_HEADER_ALIASES)
+    prop_idx = _find_header_index(header_keys, PROPERTY_NAME_HEADER_ALIASES)
+    nullable_idx = _find_header_index(header_keys, PROPERTY_NULLABLE_HEADER_ALIASES)
+    default_idx = _find_header_index(header_keys, PROPERTY_DEFAULT_HEADER_ALIASES)
+    prop_desc_idx = _find_header_index(header_keys, PROPERTY_DESC_HEADER_ALIASES)
+
+    nullable_mode = False
+    if nullable_idx is not None:
+        nullable_key = header_keys[nullable_idx]
+        nullable_mode = "nullable" in nullable_key or "可为空" in nullable_key
+
+    relations: dict[tuple[str, str, str], dict[str, Any]] = {}
+    current_name = ""
+    current_desc = ""
+    current_source = ""
+    current_target = ""
+    for row_no_offset, row in enumerate(sheet["rows"]):
+        row_no = sheet["header_row_no"] + row_no_offset + 1
+        raw_name = _cell_text(row, relation_idx)
+        raw_desc = _cell_text(row, desc_idx)
+        raw_source = _cell_text(row, source_idx)
+        raw_target = _cell_text(row, target_idx)
+        if raw_name:
+            current_name = _safe_schema_name(raw_name, fallback=f"relation_{row_no}")
+        if raw_desc:
+            current_desc = raw_desc
+        if raw_source:
+            current_source = _safe_schema_name(raw_source, fallback="EntityA")
+        if raw_target:
+            current_target = _safe_schema_name(raw_target, fallback="EntityB")
+        if not current_name or not current_source or not current_target:
+            continue
+
+        key = (current_name, current_source, current_target)
+        relation = relations.setdefault(
+            key,
+            {
+                "name": current_name,
+                "description": current_desc,
+                "domain": current_source,
+                "range": current_target,
+                "properties": [],
+                "_prop_names": set(),
+            },
+        )
+        if current_desc and not relation["description"]:
+            relation["description"] = current_desc
+
+        if prop_idx is None:
+            continue
+        prop_name = _cell_text(row, prop_idx)
+        if not prop_name:
+            continue
+        prop_name = _safe_schema_name(prop_name, fallback=f"field_{row_no}")
+        if prop_name in relation["_prop_names"]:
+            continue
+        relation["_prop_names"].add(prop_name)
+
+        required = False
+        nullable_value = _cell_text(row, nullable_idx)
+        if nullable_idx is not None:
+            required = not _is_truthy_text(nullable_value) if nullable_mode else _is_truthy_text(nullable_value)
+
+        default_value = _cell_text(row, default_idx)
+        data_type = _infer_data_type_from_default(default_value)
+        prop_desc = _cell_text(row, prop_desc_idx)
+        relation["properties"].append(
+            {
+                "name": prop_name,
+                "display_name": prop_name,
+                "data_type": data_type,
+                "required": required,
+                "default_value": "" if default_value in {"-", "—"} else default_value,
+                "description": prop_desc,
+            }
+        )
+
+    result: list[dict[str, Any]] = []
+    for item in relations.values():
+        item.pop("_prop_names", None)
+        result.append(item)
+    return result
+
+
+def _choose_primary_key(headers: list[str]) -> str:
+    for header in headers:
+        key = _header_key(header)
+        if key in {"id", "编号", "编码"} or key.endswith("id") or key.endswith("编号") or key.endswith("编码"):
+            return header
+    return headers[0]
+
+
+def _parse_data_sheet(sheet: dict[str, Any], *, source_name: str) -> dict[str, Any]:
+    headers = list(sheet["header"])
+    rows = sheet["rows"][:MAX_XLSX_ROWS_PER_SHEET]
+    if not headers:
+        return {}
+
+    entity_name = _safe_schema_name(sheet["sheet_name"], fallback="Sheet")
+    primary_key = _choose_primary_key(headers)
+    id_lookup: dict[str, str] = {}
+    label_lookup: dict[str, str] = {}
+    records: list[dict[str, Any]] = []
+    sample_values: dict[str, list[str]] = {header: [] for header in headers}
+
+    for offset, row in enumerate(rows):
+        row_no = sheet["header_row_no"] + offset + 1
+        values = {headers[idx]: _cell_text(row, idx) for idx in range(len(headers))}
+        if all(not value for value in values.values()):
+            continue
+
+        for header in headers:
+            value = _normalize_text(values.get(header))
+            if value:
+                sample_values[header].append(value)
+
+        primary_value = _normalize_text(values.get(primary_key))
+        if not primary_value:
+            for header in headers:
+                if _normalize_text(values.get(header)):
+                    primary_value = _normalize_text(values.get(header))
+                    break
+        if not primary_value:
+            primary_value = f"row_{row_no}"
+
+        lookup_key = _header_key(primary_value)
+        id_lookup[lookup_key] = primary_value
+        label_lookup[_header_key(primary_value)] = primary_value
+        records.append(
+            {
+                "row_no": row_no,
+                "label": primary_value,
+                "values": values,
+            }
+        )
+
+    properties: list[dict[str, Any]] = []
+    for idx, header in enumerate(headers):
+        prop_name = _safe_schema_name(header, fallback=f"column_{idx + 1}")
+        samples = sample_values.get(header, [])
+        properties.append(
+            {
+                "name": prop_name,
+                "display_name": prop_name,
+                "data_type": _infer_data_type_from_samples(samples),
+                "required": bool(samples) and len(samples) == len(records),
+                "default_value": "",
+                "description": f"来自工作表 {sheet['sheet_name']} 列 {header}",
+            }
+        )
+
+    return {
+        "entity_name": entity_name,
+        "sheet_name": sheet["sheet_name"],
+        "primary_key": primary_key,
+        "records": records,
+        "headers": headers,
+        "id_lookup": id_lookup,
+        "label_lookup": label_lookup,
+        "properties": properties,
+        "source_name": source_name,
+    }
+
+
+def _relation_name_from_column(source: str, column: str, target: str) -> str:
+    base = _safe_schema_name(column, fallback="")
+    if not base:
+        base = "关联"
+    return _safe_schema_name(f"{source}_{base}_to_{target}", fallback=f"{source}_to_{target}")
+
+
+def _match_target_sheet(column: str, source_table: dict[str, Any], all_tables: list[dict[str, Any]]) -> dict[str, Any] | None:
+    col_key = _header_key(column)
+    if not col_key or col_key in {"id", "name", "名称", "备注"}:
+        return None
+
+    for table in all_tables:
+        if table["entity_name"] == source_table["entity_name"]:
+            continue
+        entity_key = _header_key(table["entity_name"])
+        if not entity_key:
+            continue
+        if col_key in {
+            entity_key,
+            f"{entity_key}id",
+            f"{entity_key}编号",
+            f"{entity_key}编码",
+        }:
+            return table
+        if col_key.startswith(entity_key) and (
+            col_key.endswith("id") or col_key.endswith("编号") or col_key.endswith("编码")
+        ):
+            return table
+    return None
+
+
+def _build_xlsx_analysis(source_name: str, tables: list[dict[str, Any]]) -> dict[str, Any]:
+    parsed_sheets = [item for item in (_sheet_with_headers(table) for table in tables) if item]
+    entity_templates: list[dict[str, Any]] = []
+    relation_templates: list[dict[str, Any]] = []
+    entity_instances: list[dict[str, Any]] = []
+    relation_instances: list[dict[str, Any]] = []
+    data_tables: list[dict[str, Any]] = []
+
+    for sheet in parsed_sheets:
+        entity_sheet_rows = _parse_entity_schema_sheet(sheet)
+        if entity_sheet_rows:
+            entity_templates.extend(entity_sheet_rows)
+            continue
+
+        relation_sheet_rows = _parse_relation_schema_sheet(sheet)
+        if relation_sheet_rows:
+            relation_templates.extend(relation_sheet_rows)
+            continue
+
+        data_table = _parse_data_sheet(sheet, source_name=source_name)
+        if not data_table:
+            continue
+        data_tables.append(data_table)
+        entity_templates.append(
+            {
+                "name": data_table["entity_name"],
+                "description": f"来自 {source_name} / {data_table['sheet_name']}",
+                "properties": data_table["properties"],
+            }
+        )
+        for row in data_table["records"]:
+            entity_instances.append(
+                {
+                    "type": data_table["entity_name"],
+                    "name": row["label"],
+                    "evidence": f"{source_name} · {data_table['sheet_name']} 第 {row['row_no']} 行",
+                }
+            )
+
+    relation_template_keys: set[tuple[str, str, str]] = {
+        (_safe_schema_name(item.get("name"), fallback="relation"), item.get("domain") or "", item.get("range") or "")
+        for item in relation_templates
+    }
+    relation_instance_keys: set[tuple[str, str, str, str, str]] = set()
+    for source_table in data_tables:
+        for column in source_table["headers"]:
+            if column == source_table["primary_key"]:
+                continue
+            target_table = _match_target_sheet(column, source_table, data_tables)
+            if not target_table:
+                continue
+
+            relation_name = _relation_name_from_column(
+                source=source_table["entity_name"],
+                column=column,
+                target=target_table["entity_name"],
+            )
+            template_key = (relation_name, source_table["entity_name"], target_table["entity_name"])
+            if template_key not in relation_template_keys:
+                relation_template_keys.add(template_key)
+                relation_templates.append(
+                    {
+                        "name": relation_name,
+                        "description": f"由 {source_table['sheet_name']}.{column} 推断",
+                        "domain": source_table["entity_name"],
+                        "range": target_table["entity_name"],
+                        "properties": [],
+                    }
+                )
+
+            for row in source_table["records"]:
+                fk_value = _normalize_text(row["values"].get(column))
+                if not fk_value:
+                    continue
+                target_label = target_table["id_lookup"].get(_header_key(fk_value))
+                if not target_label:
+                    continue
+                key = (
+                    source_table["entity_name"],
+                    row["label"],
+                    relation_name,
+                    target_table["entity_name"],
+                    target_label,
+                )
+                if key in relation_instance_keys:
+                    continue
+                relation_instance_keys.add(key)
+                relation_instances.append(
+                    {
+                        "domain_type": source_table["entity_name"],
+                        "domain_name": row["label"],
+                        "relation": relation_name,
+                        "range_type": target_table["entity_name"],
+                        "range_name": target_label,
+                        "evidence": (
+                            f"{source_table['source_name']} · {source_table['sheet_name']} "
+                            f"第 {row['row_no']} 行字段 {column} 指向 {target_table['sheet_name']}"
+                        ),
+                    }
+                )
+
+    if not entity_instances and entity_templates:
+        for template in entity_templates:
+            entity_name = _safe_schema_name(template.get("name"), fallback="Entity")
+            entity_instances.append(
+                {
+                    "type": entity_name,
+                    "name": "样例",
+                    "evidence": f"{source_name} 提供实体定义",
+                }
+            )
+
+    if not relation_instances and relation_templates:
+        for template in relation_templates:
+            domain_name = _safe_schema_name(template.get("domain"), fallback="EntityA")
+            range_name = _safe_schema_name(template.get("range"), fallback="EntityB")
+            relation_instances.append(
+                {
+                    "domain_type": domain_name,
+                    "domain_name": "样例",
+                    "relation": _safe_schema_name(template.get("name"), fallback="related_to"),
+                    "range_type": range_name,
+                    "range_name": "样例",
+                    "evidence": f"{source_name} 提供关系定义",
+                }
+            )
+
+    return {
+        "entity_templates": entity_templates,
+        "relation_templates": relation_templates,
+        "entity_instances": entity_instances,
+        "relation_instances": relation_instances,
+    }
+
+
+def _merge_entity_template(target_map: dict[str, dict[str, Any]], template: dict[str, Any]) -> None:
+    name = _safe_schema_name(template.get("name"), fallback="Entity")
+    if not name:
+        return
+    row = target_map.setdefault(
+        name,
+        {
+            "name": name,
+            "description": _normalize_text(template.get("description")),
+            "properties": [],
+            "_prop_names": set(),
+        },
+    )
+    if not row["description"]:
+        row["description"] = _normalize_text(template.get("description"))
+
+    for prop in _normalize_generated_properties(template.get("properties") or []):
+        if prop["name"] in row["_prop_names"]:
+            continue
+        row["_prop_names"].add(prop["name"])
+        row["properties"].append(prop)
+
+
+def _collect_xlsx_insight_inputs(enabled_docs: list[ProjectDocument]) -> dict[str, Any]:
+    entity_map: dict[str, dict[str, Any]] = {}
+    relation_rows: list[dict[str, Any]] = []
+    entity_instances: list[dict[str, Any]] = []
+    relation_instances: list[dict[str, Any]] = []
+
+    for doc in enabled_docs:
+        if str(doc.file_type or "").lower() != "xlsx":
+            continue
+        if not doc.storage_path:
+            continue
+        path = Path(doc.storage_path)
+        if not path.exists():
+            continue
+        try:
+            tables = _parse_xlsx_tables(path.read_bytes())
+        except ValueError as exc:
+            raise ValueError(f"{doc.name} 解析失败：{exc}") from exc
+
+        analysis = _build_xlsx_analysis(doc.name, tables)
+        for template in analysis["entity_templates"]:
+            _merge_entity_template(entity_map, template)
+        relation_rows.extend(analysis["relation_templates"])
+        entity_instances.extend(analysis["entity_instances"])
+        relation_instances.extend(analysis["relation_instances"])
+
+    entities: list[dict[str, Any]] = []
+    for item in entity_map.values():
+        item.pop("_prop_names", None)
+        entities.append(item)
+    return {
+        "entity_templates": entities,
+        "relation_templates": relation_rows,
+        "entity_instances": entity_instances,
+        "relation_instances": relation_instances,
+    }
+
+
+def _dedupe_name(base: str, existing: set[str], *, max_len: int = 64) -> str:
+    candidate = _safe_schema_name(base, fallback="item", max_len=max_len)
+    if candidate not in existing:
+        return candidate
+    for idx in range(2, 200):
+        suffix = f"_{idx}"
+        prefix_len = max(max_len - len(suffix), 1)
+        next_candidate = f"{candidate[:prefix_len]}{suffix}"
+        if next_candidate not in existing:
+            return next_candidate
+    return _safe_schema_name(f"{candidate}_{uuid4().hex[:4]}", fallback="item", max_len=max_len)
+
+
+def _apply_schema_templates(
+    db: Session,
+    *,
+    project: Project,
+    entity_templates: list[dict[str, Any]],
+    relation_templates: list[dict[str, Any]],
+    now: datetime,
+) -> dict[str, Any]:
+    entity_rows = db.query(EntityType).filter(EntityType.project_id == project.id).all()
+    entity_by_name = {item.name: item for item in entity_rows}
+    added_entity_names: list[str] = []
+    added_relation_names: list[str] = []
+
+    for template in entity_templates:
+        name = _safe_schema_name(template.get("name"), fallback="Entity")
+        if not name or name in entity_by_name:
+            continue
+
+        entity_id = _new_id("ent")
+        entity = EntityType(
+            id=entity_id,
+            project_id=project.id,
+            name=name,
+            description=_normalize_text(template.get("description")),
+            created_at=now,
+            updated_at=now,
+        )
+        db.add(entity)
+        entity_by_name[name] = entity
+        added_entity_names.append(name)
+
+        properties = _normalize_generated_properties(template.get("properties") or [])
+        for index, prop in enumerate(properties):
+            db.add(
+                SchemaProperty(
+                    id=prop["id"],
+                    project_id=project.id,
+                    owner_kind=OWNER_KIND_ENTITY,
+                    owner_id=entity_id,
+                    name=prop["name"],
+                    display_name=prop["display_name"],
+                    data_type=prop["data_type"],
+                    required=bool(prop["required"]),
+                    default_value=prop["default_value"],
+                    description=prop["description"],
+                    sort_order=index,
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+
+    relation_rows = db.query(RelationType).filter(RelationType.project_id == project.id).all()
+    existing_relation_names = {item.name for item in relation_rows}
+    relation_key_set = {(item.name, item.domain_entity_type_id, item.range_entity_type_id) for item in relation_rows}
+    for template in relation_templates:
+        domain_name = _safe_schema_name(template.get("domain"), fallback="")
+        range_name = _safe_schema_name(template.get("range"), fallback="")
+        if not domain_name or not range_name:
+            continue
+        domain_entity = entity_by_name.get(domain_name)
+        range_entity = entity_by_name.get(range_name)
+        if not domain_entity or not range_entity:
+            continue
+
+        base_name = _safe_schema_name(
+            template.get("name"),
+            fallback=f"{domain_name}_to_{range_name}",
+        )
+        relation_name = base_name
+        if relation_name in existing_relation_names:
+            matched = False
+            for relation in relation_rows:
+                if (
+                    relation.name == relation_name
+                    and relation.domain_entity_type_id == domain_entity.id
+                    and relation.range_entity_type_id == range_entity.id
+                ):
+                    matched = True
+                    break
+            if matched:
+                continue
+            relation_name = _dedupe_name(base_name, existing_relation_names)
+
+        relation_key = (relation_name, domain_entity.id, range_entity.id)
+        if relation_key in relation_key_set:
+            continue
+
+        relation_id = _new_id("rel")
+        db.add(
+            RelationType(
+                id=relation_id,
+                project_id=project.id,
+                name=relation_name,
+                domain_entity_type_id=domain_entity.id,
+                range_entity_type_id=range_entity.id,
+                description=_normalize_text(template.get("description")),
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        properties = _normalize_generated_properties(template.get("properties") or [])
+        for index, prop in enumerate(properties):
+            db.add(
+                SchemaProperty(
+                    id=prop["id"],
+                    project_id=project.id,
+                    owner_kind=OWNER_KIND_RELATION,
+                    owner_id=relation_id,
+                    name=prop["name"],
+                    display_name=prop["display_name"],
+                    data_type=prop["data_type"],
+                    required=bool(prop["required"]),
+                    default_value=prop["default_value"],
+                    description=prop["description"],
+                    sort_order=index,
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+        existing_relation_names.add(relation_name)
+        relation_rows.append(
+            RelationType(
+                id=relation_id,
+                project_id=project.id,
+                name=relation_name,
+                domain_entity_type_id=domain_entity.id,
+                range_entity_type_id=range_entity.id,
+                description=_normalize_text(template.get("description")),
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        relation_key_set.add(relation_key)
+        added_relation_names.append(relation_name)
+
+    if added_entity_names or added_relation_names:
+        schema_cfg = _ensure_schema_config_row(db, project.id, now)
+        schema_cfg.updated_at = now
+        _touch_project(project)
+
+    return {
+        "added_entity_names": added_entity_names,
+        "added_relation_names": added_relation_names,
+    }
+
+
+def _generate_xlsx_review_items_for_run(
+    *,
+    project_id: str,
+    run_id: str,
+    xlsx_inputs: dict[str, Any],
+    now: datetime,
+) -> list[ReviewItem]:
+    entity_rows: list[ReviewItem] = []
+    relation_rows: list[ReviewItem] = []
+
+    seen_entities: set[tuple[str, str]] = set()
+    for item in xlsx_inputs.get("entity_instances") or []:
+        entity_type = _safe_schema_name(item.get("type"), fallback="")
+        entity_name = _safe_schema_name(item.get("name"), fallback="")
+        if not entity_type or not entity_name:
+            continue
+        key = (entity_type, entity_name)
+        if key in seen_entities:
+            continue
+        seen_entities.add(key)
+
+        evidence = _normalize_text(item.get("evidence")) or f"来自 xlsx：{entity_type} / {entity_name}"
+        entity_rows.append(
+            ReviewItem(
+                id=_new_id("review"),
+                project_id=project_id,
+                run_id=run_id,
+                kind="ENTITY",
+                title=f"{entity_type}::{entity_name}",
+                evidence=evidence,
+                confidence=round(0.82 + (hash(f"{run_id}:{entity_type}:{entity_name}") % 14) / 100, 2),
+                status="PENDING",
+                entity_type_name=entity_type,
+                entity_name=entity_name,
+                relation_type_name=None,
+                relation_domain_name=None,
+                relation_range_name=None,
+                payload_json=None,
+                created_at=now,
+                updated_at=now,
+            )
+        )
+
+    seen_relations: set[tuple[str, str, str, str, str]] = set()
+    for item in xlsx_inputs.get("relation_instances") or []:
+        relation_name = _safe_schema_name(item.get("relation"), fallback="")
+        domain_type = _safe_schema_name(item.get("domain_type"), fallback="")
+        range_type = _safe_schema_name(item.get("range_type"), fallback="")
+        domain_name = _safe_schema_name(item.get("domain_name"), fallback="样例")
+        range_name = _safe_schema_name(item.get("range_name"), fallback="样例")
+        if not relation_name or not domain_type or not range_type:
+            continue
+
+        key = (domain_type, domain_name, relation_name, range_type, range_name)
+        if key in seen_relations:
+            continue
+        seen_relations.add(key)
+
+        evidence = _normalize_text(item.get("evidence")) or f"来自 xlsx：{domain_type} -[{relation_name}]-> {range_type}"
+        relation_rows.append(
+            ReviewItem(
+                id=_new_id("review"),
+                project_id=project_id,
+                run_id=run_id,
+                kind="RELATION",
+                title=f"{domain_type}::{domain_name} -[{relation_name}]-> {range_type}::{range_name}",
+                evidence=evidence,
+                confidence=round(0.78 + (hash(f"{run_id}:{domain_type}:{relation_name}:{range_type}:{domain_name}:{range_name}") % 17) / 100, 2),
+                status="PENDING",
+                entity_type_name=None,
+                entity_name=None,
+                relation_type_name=relation_name,
+                relation_domain_name=domain_type,
+                relation_range_name=range_type,
+                payload_json=None,
+                created_at=now,
+                updated_at=now,
+            )
+        )
+
+    rows = entity_rows + relation_rows
+    return rows[:MAX_XLSX_REVIEW_ITEMS]
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -1083,7 +2147,9 @@ def upload_document(db: Session, user_id: int, project_id: str, filename: str, c
 
     ext = Path(name).suffix.lower()
     if ext not in ALLOWED_DOC_EXTENSIONS:
-        raise ValueError("仅支持 .docx 或 .md 文档")
+        raise ValueError("仅支持 .docx、.md 或 .xlsx 文档")
+    if ext == ".xlsx":
+        _parse_xlsx_tables(content)
 
     now = _now()
     document_id = _new_id("doc")
@@ -1853,95 +2919,32 @@ def run_ai_schema_insight(db: Session, user_id: int, project_id: str):
     if not enabled_docs:
         raise ValueError("请至少启用一个文档后再进行 AI 洞察")
 
-    entity_rows = db.query(EntityType).filter(EntityType.project_id == project.id).all()
-    relation_rows = db.query(RelationType).filter(RelationType.project_id == project.id).all()
-    entity_name_to_id = {item.name: item.id for item in entity_rows}
-    existing_relation_names = {item.name for item in relation_rows}
-
-    picked_entities = _pick_ai_entity_templates([doc.name for doc in enabled_docs])
-    added_entity_names: list[str] = []
-    added_relation_names: list[str] = []
     now = _now()
+    xlsx_inputs = _collect_xlsx_insight_inputs(enabled_docs)
 
-    for template in picked_entities:
-        entity_name = str(template.get("name") or "")
-        if not entity_name or entity_name in entity_name_to_id:
-            continue
+    entity_templates = list(xlsx_inputs["entity_templates"])
+    relation_templates = list(xlsx_inputs["relation_templates"])
+    if not entity_templates:
+        picked_entities = _pick_ai_entity_templates([doc.name for doc in enabled_docs])
+        entity_templates.extend(picked_entities)
+        relation_templates.extend(AI_RELATION_TEMPLATES)
 
-        entity_id = _new_id("ent")
-        entity = EntityType(
-            id=entity_id,
-            project_id=project.id,
-            name=entity_name,
-            description=str(template.get("description") or ""),
-            created_at=now,
-            updated_at=now,
-        )
-        db.add(entity)
-        entity_name_to_id[entity_name] = entity_id
-        added_entity_names.append(entity_name)
-
-        for index, prop in enumerate(template.get("properties") or []):
-            prop_name = _normalize_text(prop.get("name"))
-            if not prop_name:
-                continue
-            data_type = str(prop.get("data_type") or "STRING").upper()
-            if data_type not in ALLOWED_PROPERTY_DATA_TYPES:
-                data_type = "STRING"
-            db.add(
-                SchemaProperty(
-                    id=_new_id("prop"),
-                    project_id=project.id,
-                    owner_kind=OWNER_KIND_ENTITY,
-                    owner_id=entity_id,
-                    name=prop_name,
-                    display_name=_normalize_text(prop.get("display_name")) or prop_name,
-                    data_type=data_type,
-                    required=bool(prop.get("required")),
-                    default_value=_normalize_text(prop.get("default_value")),
-                    description=_normalize_text(prop.get("description")),
-                    sort_order=index,
-                    created_at=now,
-                    updated_at=now,
-                )
-            )
-
-    for template in AI_RELATION_TEMPLATES:
-        relation_name = str(template.get("name") or "")
-        if not relation_name or relation_name in existing_relation_names:
-            continue
-        domain_id = entity_name_to_id.get(str(template.get("domain") or ""))
-        range_id = entity_name_to_id.get(str(template.get("range") or ""))
-        if not domain_id or not range_id:
-            continue
-
-        db.add(
-            RelationType(
-                id=_new_id("rel"),
-                project_id=project.id,
-                name=relation_name,
-                domain_entity_type_id=domain_id,
-                range_entity_type_id=range_id,
-                description=str(template.get("description") or ""),
-                created_at=now,
-                updated_at=now,
-            )
-        )
-        existing_relation_names.add(relation_name)
-        added_relation_names.append(relation_name)
-
-    if added_entity_names or added_relation_names:
-        schema_cfg = _ensure_schema_config_row(db, project.id, now)
-        schema_cfg.updated_at = now
-        _touch_project(project)
+    applied = _apply_schema_templates(
+        db,
+        project=project,
+        entity_templates=entity_templates,
+        relation_templates=relation_templates,
+        now=now,
+    )
+    if applied["added_entity_names"] or applied["added_relation_names"]:
         db.commit()
 
     return {
         "scanned_document_count": len(enabled_docs),
-        "added_entity_count": len(added_entity_names),
-        "added_relation_count": len(added_relation_names),
-        "added_entity_names": added_entity_names,
-        "added_relation_names": added_relation_names,
+        "added_entity_count": len(applied["added_entity_names"]),
+        "added_relation_count": len(applied["added_relation_names"]),
+        "added_entity_names": applied["added_entity_names"],
+        "added_relation_names": applied["added_relation_names"],
     }
 
 
@@ -1962,6 +2965,17 @@ def create_extraction_run(db: Session, user_id: int, project_id: str):
     if not enabled_docs and not enabled_data_sources:
         raise ValueError("请至少启用一个数据来源（文档或数据源）后再执行抽取")
 
+    now = _now()
+    xlsx_inputs = _collect_xlsx_insight_inputs(enabled_docs)
+    if xlsx_inputs["entity_templates"] or xlsx_inputs["relation_templates"]:
+        _apply_schema_templates(
+            db,
+            project=project,
+            entity_templates=xlsx_inputs["entity_templates"],
+            relation_templates=xlsx_inputs["relation_templates"],
+            now=now,
+        )
+
     entity_rows = (
         db.query(EntityType)
         .filter(EntityType.project_id == project.id)
@@ -1969,7 +2983,7 @@ def create_extraction_run(db: Session, user_id: int, project_id: str):
         .all()
     )
     if not entity_rows:
-        raise ValueError("请先配置实体类型")
+        raise ValueError("请先配置实体类型，或上传可解析的 xlsx 文件")
 
     relation_rows = (
         db.query(RelationType)
@@ -1981,7 +2995,6 @@ def create_extraction_run(db: Session, user_id: int, project_id: str):
     if not any(skill.get("enabled") and not skill.get("blocked") for skill in skills):
         raise ValueError("请至少启用一个 Skill")
 
-    now = _now()
     run_id = _new_id("run")
     source_snapshot = {
         "documents": [
@@ -2019,17 +3032,24 @@ def create_extraction_run(db: Session, user_id: int, project_id: str):
     )
     db.add(run)
 
-    entity_name_by_id = {entity.id: entity.name for entity in entity_rows}
-    review_rows = _generate_review_items_for_run(
+    review_rows = _generate_xlsx_review_items_for_run(
         project_id=project.id,
         run_id=run.id,
-        entities=entity_rows,
-        relations=relation_rows,
-        entity_name_by_id=entity_name_by_id,
-        enabled_docs=enabled_docs,
-        enabled_data_sources=enabled_data_sources,
+        xlsx_inputs=xlsx_inputs,
         now=now,
     )
+    if not review_rows:
+        entity_name_by_id = {entity.id: entity.name for entity in entity_rows}
+        review_rows = _generate_review_items_for_run(
+            project_id=project.id,
+            run_id=run.id,
+            entities=entity_rows,
+            relations=relation_rows,
+            entity_name_by_id=entity_name_by_id,
+            enabled_docs=enabled_docs,
+            enabled_data_sources=enabled_data_sources,
+            now=now,
+        )
     for row in review_rows:
         db.add(row)
     _recalc_run_stats(db, run)
