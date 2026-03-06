@@ -1,4 +1,5 @@
 import base64
+import concurrent.futures
 import json
 import logging
 import os
@@ -116,6 +117,30 @@ MAX_EXTRACTION_DOCS = 6
 MAX_EXTRACTION_DOC_CHARS = 4000
 MAX_EXTRACTION_ENTITIES = 360
 MAX_EXTRACTION_RELATIONS = 360
+EXTRACTION_LLM_MAX_TOKENS_DEFAULT = 32768
+EXTRACTION_CONCURRENCY_DEFAULT = 3
+
+
+def _resolve_extraction_llm_max_tokens() -> int:
+    raw = os.getenv("EXTRACTION_LLM_MAX_TOKENS", "").strip()
+    if not raw:
+        return EXTRACTION_LLM_MAX_TOKENS_DEFAULT
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return EXTRACTION_LLM_MAX_TOKENS_DEFAULT
+    return max(4096, min(parsed, 65536))
+
+
+def _resolve_extraction_concurrency() -> int:
+    raw = os.getenv("EXTRACTION_CONCURRENCY", "").strip()
+    if not raw:
+        return EXTRACTION_CONCURRENCY_DEFAULT
+    try:
+        val = int(raw)
+    except ValueError:
+        return EXTRACTION_CONCURRENCY_DEFAULT
+    return max(1, min(val, 10))
 
 ENTITY_HEADER_ALIASES = {
     "entitytypename",
@@ -1283,18 +1308,27 @@ def _run_ai_instance_extraction_llm(
         raise ValueError("缺少 openai 依赖，无法调用模型抽取") from exc
 
     client = OpenAI(api_key=llm_cfg["api_key"], base_url=llm_cfg["base_url"])
+    max_tokens = _resolve_extraction_llm_max_tokens()
 
-    try:
-        response = client.chat.completions.create(
-            model=llm_cfg["model"],
-            messages=[
-                {"role": "system", "content": developer_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            max_tokens=8192,
-        )
-    except Exception as exc:
-        raise ValueError(f"模型抽取调用失败：{exc}") from exc
+    last_exc: Exception | None = None
+    for attempt in range(2):
+        try:
+            response = client.chat.completions.create(
+                model=llm_cfg["model"],
+                messages=[
+                    {"role": "system", "content": developer_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                max_tokens=max_tokens,
+            )
+            last_exc = None
+            break
+        except Exception as exc:
+            last_exc = exc
+            if attempt == 0:
+                logger.warning("模型抽取调用第 1 次失败，重试一次：%s", exc)
+    if last_exc is not None:
+        raise ValueError(f"模型抽取调用失败：{last_exc}") from last_exc
 
     text = _normalize_text(response.choices[0].message.content)
     if not text:
@@ -1304,7 +1338,11 @@ def _run_ai_instance_extraction_llm(
     try:
         parsed = json.loads(json_text)
     except json.JSONDecodeError as exc:
-        raise ValueError("模型输出不是合法 JSON") from exc
+        if not text.rstrip().endswith("}"):
+            raise ValueError(
+                "模型抽取输出疑似被截断，JSON 未闭合；请减少文档内容或提高 EXTRACTION_LLM_MAX_TOKENS"
+            ) from exc
+        raise ValueError("模型抽取输出不是合法 JSON") from exc
     if not isinstance(parsed, dict):
         raise ValueError("模型输出格式不正确，根节点必须是对象")
     return parsed
@@ -1464,7 +1502,7 @@ def _generate_ai_review_items_for_run(
             run,
             stage="EXTRACTING",
             current_document="",
-            append_log=f"开始逐文档抽取，共 {total_docs} 个文档。",
+            append_log=f"开始并发抽取，共 {total_docs} 个文档，并发度 {_resolve_extraction_concurrency()}。",
             processed_documents=0,
             total_documents=total_docs,
         )
@@ -1474,30 +1512,17 @@ def _generate_ai_review_items_for_run(
 
     entity_instances_by_key: dict[tuple[str, str], dict[str, Any]] = {}
     relation_instances_by_key: dict[tuple[str, str, str, str, str], dict[str, Any]] = {}
+    merge_lock = threading.Lock()
+    processed_count = 0
 
-    for idx, doc in enumerate(enabled_docs):
-        if run is not None:
-            _set_run_runtime_meta(
-                run,
-                stage="EXTRACTING",
-                current_document=doc.name,
-                append_log=f"[{idx + 1}/{total_docs}] 开始抽取：{doc.name}",
-                processed_documents=idx,
-                total_documents=total_docs,
-            )
-            run.progress = min(95, 5 + int((idx / max(total_docs, 1)) * 80))
-            run.updated_at = _now()
-            db.commit()
-
+    def _extract_single_doc(
+        idx: int, doc: ProjectDocument
+    ) -> tuple[int, str, list[dict[str, Any]], list[dict[str, Any]], str | None]:
+        """在线程中执行单个文档的 LLM 抽取，返回 (idx, doc.name, entities, relations, error_msg)"""
         doc_xlsx_inputs = _collect_xlsx_insight_inputs([doc])
         document_payload = _build_extraction_document_payload([doc], xlsx_inputs=doc_xlsx_inputs)
         if not document_payload.get("documents") and not document_payload.get("xlsx_entity_seed"):
-            if run is not None:
-                _set_run_runtime_meta(run, append_log=f"跳过文档 {doc.name}：无可抽取内容。")
-                run.updated_at = _now()
-                db.commit()
-            continue
-
+            return idx, doc.name, [], [], "SKIP"
         try:
             raw_output = _run_ai_instance_extraction_llm(
                 project=project,
@@ -1510,57 +1535,81 @@ def _generate_ai_review_items_for_run(
                 raw_output=raw_output,
                 schema_payload=schema_payload,
             )
+            return idx, doc.name, parsed_output["entity_instances"], parsed_output["relation_instances"], None
         except ValueError as exc:
-            if run is not None:
-                _set_run_runtime_meta(run, append_log=f"文档 {doc.name} 抽取失败：{exc}")
-                run.updated_at = _now()
-                db.commit()
-            continue
+            return idx, doc.name, [], [], str(exc)
 
-        entity_delta = 0
-        relation_delta = 0
-        for item in parsed_output["entity_instances"]:
-            entity_type = _safe_schema_name(item.get("type"), fallback="")
-            entity_name = _safe_schema_name(item.get("name"), fallback="", max_len=255)
-            if not entity_type or not entity_name:
-                continue
-            key = (entity_type, entity_name)
-            if key in entity_instances_by_key:
-                continue
-            payload = dict(item)
-            payload["source_document"] = doc.name
-            entity_instances_by_key[key] = payload
-            entity_delta += 1
+    concurrency = _resolve_extraction_concurrency()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:
+        future_to_doc = {
+            executor.submit(_extract_single_doc, idx, doc): (idx, doc)
+            for idx, doc in enumerate(enabled_docs)
+        }
+        for future in concurrent.futures.as_completed(future_to_doc):
+            idx, doc_name, entity_list, relation_list, error_msg = future.result()
 
-        for item in parsed_output["relation_instances"]:
-            relation_name = _safe_schema_name(item.get("relation"), fallback="")
-            domain_type = _safe_schema_name(item.get("domain_type"), fallback="")
-            range_type = _safe_schema_name(item.get("range_type"), fallback="")
-            domain_name = _safe_schema_name(item.get("domain_name"), fallback="", max_len=255)
-            range_name = _safe_schema_name(item.get("range_name"), fallback="", max_len=255)
-            if not relation_name or not domain_type or not range_type or not domain_name or not range_name:
-                continue
-            key = (domain_type, domain_name, relation_name, range_type, range_name)
-            if key in relation_instances_by_key:
-                continue
-            payload = dict(item)
-            payload["source_document"] = doc.name
-            relation_instances_by_key[key] = payload
-            relation_delta += 1
+            with merge_lock:
+                processed_count += 1
+                done = processed_count
 
-        if run is not None:
-            _set_run_runtime_meta(
-                run,
-                append_log=(
-                    f"[{idx + 1}/{total_docs}] 完成 {doc.name}："
-                    f"新增实体 {entity_delta}，新增关系 {relation_delta}。"
-                ),
-                processed_documents=idx + 1,
-                total_documents=total_docs,
-            )
-            run.progress = min(95, 5 + int(((idx + 1) / max(total_docs, 1)) * 85))
-            run.updated_at = _now()
-            db.commit()
+                if error_msg == "SKIP":
+                    if run is not None:
+                        _set_run_runtime_meta(run, append_log=f"跳过文档 {doc_name}：无可抽取内容。")
+                        run.updated_at = _now()
+                        db.commit()
+                    continue
+
+                if error_msg is not None:
+                    if run is not None:
+                        _set_run_runtime_meta(run, append_log=f"文档 {doc_name} 抽取失败：{error_msg}")
+                        run.updated_at = _now()
+                        db.commit()
+                    continue
+
+                entity_delta = 0
+                relation_delta = 0
+                for item in entity_list:
+                    entity_type = _safe_schema_name(item.get("type"), fallback="")
+                    entity_name = _safe_schema_name(item.get("name"), fallback="", max_len=255)
+                    if not entity_type or not entity_name:
+                        continue
+                    key = (entity_type, entity_name)
+                    if key in entity_instances_by_key:
+                        continue
+                    payload = dict(item)
+                    payload["source_document"] = doc_name
+                    entity_instances_by_key[key] = payload
+                    entity_delta += 1
+
+                for item in relation_list:
+                    relation_name = _safe_schema_name(item.get("relation"), fallback="")
+                    domain_type = _safe_schema_name(item.get("domain_type"), fallback="")
+                    range_type = _safe_schema_name(item.get("range_type"), fallback="")
+                    domain_name = _safe_schema_name(item.get("domain_name"), fallback="", max_len=255)
+                    range_name = _safe_schema_name(item.get("range_name"), fallback="", max_len=255)
+                    if not relation_name or not domain_type or not range_type or not domain_name or not range_name:
+                        continue
+                    key = (domain_type, domain_name, relation_name, range_type, range_name)
+                    if key in relation_instances_by_key:
+                        continue
+                    payload = dict(item)
+                    payload["source_document"] = doc_name
+                    relation_instances_by_key[key] = payload
+                    relation_delta += 1
+
+                if run is not None:
+                    _set_run_runtime_meta(
+                        run,
+                        append_log=(
+                            f"[{done}/{total_docs}] 完成 {doc_name}："
+                            f"新增实体 {entity_delta}，新增关系 {relation_delta}。"
+                        ),
+                        processed_documents=done,
+                        total_documents=total_docs,
+                    )
+                    run.progress = min(95, 5 + int((done / max(total_docs, 1)) * 85))
+                    run.updated_at = _now()
+                    db.commit()
 
     rows: list[ReviewItem] = []
     for item in entity_instances_by_key.values():
@@ -4016,15 +4065,9 @@ def _execute_ai_schema_insight_run(db: Session, user_id: int, project_id: str, r
         # --- 并发调用 LLM，串行写入 DB ---
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
-        def _call_llm_for_doc(doc_idx_tuple):
-            idx, doc = doc_idx_tuple
+        def _call_llm_for_doc(doc_idx_names_tuple):
+            idx, doc, existing_entity_names = doc_idx_names_tuple
             xlsx_inputs = _collect_xlsx_insight_inputs([doc])
-            existing_entity_names = {
-                row.name
-                for row in db.query(EntityType.name)
-                .filter(EntityType.project_id == project.id)
-                .all()
-            }
             try:
                 llm_raw_output = _run_ai_schema_insight_llm(
                     project=project,
@@ -4043,7 +4086,19 @@ def _execute_ai_schema_insight_run(db: Session, user_id: int, project_id: str, r
 
         # 按批次处理（每批 concurrency 个），批内并发，批间串行写入
         for batch_start in range(0, total_docs, concurrency):
-            batch = list(enumerate(enabled_docs[batch_start:batch_start + concurrency], start=batch_start + 1))
+            # Pre-fetch existing entity names in the main thread before spawning worker
+            # threads — SQLAlchemy sessions are not thread-safe and must not be accessed
+            # from multiple threads concurrently.
+            batch_existing_entity_names = {
+                row.name
+                for row in db.query(EntityType.name)
+                .filter(EntityType.project_id == project.id)
+                .all()
+            }
+            batch = [
+                (batch_start + i + 1, doc, batch_existing_entity_names)
+                for i, doc in enumerate(enabled_docs[batch_start:batch_start + concurrency])
+            ]
             batch_size = len(batch)
 
             run.progress = min(85, 10 + int((batch_start / max(total_docs, 1)) * 70))
@@ -4064,7 +4119,7 @@ def _execute_ai_schema_insight_run(db: Session, user_id: int, project_id: str, r
                         batch_results.append(future.result())
                     except Exception as exc:
                         orig_item = futures[future]
-                        idx, doc = orig_item
+                        idx, doc, _ = orig_item
                         batch_results.append((
                             idx, doc, set(),
                             {"entities": [], "relations": [], "warnings": [f"文档 {doc.name} 处理异常，已跳过：{exc}"]},
