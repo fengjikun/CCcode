@@ -1,6 +1,9 @@
+import json
 import os
+import sys
 import tempfile
 import time
+import types
 import unittest
 from datetime import datetime
 from pathlib import Path
@@ -152,6 +155,16 @@ class ExtractionRunAiPipelineTests(unittest.TestCase):
         self.assertEqual(result["pending_review_count"], 3)
         self.assertIsNotNone(result.get("logs"))
         self.assertGreater(len(result.get("logs") or []), 0)
+        logs = result.get("logs") or []
+        self.assertTrue(any("load" in line and "skill" in line for line in logs), "应记录 mock skill 加载日志")
+        load_index = next(
+            (idx for idx, line in enumerate(logs) if "load" in line and "skill" in line),
+            -1,
+        )
+        model_index = next((idx for idx, line in enumerate(logs) if "开始并发抽取" in line), -1)
+        self.assertGreaterEqual(load_index, 0)
+        self.assertGreaterEqual(model_index, 0)
+        self.assertLess(load_index, model_index, "应先记录 load skill，再记录抽取日志")
 
         titles = [item["title"] for item in result["review_items"]]
         self.assertIn("Person::张三", titles)
@@ -218,6 +231,76 @@ class ExtractionRunAiPipelineTests(unittest.TestCase):
             svc.create_extraction_run(self.db, 1, "proj_ext_1")
 
         self._wait_until_run_finished(first["id"])
+
+    def test_run_ai_instance_extraction_llm_prompt_uses_schema_whitelist(self) -> None:
+        captured: dict[str, object] = {}
+
+        class _FakeCompletions:
+            def create(self, *, model: str, messages: list[dict[str, str]], max_tokens: int):
+                captured["model"] = model
+                captured["messages"] = messages
+                captured["max_tokens"] = max_tokens
+                return types.SimpleNamespace(
+                    choices=[
+                        types.SimpleNamespace(
+                            message=types.SimpleNamespace(
+                                content='{"entities":[],"relations":[],"warnings":[]}'
+                            )
+                        )
+                    ]
+                )
+
+        class _FakeOpenAI:
+            def __init__(self, *, api_key: str, base_url: str):
+                captured["api_key"] = api_key
+                captured["base_url"] = base_url
+                self.chat = types.SimpleNamespace(completions=_FakeCompletions())
+
+        original_openai = sys.modules.get("openai")
+        sys.modules["openai"] = types.SimpleNamespace(OpenAI=_FakeOpenAI)
+        try:
+            schema_payload = {
+                "entity_types": [
+                    {"name": "Equipment"},
+                    {"name": "Failure"},
+                ],
+                "relation_types": [
+                    {"name": "has_failure", "domain": "Equipment", "range": "Failure"},
+                ],
+            }
+            project = self.db.query(Project).filter(Project.id == "proj_ext_1").first()
+            self.assertIsNotNone(project)
+            assert project is not None
+            result = svc._run_ai_instance_extraction_llm(
+                project=project,
+                enabled_docs=[],
+                schema_payload=schema_payload,
+                document_payload={
+                    "documents": [{"id": "doc_1", "name": "source.md", "text": "设备 A 发生故障 B"}]
+                },
+                xlsx_inputs={},
+            )
+
+            self.assertEqual(result, {"entities": [], "relations": [], "warnings": []})
+            messages = captured.get("messages")
+            self.assertIsInstance(messages, list)
+            assert isinstance(messages, list)
+            system_prompt = next(item["content"] for item in messages if item.get("role") == "system")
+            user_prompt = next(item["content"] for item in messages if item.get("role") == "user")
+            self.assertIn("允许实体类型白名单：Equipment, Failure", system_prompt)
+            self.assertIn("允许关系签名白名单：has_failure: Equipment -> Failure", system_prompt)
+            self.assertNotIn("works_for", system_prompt)
+
+            payload = json.loads(user_prompt)
+            relation_hint = payload["output_schema_hint"]["relations"][0]
+            self.assertEqual(relation_hint["relation"], "has_failure")
+            self.assertEqual(relation_hint["domain_type"], "Equipment")
+            self.assertEqual(relation_hint["range_type"], "Failure")
+        finally:
+            if original_openai is None:
+                sys.modules.pop("openai", None)
+            else:
+                sys.modules["openai"] = original_openai
 
     def test_get_project_detail_cleans_interrupted_running_extraction_run(self) -> None:
         now = datetime.now()
