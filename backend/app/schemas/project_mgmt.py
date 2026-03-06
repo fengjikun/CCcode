@@ -261,6 +261,24 @@ class AiInsightResult(_CamelModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class AiInsightRun(_CamelModel):
+    id: str
+    status: RunStatus
+    progress: int
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+    scanned_document_count: int
+    added_entity_count: int
+    added_relation_count: int
+    added_entity_names: list[str] = Field(default_factory=list)
+    added_relation_names: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    stage: Optional[str] = None
+    current_document: Optional[str] = None
+    logs: list[str] = Field(default_factory=list)
+    error_message: Optional[str] = None
+
+
 class ReviewItem(_CamelModel):
     id: str
     kind: ReviewKind
@@ -284,6 +302,10 @@ class ExtractionRun(_CamelModel):
     candidate_entity_count: int
     candidate_relation_count: int
     pending_review_count: int
+    stage: Optional[str] = None
+    current_document: Optional[str] = None
+    logs: list[str] = Field(default_factory=list)
+    error_message: Optional[str] = None
     review_items: list[ReviewItem] = Field(default_factory=list)
 
 
@@ -353,6 +375,7 @@ class ProjectDetail(_CamelModel):
     documents: list[ProjectDocument] = Field(default_factory=list)
     data_sources: list[ProjectDataSource] = Field(default_factory=list)
     schema_config: SchemaConfig
+    ai_insight_run: Optional[AiInsightRun] = None
     runs: list[ExtractionRun] = Field(default_factory=list)
     versions: list[OntologyVersion] = Field(default_factory=list)
     actions: list[ProjectAction] = Field(default_factory=list)

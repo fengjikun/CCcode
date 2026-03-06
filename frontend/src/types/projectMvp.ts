@@ -125,7 +125,29 @@ export interface ExtractionRun {
   candidateEntityCount: number
   candidateRelationCount: number
   pendingReviewCount: number
+  stage?: string
+  currentDocument?: string
+  logs: string[]
+  errorMessage?: string
   reviewItems: ReviewItem[]
+}
+
+export interface AiInsightRun {
+  id: string
+  status: RunStatus
+  progress: number
+  createdAt: string
+  completedAt?: string
+  scannedDocumentCount: number
+  addedEntityCount: number
+  addedRelationCount: number
+  addedEntityNames: string[]
+  addedRelationNames: string[]
+  warnings: string[]
+  stage?: string
+  currentDocument?: string
+  logs: string[]
+  errorMessage?: string
 }
 
 export interface OntologyVersion {
@@ -163,6 +185,7 @@ export interface ProjectDetail {
   documents: ProjectDocument[]
   dataSources: StructuredDataSource[]
   schemaConfig: SchemaConfig
+  aiInsightRun?: AiInsightRun
   runs: ExtractionRun[]
   versions: OntologyVersion[]
   actions: ActionDefinition[]

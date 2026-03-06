@@ -1,7 +1,10 @@
 import base64
 import json
+import logging
+import os
 import posixpath
 import re
+import threading
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
@@ -10,10 +13,12 @@ from uuid import uuid4
 from xml.etree import ElementTree
 from zipfile import BadZipFile, ZipFile
 
+from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import desc, func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.models.project_mgmt import (
+    AiInsightRun,
     EntityType,
     ExtractionRun,
     OntologyVersion,
@@ -35,6 +40,60 @@ from app.services.project_mgmt_ai_insight import (
 )
 
 
+logger = logging.getLogger(__name__)
+_AI_INSIGHT_ACTIVE_RUN_IDS: set[str] = set()
+_AI_INSIGHT_ACTIVE_RUN_IDS_LOCK = threading.Lock()
+_EXTRACTION_ACTIVE_RUN_IDS: set[str] = set()
+_EXTRACTION_ACTIVE_RUN_IDS_LOCK = threading.Lock()
+
+
+def _register_ai_insight_active_run(run_id: str) -> None:
+    rid = _normalize_text(run_id)
+    if not rid:
+        return
+    with _AI_INSIGHT_ACTIVE_RUN_IDS_LOCK:
+        _AI_INSIGHT_ACTIVE_RUN_IDS.add(rid)
+
+
+def _unregister_ai_insight_active_run(run_id: str) -> None:
+    rid = _normalize_text(run_id)
+    if not rid:
+        return
+    with _AI_INSIGHT_ACTIVE_RUN_IDS_LOCK:
+        _AI_INSIGHT_ACTIVE_RUN_IDS.discard(rid)
+
+
+def _is_ai_insight_active_run(run_id: str) -> bool:
+    rid = _normalize_text(run_id)
+    if not rid:
+        return False
+    with _AI_INSIGHT_ACTIVE_RUN_IDS_LOCK:
+        return rid in _AI_INSIGHT_ACTIVE_RUN_IDS
+
+
+def _register_extraction_active_run(run_id: str) -> None:
+    rid = _normalize_text(run_id)
+    if not rid:
+        return
+    with _EXTRACTION_ACTIVE_RUN_IDS_LOCK:
+        _EXTRACTION_ACTIVE_RUN_IDS.add(rid)
+
+
+def _unregister_extraction_active_run(run_id: str) -> None:
+    rid = _normalize_text(run_id)
+    if not rid:
+        return
+    with _EXTRACTION_ACTIVE_RUN_IDS_LOCK:
+        _EXTRACTION_ACTIVE_RUN_IDS.discard(rid)
+
+
+def _is_extraction_active_run(run_id: str) -> bool:
+    rid = _normalize_text(run_id)
+    if not rid:
+        return False
+    with _EXTRACTION_ACTIVE_RUN_IDS_LOCK:
+        return rid in _EXTRACTION_ACTIVE_RUN_IDS
+
 ASSET_ROOT = Path(__file__).resolve().parent.parent.parent / "data" / "project_assets"
 ALLOWED_DOC_EXTENSIONS = {".docx", ".md", ".xlsx"}
 MASKED_PASSWORD = "******"
@@ -52,6 +111,10 @@ OWNER_KIND_ENTITY = "ENTITY"
 OWNER_KIND_RELATION = "RELATION"
 MAX_XLSX_ROWS_PER_SHEET = 200
 MAX_XLSX_REVIEW_ITEMS = 360
+MAX_EXTRACTION_DOCS = 6
+MAX_EXTRACTION_DOC_CHARS = 4000
+MAX_EXTRACTION_ENTITIES = 360
+MAX_EXTRACTION_RELATIONS = 360
 
 ENTITY_HEADER_ALIASES = {
     "entitytypename",
@@ -121,6 +184,29 @@ BUILT_IN_SKILL_DEFAULTS = [
         "missing": "",
     },
 ]
+
+
+class _AiExtractionEntity(BaseModel):
+    type: str
+    name: str
+    evidence: str = ""
+    confidence: float = 0.0
+
+
+class _AiExtractionRelation(BaseModel):
+    relation: str
+    domain_type: str = ""
+    domain_name: str = ""
+    range_type: str = ""
+    range_name: str = ""
+    evidence: str = ""
+    confidence: float = 0.0
+
+
+class _AiExtractionOutput(BaseModel):
+    entities: list[_AiExtractionEntity] = Field(default_factory=list)
+    relations: list[_AiExtractionRelation] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
 
 def _header_key(value: str | None) -> str:
     text = _normalize_text(value)
@@ -943,17 +1029,622 @@ def _collect_xlsx_insight_inputs(enabled_docs: list[ProjectDocument]) -> dict[st
     }
 
 
-def _dedupe_name(base: str, existing: set[str], *, max_len: int = 64) -> str:
-    candidate = _safe_schema_name(base, fallback="item", max_len=max_len)
-    if candidate not in existing:
-        return candidate
-    for idx in range(2, 200):
-        suffix = f"_{idx}"
-        prefix_len = max(max_len - len(suffix), 1)
-        next_candidate = f"{candidate[:prefix_len]}{suffix}"
-        if next_candidate not in existing:
-            return next_candidate
-    return _safe_schema_name(f"{candidate}_{uuid4().hex[:4]}", fallback="item", max_len=max_len)
+def _extract_json_from_text(text: str) -> str:
+    if not text:
+        return "{}"
+    start = text.find("{")
+    end = text.rfind("}")
+    if start >= 0 and end > start:
+        return text[start : end + 1]
+    return text
+
+
+def _resolve_instance_llm_config() -> dict[str, str] | None:
+    api_key = _normalize_text(os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY"))
+    base_url = _normalize_text(os.getenv("LLM_BASE_URL") or os.getenv("OPENAI_BASE_URL"))
+    model = _normalize_text(os.getenv("LLM_MODEL") or os.getenv("OPENAI_MODEL"))
+    if not api_key or not base_url or not model:
+        return None
+    return {"api_key": api_key, "base_url": base_url.rstrip("/"), "model": model}
+
+
+def _read_docx_text(path: Path) -> str:
+    try:
+        with ZipFile(path) as archive:
+            data = archive.read("word/document.xml")
+    except (OSError, BadZipFile, KeyError) as exc:
+        raise ValueError(f"{path.name} docx 解析失败：{exc}") from exc
+
+    try:
+        root = ElementTree.fromstring(data)
+    except ElementTree.ParseError as exc:
+        raise ValueError(f"{path.name} docx 解析失败：{exc}") from exc
+
+    parts: list[str] = []
+    for node in root.findall(".//{*}t"):
+        text = _normalize_text(node.text)
+        if text:
+            parts.append(text)
+    return "\n".join(parts)
+
+
+def _read_document_text_for_extraction(doc: ProjectDocument) -> str:
+    file_type = str(doc.file_type or "").lower()
+    if file_type not in {"md", "docx"}:
+        return ""
+    if not doc.storage_path:
+        return ""
+
+    path = Path(doc.storage_path)
+    if not path.exists():
+        return ""
+    if file_type == "md":
+        try:
+            return path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            return ""
+    if file_type == "docx":
+        return _read_docx_text(path)
+    return ""
+
+
+def _build_extraction_document_payload(
+    enabled_docs: list[ProjectDocument],
+    *,
+    xlsx_inputs: dict[str, Any],
+) -> dict[str, Any]:
+    documents: list[dict[str, Any]] = []
+    for doc in enabled_docs:
+        text = _normalize_text(_read_document_text_for_extraction(doc))
+        if not text:
+            continue
+        documents.append(
+            {
+                "id": doc.id,
+                "name": doc.name,
+                "file_type": str(doc.file_type or "").lower(),
+                "content": text[:MAX_EXTRACTION_DOC_CHARS],
+            }
+        )
+        if len(documents) >= MAX_EXTRACTION_DOCS:
+            break
+
+    xlsx_entity_seed = []
+    for item in (xlsx_inputs.get("entity_instances") or [])[:120]:
+        if not isinstance(item, dict):
+            continue
+        xlsx_entity_seed.append(
+            {
+                "type": _safe_schema_name(item.get("type"), fallback=""),
+                "name": _safe_schema_name(item.get("name"), fallback="", max_len=255),
+                "evidence": _normalize_text(item.get("evidence")),
+            }
+        )
+
+    xlsx_relation_seed = []
+    for item in (xlsx_inputs.get("relation_instances") or [])[:120]:
+        if not isinstance(item, dict):
+            continue
+        xlsx_relation_seed.append(
+            {
+                "relation": _safe_schema_name(item.get("relation"), fallback=""),
+                "domain_type": _safe_schema_name(item.get("domain_type"), fallback=""),
+                "domain_name": _safe_schema_name(item.get("domain_name"), fallback="", max_len=255),
+                "range_type": _safe_schema_name(item.get("range_type"), fallback=""),
+                "range_name": _safe_schema_name(item.get("range_name"), fallback="", max_len=255),
+                "evidence": _normalize_text(item.get("evidence")),
+            }
+        )
+
+    return {
+        "documents": documents,
+        "xlsx_entity_seed": xlsx_entity_seed,
+        "xlsx_relation_seed": xlsx_relation_seed,
+    }
+
+
+def _build_extraction_schema_payload(
+    db: Session,
+    *,
+    project_id: str,
+    entity_rows: list[EntityType],
+    relation_rows: list[RelationType],
+    entity_name_by_id: dict[str, str],
+) -> dict[str, Any]:
+    prop_rows = (
+        db.query(SchemaProperty)
+        .filter(SchemaProperty.project_id == project_id)
+        .order_by(SchemaProperty.owner_kind, SchemaProperty.owner_id, SchemaProperty.sort_order)
+        .all()
+    )
+    props_by_owner: dict[tuple[str, str], list[SchemaProperty]] = {}
+    for row in prop_rows:
+        props_by_owner.setdefault((row.owner_kind, row.owner_id), []).append(row)
+
+    entity_types: list[dict[str, Any]] = []
+    for entity in entity_rows:
+        entity_types.append(
+            {
+                "name": entity.name,
+                "description": entity.description or "",
+                "properties": [
+                    {
+                        "name": prop.name,
+                        "data_type": prop.data_type,
+                        "required": bool(prop.required),
+                    }
+                    for prop in props_by_owner.get((OWNER_KIND_ENTITY, entity.id), [])
+                ],
+            }
+        )
+
+    relation_types: list[dict[str, Any]] = []
+    for relation in relation_rows:
+        relation_types.append(
+            {
+                "name": relation.name,
+                "description": relation.description or "",
+                "domain": entity_name_by_id.get(relation.domain_entity_type_id, ""),
+                "range": entity_name_by_id.get(relation.range_entity_type_id, ""),
+                "properties": [
+                    {
+                        "name": prop.name,
+                        "data_type": prop.data_type,
+                        "required": bool(prop.required),
+                    }
+                    for prop in props_by_owner.get((OWNER_KIND_RELATION, relation.id), [])
+                ],
+            }
+        )
+
+    return {
+        "entity_types": entity_types,
+        "relation_types": relation_types,
+    }
+
+
+def _run_ai_instance_extraction_llm(
+    *,
+    project: Project,
+    enabled_docs: list[ProjectDocument],
+    schema_payload: dict[str, Any],
+    document_payload: dict[str, Any],
+    xlsx_inputs: dict[str, Any],
+) -> dict[str, Any]:
+    llm_cfg = _resolve_instance_llm_config()
+    if llm_cfg is None:
+        raise ValueError("模型配置缺失")
+    if not document_payload.get("documents") and not document_payload.get("xlsx_entity_seed"):
+        return {"entities": [], "relations": [], "warnings": ["缺少可供抽取的文档内容"]}
+
+    developer_prompt = (
+        "你是工业知识图谱实例抽取助手。"
+        "任务：基于输入文档和给定 schema 提取实体实例与关系实例。"
+        "必须严格遵守 schema 中的实体类型与关系类型，禁止创造 schema 外的类型。"
+        "输出必须是 JSON 对象，且只包含 entities、relations、warnings 三个字段。"
+        "entities[*] 字段：type,name,evidence,confidence。"
+        "relations[*] 字段：relation,domain_type,domain_name,range_type,range_name,evidence,confidence。"
+        "confidence 必须在 [0,1]。"
+        "不要输出 markdown、解释文字或代码块。"
+    )
+    user_prompt = json.dumps(
+        {
+            "project": {
+                "id": project.id,
+                "name": project.name,
+                "description": project.description or "",
+            },
+            "enabled_documents": [
+                {
+                    "id": doc.id,
+                    "name": doc.name,
+                    "file_type": str(doc.file_type or "").lower(),
+                }
+                for doc in enabled_docs
+            ],
+            "schema": schema_payload,
+            "document_context": document_payload,
+            "xlsx_inputs_summary": {
+                "entity_template_count": len(xlsx_inputs.get("entity_templates") or []),
+                "relation_template_count": len(xlsx_inputs.get("relation_templates") or []),
+                "entity_instance_count": len(xlsx_inputs.get("entity_instances") or []),
+                "relation_instance_count": len(xlsx_inputs.get("relation_instances") or []),
+            },
+            "output_schema_hint": {
+                "entities": [
+                    {
+                        "type": "Person",
+                        "name": "张三",
+                        "evidence": "文档中的证据片段",
+                        "confidence": 0.92,
+                    }
+                ],
+                "relations": [
+                    {
+                        "relation": "works_for",
+                        "domain_type": "Person",
+                        "domain_name": "张三",
+                        "range_type": "Org",
+                        "range_name": "华星科技",
+                        "evidence": "关系证据片段",
+                        "confidence": 0.88,
+                    }
+                ],
+                "warnings": [],
+            },
+        },
+        ensure_ascii=False,
+    )
+
+    try:
+        import httpx
+    except ImportError as exc:
+        raise ValueError("缺少 httpx 依赖，无法调用模型抽取") from exc
+
+    base_url = llm_cfg["base_url"].rstrip("/")
+    endpoint = f"{base_url}/messages" if base_url.endswith("/v1") else f"{base_url}/v1/messages"
+    payload = {
+        "model": llm_cfg["model"],
+        "max_tokens": 8192,
+        "stream": False,
+        "system": developer_prompt,
+        "messages": [{"role": "user", "content": user_prompt}],
+    }
+
+    try:
+        response = httpx.post(
+            endpoint,
+            headers={"x-api-key": llm_cfg["api_key"], "Content-Type": "application/json"},
+            json=payload,
+            timeout=120,
+        )
+        response.raise_for_status()
+        body = response.json()
+    except Exception as exc:
+        raise ValueError(f"模型抽取调用失败：{exc}") from exc
+
+    text_chunks: list[str] = []
+    content = body.get("content")
+    if isinstance(content, list):
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+            text = _normalize_text(item.get("text"))
+            if text:
+                text_chunks.append(text)
+    text = "\n".join(text_chunks)
+    if not text:
+        raise ValueError("模型未返回可解析内容")
+
+    json_text = _extract_json_from_text(text)
+    try:
+        parsed = json.loads(json_text)
+    except json.JSONDecodeError as exc:
+        raise ValueError("模型输出不是合法 JSON") from exc
+    if not isinstance(parsed, dict):
+        raise ValueError("模型输出格式不正确，根节点必须是对象")
+    return parsed
+
+
+def _confidence_or_none(value: Any) -> float | None:
+    try:
+        confidence = float(value)
+    except (TypeError, ValueError):
+        return None
+    if confidence < 0 or confidence > 1:
+        return None
+    return round(confidence, 4)
+
+
+def _parse_ai_instance_extraction_output(
+    *,
+    raw_output: dict[str, Any],
+    schema_payload: dict[str, Any],
+) -> dict[str, Any]:
+    try:
+        extraction = _AiExtractionOutput.model_validate(raw_output)
+    except ValidationError as exc:
+        first_error = exc.errors()[0] if exc.errors() else {"msg": "未知错误"}
+        raise ValueError(f"模型抽取输出字段不符合要求：{first_error.get('msg', '未知错误')}") from exc
+
+    allowed_entity_types = {
+        _safe_schema_name(item.get("name"), fallback="")
+        for item in (schema_payload.get("entity_types") or [])
+        if isinstance(item, dict)
+    }
+    relation_rules: dict[str, tuple[str, str]] = {}
+    for item in (schema_payload.get("relation_types") or []):
+        if not isinstance(item, dict):
+            continue
+        name = _safe_schema_name(item.get("name"), fallback="")
+        domain = _safe_schema_name(item.get("domain"), fallback="")
+        range_ = _safe_schema_name(item.get("range"), fallback="")
+        if name and domain and range_:
+            relation_rules[name] = (domain, range_)
+
+    warnings = [_normalize_text(w) for w in extraction.warnings if _normalize_text(w)]
+    entities_by_key: dict[tuple[str, str], dict[str, Any]] = {}
+    relations_by_key: dict[tuple[str, str, str, str, str], dict[str, Any]] = {}
+
+    for entity in extraction.entities[:MAX_EXTRACTION_ENTITIES]:
+        type_name = _safe_schema_name(entity.type, fallback="")
+        entity_name = _safe_schema_name(entity.name, fallback="", max_len=255)
+        if not type_name or not entity_name:
+            warnings.append("存在缺少实体类型或名称的实体候选，已忽略")
+            continue
+        if type_name not in allowed_entity_types:
+            warnings.append(f"实体类型 {type_name} 不在 schema 中，已忽略")
+            continue
+        confidence = _confidence_or_none(entity.confidence)
+        if confidence is None:
+            warnings.append(f"实体 {type_name}::{entity_name} 置信度非法，已忽略")
+            continue
+        key = (type_name, entity_name)
+        if key in entities_by_key:
+            continue
+        entities_by_key[key] = {
+            "type": type_name,
+            "name": entity_name,
+            "evidence": _normalize_text(entity.evidence),
+            "confidence": confidence,
+        }
+
+    for relation in extraction.relations[:MAX_EXTRACTION_RELATIONS]:
+        relation_name = _safe_schema_name(relation.relation, fallback="")
+        if not relation_name:
+            warnings.append("存在缺少关系类型名称的关系候选，已忽略")
+            continue
+        rule = relation_rules.get(relation_name)
+        if not rule:
+            warnings.append(f"关系类型 {relation_name} 不在 schema 中，已忽略")
+            continue
+
+        domain_type = _safe_schema_name(relation.domain_type, fallback=rule[0])
+        range_type = _safe_schema_name(relation.range_type, fallback=rule[1])
+        if domain_type != rule[0] or range_type != rule[1]:
+            warnings.append(f"关系 {relation_name} 的 domain/range 与 schema 不一致，已忽略")
+            continue
+
+        domain_name = _safe_schema_name(relation.domain_name, fallback="", max_len=255)
+        range_name = _safe_schema_name(relation.range_name, fallback="", max_len=255)
+        if not domain_name or not range_name:
+            warnings.append(f"关系 {relation_name} 缺少端点实体名称，已忽略")
+            continue
+
+        confidence = _confidence_or_none(relation.confidence)
+        if confidence is None:
+            warnings.append(f"关系 {relation_name} 置信度非法，已忽略")
+            continue
+
+        for endpoint_type, endpoint_name in ((domain_type, domain_name), (range_type, range_name)):
+            key = (endpoint_type, endpoint_name)
+            if key in entities_by_key:
+                continue
+            entities_by_key[key] = {
+                "type": endpoint_type,
+                "name": endpoint_name,
+                "evidence": _normalize_text(relation.evidence) or f"由关系 {relation_name} 端点推断",
+                "confidence": round(max(min(confidence - 0.05, 1.0), 0.0), 4),
+            }
+
+        relation_key = (domain_type, domain_name, relation_name, range_type, range_name)
+        if relation_key in relations_by_key:
+            continue
+        relations_by_key[relation_key] = {
+            "relation": relation_name,
+            "domain_type": domain_type,
+            "domain_name": domain_name,
+            "range_type": range_type,
+            "range_name": range_name,
+            "evidence": _normalize_text(relation.evidence),
+            "confidence": confidence,
+        }
+
+    return {
+        "entity_instances": list(entities_by_key.values()),
+        "relation_instances": list(relations_by_key.values()),
+        "warnings": warnings,
+    }
+
+
+def _generate_ai_review_items_for_run(
+    db: Session,
+    *,
+    project: Project,
+    run_id: str,
+    enabled_docs: list[ProjectDocument],
+    entity_rows: list[EntityType],
+    relation_rows: list[RelationType],
+    entity_name_by_id: dict[str, str],
+    xlsx_inputs: dict[str, Any],
+    now: datetime,
+    run: ExtractionRun | None = None,
+) -> list[ReviewItem]:
+    if not enabled_docs:
+        return []
+    if _resolve_instance_llm_config() is None:
+        if run is not None:
+            _set_run_runtime_meta(run, append_log="模型配置缺失，跳过模型抽取。")
+        return []
+
+    schema_payload = _build_extraction_schema_payload(
+        db,
+        project_id=project.id,
+        entity_rows=entity_rows,
+        relation_rows=relation_rows,
+        entity_name_by_id=entity_name_by_id,
+    )
+    total_docs = len(enabled_docs)
+    if run is not None:
+        _set_run_runtime_meta(
+            run,
+            stage="EXTRACTING",
+            current_document="",
+            append_log=f"开始逐文档抽取，共 {total_docs} 个文档。",
+            processed_documents=0,
+            total_documents=total_docs,
+        )
+        run.progress = 1
+        run.updated_at = _now()
+        db.commit()
+
+    entity_instances_by_key: dict[tuple[str, str], dict[str, Any]] = {}
+    relation_instances_by_key: dict[tuple[str, str, str, str, str], dict[str, Any]] = {}
+
+    for idx, doc in enumerate(enabled_docs):
+        if run is not None:
+            _set_run_runtime_meta(
+                run,
+                stage="EXTRACTING",
+                current_document=doc.name,
+                append_log=f"[{idx + 1}/{total_docs}] 开始抽取：{doc.name}",
+                processed_documents=idx,
+                total_documents=total_docs,
+            )
+            run.progress = min(95, 5 + int((idx / max(total_docs, 1)) * 80))
+            run.updated_at = _now()
+            db.commit()
+
+        doc_xlsx_inputs = _collect_xlsx_insight_inputs([doc])
+        document_payload = _build_extraction_document_payload([doc], xlsx_inputs=doc_xlsx_inputs)
+        if not document_payload.get("documents") and not document_payload.get("xlsx_entity_seed"):
+            if run is not None:
+                _set_run_runtime_meta(run, append_log=f"跳过文档 {doc.name}：无可抽取内容。")
+                run.updated_at = _now()
+                db.commit()
+            continue
+
+        try:
+            raw_output = _run_ai_instance_extraction_llm(
+                project=project,
+                enabled_docs=[doc],
+                schema_payload=schema_payload,
+                document_payload=document_payload,
+                xlsx_inputs=doc_xlsx_inputs,
+            )
+            parsed_output = _parse_ai_instance_extraction_output(
+                raw_output=raw_output,
+                schema_payload=schema_payload,
+            )
+        except ValueError as exc:
+            if run is not None:
+                _set_run_runtime_meta(run, append_log=f"文档 {doc.name} 抽取失败：{exc}")
+                run.updated_at = _now()
+                db.commit()
+            continue
+
+        entity_delta = 0
+        relation_delta = 0
+        for item in parsed_output["entity_instances"]:
+            entity_type = _safe_schema_name(item.get("type"), fallback="")
+            entity_name = _safe_schema_name(item.get("name"), fallback="", max_len=255)
+            if not entity_type or not entity_name:
+                continue
+            key = (entity_type, entity_name)
+            if key in entity_instances_by_key:
+                continue
+            payload = dict(item)
+            payload["source_document"] = doc.name
+            entity_instances_by_key[key] = payload
+            entity_delta += 1
+
+        for item in parsed_output["relation_instances"]:
+            relation_name = _safe_schema_name(item.get("relation"), fallback="")
+            domain_type = _safe_schema_name(item.get("domain_type"), fallback="")
+            range_type = _safe_schema_name(item.get("range_type"), fallback="")
+            domain_name = _safe_schema_name(item.get("domain_name"), fallback="", max_len=255)
+            range_name = _safe_schema_name(item.get("range_name"), fallback="", max_len=255)
+            if not relation_name or not domain_type or not range_type or not domain_name or not range_name:
+                continue
+            key = (domain_type, domain_name, relation_name, range_type, range_name)
+            if key in relation_instances_by_key:
+                continue
+            payload = dict(item)
+            payload["source_document"] = doc.name
+            relation_instances_by_key[key] = payload
+            relation_delta += 1
+
+        if run is not None:
+            _set_run_runtime_meta(
+                run,
+                append_log=(
+                    f"[{idx + 1}/{total_docs}] 完成 {doc.name}："
+                    f"新增实体 {entity_delta}，新增关系 {relation_delta}。"
+                ),
+                processed_documents=idx + 1,
+                total_documents=total_docs,
+            )
+            run.progress = min(95, 5 + int(((idx + 1) / max(total_docs, 1)) * 85))
+            run.updated_at = _now()
+            db.commit()
+
+    rows: list[ReviewItem] = []
+    for item in entity_instances_by_key.values():
+        entity_type = _safe_schema_name(item.get("type"), fallback="")
+        entity_name = _safe_schema_name(item.get("name"), fallback="", max_len=255)
+        if not entity_type or not entity_name:
+            continue
+        source_document = _normalize_text(item.get("source_document"))
+        evidence = _normalize_text(item.get("evidence")) or f"模型抽取：{entity_type}::{entity_name}"
+        if source_document:
+            evidence = f"{source_document}：{evidence}"
+        rows.append(
+            ReviewItem(
+                id=_new_id("review"),
+                project_id=project.id,
+                run_id=run_id,
+                kind="ENTITY",
+                title=f"{entity_type}::{entity_name}",
+                evidence=evidence,
+                confidence=float(item.get("confidence") or 0),
+                status="PENDING",
+                entity_type_name=entity_type,
+                entity_name=entity_name,
+                relation_type_name=None,
+                relation_domain_name=None,
+                relation_range_name=None,
+                payload_json=json.dumps(item, ensure_ascii=False),
+                created_at=now,
+                updated_at=now,
+            )
+        )
+
+    for item in relation_instances_by_key.values():
+        relation_name = _safe_schema_name(item.get("relation"), fallback="")
+        domain_type = _safe_schema_name(item.get("domain_type"), fallback="")
+        range_type = _safe_schema_name(item.get("range_type"), fallback="")
+        domain_name = _safe_schema_name(item.get("domain_name"), fallback="", max_len=255)
+        range_name = _safe_schema_name(item.get("range_name"), fallback="", max_len=255)
+        if not relation_name or not domain_type or not range_type or not domain_name or not range_name:
+            continue
+        source_document = _normalize_text(item.get("source_document"))
+        evidence = (
+            _normalize_text(item.get("evidence"))
+            or f"模型抽取：{domain_type}::{domain_name} -[{relation_name}]-> {range_type}::{range_name}"
+        )
+        if source_document:
+            evidence = f"{source_document}：{evidence}"
+        rows.append(
+            ReviewItem(
+                id=_new_id("review"),
+                project_id=project.id,
+                run_id=run_id,
+                kind="RELATION",
+                title=f"{domain_type}::{domain_name} -[{relation_name}]-> {range_type}::{range_name}",
+                evidence=evidence,
+                confidence=float(item.get("confidence") or 0),
+                status="PENDING",
+                entity_type_name=None,
+                entity_name=None,
+                relation_type_name=relation_name,
+                relation_domain_name=domain_type,
+                relation_range_name=range_type,
+                payload_json=json.dumps(item, ensure_ascii=False),
+                created_at=now,
+                updated_at=now,
+            )
+        )
+    return rows[:MAX_XLSX_REVIEW_ITEMS]
 
 
 def _apply_schema_templates(
@@ -1025,19 +1716,10 @@ def _apply_schema_templates(
             fallback=f"{domain_name}_to_{range_name}",
         )
         relation_name = base_name
+        # Keep relation type unique by name across the project.
+        # If same type name already exists, skip instead of auto-renaming to *_2.
         if relation_name in existing_relation_names:
-            matched = False
-            for relation in relation_rows:
-                if (
-                    relation.name == relation_name
-                    and relation.domain_entity_type_id == domain_entity.id
-                    and relation.range_entity_type_id == range_entity.id
-                ):
-                    matched = True
-                    break
-            if matched:
-                continue
-            relation_name = _dedupe_name(base_name, existing_relation_names)
+            continue
 
         relation_key = (relation_name, domain_entity.id, range_entity.id)
         if relation_key in relation_key_set:
@@ -1100,6 +1782,19 @@ def _apply_schema_templates(
         "added_entity_names": added_entity_names,
         "added_relation_names": added_relation_names,
     }
+
+
+def _extend_unique_texts(
+    target: list[str],
+    seen: set[str],
+    values: list[str] | tuple[str, ...],
+) -> None:
+    for item in values:
+        text = _normalize_text(str(item))
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        target.append(text)
 
 
 def _generate_xlsx_review_items_for_run(
@@ -1354,6 +2049,325 @@ def _to_review_item_response(item: ReviewItem) -> dict[str, Any]:
     }
 
 
+def _default_run_runtime_meta() -> dict[str, Any]:
+    return {
+        "stage": "",
+        "current_document": "",
+        "logs": [],
+        "processed_documents": 0,
+        "total_documents": 0,
+        "error_message": "",
+    }
+
+
+def _parse_run_runtime_meta(raw: str | None) -> dict[str, Any]:
+    meta = _default_run_runtime_meta()
+    text = _normalize_text(raw)
+    if not text:
+        return meta
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        return meta
+    if not isinstance(parsed, dict):
+        return meta
+
+    stage = _normalize_text(parsed.get("stage"))
+    current_document = _normalize_text(parsed.get("current_document"))
+    logs_raw = parsed.get("logs")
+    processed_raw = parsed.get("processed_documents")
+    total_raw = parsed.get("total_documents")
+    error_text = _normalize_text(parsed.get("error_message"))
+
+    logs: list[str] = []
+    if isinstance(logs_raw, list):
+        for item in logs_raw[-120:]:
+            line = _normalize_text(item)
+            if line:
+                logs.append(line)
+
+    processed_documents = 0
+    total_documents = 0
+    try:
+        processed_documents = max(int(processed_raw), 0)
+    except (TypeError, ValueError):
+        processed_documents = 0
+    try:
+        total_documents = max(int(total_raw), 0)
+    except (TypeError, ValueError):
+        total_documents = 0
+
+    meta.update(
+        {
+            "stage": stage,
+            "current_document": current_document,
+            "logs": logs,
+            "processed_documents": processed_documents,
+            "total_documents": total_documents,
+            "error_message": error_text,
+        }
+    )
+    return meta
+
+
+def _set_run_runtime_meta(
+    run: ExtractionRun,
+    *,
+    stage: str | None = None,
+    current_document: str | None = None,
+    append_log: str | None = None,
+    processed_documents: int | None = None,
+    total_documents: int | None = None,
+    error_message: str | None = None,
+) -> None:
+    meta = _parse_run_runtime_meta(run.error_message)
+    if stage is not None:
+        meta["stage"] = _normalize_text(stage)
+    if current_document is not None:
+        meta["current_document"] = _normalize_text(current_document)
+    if append_log is not None:
+        line = _normalize_text(append_log)
+        if line:
+            logs = list(meta.get("logs") or [])
+            logs.append(line)
+            meta["logs"] = logs[-120:]
+    if processed_documents is not None:
+        meta["processed_documents"] = max(int(processed_documents), 0)
+    if total_documents is not None:
+        meta["total_documents"] = max(int(total_documents), 0)
+    if error_message is not None:
+        meta["error_message"] = _normalize_text(error_message)
+    run.error_message = json.dumps(meta, ensure_ascii=False)
+
+
+def _default_ai_insight_runtime_meta() -> dict[str, Any]:
+    return {
+        "stage": "",
+        "current_document": "",
+        "logs": [],
+    }
+
+
+def _parse_ai_insight_runtime_meta(raw: str | None) -> dict[str, Any]:
+    meta = _default_ai_insight_runtime_meta()
+    text = _normalize_text(raw)
+    if not text:
+        return meta
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        return meta
+    if not isinstance(parsed, dict):
+        return meta
+
+    logs: list[str] = []
+    logs_raw = parsed.get("logs")
+    if isinstance(logs_raw, list):
+        for item in logs_raw[-120:]:
+            line = _normalize_text(str(item))
+            if line:
+                logs.append(line)
+
+    meta.update(
+        {
+            "stage": _normalize_text(parsed.get("stage")),
+            "current_document": _normalize_text(parsed.get("current_document")),
+            "logs": logs,
+        }
+    )
+    return meta
+
+
+def _set_ai_insight_runtime_meta(
+    run: AiInsightRun,
+    *,
+    stage: str | None = None,
+    current_document: str | None = None,
+    append_log: str | None = None,
+) -> None:
+    meta = _parse_ai_insight_runtime_meta(run.runtime_meta_json)
+    if stage is not None:
+        meta["stage"] = _normalize_text(stage)
+    if current_document is not None:
+        meta["current_document"] = _normalize_text(current_document)
+    if append_log is not None:
+        line = _normalize_text(append_log)
+        if line:
+            logs = list(meta.get("logs") or [])
+            logs.append(line)
+            meta["logs"] = logs[-120:]
+    run.runtime_meta_json = json.dumps(meta, ensure_ascii=False)
+
+
+def _log_ai_insight_progress(run_id: str, message: str) -> None:
+    logger.info("AI 洞察任务[%s] %s", run_id, _normalize_text(message))
+
+
+def _mark_ai_insight_run_interrupted(
+    run: AiInsightRun,
+    *,
+    now: datetime,
+    reason_text: str,
+    append_log_prefix: str,
+) -> None:
+    run.status = "FAILED"
+    run.progress = 100
+    run.completed_at = now
+    run.updated_at = now
+    run.error_message = reason_text
+    _set_ai_insight_runtime_meta(
+        run,
+        stage="FAILED",
+        current_document="",
+        append_log=f"{append_log_prefix}{reason_text}",
+    )
+
+
+def recover_interrupted_ai_insight_runs(
+    db: Session,
+    *,
+    reason: str = "服务已重启，任务中断，请重新执行 AI 洞察",
+) -> int:
+    reason_text = _normalize_text(reason) or "服务已重启，任务中断，请重新执行 AI 洞察"
+    running_runs = db.query(AiInsightRun).filter(AiInsightRun.status == "RUNNING").all()
+    if not running_runs:
+        return 0
+
+    now = _now()
+    for run in running_runs:
+        _mark_ai_insight_run_interrupted(
+            run,
+            now=now,
+            reason_text=reason_text,
+            append_log_prefix="任务中断：",
+        )
+    db.commit()
+
+    for run in running_runs:
+        _log_ai_insight_progress(run.id, f"任务中断并已自动收敛为 FAILED：{reason_text}")
+    return len(running_runs)
+
+
+def _cleanup_interrupted_ai_insight_runs_for_project(
+    db: Session,
+    *,
+    project: Project,
+    reason: str,
+) -> int:
+    reason_text = _normalize_text(reason) or "服务实例中断，请重新执行 AI 洞察"
+    running_runs = (
+        db.query(AiInsightRun)
+        .filter(AiInsightRun.project_id == project.id, AiInsightRun.status == "RUNNING")
+        .order_by(desc(AiInsightRun.created_at))
+        .all()
+    )
+    stale_runs = [run for run in running_runs if not _is_ai_insight_active_run(run.id)]
+    if not stale_runs:
+        return 0
+
+    now = _now()
+    for run in stale_runs:
+        _mark_ai_insight_run_interrupted(
+            run,
+            now=now,
+            reason_text=reason_text,
+            append_log_prefix="刷新检测到任务中断：",
+        )
+    _touch_project(project)
+    db.commit()
+    for run in stale_runs:
+        _log_ai_insight_progress(run.id, f"刷新清理脏任务并收敛为 FAILED：{reason_text}")
+    return len(stale_runs)
+
+
+def cleanup_interrupted_ai_insight_runs_for_project(
+    db: Session,
+    user_id: int,
+    project_id: str,
+    *,
+    reason: str = "服务实例中断，请重新执行 AI 洞察",
+) -> int:
+    project = _ensure_project_owned(db, user_id, project_id)
+    return _cleanup_interrupted_ai_insight_runs_for_project(db, project=project, reason=reason)
+
+
+def _log_extraction_progress(run_id: str, message: str) -> None:
+    logger.info("抽取任务[%s] %s", run_id, _normalize_text(message))
+
+
+def _mark_extraction_run_interrupted(
+    run: ExtractionRun,
+    *,
+    now: datetime,
+    reason_text: str,
+    append_log_prefix: str,
+) -> None:
+    run.status = "FAILED"
+    run.progress = 100
+    run.completed_at = now
+    run.updated_at = now
+    _set_run_runtime_meta(
+        run,
+        stage="FAILED",
+        current_document="",
+        append_log=f"{append_log_prefix}{reason_text}",
+        error_message=reason_text,
+    )
+
+
+def _cleanup_interrupted_extraction_runs_for_project(
+    db: Session,
+    *,
+    project: Project,
+    reason: str,
+) -> int:
+    reason_text = _normalize_text(reason) or "服务实例中断，请重新发起全量抽取"
+    running_runs = (
+        db.query(ExtractionRun)
+        .filter(ExtractionRun.project_id == project.id, ExtractionRun.status == "RUNNING")
+        .order_by(desc(ExtractionRun.created_at))
+        .all()
+    )
+    stale_runs = [run for run in running_runs if not _is_extraction_active_run(run.id)]
+    if not stale_runs:
+        return 0
+
+    now = _now()
+    for run in stale_runs:
+        _mark_extraction_run_interrupted(
+            run,
+            now=now,
+            reason_text=reason_text,
+            append_log_prefix="刷新检测到任务中断：",
+        )
+    _touch_project(project)
+    db.commit()
+    for run in stale_runs:
+        _log_extraction_progress(run.id, f"刷新清理脏任务并收敛为 FAILED：{reason_text}")
+    return len(stale_runs)
+
+
+def _to_ai_insight_run_response(run: AiInsightRun) -> dict[str, Any]:
+    runtime_meta = _parse_ai_insight_runtime_meta(run.runtime_meta_json)
+    return {
+        "id": run.id,
+        "status": run.status,
+        "progress": run.progress,
+        "created_at": run.created_at,
+        "completed_at": run.completed_at,
+        "scanned_document_count": run.scanned_document_count,
+        "added_entity_count": run.added_entity_count,
+        "added_relation_count": run.added_relation_count,
+        "added_entity_names": _parse_json_list(run.added_entity_names_json, fallback=[]),
+        "added_relation_names": _parse_json_list(run.added_relation_names_json, fallback=[]),
+        "warnings": _parse_json_list(run.warnings_json, fallback=[]),
+        "stage": runtime_meta.get("stage") or None,
+        "current_document": runtime_meta.get("current_document") or None,
+        "logs": list(runtime_meta.get("logs") or []),
+        "error_message": _normalize_text(run.error_message) or None,
+    }
+
+
 def _to_version_response(item: OntologyVersion) -> dict[str, Any]:
     return {
         "id": item.id,
@@ -1387,6 +2401,8 @@ def _to_function_response(item: ProjectFunction) -> dict[str, Any]:
 
 
 def _recalc_run_stats(db: Session, run: ExtractionRun) -> None:
+    # Ensure in-session inserts/updates are visible when Session uses autoflush=False.
+    db.flush()
     run.candidate_entity_count = (
         db.query(func.count(ReviewItem.id))
         .filter(
@@ -1426,6 +2442,7 @@ def _to_run_response(db: Session, run: ExtractionRun) -> dict[str, Any]:
         .order_by(ReviewItem.created_at)
         .all()
     )
+    runtime_meta = _parse_run_runtime_meta(run.error_message)
     return {
         "id": run.id,
         "status": run.status,
@@ -1435,6 +2452,10 @@ def _to_run_response(db: Session, run: ExtractionRun) -> dict[str, Any]:
         "candidate_entity_count": run.candidate_entity_count,
         "candidate_relation_count": run.candidate_relation_count,
         "pending_review_count": run.pending_review_count,
+        "stage": runtime_meta.get("stage") or None,
+        "current_document": runtime_meta.get("current_document") or None,
+        "logs": list(runtime_meta.get("logs") or []),
+        "error_message": runtime_meta.get("error_message") or None,
         "review_items": [_to_review_item_response(item) for item in review_items],
     }
 
@@ -1868,6 +2889,16 @@ def create_project(db: Session, user_id: int, payload: dict):
 
 def get_project_detail(db: Session, user_id: int, project_id: str):
     project = _ensure_project_owned(db, user_id, project_id)
+    _cleanup_interrupted_ai_insight_runs_for_project(
+        db,
+        project=project,
+        reason="服务实例中断，请重新执行 AI 洞察",
+    )
+    _cleanup_interrupted_extraction_runs_for_project(
+        db,
+        project=project,
+        reason="服务实例中断，请重新发起全量抽取",
+    )
 
     documents = (
         db.query(ProjectDocument)
@@ -1880,6 +2911,12 @@ def get_project_detail(db: Session, user_id: int, project_id: str):
         .filter(ProjectDataSource.project_id == project.id)
         .order_by(desc(ProjectDataSource.updated_at))
         .all()
+    )
+    ai_insight_run = (
+        db.query(AiInsightRun)
+        .filter(AiInsightRun.project_id == project.id)
+        .order_by(desc(AiInsightRun.created_at))
+        .first()
     )
     runs = (
         db.query(ExtractionRun)
@@ -1916,6 +2953,7 @@ def get_project_detail(db: Session, user_id: int, project_id: str):
         "documents": [_to_document_response(doc) for doc in documents],
         "data_sources": [_to_data_source_response(ds) for ds in data_sources],
         "schema_config": _build_schema_config_response(db, project),
+        "ai_insight_run": _to_ai_insight_run_response(ai_insight_run) if ai_insight_run else None,
         "runs": [_to_run_response(db, run) for run in runs],
         "versions": [_to_version_response(item) for item in versions],
         "actions": [_to_action_response(item) for item in actions],
@@ -1959,6 +2997,7 @@ def delete_project(db: Session, user_id: int, project_id: str):
     db.query(RelationType).filter(RelationType.project_id == project.id).delete()
     db.query(EntityType).filter(EntityType.project_id == project.id).delete()
     db.query(ReviewItem).filter(ReviewItem.project_id == project.id).delete()
+    db.query(AiInsightRun).filter(AiInsightRun.project_id == project.id).delete()
     db.query(ExtractionRun).filter(ExtractionRun.project_id == project.id).delete()
     db.query(VersionItem).filter(VersionItem.project_id == project.id).delete()
     db.query(OntologyVersion).filter(OntologyVersion.project_id == project.id).delete()
@@ -2773,54 +3812,384 @@ def run_ai_schema_insight(db: Session, user_id: int, project_id: str):
     if not enabled_docs:
         raise ValueError("请至少启用一个文档后再进行 AI 洞察")
 
-    now = _now()
-    xlsx_inputs = _collect_xlsx_insight_inputs(enabled_docs)
-    existing_entity_names = {
-        row.name
-        for row in db.query(EntityType.name)
-        .filter(EntityType.project_id == project.id)
-        .all()
-    }
+    added_entity_names: list[str] = []
+    added_relation_names: list[str] = []
+    warnings: list[str] = []
+    seen_entity_names: set[str] = set()
+    seen_relation_names: set[str] = set()
+    seen_warnings: set[str] = set()
 
-    llm_raw_output = _run_ai_schema_insight_llm(
-        project=project,
-        enabled_docs=enabled_docs,
-        xlsx_inputs=xlsx_inputs,
-        existing_entity_names=existing_entity_names,
-    )
-    parsed_output = _parse_ai_schema_insight_output(
-        raw_output=llm_raw_output,
-        existing_entity_names=existing_entity_names,
-        normalize_generated_properties=_normalize_generated_properties,
-    )
-    entity_templates = parsed_output["entity_templates"]
-    relation_templates = parsed_output["relation_templates"]
-    warnings = parsed_output["warnings"]
-    if not entity_templates and not relation_templates:
+    for doc in enabled_docs:
+        xlsx_inputs = _collect_xlsx_insight_inputs([doc])
+        existing_entity_names = {
+            row.name
+            for row in db.query(EntityType.name)
+            .filter(EntityType.project_id == project.id)
+            .all()
+        }
+        llm_raw_output = _run_ai_schema_insight_llm(
+            project=project,
+            enabled_docs=[doc],
+            xlsx_inputs=xlsx_inputs,
+            existing_entity_names=existing_entity_names,
+        )
+        parsed_output = _parse_ai_schema_insight_output(
+            raw_output=llm_raw_output,
+            existing_entity_names=existing_entity_names,
+            normalize_generated_properties=_normalize_generated_properties,
+        )
+        entity_templates = parsed_output["entity_templates"]
+        relation_templates = parsed_output["relation_templates"]
+        _extend_unique_texts(warnings, seen_warnings, parsed_output["warnings"])
+        if not entity_templates and not relation_templates:
+            _extend_unique_texts(
+                warnings,
+                seen_warnings,
+                [f"文档 {doc.name} 未提取到可入库的实体或关系，已跳过"],
+            )
+            continue
+
+        applied = _apply_schema_templates(
+            db,
+            project=project,
+            entity_templates=entity_templates,
+            relation_templates=relation_templates,
+            now=_now(),
+        )
+        _extend_unique_texts(added_entity_names, seen_entity_names, applied["added_entity_names"])
+        _extend_unique_texts(added_relation_names, seen_relation_names, applied["added_relation_names"])
+        if applied["added_entity_names"] or applied["added_relation_names"]:
+            db.commit()
+
+    if not added_entity_names and not added_relation_names:
         raise ValueError("AI 洞察未提取到可入库的实体或关系，请调整文档内容或 Prompt 后重试")
-
-    applied = _apply_schema_templates(
-        db,
-        project=project,
-        entity_templates=entity_templates,
-        relation_templates=relation_templates,
-        now=now,
-    )
-    if applied["added_entity_names"] or applied["added_relation_names"]:
-        db.commit()
 
     return {
         "scanned_document_count": len(enabled_docs),
-        "added_entity_count": len(applied["added_entity_names"]),
-        "added_relation_count": len(applied["added_relation_names"]),
-        "added_entity_names": applied["added_entity_names"],
-        "added_relation_names": applied["added_relation_names"],
+        "added_entity_count": len(added_entity_names),
+        "added_relation_count": len(added_relation_names),
+        "added_entity_names": added_entity_names,
+        "added_relation_names": added_relation_names,
         "warnings": warnings,
     }
 
 
+def create_ai_schema_insight_run(db: Session, user_id: int, project_id: str):
+    project = _ensure_project_owned(db, user_id, project_id)
+    running = (
+        db.query(AiInsightRun.id)
+        .filter(AiInsightRun.project_id == project.id, AiInsightRun.status == "RUNNING")
+        .first()
+    )
+    if running:
+        raise ValueError("已有进行中的 AI 洞察任务，请稍后再试")
+
+    enabled_docs = (
+        db.query(ProjectDocument)
+        .filter(ProjectDocument.project_id == project.id, ProjectDocument.enabled.is_(True))
+        .order_by(desc(ProjectDocument.uploaded_at))
+        .all()
+    )
+    if not enabled_docs:
+        raise ValueError("请至少启用一个文档后再进行 AI 洞察")
+
+    now = _now()
+    run = AiInsightRun(
+        id=_new_id("airun"),
+        project_id=project.id,
+        status="RUNNING",
+        progress=0,
+        scanned_document_count=len(enabled_docs),
+        added_entity_count=0,
+        added_relation_count=0,
+        added_entity_names_json=json.dumps([], ensure_ascii=False),
+        added_relation_names_json=json.dumps([], ensure_ascii=False),
+        warnings_json=json.dumps([], ensure_ascii=False),
+        runtime_meta_json=json.dumps(_default_ai_insight_runtime_meta(), ensure_ascii=False),
+        error_message="",
+        created_at=now,
+        completed_at=None,
+        updated_at=now,
+    )
+    _set_ai_insight_runtime_meta(
+        run,
+        stage="QUEUED",
+        append_log=f"任务已创建，待扫描文档数：{len(enabled_docs)}。",
+    )
+    db.add(run)
+    _touch_project(project)
+    db.commit()
+    db.refresh(run)
+    _log_ai_insight_progress(run.id, f"任务已创建，待扫描文档数：{len(enabled_docs)}")
+
+    bind = db.get_bind()
+    session_factory = sessionmaker(bind=bind, autocommit=False, autoflush=False)
+    thread = threading.Thread(
+        target=_run_ai_schema_insight_in_background,
+        args=(session_factory, user_id, project.id, run.id),
+        daemon=True,
+        name=f"ai-insight-{run.id}",
+    )
+    _register_ai_insight_active_run(run.id)
+    thread.start()
+    return _to_ai_insight_run_response(run)
+
+
+def _mark_ai_insight_run_failed(
+    db: Session,
+    *,
+    project: Project,
+    run: AiInsightRun,
+    message: str,
+) -> None:
+    error_message = _normalize_text(message) or "AI 洞察任务失败"
+    run.status = "FAILED"
+    run.progress = 100
+    run.completed_at = _now()
+    run.updated_at = _now()
+    run.error_message = error_message
+    _set_ai_insight_runtime_meta(
+        run,
+        stage="FAILED",
+        current_document="",
+        append_log=f"任务失败：{error_message}",
+    )
+    _touch_project(project)
+    db.commit()
+    _log_ai_insight_progress(run.id, f"任务失败：{error_message}")
+
+
+def _run_ai_schema_insight_in_background(
+    session_factory: sessionmaker,
+    user_id: int,
+    project_id: str,
+    run_id: str,
+) -> None:
+    db = session_factory()
+    try:
+        _execute_ai_schema_insight_run(db, user_id, project_id, run_id)
+    finally:
+        _unregister_ai_insight_active_run(run_id)
+        db.close()
+
+
+def _execute_ai_schema_insight_run(db: Session, user_id: int, project_id: str, run_id: str) -> None:
+    try:
+        project = _ensure_project_owned(db, user_id, project_id)
+        run = (
+            db.query(AiInsightRun)
+            .filter(AiInsightRun.project_id == project.id, AiInsightRun.id == run_id)
+            .first()
+        )
+        if not run or run.status != "RUNNING":
+            return
+
+        enabled_docs = (
+            db.query(ProjectDocument)
+            .filter(ProjectDocument.project_id == project.id, ProjectDocument.enabled.is_(True))
+            .order_by(desc(ProjectDocument.uploaded_at))
+            .all()
+        )
+        if not enabled_docs:
+            _mark_ai_insight_run_failed(db, project=project, run=run, message="无可用启用文档")
+            return
+
+        added_entity_names: list[str] = []
+        added_relation_names: list[str] = []
+        warnings: list[str] = []
+        seen_entity_names: set[str] = set()
+        seen_relation_names: set[str] = set()
+        seen_warnings: set[str] = set()
+
+        run.scanned_document_count = len(enabled_docs)
+        run.progress = 10
+        _set_ai_insight_runtime_meta(
+            run,
+            stage="PREPARING",
+            current_document=enabled_docs[0].name if enabled_docs else "",
+            append_log=f"开始扫描 {len(enabled_docs)} 个启用文档。",
+        )
+        run.updated_at = _now()
+        db.commit()
+        _log_ai_insight_progress(run.id, f"开始扫描文档，数量={len(enabled_docs)}")
+
+        total_docs = len(enabled_docs)
+        for idx, doc in enumerate(enabled_docs, start=1):
+            run.progress = min(85, 10 + int(((idx - 1) / max(total_docs, 1)) * 70))
+            _set_ai_insight_runtime_meta(
+                run,
+                stage="LLM_EXTRACTING",
+                current_document=doc.name,
+                append_log=f"开始处理文档 {idx}/{total_docs}：{doc.name}",
+            )
+            run.updated_at = _now()
+            db.commit()
+            _log_ai_insight_progress(run.id, f"开始处理文档 {idx}/{total_docs}: {doc.name}")
+
+            xlsx_inputs = _collect_xlsx_insight_inputs([doc])
+            existing_entity_names = {
+                row.name
+                for row in db.query(EntityType.name)
+                .filter(EntityType.project_id == project.id)
+                .all()
+            }
+
+            llm_raw_output = _run_ai_schema_insight_llm(
+                project=project,
+                enabled_docs=[doc],
+                xlsx_inputs=xlsx_inputs,
+                existing_entity_names=existing_entity_names,
+            )
+
+            run.progress = min(90, 15 + int((idx / max(total_docs, 1)) * 70))
+            _set_ai_insight_runtime_meta(
+                run,
+                stage="PARSING_OUTPUT",
+                current_document=doc.name,
+                append_log=f"文档 {idx}/{total_docs} 模型调用完成，开始解析输出。",
+            )
+            run.updated_at = _now()
+            db.commit()
+            _log_ai_insight_progress(run.id, f"文档 {idx}/{total_docs} 模型调用完成，开始解析")
+
+            parsed_output = _parse_ai_schema_insight_output(
+                raw_output=llm_raw_output,
+                existing_entity_names=existing_entity_names,
+                normalize_generated_properties=_normalize_generated_properties,
+            )
+            entity_templates = parsed_output["entity_templates"]
+            relation_templates = parsed_output["relation_templates"]
+            _extend_unique_texts(warnings, seen_warnings, parsed_output["warnings"])
+            if not entity_templates and not relation_templates:
+                _extend_unique_texts(
+                    warnings,
+                    seen_warnings,
+                    [f"文档 {doc.name} 未提取到可入库的实体或关系，已跳过"],
+                )
+                run.added_entity_count = len(added_entity_names)
+                run.added_relation_count = len(added_relation_names)
+                run.added_entity_names_json = json.dumps(added_entity_names, ensure_ascii=False)
+                run.added_relation_names_json = json.dumps(added_relation_names, ensure_ascii=False)
+                run.warnings_json = json.dumps(warnings, ensure_ascii=False)
+                run.updated_at = _now()
+                db.commit()
+                continue
+
+            _set_ai_insight_runtime_meta(
+                run,
+                stage="APPLYING_SCHEMA",
+                current_document=doc.name,
+                append_log=f"文档 {idx}/{total_docs} 解析完成，开始写入实体与关系类型。",
+            )
+            run.updated_at = _now()
+            db.commit()
+            _log_ai_insight_progress(run.id, f"文档 {idx}/{total_docs} 开始写入 Schema")
+
+            applied = _apply_schema_templates(
+                db,
+                project=project,
+                entity_templates=entity_templates,
+                relation_templates=relation_templates,
+                now=_now(),
+            )
+            _extend_unique_texts(added_entity_names, seen_entity_names, applied["added_entity_names"])
+            _extend_unique_texts(added_relation_names, seen_relation_names, applied["added_relation_names"])
+
+            run.added_entity_count = len(added_entity_names)
+            run.added_relation_count = len(added_relation_names)
+            run.added_entity_names_json = json.dumps(added_entity_names, ensure_ascii=False)
+            run.added_relation_names_json = json.dumps(added_relation_names, ensure_ascii=False)
+            run.warnings_json = json.dumps(warnings, ensure_ascii=False)
+            run.updated_at = _now()
+            db.commit()
+            _log_ai_insight_progress(
+                run.id,
+                (
+                    f"文档 {idx}/{total_docs} 入库完成，"
+                    f"累计新增实体={run.added_entity_count}，累计新增关系={run.added_relation_count}"
+                ),
+            )
+
+        if not added_entity_names and not added_relation_names:
+            raise ValueError("AI 洞察未提取到可入库的实体或关系，请调整文档内容或 Prompt 后重试")
+
+        run.status = "COMPLETED"
+        run.progress = 100
+        run.added_entity_count = len(added_entity_names)
+        run.added_relation_count = len(added_relation_names)
+        run.added_entity_names_json = json.dumps(added_entity_names, ensure_ascii=False)
+        run.added_relation_names_json = json.dumps(added_relation_names, ensure_ascii=False)
+        run.warnings_json = json.dumps(warnings, ensure_ascii=False)
+        run.error_message = ""
+        run.completed_at = _now()
+        run.updated_at = _now()
+        _set_ai_insight_runtime_meta(
+            run,
+            stage="COMPLETED",
+            current_document="",
+            append_log=(
+                f"任务完成：新增实体 {run.added_entity_count}，"
+                f"新增关系 {run.added_relation_count}。"
+            ),
+        )
+        _touch_project(project)
+        db.commit()
+        _log_ai_insight_progress(
+            run.id,
+            f"任务完成，新增实体={run.added_entity_count}，新增关系={run.added_relation_count}",
+        )
+    except Exception as exc:
+        try:
+            project = (
+                db.query(Project)
+                .filter(Project.id == project_id, Project.owner_user_id == user_id)
+                .first()
+            )
+            run = (
+                db.query(AiInsightRun)
+                .filter(AiInsightRun.project_id == project_id, AiInsightRun.id == run_id)
+                .first()
+            )
+            if project and run and run.status == "RUNNING":
+                _mark_ai_insight_run_failed(db, project=project, run=run, message=str(exc))
+            else:
+                logger.exception("AI 洞察后台任务异常，run_id=%s", run_id)
+        except Exception:
+            db.rollback()
+
+
+def get_ai_schema_insight_run(db: Session, user_id: int, project_id: str, run_id: str):
+    project = _ensure_project_owned(db, user_id, project_id)
+    _cleanup_interrupted_ai_insight_runs_for_project(
+        db,
+        project=project,
+        reason="服务实例中断，请重新执行 AI 洞察",
+    )
+    run = (
+        db.query(AiInsightRun)
+        .filter(AiInsightRun.project_id == project.id, AiInsightRun.id == run_id)
+        .first()
+    )
+    if not run:
+        raise ValueError("AI 洞察任务不存在")
+    return _to_ai_insight_run_response(run)
+
+
 def create_extraction_run(db: Session, user_id: int, project_id: str):
     project = _ensure_project_owned(db, user_id, project_id)
+    _cleanup_interrupted_extraction_runs_for_project(
+        db,
+        project=project,
+        reason="服务实例中断，请重新发起全量抽取",
+    )
+    running = (
+        db.query(ExtractionRun.id)
+        .filter(ExtractionRun.project_id == project.id, ExtractionRun.status == "RUNNING")
+        .first()
+    )
+    if running:
+        raise ValueError("已有进行中的全量抽取任务，请稍后再试")
+
     enabled_docs = (
         db.query(ProjectDocument)
         .filter(ProjectDocument.project_id == project.id, ProjectDocument.enabled.is_(True))
@@ -2837,35 +4206,6 @@ def create_extraction_run(db: Session, user_id: int, project_id: str):
         raise ValueError("请至少启用一个数据来源（文档或数据源）后再执行抽取")
 
     now = _now()
-    xlsx_inputs = _collect_xlsx_insight_inputs(enabled_docs)
-    if xlsx_inputs["entity_templates"] or xlsx_inputs["relation_templates"]:
-        _apply_schema_templates(
-            db,
-            project=project,
-            entity_templates=xlsx_inputs["entity_templates"],
-            relation_templates=xlsx_inputs["relation_templates"],
-            now=now,
-        )
-
-    entity_rows = (
-        db.query(EntityType)
-        .filter(EntityType.project_id == project.id)
-        .order_by(EntityType.created_at)
-        .all()
-    )
-    if not entity_rows:
-        raise ValueError("请先配置实体类型，或上传可解析的 xlsx 文件")
-
-    relation_rows = (
-        db.query(RelationType)
-        .filter(RelationType.project_id == project.id)
-        .order_by(RelationType.created_at)
-        .all()
-    )
-    skills = _build_skills_response(db.query(Skill).filter(Skill.project_id == project.id).all())
-    if not any(skill.get("enabled") and not skill.get("blocked") for skill in skills):
-        raise ValueError("请至少启用一个 Skill")
-
     run_id = _new_id("run")
     source_snapshot = {
         "documents": [
@@ -2890,48 +4230,224 @@ def create_extraction_run(db: Session, user_id: int, project_id: str):
     run = ExtractionRun(
         id=run_id,
         project_id=project.id,
-        status="COMPLETED",
-        progress=100,
+        status="RUNNING",
+        progress=0,
         source_snapshot_json=json.dumps(source_snapshot, ensure_ascii=False),
         candidate_entity_count=0,
         candidate_relation_count=0,
         pending_review_count=0,
-        error_message="",
+        error_message=json.dumps(_default_run_runtime_meta(), ensure_ascii=False),
         created_at=now,
-        completed_at=now,
+        completed_at=None,
         updated_at=now,
     )
-    db.add(run)
-
-    review_rows = _generate_xlsx_review_items_for_run(
-        project_id=project.id,
-        run_id=run.id,
-        xlsx_inputs=xlsx_inputs,
-        now=now,
+    _set_run_runtime_meta(
+        run,
+        stage="QUEUED",
+        current_document="",
+        append_log=f"抽取任务已创建，待处理文档数：{len(enabled_docs)}。",
+        processed_documents=0,
+        total_documents=len(enabled_docs),
     )
-    if not review_rows:
-        entity_name_by_id = {entity.id: entity.name for entity in entity_rows}
-        review_rows = _generate_review_items_for_run(
-            project_id=project.id,
-            run_id=run.id,
-            entities=entity_rows,
-            relations=relation_rows,
-            entity_name_by_id=entity_name_by_id,
-            enabled_docs=enabled_docs,
-            enabled_data_sources=enabled_data_sources,
-            now=now,
-        )
-    for row in review_rows:
-        db.add(row)
-    _recalc_run_stats(db, run)
-    _touch_project(project)
+    db.add(run)
     db.commit()
     db.refresh(run)
+
+    bind = db.get_bind()
+    session_factory = sessionmaker(bind=bind, autocommit=False, autoflush=False)
+    thread = threading.Thread(
+        target=_run_extraction_in_background,
+        args=(session_factory, user_id, project.id, run.id),
+        daemon=True,
+        name=f"extraction-{run.id}",
+    )
+    _register_extraction_active_run(run.id)
+    thread.start()
     return _to_run_response(db, run)
+
+
+def _mark_run_failed(
+    db: Session,
+    *,
+    project: Project,
+    run: ExtractionRun,
+    message: str,
+) -> None:
+    error_text = _normalize_text(message) or "全量抽取任务失败"
+    run.status = "FAILED"
+    run.progress = 100
+    run.completed_at = _now()
+    run.updated_at = _now()
+    _set_run_runtime_meta(
+        run,
+        stage="FAILED",
+        current_document="",
+        append_log=f"任务失败：{error_text}",
+        error_message=error_text,
+    )
+    _touch_project(project)
+    db.commit()
+    _log_extraction_progress(run.id, f"任务失败：{error_text}")
+
+
+def _run_extraction_in_background(
+    session_factory: sessionmaker,
+    user_id: int,
+    project_id: str,
+    run_id: str,
+) -> None:
+    db = session_factory()
+    try:
+        _execute_extraction_run(db, user_id, project_id, run_id)
+    finally:
+        _unregister_extraction_active_run(run_id)
+        db.close()
+
+
+def _execute_extraction_run(db: Session, user_id: int, project_id: str, run_id: str) -> None:
+    try:
+        project = _ensure_project_owned(db, user_id, project_id)
+        run = (
+            db.query(ExtractionRun)
+            .filter(ExtractionRun.project_id == project.id, ExtractionRun.id == run_id)
+            .first()
+        )
+        if not run or run.status != "RUNNING":
+            return
+
+        enabled_docs = (
+            db.query(ProjectDocument)
+            .filter(ProjectDocument.project_id == project.id, ProjectDocument.enabled.is_(True))
+            .order_by(desc(ProjectDocument.uploaded_at))
+            .all()
+        )
+        enabled_data_sources = (
+            db.query(ProjectDataSource)
+            .filter(ProjectDataSource.project_id == project.id, ProjectDataSource.enabled.is_(True))
+            .order_by(desc(ProjectDataSource.updated_at))
+            .all()
+        )
+        if not enabled_docs and not enabled_data_sources:
+            _mark_run_failed(db, project=project, run=run, message="无可用数据来源")
+            return
+
+        now = _now()
+        xlsx_inputs = _collect_xlsx_insight_inputs(enabled_docs)
+        if xlsx_inputs["entity_templates"] or xlsx_inputs["relation_templates"]:
+            _apply_schema_templates(
+                db,
+                project=project,
+                entity_templates=xlsx_inputs["entity_templates"],
+                relation_templates=xlsx_inputs["relation_templates"],
+                now=now,
+            )
+
+        entity_rows = (
+            db.query(EntityType)
+            .filter(EntityType.project_id == project.id)
+            .order_by(EntityType.created_at)
+            .all()
+        )
+        if not entity_rows:
+            _mark_run_failed(db, project=project, run=run, message="请先配置实体类型，或上传可解析的 xlsx 文件")
+            return
+
+        relation_rows = (
+            db.query(RelationType)
+            .filter(RelationType.project_id == project.id)
+            .order_by(RelationType.created_at)
+            .all()
+        )
+        skills = _build_skills_response(db.query(Skill).filter(Skill.project_id == project.id).all())
+        if not any(skill.get("enabled") and not skill.get("blocked") for skill in skills):
+            _mark_run_failed(db, project=project, run=run, message="请至少启用一个 Skill")
+            return
+
+        entity_name_by_id = {entity.id: entity.name for entity in entity_rows}
+        review_rows = _generate_ai_review_items_for_run(
+            db,
+            project=project,
+            run_id=run.id,
+            enabled_docs=enabled_docs,
+            entity_rows=entity_rows,
+            relation_rows=relation_rows,
+            entity_name_by_id=entity_name_by_id,
+            xlsx_inputs=xlsx_inputs,
+            now=now,
+            run=run,
+        )
+
+        if not review_rows:
+            _set_run_runtime_meta(run, append_log="模型未产出候选，回退到 xlsx 结构化候选。")
+            run.updated_at = _now()
+            db.commit()
+            review_rows = _generate_xlsx_review_items_for_run(
+                project_id=project.id,
+                run_id=run.id,
+                xlsx_inputs=xlsx_inputs,
+                now=now,
+            )
+
+        if not review_rows:
+            _set_run_runtime_meta(run, append_log="xlsx 候选为空，回退到启发式候选。")
+            run.updated_at = _now()
+            db.commit()
+            review_rows = _generate_review_items_for_run(
+                project_id=project.id,
+                run_id=run.id,
+                entities=entity_rows,
+                relations=relation_rows,
+                entity_name_by_id=entity_name_by_id,
+                enabled_docs=enabled_docs,
+                enabled_data_sources=enabled_data_sources,
+                now=now,
+            )
+
+        for row in review_rows:
+            db.add(row)
+        _recalc_run_stats(db, run)
+        run.status = "COMPLETED"
+        run.progress = 100
+        run.completed_at = _now()
+        run.updated_at = _now()
+        _set_run_runtime_meta(
+            run,
+            stage="COMPLETED",
+            current_document="",
+            append_log=(
+                f"任务完成：候选实体 {run.candidate_entity_count}，"
+                f"候选关系 {run.candidate_relation_count}，待审核 {run.pending_review_count}。"
+            ),
+            processed_documents=len(enabled_docs),
+            total_documents=len(enabled_docs),
+        )
+        _touch_project(project)
+        db.commit()
+    except Exception as exc:
+        try:
+            project = (
+                db.query(Project)
+                .filter(Project.id == project_id, Project.owner_user_id == user_id)
+                .first()
+            )
+            run = (
+                db.query(ExtractionRun)
+                .filter(ExtractionRun.project_id == project_id, ExtractionRun.id == run_id)
+                .first()
+            )
+            if project and run and run.status == "RUNNING":
+                _mark_run_failed(db, project=project, run=run, message=str(exc))
+        except Exception:
+            db.rollback()
 
 
 def get_extraction_run(db: Session, user_id: int, project_id: str, run_id: str):
     project = _ensure_project_owned(db, user_id, project_id)
+    _cleanup_interrupted_extraction_runs_for_project(
+        db,
+        project=project,
+        reason="服务实例中断，请重新发起全量抽取",
+    )
     run = (
         db.query(ExtractionRun)
         .filter(ExtractionRun.project_id == project.id, ExtractionRun.id == run_id)

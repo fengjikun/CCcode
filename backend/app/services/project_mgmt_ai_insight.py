@@ -8,7 +8,7 @@ from app.models.project_mgmt import Project, ProjectDocument
 
 MAX_AI_INSIGHT_ENTITIES = 80
 MAX_AI_INSIGHT_RELATIONS = 120
-AI_INSIGHT_LLM_MAX_TOKENS = 8192
+AI_INSIGHT_LLM_MAX_TOKENS_DEFAULT = 16384
 
 
 class _AiInsightEvidence(BaseModel):
@@ -87,6 +87,17 @@ def _resolve_ai_insight_llm_config() -> dict[str, str]:
     if not api_key or not base_url or not model:
         raise ValueError("AI 洞察依赖模型配置，请配置 LLM_API_KEY/LLM_BASE_URL/LLM_MODEL（或 OPENAI_*）")
     return {"api_key": api_key, "base_url": base_url.rstrip("/"), "model": model}
+
+
+def _resolve_ai_insight_llm_max_tokens() -> int:
+    raw_value = _normalize_text(os.getenv("AI_INSIGHT_LLM_MAX_TOKENS"))
+    if not raw_value:
+        return AI_INSIGHT_LLM_MAX_TOKENS_DEFAULT
+    try:
+        parsed = int(raw_value)
+    except ValueError:
+        return AI_INSIGHT_LLM_MAX_TOKENS_DEFAULT
+    return max(1024, min(parsed, 65536))
 
 
 def _build_ai_insight_prompt_payload(xlsx_inputs: dict[str, Any]) -> dict[str, Any]:
@@ -254,7 +265,7 @@ def _run_ai_schema_insight_llm(
     endpoint = f"{base_url}/messages" if base_url.endswith("/v1") else f"{base_url}/v1/messages"
     payload = {
         "model": llm_cfg["model"],
-        "max_tokens": AI_INSIGHT_LLM_MAX_TOKENS,
+        "max_tokens": _resolve_ai_insight_llm_max_tokens(),
         "stream": False,
         "system": developer_prompt,
         "messages": [{"role": "user", "content": user_prompt}],

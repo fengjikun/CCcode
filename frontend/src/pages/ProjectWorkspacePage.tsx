@@ -69,6 +69,7 @@ import {
 import type {
   ActionDefinition,
   ActionStatus,
+  AiInsightRun,
   DataSourceExtractMode,
   DataSourceSyncMode,
   DataSourceType,
@@ -251,6 +252,12 @@ export default function ProjectWorkspacePage() {
   const [uploadingDocs, setUploadingDocs] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const skillZipInputRef = useRef<HTMLInputElement>(null)
+  const aiInsightRunStatusRef = useRef<{ id: string; status: AiInsightRun['status'] } | null>(null)
+  const extractionRunStatusRef = useRef<{ id: string; status: ExtractionRun['status'] } | null>(null)
+
+  const aiInsightRun = project?.aiInsightRun
+  const aiInsightBusy = aiInsightRun?.status === 'RUNNING'
+  const extractionBusy = Boolean(project?.runs.some(run => run.status === 'RUNNING'))
 
   const loadProject = useCallback(async () => {
     if (!projectId) return
@@ -275,7 +282,7 @@ export default function ProjectWorkspacePage() {
 
   useEffect(() => {
     if (!projectId || !project) return
-    const hasRunning = project.runs.some(run => run.status === 'RUNNING')
+    const hasRunning = project.runs.some(run => run.status === 'RUNNING') || project.aiInsightRun?.status === 'RUNNING'
     if (!hasRunning) return
 
     const timer = window.setInterval(() => {
@@ -286,6 +293,39 @@ export default function ProjectWorkspacePage() {
       window.clearInterval(timer)
     }
   }, [loadProject, project, projectId])
+
+  useEffect(() => {
+    if (!aiInsightRun) {
+      aiInsightRunStatusRef.current = null
+      return
+    }
+    const prev = aiInsightRunStatusRef.current
+    if (prev && prev.id === aiInsightRun.id && prev.status === 'RUNNING' && aiInsightRun.status === 'COMPLETED') {
+      message.success(`AI洞察完成：新增实体 ${aiInsightRun.addedEntityCount}，新增关系 ${aiInsightRun.addedRelationCount}`)
+    }
+    if (prev && prev.id === aiInsightRun.id && prev.status === 'RUNNING' && aiInsightRun.status === 'FAILED') {
+      message.error(aiInsightRun.errorMessage || 'AI洞察执行失败')
+    }
+    aiInsightRunStatusRef.current = { id: aiInsightRun.id, status: aiInsightRun.status }
+  }, [aiInsightRun])
+
+  useEffect(() => {
+    const latestExtractionRun = project?.runs?.[0]
+    if (!latestExtractionRun) {
+      extractionRunStatusRef.current = null
+      return
+    }
+    const prev = extractionRunStatusRef.current
+    if (prev && prev.id === latestExtractionRun.id && prev.status === 'RUNNING' && latestExtractionRun.status === 'COMPLETED') {
+      message.success(
+        `全量抽取完成：候选实体 ${latestExtractionRun.candidateEntityCount}，候选关系 ${latestExtractionRun.candidateRelationCount}`,
+      )
+    }
+    if (prev && prev.id === latestExtractionRun.id && prev.status === 'RUNNING' && latestExtractionRun.status === 'FAILED') {
+      message.error(latestExtractionRun.errorMessage || '全量抽取执行失败')
+    }
+    extractionRunStatusRef.current = { id: latestExtractionRun.id, status: latestExtractionRun.status }
+  }, [project?.runs])
 
   const selectedRun = useMemo(() => {
     if (!project) return null
@@ -604,11 +644,14 @@ export default function ProjectWorkspacePage() {
 
   const handleRunAiInsight = async () => {
     if (!projectId) return
+    if (aiInsightBusy) return
     setRunningAiInsight(true)
     try {
       const result = await runAiSchemaInsight(projectId)
       await loadProject()
-      message.success(`AI洞察完成：新增实体 ${result.addedEntityCount}，新增关系 ${result.addedRelationCount}`)
+      if (result.status === 'RUNNING') {
+        message.success('AI洞察任务已启动')
+      }
       setAiInsightModalOpen(false)
     } catch (error: any) {
       message.error(error?.message || 'AI洞察执行失败')
@@ -619,6 +662,7 @@ export default function ProjectWorkspacePage() {
 
   const handleRunExtraction = async () => {
     if (!projectId) return
+    if (extractionBusy) return
     setRunningExtraction(true)
     try {
       const run = await runProjectExtraction(projectId)
@@ -1402,7 +1446,12 @@ export default function ProjectWorkspacePage() {
                       extra={(
                         <Space>
                           <Tag>{schemaEntities.length + schemaRelations.length}</Tag>
-                          <Button icon={<BulbOutlined />} onClick={() => setAiInsightModalOpen(true)}>
+                          <Button
+                            icon={<BulbOutlined />}
+                            loading={aiInsightBusy}
+                            disabled={aiInsightBusy}
+                            onClick={() => setAiInsightModalOpen(true)}
+                          >
                             AI洞察
                           </Button>
                           <Button type="primary" icon={<PlusOutlined />} onClick={openSchemaCreateModal}>
@@ -1473,6 +1522,63 @@ export default function ProjectWorkspacePage() {
                     </Card>
                   </Col>
                 </Row>
+
+                {aiInsightRun && (
+                  <Card title="AI洞察任务进展">
+                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                      <Space wrap>
+                        {runStatusTag(aiInsightRun.status)}
+                        <Text>创建时间：{new Date(aiInsightRun.createdAt).toLocaleString()}</Text>
+                        {aiInsightRun.completedAt && (
+                          <Text type="secondary">完成时间：{new Date(aiInsightRun.completedAt).toLocaleString()}</Text>
+                        )}
+                      </Space>
+                      <Progress
+                        percent={aiInsightRun.progress}
+                        status={
+                          aiInsightRun.status === 'FAILED'
+                            ? 'exception'
+                            : aiInsightRun.status === 'COMPLETED'
+                              ? 'success'
+                              : 'active'
+                        }
+                      />
+                      <Space wrap>
+                        <Tag color="blue">扫描文档 {aiInsightRun.scannedDocumentCount}</Tag>
+                        <Tag color="green">新增实体 {aiInsightRun.addedEntityCount}</Tag>
+                        <Tag color="purple">新增关系 {aiInsightRun.addedRelationCount}</Tag>
+                        {aiInsightRun.stage && <Tag color="geekblue">阶段 {aiInsightRun.stage}</Tag>}
+                        {aiInsightRun.currentDocument && <Tag color="cyan">当前文档 {aiInsightRun.currentDocument}</Tag>}
+                      </Space>
+                      {aiInsightRun.errorMessage && (
+                        <Alert
+                          type="error"
+                          showIcon
+                          message="AI洞察执行失败"
+                          description={aiInsightRun.errorMessage}
+                        />
+                      )}
+                      {aiInsightRun.logs.length > 0 && (
+                        <div style={{ maxHeight: 180, overflow: 'auto', border: '1px solid #f0f0f0', borderRadius: 8, padding: 8 }}>
+                          {aiInsightRun.logs.map((line, index) => (
+                            <Text key={`${index}_${line}`} type="secondary" style={{ display: 'block' }}>
+                              {line}
+                            </Text>
+                          ))}
+                        </div>
+                      )}
+                      {aiInsightRun.warnings.length > 0 && (
+                        <div style={{ maxHeight: 120, overflow: 'auto' }}>
+                          {aiInsightRun.warnings.map((line, index) => (
+                            <Text key={`${index}_${line}`} type="warning" style={{ display: 'block' }}>
+                              {line}
+                            </Text>
+                          ))}
+                        </div>
+                      )}
+                    </Space>
+                  </Card>
+                )}
 
                 <Card
                   title={(
@@ -1553,8 +1659,8 @@ export default function ProjectWorkspacePage() {
                       <Button
                         type="primary"
                         icon={<PlayCircleOutlined />}
-                        loading={runningExtraction}
-                        disabled={enabledDocuments.length + enabledDataSources.length === 0}
+                        loading={runningExtraction || extractionBusy}
+                        disabled={enabledDocuments.length + enabledDataSources.length === 0 || extractionBusy}
                         onClick={() => void handleRunExtraction()}
                       >
                         发起全量抽取
@@ -1572,7 +1678,27 @@ export default function ProjectWorkspacePage() {
                         <Tag color="blue">候选实体 {selectedRun.candidateEntityCount}</Tag>
                         <Tag color="purple">候选关系 {selectedRun.candidateRelationCount}</Tag>
                         <Tag color="orange">待审核 {selectedRun.pendingReviewCount}</Tag>
+                        {selectedRun.stage && <Tag color="geekblue">阶段 {selectedRun.stage}</Tag>}
+                        {selectedRun.currentDocument && <Tag color="cyan">当前文档 {selectedRun.currentDocument}</Tag>}
                       </Space>
+                      {selectedRun.errorMessage && (
+                        <Alert
+                          style={{ marginTop: 12 }}
+                          type="error"
+                          showIcon
+                          message="抽取任务失败"
+                          description={selectedRun.errorMessage}
+                        />
+                      )}
+                      {selectedRun.logs.length > 0 && (
+                        <div style={{ marginTop: 12, maxHeight: 180, overflow: 'auto', border: '1px solid #f0f0f0', borderRadius: 8, padding: 8 }}>
+                          {selectedRun.logs.map((line, index) => (
+                            <Text key={`${index}_${line}`} type="secondary" style={{ display: 'block' }}>
+                              {line}
+                            </Text>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无抽取任务" />
@@ -1683,8 +1809,8 @@ export default function ProjectWorkspacePage() {
         onOk={() => void handleRunAiInsight()}
         okText="开始扫描"
         cancelText="取消"
-        confirmLoading={runningAiInsight}
-        okButtonProps={{ disabled: enabledDocuments.length === 0 }}
+        confirmLoading={runningAiInsight || aiInsightBusy}
+        okButtonProps={{ disabled: enabledDocuments.length === 0 || aiInsightBusy }}
       >
         <Space direction="vertical" style={{ width: '100%' }} size={12}>
           <Alert
@@ -1696,6 +1822,14 @@ export default function ProjectWorkspacePage() {
           {enabledDocuments.length > 0 ? (
             <>
               <Text>当前将扫描 {enabledDocuments.length} 个启用文档：</Text>
+              {aiInsightBusy && (
+                <Alert
+                  type="info"
+                  showIcon
+                  message="AI洞察任务正在执行中"
+                  description={aiInsightRun?.logs?.slice(-1)?.[0] || '请稍候，系统会自动刷新任务状态。'}
+                />
+              )}
               <div style={{ maxHeight: 180, overflow: 'auto', border: '1px solid #f0f0f0', borderRadius: 8, padding: 8 }}>
                 {enabledDocuments.map(doc => (
                   <div key={doc.id}>

@@ -1,6 +1,7 @@
 import { fetchJSON, fetchMultipart } from './client'
 import type {
   ActionDefinition,
+  AiInsightRun,
   ActionStatus,
   DataSourceExtractMode,
   DataSourceSyncMode,
@@ -177,7 +178,31 @@ function mapRun(item: any): ExtractionRun {
     candidateEntityCount: Number(item.candidateEntityCount || 0),
     candidateRelationCount: Number(item.candidateRelationCount || 0),
     pendingReviewCount: Number(item.pendingReviewCount || 0),
+    stage: item.stage ? String(item.stage) : undefined,
+    currentDocument: item.currentDocument ? String(item.currentDocument) : undefined,
+    logs: Array.isArray(item.logs) ? item.logs.map((x: unknown) => String(x)) : [],
+    errorMessage: item.errorMessage ? String(item.errorMessage) : undefined,
     reviewItems: Array.isArray(item.reviewItems) ? item.reviewItems.map(mapReviewItem) : [],
+  }
+}
+
+function mapAiInsightRun(item: any): AiInsightRun {
+  return {
+    id: String(item.id),
+    status: item.status as AiInsightRun['status'],
+    progress: Number(item.progress || 0),
+    createdAt: String(item.createdAt || new Date().toISOString()),
+    completedAt: item.completedAt ? String(item.completedAt) : undefined,
+    scannedDocumentCount: Number(item.scannedDocumentCount || 0),
+    addedEntityCount: Number(item.addedEntityCount || 0),
+    addedRelationCount: Number(item.addedRelationCount || 0),
+    addedEntityNames: Array.isArray(item.addedEntityNames) ? item.addedEntityNames.map((x: unknown) => String(x)) : [],
+    addedRelationNames: Array.isArray(item.addedRelationNames) ? item.addedRelationNames.map((x: unknown) => String(x)) : [],
+    warnings: Array.isArray(item.warnings) ? item.warnings.map((x: unknown) => String(x)) : [],
+    stage: item.stage ? String(item.stage) : undefined,
+    currentDocument: item.currentDocument ? String(item.currentDocument) : undefined,
+    logs: Array.isArray(item.logs) ? item.logs.map((x: unknown) => String(x)) : [],
+    errorMessage: item.errorMessage ? String(item.errorMessage) : undefined,
   }
 }
 
@@ -236,6 +261,7 @@ function mapProjectDetail(item: any): ProjectDetail {
     documents: Array.isArray(item.documents) ? item.documents.map(mapProjectDocument) : [],
     dataSources: Array.isArray(item.dataSources) ? item.dataSources.map(mapDataSource) : [],
     schemaConfig: mapSchemaConfig(item.schemaConfig || {}),
+    aiInsightRun: item.aiInsightRun ? mapAiInsightRun(item.aiInsightRun) : undefined,
     runs: Array.isArray(item.runs) ? item.runs.map(mapRun) : [],
     versions: Array.isArray(item.versions) ? item.versions.map(mapVersion) : [],
     actions: Array.isArray(item.actions) ? item.actions.map(mapAction) : [],
@@ -447,21 +473,9 @@ export async function removeCustomSkill(projectId: string, skillId: string): Pro
   await fetchJSON(`/api/projects/${projectId}/skills/${skillId}`, 'DELETE')
 }
 
-export async function runAiSchemaInsight(projectId: string): Promise<{
-  scannedDocumentCount: number
-  addedEntityCount: number
-  addedRelationCount: number
-  addedEntityNames: string[]
-  addedRelationNames: string[]
-}> {
+export async function runAiSchemaInsight(projectId: string): Promise<AiInsightRun> {
   const row = await fetchJSON<any>(`/api/projects/${projectId}/schema/ai-insight`, 'POST')
-  return {
-    scannedDocumentCount: Number(row.scannedDocumentCount || 0),
-    addedEntityCount: Number(row.addedEntityCount || 0),
-    addedRelationCount: Number(row.addedRelationCount || 0),
-    addedEntityNames: Array.isArray(row.addedEntityNames) ? row.addedEntityNames.map((x: unknown) => String(x)) : [],
-    addedRelationNames: Array.isArray(row.addedRelationNames) ? row.addedRelationNames.map((x: unknown) => String(x)) : [],
-  }
+  return mapAiInsightRun(row)
 }
 
 export async function runProjectExtraction(projectId: string): Promise<ExtractionRun> {
