@@ -1,6 +1,9 @@
 import type {
   ActionDefinition,
   ActionStatus,
+  DataSourceExtractMode,
+  DataSourceSyncMode,
+  DataSourceType,
   EntityPropertyConfig,
   EntityTypeConfig,
   ExtractionRun,
@@ -15,6 +18,7 @@ import type {
   ReviewStatus,
   SchemaConfig,
   SkillConfig,
+  StructuredDataSource,
 } from '../types/projectMvp'
 
 const STORAGE_KEY = 'ontology_mvp_projects_v2'
@@ -30,6 +34,9 @@ const PROPERTY_DATA_TYPES: EntityPropertyConfig['dataType'][] = [
   'JSON',
   'TEXT',
 ]
+const DATA_SOURCE_TYPES: DataSourceType[] = ['MYSQL', 'POSTGRESQL', 'SQLSERVER', 'ORACLE', 'CLICKHOUSE']
+const DATA_SOURCE_EXTRACT_MODES: DataSourceExtractMode[] = ['TABLE', 'SQL']
+const DATA_SOURCE_SYNC_MODES: DataSourceSyncMode[] = ['FULL', 'INCREMENTAL']
 
 type Store = {
   projects: ProjectDetail[]
@@ -164,10 +171,128 @@ function normalizeEntityTypes(entityTypesLike: any[]): EntityTypeConfig[] {
     }))
 }
 
+function normalizeRelationTypes(relationTypesLike: any[]): RelationTypeConfig[] {
+  const source = Array.isArray(relationTypesLike) ? relationTypesLike : []
+  return source
+    .filter((item: any) => item && typeof item === 'object' && typeof item.name === 'string')
+    .map((item: any) => ({
+      id: typeof item.id === 'string' ? item.id : makeId('rel'),
+      name: item.name.trim(),
+      domain: typeof item.domain === 'string' ? item.domain : '',
+      range: typeof item.range === 'string' ? item.range : '',
+      description: typeof item.description === 'string' ? item.description : '',
+      properties: normalizeEntityProperties(item.properties),
+    }))
+}
+
+function defaultPortForDataSourceType(type: DataSourceType): number {
+  if (type === 'MYSQL') return 3306
+  if (type === 'POSTGRESQL') return 5432
+  if (type === 'SQLSERVER') return 1433
+  if (type === 'ORACLE') return 1521
+  return 8123
+}
+
+function normalizeStructuredDataSources(dataSourcesLike: any[]): StructuredDataSource[] {
+  const source = Array.isArray(dataSourcesLike) ? dataSourcesLike : []
+  return source
+    .filter((item: any) => item && typeof item === 'object' && typeof item.name === 'string')
+    .map((item: any) => {
+      const type = (
+        typeof item.type === 'string' && DATA_SOURCE_TYPES.includes(item.type as DataSourceType)
+          ? item.type
+          : 'MYSQL'
+      ) as DataSourceType
+      const extractMode = (
+        typeof item.extractMode === 'string' && DATA_SOURCE_EXTRACT_MODES.includes(item.extractMode as DataSourceExtractMode)
+          ? item.extractMode
+          : 'TABLE'
+      ) as DataSourceExtractMode
+      const syncMode = (
+        typeof item.syncMode === 'string' && DATA_SOURCE_SYNC_MODES.includes(item.syncMode as DataSourceSyncMode)
+          ? item.syncMode
+          : 'FULL'
+      ) as DataSourceSyncMode
+
+      const fallbackPort = defaultPortForDataSourceType(type)
+      const normalizedPort = typeof item.port === 'number'
+        ? item.port
+        : Number(item.port || fallbackPort)
+
+      return {
+        id: typeof item.id === 'string' ? item.id : makeId('ds'),
+        name: typeof item.name === 'string' ? item.name.trim() : '未命名数据源',
+        type,
+        host: typeof item.host === 'string' ? item.host.trim() : '',
+        port: Number.isFinite(normalizedPort) && normalizedPort > 0 ? normalizedPort : fallbackPort,
+        database: typeof item.database === 'string' ? item.database.trim() : '',
+        schema: typeof item.schema === 'string' ? item.schema.trim() : '',
+        username: typeof item.username === 'string' ? item.username.trim() : '',
+        password: typeof item.password === 'string' ? item.password : '',
+        sslEnabled: Boolean(item.sslEnabled),
+        enabled: typeof item.enabled === 'boolean' ? item.enabled : true,
+        extractMode,
+        tables: Array.isArray(item.tables)
+          ? item.tables
+            .filter((table: unknown): table is string => typeof table === 'string')
+            .map((table: string) => table.trim())
+            .filter(Boolean)
+          : [],
+        customSql: typeof item.customSql === 'string' ? item.customSql : '',
+        rowLimit: typeof item.rowLimit === 'number' && item.rowLimit > 0 ? item.rowLimit : 10000,
+        syncMode,
+        incrementalColumn: typeof item.incrementalColumn === 'string' ? item.incrementalColumn.trim() : '',
+        status: item.status === 'SUCCESS' || item.status === 'FAILED' ? item.status : 'UNKNOWN',
+        lastTestAt: typeof item.lastTestAt === 'string' ? item.lastTestAt : undefined,
+        lastError: typeof item.lastError === 'string' ? item.lastError : '',
+        createdAt: typeof item.createdAt === 'string' ? item.createdAt : nowIso(),
+        updatedAt: typeof item.updatedAt === 'string' ? item.updatedAt : nowIso(),
+      }
+    })
+}
+
+function buildPropertiesFromPayload(
+  propertiesLike: Array<{
+    id?: string
+    name: string
+    displayName?: string
+    dataType?: EntityPropertyConfig['dataType']
+    required?: boolean
+    defaultValue?: string
+    description?: string
+    sortOrder?: number
+  }> | undefined,
+): EntityPropertyConfig[] {
+  const source = Array.isArray(propertiesLike) ? propertiesLike : []
+  const result: EntityPropertyConfig[] = []
+
+  source.forEach((item, index) => {
+    const propertyName = normalizeText(item.name || '')
+    if (!propertyName) return
+
+    const candidateDataType = (item.dataType || 'STRING') as EntityPropertyConfig['dataType']
+    const dataType = PROPERTY_DATA_TYPES.includes(candidateDataType) ? candidateDataType : 'STRING'
+
+    result.push({
+      id: item.id || makeId('prop'),
+      name: propertyName,
+      displayName: normalizeText(item.displayName || '') || propertyName,
+      dataType,
+      required: Boolean(item.required),
+      defaultValue: normalizeText(item.defaultValue || ''),
+      description: normalizeText(item.description || ''),
+      sortOrder: typeof item.sortOrder === 'number' ? item.sortOrder : index,
+    })
+  })
+
+  result.sort((a, b) => a.sortOrder - b.sortOrder)
+  return result
+}
+
 function normalizeSchemaConfig(schemaLike: any): SchemaConfig {
   return {
     entityTypes: normalizeEntityTypes(schemaLike?.entityTypes),
-    relationTypes: Array.isArray(schemaLike?.relationTypes) ? schemaLike.relationTypes : [],
+    relationTypes: normalizeRelationTypes(schemaLike?.relationTypes),
     entityScope: typeof schemaLike?.entityScope === 'string' ? schemaLike.entityScope : '',
     relationScope: typeof schemaLike?.relationScope === 'string' ? schemaLike.relationScope : '',
     skills: normalizeSkillList(schemaLike?.skills),
@@ -181,6 +306,7 @@ function normalizeStore(storeLike: any): Store {
     projects: projects.map((project: any) => ({
       ...project,
       documents: Array.isArray(project?.documents) ? project.documents : [],
+      dataSources: normalizeStructuredDataSources(project?.dataSources),
       runs: Array.isArray(project?.runs) ? project.runs : [],
       versions: Array.isArray(project?.versions) ? project.versions : [],
       actions: Array.isArray(project?.actions) ? project.actions : [],
@@ -253,18 +379,125 @@ function updateProjectTime(project: ProjectDetail): void {
   project.updatedAt = nowIso()
 }
 
+type AiEntityTemplate = {
+  name: string
+  description: string
+  keywords: string[]
+  properties: Array<{
+    name: string
+    displayName: string
+    dataType: EntityPropertyConfig['dataType']
+    required: boolean
+    defaultValue?: string
+    description?: string
+  }>
+}
+
+type AiRelationTemplate = {
+  name: string
+  domain: string
+  range: string
+  description: string
+}
+
+const AI_ENTITY_TEMPLATES: AiEntityTemplate[] = [
+  {
+    name: 'AlarmCode',
+    description: '设备报警编码实体',
+    keywords: ['报警', '告警', 'alarm'],
+    properties: [
+      { name: 'code', displayName: '报警码', dataType: 'STRING', required: true },
+      { name: 'level', displayName: '等级', dataType: 'STRING', required: false },
+    ],
+  },
+  {
+    name: 'MaintenanceAction',
+    description: '检修或维护动作实体',
+    keywords: ['检修', '维护', 'repair', 'maintenance'],
+    properties: [
+      { name: 'action_desc', displayName: '动作描述', dataType: 'TEXT', required: true },
+      { name: 'duration_min', displayName: '预计时长(分钟)', dataType: 'INTEGER', required: false },
+    ],
+  },
+  {
+    name: 'Part',
+    description: '设备零部件实体',
+    keywords: ['部件', '零件', 'part', '模块'],
+    properties: [
+      { name: 'part_name', displayName: '部件名称', dataType: 'STRING', required: true },
+      { name: 'part_no', displayName: '部件编号', dataType: 'STRING', required: false },
+    ],
+  },
+  {
+    name: 'Sensor',
+    description: '传感器实体',
+    keywords: ['传感', 'sensor'],
+    properties: [
+      { name: 'sensor_type', displayName: '传感器类型', dataType: 'STRING', required: false },
+      { name: 'signal', displayName: '信号值', dataType: 'FLOAT', required: false },
+    ],
+  },
+  {
+    name: 'ProcedureStep',
+    description: '排查流程步骤实体',
+    keywords: ['步骤', '流程', 'step', 'procedure'],
+    properties: [
+      { name: 'step_no', displayName: '步骤编号', dataType: 'INTEGER', required: true },
+      { name: 'step_detail', displayName: '步骤说明', dataType: 'TEXT', required: true },
+    ],
+  },
+]
+
+const AI_RELATION_TEMPLATES: AiRelationTemplate[] = [
+  { name: 'triggered_by', domain: 'FaultPhenomenon', range: 'AlarmCode', description: '故障现象由报警码触发' },
+  { name: 'handled_by', domain: 'FaultPhenomenon', range: 'MaintenanceAction', description: '故障现象对应维护动作' },
+  { name: 'targets_part', domain: 'MaintenanceAction', range: 'Part', description: '维护动作作用于零部件' },
+  { name: 'monitored_by', domain: 'FaultPhenomenon', range: 'Sensor', description: '故障现象可由传感器监测' },
+  { name: 'requires_step', domain: 'MaintenanceAction', range: 'ProcedureStep', description: '维护动作需要执行步骤' },
+  { name: 'checks_part', domain: 'Checkpoint', range: 'Part', description: '排查点对应检查部件' },
+]
+
+function pickAiEntityTemplates(docNames: string[]): AiEntityTemplate[] {
+  const text = docNames.join(' ').toLowerCase()
+  const picked: AiEntityTemplate[] = []
+
+  AI_ENTITY_TEMPLATES.forEach(template => {
+    if (template.keywords.some(keyword => text.includes(keyword.toLowerCase()))) {
+      picked.push(template)
+    }
+  })
+
+  if (picked.length < 2) {
+    return AI_ENTITY_TEMPLATES.slice(0, 3)
+  }
+  return picked
+}
+
 function generateReviewItems(project: ProjectDetail): ReviewItem[] {
   const enabledDocs = project.documents.filter(doc => doc.enabled)
-  const sourceDocs = enabledDocs.length > 0 ? enabledDocs : [{ name: '文档内容片段' }]
+  const enabledDataSources = project.dataSources.filter(source => source.enabled)
+  const sourceItems = [
+    ...enabledDocs.map(doc => ({
+      name: doc.name,
+      evidencePrefix: `${doc.name} 文档中`,
+    })),
+    ...enabledDataSources.map(source => ({
+      name: source.name,
+      evidencePrefix: `数据源 ${source.name} 中`,
+    })),
+  ]
+  const candidateSources = sourceItems.length > 0
+    ? sourceItems
+    : [{ name: '演示来源', evidencePrefix: '来源样例中' }]
 
   const entityItems: ReviewItem[] = []
-  for (const doc of sourceDocs) {
+  for (const source of candidateSources) {
     for (const entityType of project.schemaConfig.entityTypes) {
       entityItems.push({
         id: makeId('review'),
         kind: 'ENTITY',
-        title: `${entityType.name}::候选_${doc.name.replace(/\s+/g, '_').slice(0, 16)}`,
-        evidence: `${doc.name} 中出现与 ${entityType.name} 相关描述，需确认是否复用已有实体。`,
+        title: `${entityType.name}::候选_${source.name.replace(/\s+/g, '_').slice(0, 16)}`,
+        evidence: `${source.evidencePrefix}发现与 ${entityType.name} 相关记录，需确认是否复用已有实体。`,
         confidence: Number((0.74 + Math.random() * 0.2).toFixed(2)),
         status: 'PENDING',
       })
@@ -272,13 +505,13 @@ function generateReviewItems(project: ProjectDetail): ReviewItem[] {
   }
 
   const relationItems: ReviewItem[] = []
-  for (const doc of sourceDocs) {
+  for (const source of candidateSources) {
     for (const relationType of project.schemaConfig.relationTypes) {
       relationItems.push({
         id: makeId('review'),
         kind: 'RELATION',
         title: `${relationType.domain} -[${relationType.name}]-> ${relationType.range}`,
-        evidence: `${doc.name} 中发现 ${relationType.name} 关系的语义证据，待审核。`,
+        evidence: `${source.evidencePrefix}发现 ${relationType.name} 关系的语义证据，待审核。`,
         confidence: Number((0.7 + Math.random() * 0.22).toFixed(2)),
         status: 'PENDING',
       })
@@ -359,10 +592,38 @@ function defaultSchema(): SchemaConfig {
       },
     ],
     relationTypes: [
-      { id: makeId('rel'), name: 'located_in', domain: 'FaultPhenomenon', range: 'Device', description: '现象位于设备' },
-      { id: makeId('rel'), name: 'requires_check', domain: 'FaultPhenomenon', range: 'Checkpoint', description: '现象需要排查点' },
-      { id: makeId('rel'), name: 'indicates', domain: 'Checkpoint', range: 'Cause', description: '排查点发现原因' },
-      { id: makeId('rel'), name: 'resolved_by', domain: 'Cause', range: 'Solution', description: '原因对应解决方案' },
+      {
+        id: makeId('rel'),
+        name: 'located_in',
+        domain: 'FaultPhenomenon',
+        range: 'Device',
+        description: '现象位于设备',
+        properties: [{ id: makeId('prop'), name: 'evidence', displayName: '证据片段', dataType: 'TEXT', required: false, defaultValue: '', description: '', sortOrder: 0 }],
+      },
+      {
+        id: makeId('rel'),
+        name: 'requires_check',
+        domain: 'FaultPhenomenon',
+        range: 'Checkpoint',
+        description: '现象需要排查点',
+        properties: [],
+      },
+      {
+        id: makeId('rel'),
+        name: 'indicates',
+        domain: 'Checkpoint',
+        range: 'Cause',
+        description: '排查点发现原因',
+        properties: [],
+      },
+      {
+        id: makeId('rel'),
+        name: 'resolved_by',
+        domain: 'Cause',
+        range: 'Solution',
+        description: '原因对应解决方案',
+        properties: [{ id: makeId('prop'), name: 'confidence', displayName: '置信度', dataType: 'FLOAT', required: false, defaultValue: '', description: '', sortOrder: 0 }],
+      },
     ],
     entityScope: '仅抽取与设备故障诊断相关的设备、现象、排查点、原因、方案实体。',
     relationScope: '仅抽取配置的关系类型，关系必须满足 domain/range 约束。',
@@ -514,6 +775,56 @@ function seedStore(): Store {
         uploadedAt: isoMinutesAgo(800),
       },
     ],
+    dataSources: [
+      {
+        id: makeId('ds'),
+        name: 'MES主库-生产库',
+        type: 'POSTGRESQL',
+        host: '10.23.8.12',
+        port: 5432,
+        database: 'mes_prod',
+        schema: 'public',
+        username: 'readonly_mes',
+        password: '******',
+        sslEnabled: true,
+        enabled: true,
+        extractMode: 'TABLE',
+        tables: ['work_order', 'fault_event', 'device_registry'],
+        customSql: '',
+        rowLimit: 20000,
+        syncMode: 'INCREMENTAL',
+        incrementalColumn: 'updated_at',
+        status: 'SUCCESS',
+        lastTestAt: isoMinutesAgo(45),
+        lastError: '',
+        createdAt: isoMinutesAgo(480),
+        updatedAt: isoMinutesAgo(45),
+      },
+      {
+        id: makeId('ds'),
+        name: '质量追溯库',
+        type: 'MYSQL',
+        host: '10.23.8.26',
+        port: 3306,
+        database: 'traceability',
+        schema: '',
+        username: 'trace_user',
+        password: '******',
+        sslEnabled: false,
+        enabled: false,
+        extractMode: 'SQL',
+        tables: [],
+        customSql: 'SELECT device_id, defect_code, event_time FROM qa_defects WHERE event_time >= NOW() - INTERVAL 30 DAY',
+        rowLimit: 5000,
+        syncMode: 'FULL',
+        incrementalColumn: '',
+        status: 'FAILED',
+        lastTestAt: isoMinutesAgo(120),
+        lastError: 'connect timeout',
+        createdAt: isoMinutesAgo(600),
+        updatedAt: isoMinutesAgo(120),
+      },
+    ],
     schemaConfig: schema,
     runs: [runC, runB, runA],
     versions: [version2, version1],
@@ -580,6 +891,7 @@ export async function createProject(name: string, description?: string): Promise
       updatedAt: createdAt,
       currentVersionId: undefined,
       documents: [],
+      dataSources: [],
       schemaConfig: {
         entityTypes: [],
         relationTypes: [],
@@ -674,10 +986,245 @@ export async function setProjectDocumentEnabled(
   await sleep(LATENCY_MS)
 }
 
+type DataSourcePayload = {
+  name: string
+  type: DataSourceType
+  host: string
+  port: number
+  database: string
+  schema?: string
+  username: string
+  password: string
+  sslEnabled?: boolean
+  enabled?: boolean
+  extractMode?: DataSourceExtractMode
+  tables?: string[]
+  customSql?: string
+  rowLimit?: number
+  syncMode?: DataSourceSyncMode
+  incrementalColumn?: string
+}
+
+function normalizeDataSourcePayload(payload: DataSourcePayload): Omit<StructuredDataSource, 'id' | 'status' | 'lastTestAt' | 'lastError' | 'createdAt' | 'updatedAt'> {
+  const name = normalizeText(payload.name)
+  const host = normalizeText(payload.host)
+  const database = normalizeText(payload.database)
+  const username = normalizeText(payload.username)
+  const schema = normalizeText(payload.schema || '')
+  const password = payload.password || ''
+  const extractMode = payload.extractMode || 'TABLE'
+  const syncMode = payload.syncMode || 'FULL'
+  const type = payload.type || 'MYSQL'
+
+  if (!name) {
+    throw new Error('数据源名称不能为空')
+  }
+  if (!host) {
+    throw new Error('数据库地址不能为空')
+  }
+  if (!database) {
+    throw new Error('数据库名称不能为空')
+  }
+  if (!username) {
+    throw new Error('数据库账号不能为空')
+  }
+
+  const fallbackPort = defaultPortForDataSourceType(type)
+  const port = Number(payload.port || fallbackPort)
+  if (!Number.isFinite(port) || port <= 0) {
+    throw new Error('端口格式不正确')
+  }
+
+  const tables = Array.isArray(payload.tables)
+    ? payload.tables.map(item => normalizeText(item)).filter(Boolean)
+    : []
+  const customSql = normalizeText(payload.customSql || '')
+
+  if (extractMode === 'TABLE' && tables.length === 0) {
+    throw new Error('请选择至少一个表用于抽取')
+  }
+  if (extractMode === 'SQL' && !customSql) {
+    throw new Error('请输入 SQL 语句')
+  }
+
+  const rowLimit = Number(payload.rowLimit || 10000)
+  if (!Number.isFinite(rowLimit) || rowLimit <= 0) {
+    throw new Error('单次拉取上限必须大于 0')
+  }
+
+  const incrementalColumn = normalizeText(payload.incrementalColumn || '')
+  if (syncMode === 'INCREMENTAL' && !incrementalColumn) {
+    throw new Error('增量同步需要填写增量字段')
+  }
+
+  return {
+    name,
+    type,
+    host,
+    port,
+    database,
+    schema,
+    username,
+    password,
+    sslEnabled: Boolean(payload.sslEnabled),
+    enabled: payload.enabled ?? true,
+    extractMode,
+    tables,
+    customSql,
+    rowLimit,
+    syncMode,
+    incrementalColumn,
+  }
+}
+
+export async function createProjectDataSource(projectId: string, payload: DataSourcePayload): Promise<StructuredDataSource> {
+  const normalized = normalizeDataSourcePayload(payload)
+
+  const result = mutateStore(store => {
+    const project = ensureProject(store, projectId)
+    if (project.dataSources.some(item => item.name === normalized.name)) {
+      throw new Error('数据源名称已存在')
+    }
+
+    const now = nowIso()
+    const dataSource: StructuredDataSource = {
+      id: makeId('ds'),
+      ...normalized,
+      status: 'UNKNOWN',
+      lastTestAt: undefined,
+      lastError: '',
+      createdAt: now,
+      updatedAt: now,
+    }
+
+    project.dataSources.unshift(dataSource)
+    updateProjectTime(project)
+    return dataSource
+  })
+
+  await sleep(LATENCY_MS)
+  return clone(result)
+}
+
+export async function updateProjectDataSource(
+  projectId: string,
+  dataSourceId: string,
+  payload: DataSourcePayload,
+): Promise<StructuredDataSource> {
+  const normalized = normalizeDataSourcePayload(payload)
+
+  const result = mutateStore(store => {
+    const project = ensureProject(store, projectId)
+    const dataSource = project.dataSources.find(item => item.id === dataSourceId)
+    if (!dataSource) {
+      throw new Error('数据源不存在')
+    }
+
+    const duplicated = project.dataSources.some(item => item.id !== dataSourceId && item.name === normalized.name)
+    if (duplicated) {
+      throw new Error('数据源名称已存在')
+    }
+
+    Object.assign(dataSource, normalized)
+    dataSource.updatedAt = nowIso()
+    dataSource.status = 'UNKNOWN'
+    dataSource.lastError = ''
+    dataSource.lastTestAt = undefined
+
+    updateProjectTime(project)
+    return dataSource
+  })
+
+  await sleep(LATENCY_MS)
+  return clone(result)
+}
+
+export async function deleteProjectDataSource(projectId: string, dataSourceId: string): Promise<void> {
+  mutateStore(store => {
+    const project = ensureProject(store, projectId)
+    const index = project.dataSources.findIndex(item => item.id === dataSourceId)
+    if (index < 0) {
+      throw new Error('数据源不存在')
+    }
+
+    project.dataSources.splice(index, 1)
+    updateProjectTime(project)
+  })
+
+  await sleep(LATENCY_MS)
+}
+
+export async function setProjectDataSourceEnabled(
+  projectId: string,
+  dataSourceId: string,
+  enabled: boolean,
+): Promise<void> {
+  mutateStore(store => {
+    const project = ensureProject(store, projectId)
+    const dataSource = project.dataSources.find(item => item.id === dataSourceId)
+    if (!dataSource) {
+      throw new Error('数据源不存在')
+    }
+
+    dataSource.enabled = enabled
+    dataSource.updatedAt = nowIso()
+    updateProjectTime(project)
+  })
+
+  await sleep(LATENCY_MS)
+}
+
+export async function testProjectDataSourceConnection(
+  projectId: string,
+  dataSourceId: string,
+): Promise<{ status: 'SUCCESS' | 'FAILED'; testedAt: string; message: string }> {
+  const result = mutateStore(store => {
+    const project = ensureProject(store, projectId)
+    const dataSource = project.dataSources.find(item => item.id === dataSourceId)
+    if (!dataSource) {
+      throw new Error('数据源不存在')
+    }
+
+    const testedAt = nowIso()
+    const lowerHost = dataSource.host.toLowerCase()
+    const forceFailed = lowerHost.includes('timeout') || lowerHost.includes('fail') || lowerHost.includes('invalid')
+    const status: 'SUCCESS' | 'FAILED' = forceFailed ? 'FAILED' : 'SUCCESS'
+
+    dataSource.status = status
+    dataSource.lastTestAt = testedAt
+    dataSource.lastError = status === 'FAILED'
+      ? '连接失败: mock network timeout'
+      : ''
+    dataSource.updatedAt = testedAt
+    updateProjectTime(project)
+
+    return {
+      status,
+      testedAt,
+      message: status === 'SUCCESS'
+        ? '连接成功，目标数据库可访问'
+        : dataSource.lastError || '连接失败',
+    }
+  })
+
+  await sleep(LATENCY_MS + 180)
+  return clone(result)
+}
+
 export async function createEntityType(
   projectId: string,
   name: string,
   description?: string,
+  properties?: Array<{
+    id?: string
+    name: string
+    displayName?: string
+    dataType?: EntityPropertyConfig['dataType']
+    required?: boolean
+    defaultValue?: string
+    description?: string
+    sortOrder?: number
+  }>,
 ): Promise<EntityTypeConfig> {
   const normalized = normalizeText(name)
   if (!normalized) {
@@ -693,12 +1240,70 @@ export async function createEntityType(
       id: makeId('ent'),
       name: normalized,
       description: normalizeText(description || ''),
-      properties: [],
+      properties: buildPropertiesFromPayload(properties),
     }
     project.schemaConfig.entityTypes.push(entityType)
     project.schemaConfig.updatedAt = nowIso()
     updateProjectTime(project)
     return entityType
+  })
+
+  await sleep(LATENCY_MS)
+  return clone(result)
+}
+
+export async function updateEntityType(
+  projectId: string,
+  entityTypeId: string,
+  payload: {
+    name: string
+    description?: string
+    properties?: Array<{
+      id?: string
+      name: string
+      displayName?: string
+      dataType?: EntityPropertyConfig['dataType']
+      required?: boolean
+      defaultValue?: string
+      description?: string
+      sortOrder?: number
+    }>
+  },
+): Promise<EntityTypeConfig> {
+  const normalizedName = normalizeText(payload.name)
+  if (!normalizedName) {
+    throw new Error('实体类型名称不能为空')
+  }
+
+  const result = mutateStore(store => {
+    const project = ensureProject(store, projectId)
+    const entity = project.schemaConfig.entityTypes.find(item => item.id === entityTypeId)
+    if (!entity) {
+      throw new Error('实体类型不存在')
+    }
+
+    const duplicated = project.schemaConfig.entityTypes.some(
+      item => item.id !== entityTypeId && item.name === normalizedName,
+    )
+    if (duplicated) {
+      throw new Error('实体类型已存在')
+    }
+
+    const oldName = entity.name
+    entity.name = normalizedName
+    entity.description = normalizeText(payload.description || '')
+    entity.properties = buildPropertiesFromPayload(payload.properties)
+
+    if (oldName !== normalizedName) {
+      project.schemaConfig.relationTypes.forEach(relation => {
+        if (relation.domain === oldName) relation.domain = normalizedName
+        if (relation.range === oldName) relation.range = normalizedName
+      })
+    }
+
+    project.schemaConfig.updatedAt = nowIso()
+    updateProjectTime(project)
+    return entity
   })
 
   await sleep(LATENCY_MS)
@@ -797,7 +1402,22 @@ export async function removeEntityProperty(
 
 export async function createRelationType(
   projectId: string,
-  relation: { name: string; domain: string; range: string; description?: string },
+  relation: {
+    name: string
+    domain: string
+    range: string
+    description?: string
+    properties?: Array<{
+      id?: string
+      name: string
+      displayName?: string
+      dataType?: EntityPropertyConfig['dataType']
+      required?: boolean
+      defaultValue?: string
+      description?: string
+      sortOrder?: number
+    }>
+  },
 ): Promise<RelationTypeConfig> {
   const relationName = normalizeText(relation.name)
   if (!relationName) {
@@ -821,11 +1441,72 @@ export async function createRelationType(
       domain: relation.domain,
       range: relation.range,
       description: normalizeText(relation.description || ''),
+      properties: buildPropertiesFromPayload(relation.properties),
     }
     project.schemaConfig.relationTypes.push(relationType)
     project.schemaConfig.updatedAt = nowIso()
     updateProjectTime(project)
     return relationType
+  })
+
+  await sleep(LATENCY_MS)
+  return clone(result)
+}
+
+export async function updateRelationType(
+  projectId: string,
+  relationTypeId: string,
+  payload: {
+    name: string
+    domain: string
+    range: string
+    description?: string
+    properties?: Array<{
+      id?: string
+      name: string
+      displayName?: string
+      dataType?: EntityPropertyConfig['dataType']
+      required?: boolean
+      defaultValue?: string
+      description?: string
+      sortOrder?: number
+    }>
+  },
+): Promise<RelationTypeConfig> {
+  const relationName = normalizeText(payload.name)
+  if (!relationName) {
+    throw new Error('关系类型名称不能为空')
+  }
+
+  const result = mutateStore(store => {
+    const project = ensureProject(store, projectId)
+    const relation = project.schemaConfig.relationTypes.find(item => item.id === relationTypeId)
+    if (!relation) {
+      throw new Error('关系类型不存在')
+    }
+
+    const hasDomain = project.schemaConfig.entityTypes.some(item => item.name === payload.domain)
+    const hasRange = project.schemaConfig.entityTypes.some(item => item.name === payload.range)
+    if (!hasDomain || !hasRange) {
+      throw new Error('关系的 domain/range 必须来自实体类型')
+    }
+
+    const duplicated = project.schemaConfig.relationTypes.some(
+      item => item.id !== relationTypeId && item.name === relationName,
+    )
+    if (duplicated) {
+      throw new Error('关系类型已存在')
+    }
+
+    relation.name = relationName
+    relation.domain = payload.domain
+    relation.range = payload.range
+    relation.description = normalizeText(payload.description || '')
+    relation.properties = buildPropertiesFromPayload(payload.properties)
+
+    project.schemaConfig.updatedAt = nowIso()
+    updateProjectTime(project)
+    return relation
   })
 
   await sleep(LATENCY_MS)
@@ -929,12 +1610,93 @@ export async function removeCustomSkill(projectId: string, skillId: string): Pro
   await sleep(LATENCY_MS)
 }
 
+export async function runAiSchemaInsight(projectId: string): Promise<{
+  scannedDocumentCount: number
+  addedEntityCount: number
+  addedRelationCount: number
+  addedEntityNames: string[]
+  addedRelationNames: string[]
+}> {
+  const result = mutateStore(store => {
+    const project = ensureProject(store, projectId)
+    const enabledDocs = project.documents.filter(item => item.enabled)
+    if (enabledDocs.length === 0) {
+      throw new Error('请至少启用一个文档后再进行 AI 洞察')
+    }
+
+    const existingEntityNames = new Set(project.schemaConfig.entityTypes.map(item => item.name))
+    const existingRelationNames = new Set(project.schemaConfig.relationTypes.map(item => item.name))
+
+    const pickedEntities = pickAiEntityTemplates(enabledDocs.map(item => item.name))
+    const addedEntityNames: string[] = []
+    const addedRelationNames: string[] = []
+
+    pickedEntities.forEach(template => {
+      if (existingEntityNames.has(template.name)) return
+
+      const entityType: EntityTypeConfig = {
+        id: makeId('ent'),
+        name: template.name,
+        description: template.description,
+        properties: template.properties.map((property, index) => ({
+          id: makeId('prop'),
+          name: property.name,
+          displayName: property.displayName,
+          dataType: property.dataType,
+          required: property.required,
+          defaultValue: property.defaultValue || '',
+          description: property.description || '',
+          sortOrder: index,
+        })),
+      }
+
+      project.schemaConfig.entityTypes.push(entityType)
+      existingEntityNames.add(template.name)
+      addedEntityNames.push(template.name)
+    })
+
+    AI_RELATION_TEMPLATES.forEach(template => {
+      if (existingRelationNames.has(template.name)) return
+      if (!existingEntityNames.has(template.domain) || !existingEntityNames.has(template.range)) return
+
+      const relationType: RelationTypeConfig = {
+        id: makeId('rel'),
+        name: template.name,
+        domain: template.domain,
+        range: template.range,
+        description: template.description,
+        properties: [],
+      }
+      project.schemaConfig.relationTypes.push(relationType)
+      existingRelationNames.add(template.name)
+      addedRelationNames.push(template.name)
+    })
+
+    if (addedEntityNames.length > 0 || addedRelationNames.length > 0) {
+      project.schemaConfig.updatedAt = nowIso()
+      updateProjectTime(project)
+    }
+
+    return {
+      scannedDocumentCount: enabledDocs.length,
+      addedEntityCount: addedEntityNames.length,
+      addedRelationCount: addedRelationNames.length,
+      addedEntityNames,
+      addedRelationNames,
+    }
+  })
+
+  await sleep(LATENCY_MS + 320)
+  return clone(result)
+}
+
 export async function runProjectExtraction(projectId: string): Promise<ExtractionRun> {
   const run = mutateStore(store => {
     const project = ensureProject(store, projectId)
     const enabledDocs = project.documents.filter(item => item.enabled)
-    if (enabledDocs.length === 0) {
-      throw new Error('请至少启用一个文档后再执行抽取')
+    const enabledDataSources = project.dataSources.filter(item => item.enabled)
+    if (enabledDocs.length === 0 && enabledDataSources.length === 0) {
+      throw new Error('请至少启用一个数据来源（文档或数据源）后再执行抽取')
     }
     if (project.schemaConfig.entityTypes.length === 0) {
       throw new Error('请先配置实体类型')

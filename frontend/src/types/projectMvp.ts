@@ -3,6 +3,10 @@ export type RunStatus = 'RUNNING' | 'COMPLETED' | 'FAILED'
 export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type ActionStatus = 'DRAFT' | 'ACTIVE'
 export type FunctionStatus = 'DRAFT' | 'ACTIVE'
+export type DataSourceType = 'MYSQL' | 'POSTGRESQL' | 'SQLSERVER' | 'ORACLE' | 'CLICKHOUSE'
+export type DataSourceStatus = 'UNKNOWN' | 'SUCCESS' | 'FAILED'
+export type DataSourceExtractMode = 'TABLE' | 'SQL'
+export type DataSourceSyncMode = 'FULL' | 'INCREMENTAL'
 
 export interface ProjectDocument {
   id: string
@@ -12,6 +16,31 @@ export interface ProjectDocument {
   status: DocumentStatus
   enabled: boolean
   uploadedAt: string
+}
+
+export interface StructuredDataSource {
+  id: string
+  name: string
+  type: DataSourceType
+  host: string
+  port: number
+  database: string
+  schema?: string
+  username: string
+  password: string
+  sslEnabled: boolean
+  enabled: boolean
+  extractMode: DataSourceExtractMode
+  tables: string[]
+  customSql?: string
+  rowLimit: number
+  syncMode: DataSourceSyncMode
+  incrementalColumn?: string
+  status: DataSourceStatus
+  lastTestAt?: string
+  lastError?: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface EntityTypeConfig {
@@ -27,6 +56,7 @@ export interface RelationTypeConfig {
   domain: string
   range: string
   description?: string
+  properties: EntityPropertyConfig[]
 }
 
 export type PropertyDataType =
@@ -131,6 +161,7 @@ export interface ProjectDetail {
   updatedAt: string
   currentVersionId?: string
   documents: ProjectDocument[]
+  dataSources: StructuredDataSource[]
   schemaConfig: SchemaConfig
   runs: ExtractionRun[]
   versions: OntologyVersion[]
