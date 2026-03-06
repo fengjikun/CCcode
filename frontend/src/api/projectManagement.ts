@@ -450,6 +450,10 @@ export async function removeRelationType(projectId: string, relationTypeId: stri
   await fetchJSON(`/api/projects/${projectId}/schema/relation-types/${relationTypeId}`, 'DELETE')
 }
 
+export async function clearProjectSchema(projectId: string): Promise<void> {
+  await fetchJSON(`/api/projects/${projectId}/schema`, 'DELETE')
+}
+
 export async function updateSchemaPrompts(
   projectId: string,
   payload: {

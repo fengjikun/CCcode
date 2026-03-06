@@ -29,6 +29,7 @@ import {
   AppstoreOutlined,
   ArrowLeftOutlined,
   BulbOutlined,
+  ClearOutlined,
   DatabaseOutlined,
   DeleteOutlined,
   EditOutlined,
@@ -45,6 +46,7 @@ import {
   createProjectDataSource,
   createProjectFunction,
   createRelationType,
+  clearProjectSchema,
   deleteProjectAction,
   deleteProjectDataSource,
   deleteProjectDocument,
@@ -477,6 +479,16 @@ export default function ProjectWorkspacePage() {
     } finally {
       setTestingDataSourceId(null)
     }
+  }
+
+  const handleClearSchema = async () => {
+    try {
+      await clearProjectSchema(projectId)
+      message.success('已清空全部实体与关系')
+      setSelectedSchemaTreeKeys([])
+      setSelectedEntityId(null)
+      loadProject()
+    } catch {}
   }
 
   const openSchemaCreateModal = () => {
@@ -1162,6 +1174,18 @@ export default function ProjectWorkspacePage() {
     [schemaEntities, selectedEntityId],
   )
 
+  // 稳定图谱数据：只有节点/边的实际内容变化时才更新，避免轮询刷新触发 D3 重建抖动
+  const [stableGraphData, setStableGraphData] = useState<{ objectTypes: ObjectType[]; linkTypes: LinkType[] }>(
+    () => ({ objectTypes: schemaViewModel.objectTypes, linkTypes: schemaViewModel.linkTypes })
+  )
+  const graphFingerprint = schemaViewModel.objectTypes.map(o => `${o.id}:${o.name}:${o.color}`).join('|')
+    + '##' + schemaViewModel.linkTypes.map(l => `${l.id}:${l.sourceObjectTypeId}:${l.targetObjectTypeId}`).join('|')
+
+  useEffect(() => {
+    setStableGraphData({ objectTypes: schemaViewModel.objectTypes, linkTypes: schemaViewModel.linkTypes })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphFingerprint])
+
   const selectedGraphNodeId = useMemo(() => {
     if (!selectedEntityId) return null
     return schemaViewModel.graphObjectTypeIdByEntityId.get(selectedEntityId) || null
@@ -1446,6 +1470,22 @@ export default function ProjectWorkspacePage() {
                       extra={(
                         <Space>
                           <Tag>{schemaEntities.length + schemaRelations.length}</Tag>
+                          <Popconfirm
+                            title="确认清空全部？"
+                            description="将删除该项目所有实体类型与关系类型，此操作不可恢复。"
+                            onConfirm={handleClearSchema}
+                            okText="清空"
+                            okType="danger"
+                            disabled={schemaEntities.length === 0 && schemaRelations.length === 0}
+                          >
+                            <Button
+                              danger
+                              icon={<ClearOutlined />}
+                              disabled={schemaEntities.length === 0 && schemaRelations.length === 0}
+                            >
+                              清空
+                            </Button>
+                          </Popconfirm>
                           <Button
                             icon={<BulbOutlined />}
                             loading={aiInsightBusy}
@@ -1499,8 +1539,8 @@ export default function ProjectWorkspacePage() {
                             />
                           )}
                           <OntologyGraph
-                            objectTypes={schemaViewModel.objectTypes}
-                            linkTypes={schemaViewModel.linkTypes}
+                            objectTypes={stableGraphData.objectTypes}
+                            linkTypes={stableGraphData.linkTypes}
                             selectedOTId={selectedGraphNodeId}
                             onSelectOT={(ot) => {
                               const entityId = schemaViewModel.entityIdByGraphObjectTypeId.get(ot.id)
