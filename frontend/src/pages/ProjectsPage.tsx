@@ -16,7 +16,7 @@ import {
   message,
 } from 'antd'
 import { DeleteOutlined, FolderOpenOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
-import { createProject, deleteProject, listProjects } from '../api/mvpMock'
+import { createProject, deleteProject, listProjects } from '../api/projectManagement'
 import type { ProjectSummary } from '../types/projectMvp'
 
 const { Title, Text } = Typography
@@ -110,7 +110,7 @@ export default function ProjectsPage() {
 
       <Card loading={loading}>
         {projects.length === 0 ? (
-          <Empty description="暂无项目，先创建一个项目开始原型评审" />
+          <Empty description="暂无项目，先创建一个项目开始使用" />
         ) : (
           <Row gutter={[16, 16]}>
             {projects.map(project => (
@@ -126,7 +126,7 @@ export default function ProjectsPage() {
                     <Popconfirm
                       key="delete"
                       title="确认删除该项目？"
-                      description="该操作仅用于原型演示数据。"
+                      description="该操作不可恢复，请谨慎操作。"
                       onConfirm={() => void handleDelete(project.id)}
                       okButtonProps={{ loading: deletingId === project.id }}
                     >
@@ -177,4 +177,3 @@ export default function ProjectsPage() {
     </div>
   )
 }
-

@@ -1,0 +1,1386 @@
+openapi: 3.0.3
+info:
+  title: Project Management API Draft
+  version: 0.1.0
+  description: |
+    项目管理模块后端接口草案（对齐前端 projectManagement 适配层）。
+    该草案面向现有前端行为，字段风格采用 camelCase。
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+tags:
+  - name: projects
+  - name: documents
+  - name: data-sources
+  - name: schema
+  - name: skills
+  - name: extraction
+  - name: actions
+  - name: functions
+
+paths:
+  /api/projects:
+    get:
+      tags: [projects]
+      summary: List projects
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectSummary'
+    post:
+      tags: [projects]
+      summary: Create project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/projects/{projectId}:
+    get:
+      tags: [projects]
+      summary: Get project detail
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [projects]
+      summary: Delete project
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '204':
+          description: No Content
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/projects/{projectId}/documents:
+    get:
+      tags: [documents]
+      summary: List project documents
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectDocument'
+    post:
+      tags: [documents]
+      summary: Upload project document
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDocument'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/projects/{projectId}/documents/{documentId}:
+    patch:
+      tags: [documents]
+      summary: Update document enabled status
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/DocumentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnabledPatchRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDocument'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [documents]
+      summary: Delete document
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '204':
+          description: No Content
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/projects/{projectId}/data-sources:
+    get:
+      tags: [data-sources]
+      summary: List project data sources
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectDataSource'
+    post:
+      tags: [data-sources]
+      summary: Create data source
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSourceUpsertRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDataSource'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/projects/{projectId}/data-sources/{dataSourceId}:
+    put:
+      tags: [data-sources]
+      summary: Update data source
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/DataSourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSourceUpsertRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDataSource'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    patch:
+      tags: [data-sources]
+      summary: Update data source enabled status
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/DataSourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnabledPatchRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDataSource'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [data-sources]
+      summary: Delete data source
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/DataSourceId'
+      responses:
+        '204':
+          description: No Content
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/projects/{projectId}/data-sources/{dataSourceId}/test-connection:
+    post:
+      tags: [data-sources]
+      summary: Test data source connection
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/DataSourceId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectionTestResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/projects/{projectId}/schema/entity-types:
+    post:
+      tags: [schema]
+      summary: Create entity type
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityTypeUpsertRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityType'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/projects/{projectId}/schema/entity-types/{entityTypeId}:
+    put:
+      tags: [schema]
+      summary: Update entity type
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/EntityTypeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityTypeUpsertRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityType'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      tags: [schema]
+      summary: Delete entity type
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/EntityTypeId'
+      responses:
+        '204':
+          description: No Content
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/projects/{projectId}/schema/relation-types:
+    post:
+      tags: [schema]
+      summary: Create relation type
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelationTypeUpsertRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelationType'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/projects/{projectId}/schema/relation-types/{relationTypeId}:
+    put:
+      tags: [schema]
+      summary: Update relation type
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/RelationTypeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelationTypeUpsertRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelationType'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      tags: [schema]
+      summary: Delete relation type
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/RelationTypeId'
+      responses:
+        '204':
+          description: No Content
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/projects/{projectId}/schema/prompts:
+    patch:
+      tags: [schema]
+      summary: Update schema scopes and skills
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchemaPromptsUpdateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaConfig'
+
+  /api/projects/{projectId}/skills/upload:
+    post:
+      tags: [skills]
+      summary: Upload custom skill zip
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/projects/{projectId}/skills/{skillId}:
+    delete:
+      tags: [skills]
+      summary: Delete custom skill
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/SkillId'
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/projects/{projectId}/schema/ai-insight:
+    post:
+      tags: [schema]
+      summary: Run AI schema insight
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiInsightResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/projects/{projectId}/runs:
+    post:
+      tags: [extraction]
+      summary: Create extraction run
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionRun'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/projects/{projectId}/runs/{runId}:
+    get:
+      tags: [extraction]
+      summary: Get run detail
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionRun'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/projects/{projectId}/runs/{runId}/review-items/{itemId}:
+    patch:
+      tags: [extraction]
+      summary: Update review item status
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/RunId'
+        - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewStatusUpdateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/projects/{projectId}/runs/{runId}/publish:
+    post:
+      tags: [extraction]
+      summary: Publish ontology version from run
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/RunId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishVersionRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OntologyVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/projects/{projectId}/actions:
+    post:
+      tags: [actions]
+      summary: Create project action
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectAction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/projects/{projectId}/actions/{actionId}:
+    patch:
+      tags: [actions]
+      summary: Update action status
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/ActionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionStatusPatchRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectAction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [actions]
+      summary: Delete action
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/ActionId'
+      responses:
+        '204':
+          description: No Content
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/projects/{projectId}/functions:
+    post:
+      tags: [functions]
+      summary: Create project function
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FunctionCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectFunction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/projects/{projectId}/functions/{functionId}:
+    patch:
+      tags: [functions]
+      summary: Update function status
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/FunctionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FunctionStatusPatchRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectFunction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [functions]
+      summary: Delete function
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/FunctionId'
+      responses:
+        '204':
+          description: No Content
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DocumentId:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DataSourceId:
+      name: dataSourceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    EntityTypeId:
+      name: entityTypeId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RelationTypeId:
+      name: relationTypeId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SkillId:
+      name: skillId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RunId:
+      name: runId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ItemId:
+      name: itemId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ActionId:
+      name: actionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    FunctionId:
+      name: functionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+
+    DocumentStatus:
+      type: string
+      enum: [READY, FAILED, PROCESSING]
+    RunStatus:
+      type: string
+      enum: [RUNNING, COMPLETED, FAILED, CANCELED]
+    ReviewStatus:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED]
+    ActionStatus:
+      type: string
+      enum: [DRAFT, ACTIVE]
+    FunctionStatus:
+      type: string
+      enum: [DRAFT, ACTIVE]
+    DataSourceType:
+      type: string
+      enum: [MYSQL, POSTGRESQL, SQLSERVER, ORACLE, CLICKHOUSE]
+    DataSourceStatus:
+      type: string
+      enum: [UNKNOWN, SUCCESS, FAILED]
+    DataSourceExtractMode:
+      type: string
+      enum: [TABLE, SQL]
+    DataSourceSyncMode:
+      type: string
+      enum: [FULL, INCREMENTAL]
+    PropertyDataType:
+      type: string
+      enum: [STRING, INTEGER, FLOAT, BOOLEAN, DATE, DATETIME, JSON, TEXT]
+    ReviewKind:
+      type: string
+      enum: [ENTITY, RELATION]
+
+    ProjectCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 64
+        description:
+          type: string
+          maxLength: 300
+
+    ProjectSummary:
+      type: object
+      required: [id, name, createdAt, updatedAt, documentCount, versionCount]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        documentCount:
+          type: integer
+        versionCount:
+          type: integer
+        latestRunStatus:
+          $ref: '#/components/schemas/RunStatus'
+
+    ProjectDocument:
+      type: object
+      required: [id, name, fileType, size, status, enabled, uploadedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        fileType:
+          type: string
+          enum: [docx, md]
+        size:
+          type: integer
+        status:
+          $ref: '#/components/schemas/DocumentStatus'
+        enabled:
+          type: boolean
+        uploadedAt:
+          type: string
+          format: date-time
+
+    DataSourceUpsertRequest:
+      type: object
+      required: [name, type, host, port, database, username, extractMode, rowLimit, syncMode]
+      properties:
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/DataSourceType'
+        host:
+          type: string
+        port:
+          type: integer
+        database:
+          type: string
+        schema:
+          type: string
+          nullable: true
+        username:
+          type: string
+        password:
+          type: string
+          nullable: true
+          writeOnly: true
+          description: 新增必填；更新时空字符串或不传表示不更新密码
+        sslEnabled:
+          type: boolean
+        enabled:
+          type: boolean
+        extractMode:
+          $ref: '#/components/schemas/DataSourceExtractMode'
+        tables:
+          type: array
+          items:
+            type: string
+        customSql:
+          type: string
+          nullable: true
+        rowLimit:
+          type: integer
+        syncMode:
+          $ref: '#/components/schemas/DataSourceSyncMode'
+        incrementalColumn:
+          type: string
+          nullable: true
+
+    ProjectDataSource:
+      type: object
+      required:
+        [id, name, type, host, port, database, username, sslEnabled, enabled, extractMode, rowLimit, syncMode, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/DataSourceType'
+        host:
+          type: string
+        port:
+          type: integer
+        database:
+          type: string
+        schema:
+          type: string
+          nullable: true
+        username:
+          type: string
+        passwordMasked:
+          type: string
+          nullable: true
+          description: 始终为掩码值，例如 ******；不返回明文密码
+        sslEnabled:
+          type: boolean
+        enabled:
+          type: boolean
+        extractMode:
+          $ref: '#/components/schemas/DataSourceExtractMode'
+        tables:
+          type: array
+          items:
+            type: string
+        customSql:
+          type: string
+          nullable: true
+        rowLimit:
+          type: integer
+        syncMode:
+          $ref: '#/components/schemas/DataSourceSyncMode'
+        incrementalColumn:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/DataSourceStatus'
+        lastTestAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastError:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ConnectionTestResult:
+      type: object
+      required: [status, testedAt, message]
+      properties:
+        status:
+          type: string
+          enum: [SUCCESS, FAILED]
+        testedAt:
+          type: string
+          format: date-time
+        message:
+          type: string
+
+    SchemaProperty:
+      type: object
+      required: [id, name, displayName, dataType, required, sortOrder]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        displayName:
+          type: string
+        dataType:
+          $ref: '#/components/schemas/PropertyDataType'
+        required:
+          type: boolean
+        defaultValue:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+
+    EntityTypeUpsertRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/SchemaProperty'
+
+    EntityType:
+      allOf:
+        - $ref: '#/components/schemas/EntityTypeUpsertRequest'
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+              format: uuid
+
+    RelationTypeUpsertRequest:
+      type: object
+      required: [name, domain, range]
+      properties:
+        name:
+          type: string
+        domain:
+          type: string
+        range:
+          type: string
+        description:
+          type: string
+          nullable: true
+        properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/SchemaProperty'
+
+    RelationType:
+      allOf:
+        - $ref: '#/components/schemas/RelationTypeUpsertRequest'
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+              format: uuid
+
+    SkillConfig:
+      type: object
+      required: [id, code, name, enabled, prompt, source]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          enum: [data_processing, graph_synthesis, custom]
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        enabled:
+          type: boolean
+        prompt:
+          type: string
+        source:
+          type: string
+          enum: [built_in, uploaded]
+        tags:
+          type: array
+          items:
+            type: string
+        blocked:
+          type: boolean
+        missing:
+          type: string
+          nullable: true
+        fileName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    SchemaConfig:
+      type: object
+      required: [entityTypes, relationTypes, entityScope, relationScope, skills, updatedAt]
+      properties:
+        entityTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityType'
+        relationTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelationType'
+        entityScope:
+          type: string
+        relationScope:
+          type: string
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkillConfig'
+        updatedAt:
+          type: string
+          format: date-time
+
+    SchemaPromptsUpdateRequest:
+      type: object
+      required: [entityScope, relationScope, skills]
+      properties:
+        entityScope:
+          type: string
+        relationScope:
+          type: string
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkillConfig'
+
+    AiInsightResult:
+      type: object
+      required:
+        [scannedDocumentCount, addedEntityCount, addedRelationCount, addedEntityNames, addedRelationNames]
+      properties:
+        scannedDocumentCount:
+          type: integer
+        addedEntityCount:
+          type: integer
+        addedRelationCount:
+          type: integer
+        addedEntityNames:
+          type: array
+          items:
+            type: string
+        addedRelationNames:
+          type: array
+          items:
+            type: string
+
+    ReviewItem:
+      type: object
+      required: [id, kind, title, evidence, confidence, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/ReviewKind'
+        title:
+          type: string
+        evidence:
+          type: string
+        confidence:
+          type: number
+          format: float
+        status:
+          $ref: '#/components/schemas/ReviewStatus'
+        entityTypeName:
+          type: string
+          nullable: true
+        entityName:
+          type: string
+          nullable: true
+        relationTypeName:
+          type: string
+          nullable: true
+        relationDomainName:
+          type: string
+          nullable: true
+        relationRangeName:
+          type: string
+          nullable: true
+
+    ExtractionRun:
+      type: object
+      required:
+        [id, status, progress, createdAt, candidateEntityCount, candidateRelationCount, pendingReviewCount, reviewItems]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/RunStatus'
+        progress:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        candidateEntityCount:
+          type: integer
+        candidateRelationCount:
+          type: integer
+        pendingReviewCount:
+          type: integer
+        reviewItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReviewItem'
+
+    ReviewStatusUpdateRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/ReviewStatus'
+
+    PublishVersionRequest:
+      type: object
+      required: [label]
+      properties:
+        label:
+          type: string
+        notes:
+          type: string
+          nullable: true
+
+    OntologyVersion:
+      type: object
+      required: [id, version, label, createdAt, sourceRunId, entityCount, relationCount]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: string
+        label:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        sourceRunId:
+          type: string
+          format: uuid
+        entityCount:
+          type: integer
+        relationCount:
+          type: integer
+
+    ActionCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ActionStatus'
+
+    ProjectAction:
+      allOf:
+        - $ref: '#/components/schemas/ActionCreateRequest'
+        - type: object
+          required: [id, status]
+          properties:
+            id:
+              type: string
+              format: uuid
+            status:
+              $ref: '#/components/schemas/ActionStatus'
+
+    ActionStatusPatchRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/ActionStatus'
+
+    FunctionCreateRequest:
+      type: object
+      required: [name, scriptContent]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        scriptContent:
+          type: string
+        status:
+          $ref: '#/components/schemas/FunctionStatus'
+
+    ProjectFunction:
+      allOf:
+        - $ref: '#/components/schemas/FunctionCreateRequest'
+        - type: object
+          required: [id, status]
+          properties:
+            id:
+              type: string
+              format: uuid
+            status:
+              $ref: '#/components/schemas/FunctionStatus'
+
+    FunctionStatusPatchRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/FunctionStatus'
+
+    EnabledPatchRequest:
+      type: object
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
+
+    ProjectDetail:
+      type: object
+      required:
+        [id, name, createdAt, updatedAt, documents, dataSources, schemaConfig, runs, versions, actions, functions]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        currentVersionId:
+          type: string
+          format: uuid
+          nullable: true
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectDocument'
+        dataSources:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectDataSource'
+        schemaConfig:
+          $ref: '#/components/schemas/SchemaConfig'
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtractionRun'
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/OntologyVersion'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectAction'
+        functions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectFunction'

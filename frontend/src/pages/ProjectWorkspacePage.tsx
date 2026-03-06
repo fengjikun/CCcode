@@ -65,7 +65,7 @@ import {
   updateProjectDataSource,
   updateRelationType,
   uploadProjectDocument,
-} from '../api/mvpMock'
+} from '../api/projectManagement'
 import type {
   ActionDefinition,
   ActionStatus,
@@ -1585,7 +1585,7 @@ export default function ProjectWorkspacePage() {
                       <Alert
                         type="info"
                         showIcon
-                        message="仅用于原型评审"
+                        message="版本发布说明"
                         description="发布时会固化当前 run 的审核结果，动作与函数可据此挂载版本。"
                       />
                       <Space style={{ justifyContent: 'space-between', width: '100%' }} wrap>
@@ -2093,9 +2093,14 @@ export default function ProjectWorkspacePage() {
               <Form.Item
                 name="password"
                 label="密码"
-                rules={[{ required: true, message: '请输入密码' }]}
+                rules={[
+                  {
+                    required: dataSourceModalMode === 'create',
+                    message: '请输入密码',
+                  },
+                ]}
               >
-                <Input.Password placeholder="请输入数据库密码" />
+                <Input.Password placeholder={dataSourceModalMode === 'edit' ? '留空则沿用原密码' : '请输入数据库密码'} />
               </Form.Item>
             </Col>
           </Row>

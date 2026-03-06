@@ -30,7 +30,7 @@ import type { ForceGraphHandle } from '../components/graph/ForceGraph'
 import GraphSidebar from '../components/graph/GraphSidebar'
 import type { GraphStats } from '../components/graph/GraphSidebar'
 import NodeDetail from '../components/graph/NodeDetail'
-import { getProjectDetail, updateRunReviewItem } from '../api/mvpMock'
+import { getProjectDetail, updateRunReviewItem } from '../api/projectManagement'
 import type { ProjectDetail, ReviewItem, ReviewStatus } from '../types/projectMvp'
 
 const { Title, Text } = Typography

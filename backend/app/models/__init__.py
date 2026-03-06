@@ -6,3 +6,9 @@ from .ontology import (
     OntologyActionType, OntologyActionParameter, OntologyActionRule, OntologyActionExecution,
     OntologyFunction, OntologyFunctionLog,
 )
+from .project_mgmt import (
+    Project, ProjectDocument, ProjectDataSource,
+    SchemaConfig, EntityType, RelationType, SchemaProperty, Skill,
+    ExtractionRun, ReviewItem, OntologyVersion, VersionItem,
+    ProjectAction, ProjectFunction,
+)

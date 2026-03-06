@@ -13,6 +13,8 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+backend/.dep/
+backend/.deps/
 *.egg-info/
 dist/
 .pytest_cache/

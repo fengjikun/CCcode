@@ -76,6 +76,29 @@ cp deploy/.env.example deploy/.env
 ./scripts/start.sh docker logs deploy/.env
 ```
 
+### 重新构建并重启（前后端）
+
+```bash
+# 进入项目目录
+cd CCcode
+
+# 方案1：直接重建并重启（推荐）
+./scripts/start.sh docker up deploy/.env
+
+# 方案2：先停止，再重建并启动（更彻底）
+./scripts/start.sh docker down deploy/.env
+./scripts/start.sh docker up deploy/.env
+
+# 检查服务状态
+./scripts/start.sh docker ps deploy/.env
+```
+
+如果需要查看启动日志：
+
+```bash
+./scripts/start.sh docker logs deploy/.env
+```
+
 访问：
 - 应用入口（前端 + API）：http://localhost:9000
 - API 文档：http://localhost:9000/docs

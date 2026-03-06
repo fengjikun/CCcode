@@ -9,7 +9,9 @@ from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
 from app.database import SessionLocal
 from app.models import *  # noqa: F401, F403 - ensure all models are imported
-from app.routers import auth, diagnosis, ontology_schema, ontology_objects, ontology_actions, ontology_functions
+from app.routers import (
+    auth, diagnosis, ontology_schema, ontology_objects, ontology_actions, ontology_functions, projects
+)
 from app.security import bootstrap_default_user, get_current_user
 from app.services import fault_knowledge_service
 
@@ -32,6 +34,7 @@ app.include_router(ontology_schema.router, dependencies=_protected)
 app.include_router(ontology_objects.router, dependencies=_protected)
 app.include_router(ontology_actions.router, dependencies=_protected)
 app.include_router(ontology_functions.router, dependencies=_protected)
+app.include_router(projects.router)
 
 
 @app.on_event("startup")
