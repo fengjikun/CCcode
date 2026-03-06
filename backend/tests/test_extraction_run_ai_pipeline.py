@@ -206,6 +206,38 @@ class ExtractionRunAiPipelineTests(unittest.TestCase):
         titles = [item["title"] for item in result["review_items"]]
         self.assertEqual(titles, ["Person::张三"])
 
+    def test_create_extraction_run_logs_mock_skill_load_before_processing(self) -> None:
+        def _fake_llm_runner(*, project, enabled_docs, schema_payload, document_payload, xlsx_inputs):
+            return {
+                "entities": [
+                    {
+                        "type": "Person",
+                        "name": "张三",
+                        "evidence": "文档提到张三。",
+                        "confidence": 0.9,
+                    }
+                ],
+                "relations": [],
+                "warnings": [],
+            }
+
+        setattr(svc, "_run_ai_instance_extraction_llm", _fake_llm_runner)
+
+        created = svc.create_extraction_run(self.db, 1, "proj_ext_1")
+        result = self._wait_until_run_finished(created["id"])
+
+        self.assertEqual(result["status"], "COMPLETED")
+        logs = result.get("logs") or []
+        self.assertTrue(any("load" in line and "skill" in line for line in logs), "应记录 mock skill 加载日志")
+        load_index = next(
+            (idx for idx, line in enumerate(logs) if "load" in line and "skill" in line),
+            -1,
+        )
+        model_index = next((idx for idx, line in enumerate(logs) if "开始并发抽取" in line), -1)
+        self.assertGreaterEqual(load_index, 0)
+        self.assertGreaterEqual(model_index, 0)
+        self.assertLess(load_index, model_index, "应先记录 load skill，再记录抽取日志")
+
     def test_create_extraction_run_rejects_when_another_run_is_running(self) -> None:
         def _slow_llm_runner(*, project, enabled_docs, schema_payload, document_payload, xlsx_inputs):
             time.sleep(0.3)
