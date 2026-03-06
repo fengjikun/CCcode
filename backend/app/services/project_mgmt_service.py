@@ -1481,13 +1481,13 @@ def _generate_ai_review_items_for_run(
     xlsx_inputs: dict[str, Any],
     now: datetime,
     run: ExtractionRun | None = None,
-) -> list[ReviewItem]:
+) -> int:
     if not enabled_docs:
-        return []
+        return 0
     if _resolve_instance_llm_config() is None:
         if run is not None:
             _set_run_runtime_meta(run, append_log="模型配置缺失，跳过模型抽取。")
-        return []
+        return 0
 
     schema_payload = _build_extraction_schema_payload(
         db,
@@ -1510,10 +1510,44 @@ def _generate_ai_review_items_for_run(
         run.updated_at = _now()
         db.commit()
 
-    entity_instances_by_key: dict[tuple[str, str], dict[str, Any]] = {}
-    relation_instances_by_key: dict[tuple[str, str, str, str, str], dict[str, Any]] = {}
+    existing_items = (
+        db.query(ReviewItem)
+        .filter(ReviewItem.project_id == project.id, ReviewItem.run_id == run_id)
+        .all()
+    )
+    seen_entity_keys: set[tuple[str, str]] = set()
+    seen_relation_keys: set[tuple[str, str, str, str, str]] = set()
+    for item in existing_items:
+        if item.kind == "ENTITY":
+            entity_type = _safe_schema_name(item.entity_type_name, fallback="")
+            entity_name = _safe_schema_name(item.entity_name, fallback="", max_len=255)
+            if entity_type and entity_name:
+                seen_entity_keys.add((entity_type, entity_name))
+        elif item.kind == "RELATION":
+            relation_name = _safe_schema_name(item.relation_type_name, fallback="")
+            domain_type = _safe_schema_name(item.relation_domain_name, fallback="")
+            range_type = _safe_schema_name(item.relation_range_name, fallback="")
+            domain_name = ""
+            range_name = ""
+            try:
+                payload = json.loads(item.payload_json or "{}")
+            except json.JSONDecodeError:
+                payload = {}
+            if isinstance(payload, dict):
+                domain_name = _safe_schema_name(payload.get("domain_name"), fallback="", max_len=255)
+                range_name = _safe_schema_name(payload.get("range_name"), fallback="", max_len=255)
+            if not domain_name or not range_name:
+                title_text = _normalize_text(item.title)
+                match = re.match(r"^.+::(.+?)\s-\[.+\]->\s.+::(.+)$", title_text)
+                if match:
+                    domain_name = _safe_schema_name(match.group(1), fallback="", max_len=255)
+                    range_name = _safe_schema_name(match.group(2), fallback="", max_len=255)
+            if relation_name and domain_type and range_type and domain_name and range_name:
+                seen_relation_keys.add((domain_type, domain_name, relation_name, range_type, range_name))
+
     merge_lock = threading.Lock()
     processed_count = 0
+    inserted_total = 0
 
     def _extract_single_doc(
         idx: int, doc: ProjectDocument
@@ -1566,22 +1600,51 @@ def _generate_ai_review_items_for_run(
                         db.commit()
                     continue
 
+                doc_rows: list[ReviewItem] = []
                 entity_delta = 0
                 relation_delta = 0
                 for item in entity_list:
+                    if inserted_total >= MAX_XLSX_REVIEW_ITEMS:
+                        break
                     entity_type = _safe_schema_name(item.get("type"), fallback="")
                     entity_name = _safe_schema_name(item.get("name"), fallback="", max_len=255)
                     if not entity_type or not entity_name:
                         continue
                     key = (entity_type, entity_name)
-                    if key in entity_instances_by_key:
+                    if key in seen_entity_keys:
                         continue
+                    seen_entity_keys.add(key)
                     payload = dict(item)
                     payload["source_document"] = doc_name
-                    entity_instances_by_key[key] = payload
+                    evidence = _normalize_text(payload.get("evidence")) or f"模型抽取：{entity_type}::{entity_name}"
+                    if doc_name:
+                        evidence = f"{doc_name}：{evidence}"
+                    doc_rows.append(
+                        ReviewItem(
+                            id=_new_id("review"),
+                            project_id=project.id,
+                            run_id=run_id,
+                            kind="ENTITY",
+                            title=f"{entity_type}::{entity_name}",
+                            evidence=evidence,
+                            confidence=float(payload.get("confidence") or 0),
+                            status="PENDING",
+                            entity_type_name=entity_type,
+                            entity_name=entity_name,
+                            relation_type_name=None,
+                            relation_domain_name=None,
+                            relation_range_name=None,
+                            payload_json=json.dumps(payload, ensure_ascii=False),
+                            created_at=now,
+                            updated_at=now,
+                        )
+                    )
                     entity_delta += 1
+                    inserted_total += 1
 
                 for item in relation_list:
+                    if inserted_total >= MAX_XLSX_REVIEW_ITEMS:
+                        break
                     relation_name = _safe_schema_name(item.get("relation"), fallback="")
                     domain_type = _safe_schema_name(item.get("domain_type"), fallback="")
                     range_type = _safe_schema_name(item.get("range_type"), fallback="")
@@ -1590,13 +1653,44 @@ def _generate_ai_review_items_for_run(
                     if not relation_name or not domain_type or not range_type or not domain_name or not range_name:
                         continue
                     key = (domain_type, domain_name, relation_name, range_type, range_name)
-                    if key in relation_instances_by_key:
+                    if key in seen_relation_keys:
                         continue
+                    seen_relation_keys.add(key)
                     payload = dict(item)
                     payload["source_document"] = doc_name
-                    relation_instances_by_key[key] = payload
+                    evidence = (
+                        _normalize_text(payload.get("evidence"))
+                        or f"模型抽取：{domain_type}::{domain_name} -[{relation_name}]-> {range_type}::{range_name}"
+                    )
+                    if doc_name:
+                        evidence = f"{doc_name}：{evidence}"
+                    doc_rows.append(
+                        ReviewItem(
+                            id=_new_id("review"),
+                            project_id=project.id,
+                            run_id=run_id,
+                            kind="RELATION",
+                            title=f"{domain_type}::{domain_name} -[{relation_name}]-> {range_type}::{range_name}",
+                            evidence=evidence,
+                            confidence=float(payload.get("confidence") or 0),
+                            status="PENDING",
+                            entity_type_name=None,
+                            entity_name=None,
+                            relation_type_name=relation_name,
+                            relation_domain_name=domain_type,
+                            relation_range_name=range_type,
+                            payload_json=json.dumps(payload, ensure_ascii=False),
+                            created_at=now,
+                            updated_at=now,
+                        )
+                    )
                     relation_delta += 1
+                    inserted_total += 1
 
+                for row in doc_rows:
+                    db.add(row)
+                if run is not None:
+                    _recalc_run_stats(db, run)
                 if run is not None:
                     _set_run_runtime_meta(
                         run,
@@ -1610,74 +1704,7 @@ def _generate_ai_review_items_for_run(
                     run.progress = min(95, 5 + int((done / max(total_docs, 1)) * 85))
                     run.updated_at = _now()
                     db.commit()
-
-    rows: list[ReviewItem] = []
-    for item in entity_instances_by_key.values():
-        entity_type = _safe_schema_name(item.get("type"), fallback="")
-        entity_name = _safe_schema_name(item.get("name"), fallback="", max_len=255)
-        if not entity_type or not entity_name:
-            continue
-        source_document = _normalize_text(item.get("source_document"))
-        evidence = _normalize_text(item.get("evidence")) or f"模型抽取：{entity_type}::{entity_name}"
-        if source_document:
-            evidence = f"{source_document}：{evidence}"
-        rows.append(
-            ReviewItem(
-                id=_new_id("review"),
-                project_id=project.id,
-                run_id=run_id,
-                kind="ENTITY",
-                title=f"{entity_type}::{entity_name}",
-                evidence=evidence,
-                confidence=float(item.get("confidence") or 0),
-                status="PENDING",
-                entity_type_name=entity_type,
-                entity_name=entity_name,
-                relation_type_name=None,
-                relation_domain_name=None,
-                relation_range_name=None,
-                payload_json=json.dumps(item, ensure_ascii=False),
-                created_at=now,
-                updated_at=now,
-            )
-        )
-
-    for item in relation_instances_by_key.values():
-        relation_name = _safe_schema_name(item.get("relation"), fallback="")
-        domain_type = _safe_schema_name(item.get("domain_type"), fallback="")
-        range_type = _safe_schema_name(item.get("range_type"), fallback="")
-        domain_name = _safe_schema_name(item.get("domain_name"), fallback="", max_len=255)
-        range_name = _safe_schema_name(item.get("range_name"), fallback="", max_len=255)
-        if not relation_name or not domain_type or not range_type or not domain_name or not range_name:
-            continue
-        source_document = _normalize_text(item.get("source_document"))
-        evidence = (
-            _normalize_text(item.get("evidence"))
-            or f"模型抽取：{domain_type}::{domain_name} -[{relation_name}]-> {range_type}::{range_name}"
-        )
-        if source_document:
-            evidence = f"{source_document}：{evidence}"
-        rows.append(
-            ReviewItem(
-                id=_new_id("review"),
-                project_id=project.id,
-                run_id=run_id,
-                kind="RELATION",
-                title=f"{domain_type}::{domain_name} -[{relation_name}]-> {range_type}::{range_name}",
-                evidence=evidence,
-                confidence=float(item.get("confidence") or 0),
-                status="PENDING",
-                entity_type_name=None,
-                entity_name=None,
-                relation_type_name=relation_name,
-                relation_domain_name=domain_type,
-                relation_range_name=range_type,
-                payload_json=json.dumps(item, ensure_ascii=False),
-                created_at=now,
-                updated_at=now,
-            )
-        )
-    return rows[:MAX_XLSX_REVIEW_ITEMS]
+    return inserted_total
 
 
 def _apply_schema_templates(
@@ -4451,7 +4478,7 @@ def _execute_extraction_run(db: Session, user_id: int, project_id: str, run_id: 
             return
 
         entity_name_by_id = {entity.id: entity.name for entity in entity_rows}
-        review_rows = _generate_ai_review_items_for_run(
+        ai_generated_count = _generate_ai_review_items_for_run(
             db,
             project=project,
             run_id=run.id,
@@ -4463,8 +4490,9 @@ def _execute_extraction_run(db: Session, user_id: int, project_id: str, run_id: 
             now=now,
             run=run,
         )
+        review_rows: list[ReviewItem] = []
 
-        if not review_rows:
+        if ai_generated_count <= 0:
             _set_run_runtime_meta(run, append_log="模型未产出候选，回退到 xlsx 结构化候选。")
             run.updated_at = _now()
             db.commit()
