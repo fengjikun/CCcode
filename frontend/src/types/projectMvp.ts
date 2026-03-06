@@ -83,6 +83,16 @@ export interface EntityPropertyConfig {
 export type SkillCode = 'data_processing' | 'graph_synthesis' | 'custom'
 export type SkillSource = 'built_in' | 'uploaded'
 
+export interface SkillMetadata {
+  packageFormat?: string
+  packageSize?: number
+  packageEntries?: number
+  skillMdPath?: string
+  hasSkillMd?: boolean
+  capabilities?: string[]
+  [key: string]: unknown
+}
+
 export interface SkillConfig {
   id: string
   code: SkillCode
@@ -95,6 +105,7 @@ export interface SkillConfig {
   blocked?: boolean
   missing?: string
   fileName?: string
+  metadata?: SkillMetadata
   createdAt?: string
 }
 
@@ -128,6 +139,7 @@ export interface ExtractionRun {
   stage?: string
   currentDocument?: string
   logs: string[]
+  warnings: string[]
   errorMessage?: string
   reviewItems: ReviewItem[]
 }

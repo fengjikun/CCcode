@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Col,
+  Descriptions,
   Empty,
   Popconfirm,
   Progress,
@@ -20,11 +21,13 @@ import {
   BulbOutlined,
   ClearOutlined,
   DeleteOutlined,
+  FileZipOutlined,
   EditOutlined,
   PlusOutlined,
+  UploadOutlined,
 } from '@ant-design/icons'
 import type { DataNode, TreeProps } from 'antd/es/tree'
-import { clearProjectSchema, removeEntityType, removeRelationType, uploadCustomSkill } from '../../../api/projectManagement'
+import { clearProjectSchema, removeCustomSkill, removeEntityType, removeRelationType, uploadCustomSkill } from '../../../api/projectManagement'
 import type { AiInsightRun, ProjectDetail, ProjectDocument } from '../../../types/projectMvp'
 import type { SchemaCreateType, SchemaViewModel } from '../types'
 import { runStatusTag, getErrorMessage } from '../helpers'
@@ -145,6 +148,16 @@ export default function SchemaTab({
     } finally {
       setUploadingSkills(false)
       event.target.value = ''
+    }
+  }
+
+  const handleDeleteUploadedSkill = async (skillId: string) => {
+    try {
+      await removeCustomSkill(projectId, skillId)
+      message.success('已删除自定义 Skill')
+      loadProject()
+    } catch (error: unknown) {
+      message.error(getErrorMessage(error, '删除 Skill 失败'))
     }
   }
 
@@ -441,7 +454,7 @@ export default function SchemaTab({
       <Card
         title={(
           <Space style={{ justifyContent: 'space-between', width: '100%' }}>
-            <span style={{ letterSpacing: 1, fontWeight: 700 }}>Skills</span>
+            <span style={{ letterSpacing: 1, fontWeight: 700 }}>Skill 能力编排</span>
             <Tag>{skillList.length}</Tag>
           </Space>
         )}
@@ -456,33 +469,78 @@ export default function SchemaTab({
               onChange={(event) => { void handleUploadSkillZip(event) }}
             />
             <Button
-              type="text"
-              icon={<PlusOutlined />}
+              type="primary"
+              icon={<UploadOutlined />}
               loading={uploadingSkills}
               onClick={() => skillZipInputRef.current?.click()}
-            />
+            >
+              上传 Skill 包
+            </Button>
           </>
         )}
       >
         <Space direction="vertical" size={12} style={{ width: '100%' }}>
+          <Alert
+            type="info"
+            showIcon
+            message="支持上传 Claude 标准 Skill 包（zip）"
+            description="压缩包中需包含 SKILL.md，系统会自动解析名称、简介与包元数据并存库。"
+          />
           {skillList.length === 0 && (
             <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无 Skill。" />
           )}
           {skillList.map(skill => (
-            <Card
-              key={skill.id}
-              size="small"
-              title={skill.name}
-              extra={skill.enabled ? <Tag color="success">enabled</Tag> : <Tag>disabled</Tag>}
+            <Card key={skill.id} size="small" title={skill.name} extra={(
+              <Space size={6}>
+                {skill.enabled ? <Tag color="success">已启用</Tag> : <Tag>未启用</Tag>}
+                {skill.source === 'built_in' ? <Tag color="blue">内置</Tag> : <Tag color="purple">用户上传</Tag>}
+              </Space>
+            )}
             >
-              <Space direction="vertical" style={{ width: '100%' }} size={8}>
+              <Space direction="vertical" style={{ width: '100%' }} size={10}>
                 <Text type="secondary">{skill.description || '暂无介绍'}</Text>
+                <Descriptions size="small" column={2}>
+                  <Descriptions.Item label="来源">
+                    {skill.source === 'built_in' ? '系统内置' : '客户自定义'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="编码">{skill.code}</Descriptions.Item>
+                  <Descriptions.Item label="包格式">
+                    {String(skill.metadata?.packageFormat || (skill.source === 'built_in' ? 'builtin' : '-'))}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="SKILL.md">
+                    {skill.metadata?.hasSkillMd ? '已检测' : (skill.source === 'built_in' ? '内置能力' : '未检测')}
+                  </Descriptions.Item>
+                </Descriptions>
                 <Space wrap>
                   {(skill.tags || []).map(tag => <Tag key={tag}>{tag}</Tag>)}
-                  {skill.fileName && <Tag>{skill.fileName}</Tag>}
-                  {skill.blocked && <Tag color="orange">blocked</Tag>}
+                  {Array.isArray(skill.metadata?.capabilities)
+                    ? skill.metadata.capabilities?.map((capability) => (
+                      <Tag color="geekblue" key={`${skill.id}_${String(capability)}`}>
+                        {String(capability)}
+                      </Tag>
+                    ))
+                    : null}
+                  {skill.fileName && (
+                    <Tag icon={<FileZipOutlined />}>{skill.fileName}</Tag>
+                  )}
+                  {skill.blocked && <Tag color="orange">依赖未满足</Tag>}
                 </Space>
-                {skill.missing && <Text type="secondary">Missing: {skill.missing}</Text>}
+                {skill.missing && <Text type="secondary">缺失依赖：{skill.missing}</Text>}
+                {skill.source === 'uploaded' && (
+                  <Space>
+                    <Popconfirm
+                      title="删除该 Skill？"
+                      description="删除后不会参与后续图谱处理。"
+                      onConfirm={() => {
+                        void handleDeleteUploadedSkill(skill.id)
+                      }}
+                    >
+                      <Button danger icon={<DeleteOutlined />}>
+                        删除
+                      </Button>
+                    </Popconfirm>
+                  </Space>
+                )}
               </Space>
             </Card>
           ))}

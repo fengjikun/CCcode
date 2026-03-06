@@ -88,6 +88,14 @@ export default function ExtractionTab({
     },
   ]
 
+  const schemaWarnings = (selectedRun?.warnings || []).filter((line) => (
+    line.includes('schema')
+    || line.includes('不在 schema 中')
+    || line.includes('domain/range 与 schema 不一致')
+    || line.includes('超出 schema 范围')
+  ))
+  const otherWarnings = (selectedRun?.warnings || []).filter((line) => !schemaWarnings.includes(line))
+
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={16}>
       <Card>
@@ -141,6 +149,40 @@ export default function ExtractionTab({
             </Space>
             {selectedRun.errorMessage && (
               <Alert style={{ marginTop: 12 }} type="error" showIcon message="抽取任务失败" description={selectedRun.errorMessage} />
+            )}
+            {schemaWarnings.length > 0 && (
+              <Alert
+                style={{ marginTop: 12 }}
+                type="warning"
+                showIcon
+                message={`检测到 ${schemaWarnings.length} 条 Schema 约束告警（已自动忽略）`}
+                description={(
+                  <div style={{ maxHeight: 120, overflow: 'auto' }}>
+                    {schemaWarnings.map((line, index) => (
+                      <Text key={`${index}_${line}`} type="warning" style={{ display: 'block' }}>
+                        {line}
+                      </Text>
+                    ))}
+                  </div>
+                )}
+              />
+            )}
+            {otherWarnings.length > 0 && (
+              <Alert
+                style={{ marginTop: 12 }}
+                type="info"
+                showIcon
+                message={`其他抽取告警 ${otherWarnings.length} 条`}
+                description={(
+                  <div style={{ maxHeight: 120, overflow: 'auto' }}>
+                    {otherWarnings.map((line, index) => (
+                      <Text key={`${index}_${line}`} type="secondary" style={{ display: 'block' }}>
+                        {line}
+                      </Text>
+                    ))}
+                  </div>
+                )}
+              />
             )}
             {selectedRun.logs.length > 0 && (
               <div style={{ marginTop: 12, maxHeight: 180, overflow: 'auto', border: '1px solid #f0f0f0', borderRadius: 8, padding: 8 }}>

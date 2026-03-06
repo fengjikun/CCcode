@@ -130,6 +130,17 @@ function mapRelationType(item: any): RelationTypeConfig {
 }
 
 function mapSkill(item: any): SkillConfig {
+  const rawMetadata = item.metadata && typeof item.metadata === 'object' ? item.metadata : {}
+  const metadata = {
+    packageFormat: String((rawMetadata as any).packageFormat || (rawMetadata as any).package_format || ''),
+    packageSize: Number((rawMetadata as any).packageSize || (rawMetadata as any).package_size || 0),
+    packageEntries: Number((rawMetadata as any).packageEntries || (rawMetadata as any).package_entries || 0),
+    skillMdPath: String((rawMetadata as any).skillMdPath || (rawMetadata as any).skill_md_path || ''),
+    hasSkillMd: Boolean((rawMetadata as any).hasSkillMd || (rawMetadata as any).has_skill_md),
+    capabilities: Array.isArray((rawMetadata as any).capabilities)
+      ? (rawMetadata as any).capabilities.map((x: unknown) => String(x))
+      : [],
+  }
   return {
     id: String(item.id),
     code: item.code as SkillConfig['code'],
@@ -142,6 +153,7 @@ function mapSkill(item: any): SkillConfig {
     blocked: Boolean(item.blocked),
     missing: String(item.missing || ''),
     fileName: String(item.fileName || ''),
+    metadata,
     createdAt: item.createdAt ? String(item.createdAt) : undefined,
   }
 }
@@ -181,6 +193,7 @@ function mapRun(item: any): ExtractionRun {
     stage: item.stage ? String(item.stage) : undefined,
     currentDocument: item.currentDocument ? String(item.currentDocument) : undefined,
     logs: Array.isArray(item.logs) ? item.logs.map((x: unknown) => String(x)) : [],
+    warnings: Array.isArray(item.warnings) ? item.warnings.map((x: unknown) => String(x)) : [],
     errorMessage: item.errorMessage ? String(item.errorMessage) : undefined,
     reviewItems: Array.isArray(item.reviewItems) ? item.reviewItems.map(mapReviewItem) : [],
   }
