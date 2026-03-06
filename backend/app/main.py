@@ -1,4 +1,5 @@
 from pathlib import Path
+import logging
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -15,6 +16,8 @@ from app.routers import (
 )
 from app.security import bootstrap_default_user, get_current_user
 from app.services import fault_knowledge_service
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="大族智控设备故障诊断系统", version="2.0.0")
 setup_request_logging_middleware(app)
@@ -52,6 +55,14 @@ def on_startup():
     db = SessionLocal()
     try:
         bootstrap_default_user(db)
+        from app.services import project_mgmt_service
+
+        recovered_count = project_mgmt_service.recover_interrupted_ai_insight_runs(db)
+        if recovered_count > 0:
+            logger.warning(
+                "startup recovered %s interrupted ai-insight runs to FAILED",
+                recovered_count,
+            )
     finally:
         db.close()
 

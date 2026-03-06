@@ -149,6 +149,26 @@ class ExtractionRun(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 
+class AiInsightRun(Base):
+    __tablename__ = "pm_ai_insight_runs"
+
+    id = Column(String, primary_key=True)
+    project_id = Column(String, nullable=False)
+    status = Column(String(32), nullable=False, default="RUNNING")
+    progress = Column(Integer, nullable=False, default=0)
+    scanned_document_count = Column(Integer, nullable=False, default=0)
+    added_entity_count = Column(Integer, nullable=False, default=0)
+    added_relation_count = Column(Integer, nullable=False, default=0)
+    added_entity_names_json = Column(Text)
+    added_relation_names_json = Column(Text)
+    warnings_json = Column(Text)
+    runtime_meta_json = Column(Text)
+    error_message = Column(Text)
+    created_at = Column(DateTime, default=datetime.now)
+    completed_at = Column(DateTime)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+
 class ReviewItem(Base):
     __tablename__ = "pm_review_items"
 

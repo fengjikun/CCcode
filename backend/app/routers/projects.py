@@ -8,7 +8,7 @@ from app.models.user import User
 from app.schemas.project_mgmt import (
     ActionCreateRequest,
     ActionStatusPatchRequest,
-    AiInsightResult,
+    AiInsightRun,
     ConnectionTestResult,
     DataSourceUpsertRequest,
     EnabledPatchRequest,
@@ -419,14 +419,29 @@ def delete_custom_skill(
         _raise_not_implemented(e)
 
 
-@router.post("/{project_id}/schema/ai-insight", response_model=AiInsightResult)
+@router.post("/{project_id}/schema/ai-insight", response_model=AiInsightRun, status_code=202)
 def run_ai_schema_insight(
     project_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return project_svc.run_ai_schema_insight(db, current_user.id, project_id)
+        return project_svc.create_ai_schema_insight_run(db, current_user.id, project_id)
+    except ValueError as e:
+        raise HTTPException(status_code=_value_error_status(str(e)), detail=str(e))
+    except NotImplementedError as e:
+        _raise_not_implemented(e)
+
+
+@router.get("/{project_id}/schema/ai-insight/runs/{run_id}", response_model=AiInsightRun)
+def get_ai_schema_insight_run(
+    project_id: str,
+    run_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return project_svc.get_ai_schema_insight_run(db, current_user.id, project_id, run_id)
     except ValueError as e:
         raise HTTPException(status_code=_value_error_status(str(e)), detail=str(e))
     except NotImplementedError as e:

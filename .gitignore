@@ -18,6 +18,7 @@ backend/.deps/
 *.egg-info/
 dist/
 .pytest_cache/
+.spec-workflow/
 
 # ===== Environment =====
 backend/.env

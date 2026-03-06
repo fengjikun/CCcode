@@ -9,6 +9,6 @@ from .ontology import (
 from .project_mgmt import (
     Project, ProjectDocument, ProjectDataSource,
     SchemaConfig, EntityType, RelationType, SchemaProperty, Skill,
-    ExtractionRun, ReviewItem, OntologyVersion, VersionItem,
+    ExtractionRun, AiInsightRun, ReviewItem, OntologyVersion, VersionItem,
     ProjectAction, ProjectFunction,
 )
