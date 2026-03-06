@@ -119,6 +119,15 @@ def delete_link_type(db: Session, id: int):
     db.commit()
 
 
+# ===== Bulk Delete =====
+
+def delete_all_schema(db: Session):
+    db.query(OntologyProperty).delete()
+    db.query(OntologyLinkType).delete()
+    db.query(OntologyObjectType).delete()
+    db.commit()
+
+
 # ===== Schema Graph =====
 
 def get_schema_graph(db: Session) -> dict:

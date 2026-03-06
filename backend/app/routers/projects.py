@@ -369,6 +369,18 @@ def delete_relation_type(
         _raise_not_implemented(e)
 
 
+@router.delete("/{project_id}/schema", status_code=204)
+def clear_project_schema(
+    project_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        project_svc.clear_project_schema(db, current_user.id, project_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @router.patch("/{project_id}/schema/prompts", response_model=SchemaConfig)
 def update_schema_prompts(
     project_id: str,

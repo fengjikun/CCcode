@@ -123,6 +123,11 @@ def delete_link_type(id: int, db: Session = Depends(get_db)):
 
 # ===== Schema Graph =====
 
+@router.delete("/schema", status_code=204)
+def delete_all_schema(db: Session = Depends(get_db)):
+    schema_svc.delete_all_schema(db)
+
+
 @router.get("/schema")
 def get_schema_graph(db: Session = Depends(get_db)):
     return schema_svc.get_schema_graph(db)
