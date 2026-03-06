@@ -2840,6 +2840,34 @@ def _build_skills_response(skill_rows: list[Skill]) -> list[dict[str, Any]]:
     return responses
 
 
+def _select_mock_skill_for_task(
+    skills: list[dict[str, Any]],
+    *,
+    preferred_codes: tuple[str, ...],
+) -> dict[str, Any] | None:
+    enabled_skills = [
+        skill
+        for skill in skills
+        if bool(skill.get("enabled")) and not bool(skill.get("blocked"))
+    ]
+    if not enabled_skills:
+        return None
+
+    for code in preferred_codes:
+        normalized_code = _normalize_text(code).lower()
+        for skill in enabled_skills:
+            if _normalize_text(skill.get("code")).lower() == normalized_code:
+                return skill
+    return enabled_skills[0]
+
+
+def _build_mock_skill_load_log_line(skill: dict[str, Any]) -> str:
+    skill_name = _normalize_text(skill.get("name"))
+    if not skill_name:
+        skill_name = _normalize_text(skill.get("code")) or "custom"
+    return f"load {skill_name} skill"
+
+
 def _build_schema_config_response(db: Session, project: Project) -> dict[str, Any]:
     schema_cfg = db.query(SchemaConfig).filter(SchemaConfig.project_id == project.id).first()
     entity_rows = (
@@ -4272,6 +4300,17 @@ def _execute_ai_schema_insight_run(db: Session, user_id: int, project_id: str, r
             _mark_ai_insight_run_failed(db, project=project, run=run, message="无可用启用文档")
             return
 
+        skills = _build_skills_response(db.query(Skill).filter(Skill.project_id == project.id).all())
+        selected_skill = _select_mock_skill_for_task(
+            skills,
+            preferred_codes=("data_processing", "graph_synthesis"),
+        )
+        if selected_skill:
+            _set_ai_insight_runtime_meta(
+                run,
+                append_log=_build_mock_skill_load_log_line(selected_skill),
+            )
+
         added_entity_names: list[str] = []
         added_relation_names: list[str] = []
         warnings: list[str] = []
@@ -4679,6 +4718,15 @@ def _execute_extraction_run(db: Session, user_id: int, project_id: str, run_id: 
             .all()
         )
         skills = _build_skills_response(db.query(Skill).filter(Skill.project_id == project.id).all())
+        selected_skill = _select_mock_skill_for_task(
+            skills,
+            preferred_codes=("graph_synthesis", "data_processing"),
+        )
+        if selected_skill:
+            _set_run_runtime_meta(
+                run,
+                append_log=_build_mock_skill_load_log_line(selected_skill),
+            )
         if not any(skill.get("enabled") and not skill.get("blocked") for skill in skills):
             _mark_run_failed(db, project=project, run=run, message="请至少启用一个 Skill")
             return

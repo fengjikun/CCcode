@@ -212,6 +212,16 @@ class AiInsightOpenAIPipelineTests(unittest.TestCase):
         self.assertEqual(finished["added_entity_names"], ["FaultPhenomenon"])
         self.assertEqual(self.db.query(EntityType).count(), 1)
         self.assertGreaterEqual(len(finished.get("logs") or []), 1)
+        logs = finished.get("logs") or []
+        self.assertTrue(any("load" in line and "skill" in line for line in logs), "应记录 mock skill 加载日志")
+        load_index = next(
+            (idx for idx, line in enumerate(logs) if "load" in line and "skill" in line),
+            -1,
+        )
+        scan_index = next((idx for idx, line in enumerate(logs) if "开始扫描" in line), -1)
+        self.assertGreaterEqual(load_index, 0)
+        self.assertGreaterEqual(scan_index, 0)
+        self.assertLess(load_index, scan_index, "应先记录 load skill，再记录扫描日志")
 
     def test_create_ai_schema_insight_run_rejects_when_another_run_is_running(self) -> None:
         def _slow_llm_runner(*, project, enabled_docs, xlsx_inputs, existing_entity_names):
