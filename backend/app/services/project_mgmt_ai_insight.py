@@ -2,13 +2,25 @@ import json
 import os
 from typing import Any, Callable
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from app.models.project_mgmt import Project, ProjectDocument
 
 MAX_AI_INSIGHT_ENTITIES = 80
 MAX_AI_INSIGHT_RELATIONS = 120
-AI_INSIGHT_LLM_MAX_TOKENS_DEFAULT = 16384
+AI_INSIGHT_LLM_MAX_TOKENS_DEFAULT = 32768
+AI_INSIGHT_CONCURRENCY_DEFAULT = 1
+
+
+def _resolve_ai_insight_concurrency() -> int:
+    raw = _normalize_text(os.getenv("AI_INSIGHT_CONCURRENCY"))
+    if not raw:
+        return AI_INSIGHT_CONCURRENCY_DEFAULT
+    try:
+        val = int(raw)
+    except ValueError:
+        return AI_INSIGHT_CONCURRENCY_DEFAULT
+    return max(1, min(val, 10))
 
 
 class _AiInsightEvidence(BaseModel):
@@ -16,40 +28,105 @@ class _AiInsightEvidence(BaseModel):
     row: int | None = None
     snippet: str = ""
 
+    @field_validator("sheet", "snippet", mode="before")
+    @classmethod
+    def _coerce_str(cls, v: Any) -> str:
+        return "" if v is None else str(v)
+
 
 class _AiInsightProperty(BaseModel):
-    name: str
+    name: str = ""
     display_name: str = ""
     data_type: str = "STRING"
     required: bool = False
     default_value: str = ""
     description: str = ""
 
+    @field_validator("name", "display_name", "data_type", "default_value", "description", mode="before")
+    @classmethod
+    def _coerce_str(cls, v: Any) -> str:
+        return "" if v is None else str(v)
+
+    @field_validator("required", mode="before")
+    @classmethod
+    def _coerce_bool(cls, v: Any) -> bool:
+        if v is None:
+            return False
+        return bool(v)
+
 
 class _AiInsightEntity(BaseModel):
-    name: str
+    name: str = ""
     display_name: str = ""
     description: str = ""
     properties: list[_AiInsightProperty] = Field(default_factory=list)
     evidence: list[_AiInsightEvidence] = Field(default_factory=list)
     confidence: float = 0.0
+
+    @field_validator("name", "display_name", "description", mode="before")
+    @classmethod
+    def _coerce_str(cls, v: Any) -> str:
+        return "" if v is None else str(v)
+
+    @field_validator("properties", "evidence", mode="before")
+    @classmethod
+    def _coerce_list(cls, v: Any) -> list:
+        return v if isinstance(v, list) else []
+
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def _coerce_float(cls, v: Any) -> float:
+        try:
+            return float(v or 0)
+        except (TypeError, ValueError):
+            return 0.0
 
 
 class _AiInsightRelation(BaseModel):
-    name: str
+    name: str = ""
     display_name: str = ""
     description: str = ""
-    domain_entity_name: str
-    range_entity_name: str
+    domain_entity_name: str = ""
+    range_entity_name: str = ""
     properties: list[_AiInsightProperty] = Field(default_factory=list)
     evidence: list[_AiInsightEvidence] = Field(default_factory=list)
     confidence: float = 0.0
+
+    @field_validator("name", "display_name", "description", "domain_entity_name", "range_entity_name", mode="before")
+    @classmethod
+    def _coerce_str(cls, v: Any) -> str:
+        return "" if v is None else str(v)
+
+    @field_validator("properties", "evidence", mode="before")
+    @classmethod
+    def _coerce_list(cls, v: Any) -> list:
+        return v if isinstance(v, list) else []
+
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def _coerce_float(cls, v: Any) -> float:
+        try:
+            return float(v or 0)
+        except (TypeError, ValueError):
+            return 0.0
 
 
 class _AiInsightExtraction(BaseModel):
     entities: list[_AiInsightEntity] = Field(default_factory=list)
     relations: list[_AiInsightRelation] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+
+    @field_validator("entities", "relations", mode="before")
+    @classmethod
+    def _coerce_list(cls, v: Any) -> list:
+        return v if isinstance(v, list) else []
+
+    @field_validator("warnings", mode="before")
+    @classmethod
+    def _coerce_warnings(cls, v: Any) -> list:
+        if not isinstance(v, list):
+            return []
+        return [str(x) for x in v if x is not None]
 
 
 def _normalize_text(value: str | None) -> str:
@@ -177,14 +254,14 @@ def _build_ai_insight_prompts(
         "请基于输入的 xlsx 解析结果，提取实体类型与关系类型。"
         "只允许输出 schema-level 类型定义，禁止输出任何实例级数据。"
         "禁止输出具体实例名称、具体工单编号、具体设备编号、具体行记录。"
-        "必须严格返回一个 JSON 对象，不允许输出 markdown、代码块或解释。"
-        "输出字段必须包含 entities、relations、warnings。"
+        "必须严格返回一个 JSON 对象，不允许输出 markdown、代码块或解释文字。"
+        "输出字段必须包含 entities、relations、warnings，所有字段值不得为 null，字符串字段为空时用空字符串。"
         "entities[*] 必须包含 name、display_name、description、properties、evidence、confidence。"
         "relations[*] 必须包含 name、display_name、description、domain_entity_name、range_entity_name、properties、evidence、confidence。"
         "properties[*].data_type 仅允许 STRING/INTEGER/FLOAT/BOOLEAN/DATE/DATETIME/JSON/TEXT。"
-        "confidence 取值范围 [0, 1]。"
-        "输出规模限制：entities 最多 24 个，relations 最多 40 个，每个实体/关系最多 8 个 properties，evidence 最多 1 条。"
-        "description 与 evidence.snippet 请尽量简洁，避免长段落。"
+        "confidence 取值范围 [0, 1]，必须是数字。"
+        "输出规模限制：entities 最多 16 个，relations 最多 24 个，每个实体/关系最多 6 个 properties，evidence 恰好 1 条。"
+        "description 与 evidence.snippet 不超过 50 字，避免长段落。"
         "若信息不足或不确定，请不要猜测，把原因写进 warnings。"
     )
 
@@ -257,43 +334,25 @@ def _run_ai_schema_insight_llm(
     )
 
     try:
-        import httpx
+        from openai import OpenAI
     except ImportError as exc:
-        raise ValueError("缺少 httpx 依赖，无法调用 /v1/messages 协议") from exc
+        raise ValueError("缺少 openai 依赖，无法调用模型") from exc
 
-    base_url = llm_cfg["base_url"].rstrip("/")
-    endpoint = f"{base_url}/messages" if base_url.endswith("/v1") else f"{base_url}/v1/messages"
-    payload = {
-        "model": llm_cfg["model"],
-        "max_tokens": _resolve_ai_insight_llm_max_tokens(),
-        "stream": False,
-        "system": developer_prompt,
-        "messages": [{"role": "user", "content": user_prompt}],
-    }
+    client = OpenAI(api_key=llm_cfg["api_key"], base_url=llm_cfg["base_url"])
 
     try:
-        response = httpx.post(
-            endpoint,
-            headers={"x-api-key": llm_cfg["api_key"], "Content-Type": "application/json"},
-            json=payload,
-            timeout=120,
+        response = client.chat.completions.create(
+            model=llm_cfg["model"],
+            messages=[
+                {"role": "system", "content": developer_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            max_tokens=_resolve_ai_insight_llm_max_tokens(),
         )
-        response.raise_for_status()
-        body = response.json()
     except Exception as exc:
-        raise ValueError(f"AI 洞察模型调用失败（/v1/messages）：{exc}") from exc
+        raise ValueError(f"AI 洞察模型调用失败：{exc}") from exc
 
-    text_chunks: list[str] = []
-    content = body.get("content")
-    if isinstance(content, list):
-        for item in content:
-            if not isinstance(item, dict):
-                continue
-            text = _normalize_text(item.get("text"))
-            if text:
-                text_chunks.append(text)
-
-    text = "\n".join(text_chunks)
+    text = _normalize_text(response.choices[0].message.content)
     if not text:
         raise ValueError("AI 洞察模型未返回可解析文本内容")
 
@@ -318,8 +377,15 @@ def _parse_ai_schema_insight_output(
     try:
         extraction = _AiInsightExtraction.model_validate(raw_output)
     except ValidationError as exc:
-        first_error = exc.errors()[0] if exc.errors() else {"msg": "未知字段错误"}
-        raise ValueError(f"AI 洞察输出字段不符合要求：{first_error.get('msg', '未知错误')}") from exc
+        # 降级：不整体失败，记录 warning 并返回空结果
+        error_msgs = "; ".join(
+            e.get("msg", "未知错误") for e in (exc.errors() or [{"msg": "未知字段错误"}])
+        )
+        return {
+            "entity_templates": [],
+            "relation_templates": [],
+            "warnings": [f"AI 输出字段校验失败，已跳过本文档：{error_msgs}"],
+        }
 
     warnings = [_normalize_text(item) for item in extraction.warnings if _normalize_text(item)]
 
@@ -371,9 +437,10 @@ def _parse_ai_schema_insight_output(
             warnings.append(f"关系 {relation_name} 置信度越界，已忽略")
             continue
         if domain_name not in available_entity_names or range_name not in available_entity_names:
-            raise ValueError(
-                f"AI 洞察输出存在非法关系 {relation_name}：{domain_name} -> {range_name}，引用了不存在实体"
+            warnings.append(
+                f"关系 {relation_name}（{domain_name} -> {range_name}）引用了不存在的实体，已忽略"
             )
+            continue
 
         relation_key = (relation_name, domain_name, range_name)
         if relation_key in seen_relation_keys:

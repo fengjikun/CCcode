@@ -36,6 +36,7 @@ from app.models.project_mgmt import (
 )
 from app.services.project_mgmt_ai_insight import (
     _parse_ai_schema_insight_output,
+    _resolve_ai_insight_concurrency,
     _run_ai_schema_insight_llm,
 )
 
@@ -1277,42 +1278,25 @@ def _run_ai_instance_extraction_llm(
     )
 
     try:
-        import httpx
+        from openai import OpenAI
     except ImportError as exc:
-        raise ValueError("缺少 httpx 依赖，无法调用模型抽取") from exc
+        raise ValueError("缺少 openai 依赖，无法调用模型抽取") from exc
 
-    base_url = llm_cfg["base_url"].rstrip("/")
-    endpoint = f"{base_url}/messages" if base_url.endswith("/v1") else f"{base_url}/v1/messages"
-    payload = {
-        "model": llm_cfg["model"],
-        "max_tokens": 8192,
-        "stream": False,
-        "system": developer_prompt,
-        "messages": [{"role": "user", "content": user_prompt}],
-    }
+    client = OpenAI(api_key=llm_cfg["api_key"], base_url=llm_cfg["base_url"])
 
     try:
-        response = httpx.post(
-            endpoint,
-            headers={"x-api-key": llm_cfg["api_key"], "Content-Type": "application/json"},
-            json=payload,
-            timeout=120,
+        response = client.chat.completions.create(
+            model=llm_cfg["model"],
+            messages=[
+                {"role": "system", "content": developer_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            max_tokens=8192,
         )
-        response.raise_for_status()
-        body = response.json()
     except Exception as exc:
         raise ValueError(f"模型抽取调用失败：{exc}") from exc
 
-    text_chunks: list[str] = []
-    content = body.get("content")
-    if isinstance(content, list):
-        for item in content:
-            if not isinstance(item, dict):
-                continue
-            text = _normalize_text(item.get("text"))
-            if text:
-                text_chunks.append(text)
-    text = "\n".join(text_chunks)
+    text = _normalize_text(response.choices[0].message.content)
     if not text:
         raise ValueError("模型未返回可解析内容")
 
@@ -3606,6 +3590,18 @@ def delete_relation_type(db: Session, user_id: int, project_id: str, relation_ty
     db.commit()
 
 
+def clear_project_schema(db: Session, user_id: int, project_id: str):
+    project = _ensure_project_owned(db, user_id, project_id)
+    db.query(SchemaProperty).filter(SchemaProperty.project_id == project.id).delete()
+    db.query(RelationType).filter(RelationType.project_id == project.id).delete()
+    db.query(EntityType).filter(EntityType.project_id == project.id).delete()
+    now = _now()
+    schema_cfg = _ensure_schema_config_row(db, project.id, now)
+    schema_cfg.updated_at = now
+    _touch_project(project)
+    db.commit()
+
+
 def update_schema_prompts(db: Session, user_id: int, project_id: str, payload: dict):
     project = _ensure_project_owned(db, user_id, project_id)
     skills_raw = payload.get("skills") or []
@@ -4014,18 +4010,14 @@ def _execute_ai_schema_insight_run(db: Session, user_id: int, project_id: str, r
         _log_ai_insight_progress(run.id, f"开始扫描文档，数量={len(enabled_docs)}")
 
         total_docs = len(enabled_docs)
-        for idx, doc in enumerate(enabled_docs, start=1):
-            run.progress = min(85, 10 + int(((idx - 1) / max(total_docs, 1)) * 70))
-            _set_ai_insight_runtime_meta(
-                run,
-                stage="LLM_EXTRACTING",
-                current_document=doc.name,
-                append_log=f"开始处理文档 {idx}/{total_docs}：{doc.name}",
-            )
-            run.updated_at = _now()
-            db.commit()
-            _log_ai_insight_progress(run.id, f"开始处理文档 {idx}/{total_docs}: {doc.name}")
+        concurrency = _resolve_ai_insight_concurrency()
+        _log_ai_insight_progress(run.id, f"并发数={concurrency}")
 
+        # --- 并发调用 LLM，串行写入 DB ---
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        def _call_llm_for_doc(doc_idx_tuple):
+            idx, doc = doc_idx_tuple
             xlsx_inputs = _collect_xlsx_insight_inputs([doc])
             existing_entity_names = {
                 row.name
@@ -4033,39 +4025,108 @@ def _execute_ai_schema_insight_run(db: Session, user_id: int, project_id: str, r
                 .filter(EntityType.project_id == project.id)
                 .all()
             }
+            try:
+                llm_raw_output = _run_ai_schema_insight_llm(
+                    project=project,
+                    enabled_docs=[doc],
+                    xlsx_inputs=xlsx_inputs,
+                    existing_entity_names=existing_entity_names,
+                )
+            except Exception as exc:
+                # 单文件失败不中断整体，返回空结果 + warning
+                llm_raw_output = {
+                    "entities": [],
+                    "relations": [],
+                    "warnings": [f"文档 {doc.name} 模型调用失败，已跳过：{exc}"],
+                }
+            return idx, doc, existing_entity_names, llm_raw_output
 
-            llm_raw_output = _run_ai_schema_insight_llm(
-                project=project,
-                enabled_docs=[doc],
-                xlsx_inputs=xlsx_inputs,
-                existing_entity_names=existing_entity_names,
-            )
+        # 按批次处理（每批 concurrency 个），批内并发，批间串行写入
+        for batch_start in range(0, total_docs, concurrency):
+            batch = list(enumerate(enabled_docs[batch_start:batch_start + concurrency], start=batch_start + 1))
+            batch_size = len(batch)
 
-            run.progress = min(90, 15 + int((idx / max(total_docs, 1)) * 70))
+            run.progress = min(85, 10 + int((batch_start / max(total_docs, 1)) * 70))
             _set_ai_insight_runtime_meta(
                 run,
-                stage="PARSING_OUTPUT",
-                current_document=doc.name,
-                append_log=f"文档 {idx}/{total_docs} 模型调用完成，开始解析输出。",
+                stage="LLM_EXTRACTING",
+                current_document=batch[0][1].name,
+                append_log=f"开始处理文档 {batch_start + 1}~{batch_start + batch_size}/{total_docs}",
             )
             run.updated_at = _now()
             db.commit()
-            _log_ai_insight_progress(run.id, f"文档 {idx}/{total_docs} 模型调用完成，开始解析")
 
-            parsed_output = _parse_ai_schema_insight_output(
-                raw_output=llm_raw_output,
-                existing_entity_names=existing_entity_names,
-                normalize_generated_properties=_normalize_generated_properties,
-            )
-            entity_templates = parsed_output["entity_templates"]
-            relation_templates = parsed_output["relation_templates"]
-            _extend_unique_texts(warnings, seen_warnings, parsed_output["warnings"])
-            if not entity_templates and not relation_templates:
-                _extend_unique_texts(
-                    warnings,
-                    seen_warnings,
-                    [f"文档 {doc.name} 未提取到可入库的实体或关系，已跳过"],
+            with ThreadPoolExecutor(max_workers=batch_size) as executor:
+                futures = {executor.submit(_call_llm_for_doc, item): item for item in batch}
+                batch_results = []
+                for future in as_completed(futures):
+                    try:
+                        batch_results.append(future.result())
+                    except Exception as exc:
+                        orig_item = futures[future]
+                        idx, doc = orig_item
+                        batch_results.append((
+                            idx, doc, set(),
+                            {"entities": [], "relations": [], "warnings": [f"文档 {doc.name} 处理异常，已跳过：{exc}"]},
+                        ))
+
+            # 按原始顺序排序后串行写入
+            batch_results.sort(key=lambda r: r[0])
+            for idx, doc, existing_entity_names, llm_raw_output in batch_results:
+                run.progress = min(90, 15 + int((idx / max(total_docs, 1)) * 70))
+                _set_ai_insight_runtime_meta(
+                    run,
+                    stage="PARSING_OUTPUT",
+                    current_document=doc.name,
+                    append_log=f"文档 {idx}/{total_docs} 模型调用完成，开始解析输出。",
                 )
+                run.updated_at = _now()
+                db.commit()
+                _log_ai_insight_progress(run.id, f"文档 {idx}/{total_docs} 模型调用完成，开始解析")
+
+                parsed_output = _parse_ai_schema_insight_output(
+                    raw_output=llm_raw_output,
+                    existing_entity_names=existing_entity_names,
+                    normalize_generated_properties=_normalize_generated_properties,
+                )
+                entity_templates = parsed_output["entity_templates"]
+                relation_templates = parsed_output["relation_templates"]
+                _extend_unique_texts(warnings, seen_warnings, parsed_output["warnings"])
+                if not entity_templates and not relation_templates:
+                    _extend_unique_texts(
+                        warnings,
+                        seen_warnings,
+                        [f"文档 {doc.name} 未提取到可入库的实体或关系，已跳过"],
+                    )
+                    run.added_entity_count = len(added_entity_names)
+                    run.added_relation_count = len(added_relation_names)
+                    run.added_entity_names_json = json.dumps(added_entity_names, ensure_ascii=False)
+                    run.added_relation_names_json = json.dumps(added_relation_names, ensure_ascii=False)
+                    run.warnings_json = json.dumps(warnings, ensure_ascii=False)
+                    run.updated_at = _now()
+                    db.commit()
+                    continue
+
+                _set_ai_insight_runtime_meta(
+                    run,
+                    stage="APPLYING_SCHEMA",
+                    current_document=doc.name,
+                    append_log=f"文档 {idx}/{total_docs} 解析完成，开始写入实体与关系类型。",
+                )
+                run.updated_at = _now()
+                db.commit()
+                _log_ai_insight_progress(run.id, f"文档 {idx}/{total_docs} 开始写入 Schema")
+
+                applied = _apply_schema_templates(
+                    db,
+                    project=project,
+                    entity_templates=entity_templates,
+                    relation_templates=relation_templates,
+                    now=_now(),
+                )
+                _extend_unique_texts(added_entity_names, seen_entity_names, applied["added_entity_names"])
+                _extend_unique_texts(added_relation_names, seen_relation_names, applied["added_relation_names"])
+
                 run.added_entity_count = len(added_entity_names)
                 run.added_relation_count = len(added_relation_names)
                 run.added_entity_names_json = json.dumps(added_entity_names, ensure_ascii=False)
@@ -4073,42 +4134,13 @@ def _execute_ai_schema_insight_run(db: Session, user_id: int, project_id: str, r
                 run.warnings_json = json.dumps(warnings, ensure_ascii=False)
                 run.updated_at = _now()
                 db.commit()
-                continue
-
-            _set_ai_insight_runtime_meta(
-                run,
-                stage="APPLYING_SCHEMA",
-                current_document=doc.name,
-                append_log=f"文档 {idx}/{total_docs} 解析完成，开始写入实体与关系类型。",
-            )
-            run.updated_at = _now()
-            db.commit()
-            _log_ai_insight_progress(run.id, f"文档 {idx}/{total_docs} 开始写入 Schema")
-
-            applied = _apply_schema_templates(
-                db,
-                project=project,
-                entity_templates=entity_templates,
-                relation_templates=relation_templates,
-                now=_now(),
-            )
-            _extend_unique_texts(added_entity_names, seen_entity_names, applied["added_entity_names"])
-            _extend_unique_texts(added_relation_names, seen_relation_names, applied["added_relation_names"])
-
-            run.added_entity_count = len(added_entity_names)
-            run.added_relation_count = len(added_relation_names)
-            run.added_entity_names_json = json.dumps(added_entity_names, ensure_ascii=False)
-            run.added_relation_names_json = json.dumps(added_relation_names, ensure_ascii=False)
-            run.warnings_json = json.dumps(warnings, ensure_ascii=False)
-            run.updated_at = _now()
-            db.commit()
-            _log_ai_insight_progress(
-                run.id,
-                (
-                    f"文档 {idx}/{total_docs} 入库完成，"
-                    f"累计新增实体={run.added_entity_count}，累计新增关系={run.added_relation_count}"
-                ),
-            )
+                _log_ai_insight_progress(
+                    run.id,
+                    (
+                        f"文档 {idx}/{total_docs} 入库完成，"
+                        f"累计新增实体={run.added_entity_count}，累计新增关系={run.added_relation_count}"
+                    ),
+                )
 
         if not added_entity_names and not added_relation_names:
             raise ValueError("AI 洞察未提取到可入库的实体或关系，请调整文档内容或 Prompt 后重试")

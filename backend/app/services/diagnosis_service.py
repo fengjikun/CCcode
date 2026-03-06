@@ -63,62 +63,48 @@ def _run_agent(request: Dict[str, Any]) -> str:
 
     client = OpenAI(api_key=LLM_API_KEY, base_url=base_url)
 
-    input_items = [
-        {"role": "developer", "content": _build_system_prompt()},
+    messages = [
+        {"role": "system", "content": _build_system_prompt()},
         _build_user_message(request),
     ]
     tools = _build_tool_definitions()
     diagnosis_conclusion = None
 
     for round_ in range(MAX_AGENT_ROUNDS):
-        response = client.responses.create(
+        response = client.chat.completions.create(
             model=LLM_MODEL,
-            input=input_items,
+            messages=messages,
             tools=tools,
-            max_output_tokens=4096,
+            max_tokens=4096,
         )
 
-        function_calls = [
-            item for item in response.output if item.type == "function_call"
-        ]
+        msg = response.choices[0].message
+        tool_calls = msg.tool_calls or []
 
-        # No function calls — model returned final text
-        if not function_calls:
+        # No tool calls — model returned final text
+        if not tool_calls:
             if diagnosis_conclusion is not None:
                 return diagnosis_conclusion
-            text = _extract_text_from_response(response)
-            return _extract_json_from_text(text)
+            return _extract_json_from_text(msg.content or "{}")
 
-        # Append model output (messages + function_calls) to conversation history
-        for item in response.output:
-            if item.type == "message":
-                for c in item.content:
-                    if hasattr(c, "text") and c.text:
-                        input_items.append({"role": "assistant", "content": c.text})
-            elif item.type == "function_call":
-                input_items.append({
-                    "type": "function_call",
-                    "id": item.id,
-                    "call_id": item.call_id,
-                    "name": item.name,
-                    "arguments": item.arguments,
-                })
+        # Append assistant message (with tool_calls) to history
+        messages.append(msg)
 
         # Execute each tool and append results
-        for fc in function_calls:
+        for tc in tool_calls:
             try:
-                input_data = json.loads(fc.arguments)
+                input_data = json.loads(tc.function.arguments)
             except json.JSONDecodeError:
                 input_data = {}
 
-            if fc.name == "record_diagnosis":
+            if tc.function.name == "record_diagnosis":
                 diagnosis_conclusion = json.dumps(input_data, ensure_ascii=False)
 
-            result = _execute_tool(fc.name, input_data)
-            input_items.append({
-                "type": "function_call_output",
-                "call_id": fc.call_id,
-                "output": result,
+            result = _execute_tool(tc.function.name, input_data)
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tc.id,
+                "content": result,
             })
 
         # Early exit once diagnosis is recorded and we're near the round limit
@@ -127,14 +113,6 @@ def _run_agent(request: Dict[str, Any]) -> str:
 
     return diagnosis_conclusion if diagnosis_conclusion else _run_local_diagnosis(request)
 
-
-def _extract_text_from_response(response) -> str:
-    for item in response.output:
-        if item.type == "message":
-            for c in item.content:
-                if hasattr(c, "text") and c.text:
-                    return c.text
-    return "{}"
 
 
 def _execute_tool(tool_name: str, input_data: Dict[str, Any]) -> str:
@@ -221,85 +199,97 @@ def _build_tool_definitions() -> list:
     return [
         {
             "type": "function",
-            "name": "search_phenomena",
-            "description": "搜索与用户描述的故障症状匹配的现象级问题（Phenomenon）",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {"type": "string", "description": "故障描述关键词，如'W轴限位报警'"},
-                    "symptoms": {"type": "array", "items": {"type": "string"}, "description": "症状关键词列表"},
-                    "device_type": {"type": "string", "description": "设备类型，如'激光切割机'"},
+            "function": {
+                "name": "search_phenomena",
+                "description": "搜索与用户描述的故障症状匹配的现象级问题（Phenomenon）",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "故障描述关键词，如'W轴限位报警'"},
+                        "symptoms": {"type": "array", "items": {"type": "string"}, "description": "症状关键词列表"},
+                        "device_type": {"type": "string", "description": "设备类型，如'激光切割机'"},
+                    },
+                    "required": [],
                 },
-                "required": [],
             },
         },
         {
             "type": "function",
-            "name": "get_sub_phenomena",
-            "description": "获取某现象级问题（Phenomenon）的所有子现象（SubPhenomenon）",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "phenomenon_id": {"type": "string", "description": "现象级问题的ID，如 phen_w_limit"},
+            "function": {
+                "name": "get_sub_phenomena",
+                "description": "获取某现象级问题（Phenomenon）的所有子现象（SubPhenomenon）",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "phenomenon_id": {"type": "string", "description": "现象级问题的ID，如 phen_w_limit"},
+                    },
+                    "required": ["phenomenon_id"],
                 },
-                "required": ["phenomenon_id"],
             },
         },
         {
             "type": "function",
-            "name": "get_checkpoints",
-            "description": "获取某现象或子现象的所有排查点（Checkpoint），按优先级排序",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "node_id": {"type": "string", "description": "现象或子现象的ID"},
+            "function": {
+                "name": "get_checkpoints",
+                "description": "获取某现象或子现象的所有排查点（Checkpoint），按优先级排序",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "node_id": {"type": "string", "description": "现象或子现象的ID"},
+                    },
+                    "required": ["node_id"],
                 },
-                "required": ["node_id"],
             },
         },
         {
             "type": "function",
-            "name": "get_causes_and_solutions",
-            "description": "获取某子现象（SubPhenomenon）的可能原因（Cause）和解决方案（Solution）",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "sub_phenomenon_id": {"type": "string", "description": "子现象的ID，如 sp_io_no_purple"},
+            "function": {
+                "name": "get_causes_and_solutions",
+                "description": "获取某子现象（SubPhenomenon）的可能原因（Cause）和解决方案（Solution）",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "sub_phenomenon_id": {"type": "string", "description": "子现象的ID，如 sp_io_no_purple"},
+                    },
+                    "required": ["sub_phenomenon_id"],
                 },
-                "required": ["sub_phenomenon_id"],
             },
         },
         {
             "type": "function",
-            "name": "get_parameter_config",
-            "description": "获取某排查点（Checkpoint）关联的设备参数采集配置（Parameter）",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "checkpoint_id": {"type": "string", "description": "排查点的ID"},
+            "function": {
+                "name": "get_parameter_config",
+                "description": "获取某排查点（Checkpoint）关联的设备参数采集配置（Parameter）",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "checkpoint_id": {"type": "string", "description": "排查点的ID"},
+                    },
+                    "required": ["checkpoint_id"],
                 },
-                "required": ["checkpoint_id"],
             },
         },
         {
             "type": "function",
-            "name": "record_diagnosis",
-            "description": "记录最终诊断结论，包含排查步骤和解决方案",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "phenomenon": {"type": "string", "description": "现象名称"},
-                    "phenomenon_id": {"type": "string", "description": "现象ID"},
-                    "confidence": {"type": "string", "description": "置信度：HIGH/MEDIUM/LOW"},
-                    "summary": {"type": "string", "description": "故障概述"},
-                    "matched_sub_phenomena": {"type": "array", "items": {"type": "string"}, "description": "匹配的子现象列表"},
-                    "checkpoints": {"type": "array", "items": {"type": "object"}, "description": "排查步骤列表"},
-                    "causes": {"type": "array", "items": {"type": "string"}, "description": "根本原因列表"},
-                    "solutions": {"type": "array", "items": {"type": "object"}, "description": "解决方案列表"},
-                    "estimated_time": {"type": "string", "description": "预计处理时间"},
-                    "urgency": {"type": "string", "description": "紧急程度：HIGH/MEDIUM/LOW"},
+            "function": {
+                "name": "record_diagnosis",
+                "description": "记录最终诊断结论，包含排查步骤和解决方案",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "phenomenon": {"type": "string", "description": "现象名称"},
+                        "phenomenon_id": {"type": "string", "description": "现象ID"},
+                        "confidence": {"type": "string", "description": "置信度：HIGH/MEDIUM/LOW"},
+                        "summary": {"type": "string", "description": "故障概述"},
+                        "matched_sub_phenomena": {"type": "array", "items": {"type": "string"}, "description": "匹配的子现象列表"},
+                        "checkpoints": {"type": "array", "items": {"type": "object"}, "description": "排查步骤列表"},
+                        "causes": {"type": "array", "items": {"type": "string"}, "description": "根本原因列表"},
+                        "solutions": {"type": "array", "items": {"type": "object"}, "description": "解决方案列表"},
+                        "estimated_time": {"type": "string", "description": "预计处理时间"},
+                        "urgency": {"type": "string", "description": "紧急程度：HIGH/MEDIUM/LOW"},
+                    },
+                    "required": ["phenomenon", "confidence", "checkpoints", "solutions"],
                 },
-                "required": ["phenomenon", "confidence", "checkpoints", "solutions"],
             },
         },
     ]
