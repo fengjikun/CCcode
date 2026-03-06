@@ -258,6 +258,7 @@ class AiInsightResult(_CamelModel):
     added_relation_count: int
     added_entity_names: list[str]
     added_relation_names: list[str]
+    warnings: list[str] = Field(default_factory=list)
 
 
 class ReviewItem(_CamelModel):

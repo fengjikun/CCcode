@@ -29,6 +29,10 @@ from app.models.project_mgmt import (
     Skill,
     VersionItem,
 )
+from app.services.project_mgmt_ai_insight import (
+    _parse_ai_schema_insight_output,
+    _run_ai_schema_insight_llm,
+)
 
 
 ASSET_ROOT = Path(__file__).resolve().parent.parent.parent / "data" / "project_assets"
@@ -117,144 +121,6 @@ BUILT_IN_SKILL_DEFAULTS = [
         "missing": "",
     },
 ]
-
-AI_ENTITY_TEMPLATES = [
-    {
-        "name": "AlarmCode",
-        "description": "设备报警编码实体",
-        "keywords": ["报警", "告警", "alarm"],
-        "properties": [
-            {
-                "name": "code",
-                "display_name": "报警码",
-                "data_type": "STRING",
-                "required": True,
-            },
-            {
-                "name": "level",
-                "display_name": "等级",
-                "data_type": "STRING",
-                "required": False,
-            },
-        ],
-    },
-    {
-        "name": "MaintenanceAction",
-        "description": "检修或维护动作实体",
-        "keywords": ["检修", "维护", "repair", "maintenance"],
-        "properties": [
-            {
-                "name": "action_desc",
-                "display_name": "动作描述",
-                "data_type": "TEXT",
-                "required": True,
-            },
-            {
-                "name": "duration_min",
-                "display_name": "预计时长(分钟)",
-                "data_type": "INTEGER",
-                "required": False,
-            },
-        ],
-    },
-    {
-        "name": "Part",
-        "description": "设备零部件实体",
-        "keywords": ["部件", "零件", "part", "模块"],
-        "properties": [
-            {
-                "name": "part_name",
-                "display_name": "部件名称",
-                "data_type": "STRING",
-                "required": True,
-            },
-            {
-                "name": "part_no",
-                "display_name": "部件编号",
-                "data_type": "STRING",
-                "required": False,
-            },
-        ],
-    },
-    {
-        "name": "Sensor",
-        "description": "传感器实体",
-        "keywords": ["传感", "sensor"],
-        "properties": [
-            {
-                "name": "sensor_type",
-                "display_name": "传感器类型",
-                "data_type": "STRING",
-                "required": False,
-            },
-            {
-                "name": "signal",
-                "display_name": "信号值",
-                "data_type": "FLOAT",
-                "required": False,
-            },
-        ],
-    },
-    {
-        "name": "ProcedureStep",
-        "description": "排查流程步骤实体",
-        "keywords": ["步骤", "流程", "step", "procedure"],
-        "properties": [
-            {
-                "name": "step_no",
-                "display_name": "步骤编号",
-                "data_type": "INTEGER",
-                "required": True,
-            },
-            {
-                "name": "step_detail",
-                "display_name": "步骤说明",
-                "data_type": "TEXT",
-                "required": True,
-            },
-        ],
-    },
-]
-
-AI_RELATION_TEMPLATES = [
-    {
-        "name": "triggered_by",
-        "domain": "FaultPhenomenon",
-        "range": "AlarmCode",
-        "description": "故障现象由报警码触发",
-    },
-    {
-        "name": "handled_by",
-        "domain": "FaultPhenomenon",
-        "range": "MaintenanceAction",
-        "description": "故障现象对应维护动作",
-    },
-    {
-        "name": "targets_part",
-        "domain": "MaintenanceAction",
-        "range": "Part",
-        "description": "维护动作作用于零部件",
-    },
-    {
-        "name": "monitored_by",
-        "domain": "FaultPhenomenon",
-        "range": "Sensor",
-        "description": "故障现象可由传感器监测",
-    },
-    {
-        "name": "requires_step",
-        "domain": "MaintenanceAction",
-        "range": "ProcedureStep",
-        "description": "维护动作需要执行步骤",
-    },
-    {
-        "name": "checks_part",
-        "domain": "Checkpoint",
-        "range": "Part",
-        "description": "排查点对应检查部件",
-    },
-]
-
 
 def _header_key(value: str | None) -> str:
     text = _normalize_text(value)
@@ -1762,18 +1628,6 @@ def _build_schema_config_response(db: Session, project: Project) -> dict[str, An
     }
 
 
-def _pick_ai_entity_templates(doc_names: list[str]) -> list[dict[str, Any]]:
-    text = " ".join(doc_names).lower()
-    picked: list[dict[str, Any]] = []
-    for template in AI_ENTITY_TEMPLATES:
-        keywords = template.get("keywords") or []
-        if any(str(keyword).lower() in text for keyword in keywords):
-            picked.append(template)
-    if len(picked) < 2:
-        return AI_ENTITY_TEMPLATES[:3]
-    return picked
-
-
 def _generate_review_items_for_run(
     *,
     project_id: str,
@@ -2921,13 +2775,29 @@ def run_ai_schema_insight(db: Session, user_id: int, project_id: str):
 
     now = _now()
     xlsx_inputs = _collect_xlsx_insight_inputs(enabled_docs)
+    existing_entity_names = {
+        row.name
+        for row in db.query(EntityType.name)
+        .filter(EntityType.project_id == project.id)
+        .all()
+    }
 
-    entity_templates = list(xlsx_inputs["entity_templates"])
-    relation_templates = list(xlsx_inputs["relation_templates"])
-    if not entity_templates:
-        picked_entities = _pick_ai_entity_templates([doc.name for doc in enabled_docs])
-        entity_templates.extend(picked_entities)
-        relation_templates.extend(AI_RELATION_TEMPLATES)
+    llm_raw_output = _run_ai_schema_insight_llm(
+        project=project,
+        enabled_docs=enabled_docs,
+        xlsx_inputs=xlsx_inputs,
+        existing_entity_names=existing_entity_names,
+    )
+    parsed_output = _parse_ai_schema_insight_output(
+        raw_output=llm_raw_output,
+        existing_entity_names=existing_entity_names,
+        normalize_generated_properties=_normalize_generated_properties,
+    )
+    entity_templates = parsed_output["entity_templates"]
+    relation_templates = parsed_output["relation_templates"]
+    warnings = parsed_output["warnings"]
+    if not entity_templates and not relation_templates:
+        raise ValueError("AI 洞察未提取到可入库的实体或关系，请调整文档内容或 Prompt 后重试")
 
     applied = _apply_schema_templates(
         db,
@@ -2945,6 +2815,7 @@ def run_ai_schema_insight(db: Session, user_id: int, project_id: str):
         "added_relation_count": len(applied["added_relation_names"]),
         "added_entity_names": applied["added_entity_names"],
         "added_relation_names": applied["added_relation_names"],
+        "warnings": warnings,
     }
 
 

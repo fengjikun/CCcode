@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
 from app.database import SessionLocal
+from app.middleware.request_logging import setup_request_logging_middleware
 from app.models import *  # noqa: F401, F403 - ensure all models are imported
 from app.routers import (
     auth, diagnosis, ontology_schema, ontology_objects, ontology_actions, ontology_functions, projects
@@ -16,6 +17,7 @@ from app.security import bootstrap_default_user, get_current_user
 from app.services import fault_knowledge_service
 
 app = FastAPI(title="大族智控设备故障诊断系统", version="2.0.0")
+setup_request_logging_middleware(app)
 
 # CORS
 app.add_middleware(
