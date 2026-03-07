@@ -2,29 +2,29 @@ import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Button, Layout, Menu } from 'antd'
 import {
-  GlobalOutlined,
-  SearchOutlined,
-  ToolOutlined,
   LogoutOutlined,
   UserOutlined,
   ProjectOutlined,
+  RobotOutlined,
+  SearchOutlined,
+  ToolOutlined,
 } from '@ant-design/icons'
 import { clearAuthSession, getAuthUser } from '../../auth/session'
 
 const { Sider, Content, Header } = Layout
 
 const menuItems = [
-  { key: '/projects', icon: <ProjectOutlined />, label: '项目管理' },
-  { key: '/ontology', icon: <GlobalOutlined />, label: '本体管理' },
+  { key: '/projects', icon: <ProjectOutlined />, label: '本体管理' },
   { key: '/graph', icon: <SearchOutlined />, label: '图谱检索' },
   { key: '/diagnosis', icon: <ToolOutlined />, label: '故障诊断' },
+  { key: '/digital-human', icon: <RobotOutlined />, label: '数字人' },
 ]
 
 const PAGE_TITLES: Record<string, string> = {
-  '/projects': '项目管理',
-  '/ontology': '本体管理',
+  '/projects': '本体管理',
   '/graph': '图谱检索',
   '/diagnosis': '故障诊断',
+  '/digital-human': '数字人管理',
 }
 
 export default function AppLayout() {
@@ -36,9 +36,9 @@ export default function AppLayout() {
     location.pathname === item.key || location.pathname.startsWith(`${item.key}/`),
   )
   const pageTitle = location.pathname.startsWith('/projects/') && location.pathname.endsWith('/graph')
-    ? '项目图谱展示'
+    ? '本体图谱展示'
     : location.pathname.startsWith('/projects/')
-      ? '项目工作台'
+      ? '本体工作台'
     : (PAGE_TITLES[selectedMenu?.key || location.pathname] || '')
 
   const handleLogout = () => {

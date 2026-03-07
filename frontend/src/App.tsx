@@ -1,13 +1,12 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from './components/layout/AppLayout'
 import RequireAuth from './components/auth/RequireAuth'
-import OntologyPage from './pages/OntologyPage'
-import DiagnosisPage from './pages/DiagnosisPage'
-import GraphPage from './pages/GraphPage'
 import LoginPage from './pages/LoginPage'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectWorkspacePage from './pages/ProjectWorkspacePage'
 import ProjectGraphPage from './pages/ProjectGraphPage'
+import DigitalHumanListPage from './pages/DigitalHumanListPage'
+import DeviceFaultMonitorPage from './pages/DeviceFaultMonitorPage'
 
 export default function App() {
   return (
@@ -23,9 +22,9 @@ export default function App() {
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/projects/:projectId" element={<ProjectWorkspacePage />} />
         <Route path="/projects/:projectId/graph" element={<ProjectGraphPage />} />
-        <Route path="/ontology" element={<OntologyPage />} />
-        <Route path="/diagnosis" element={<DiagnosisPage />} />
-        <Route path="/graph" element={<GraphPage />} />
+        <Route path="/ontology" element={<Navigate to="/projects" replace />} />
+        <Route path="/digital-human" element={<DigitalHumanListPage />} />
+        <Route path="/digital-human/:id" element={<DeviceFaultMonitorPage />} />
         <Route path="/" element={<Navigate to="/projects" replace />} />
       </Route>
     </Routes>
