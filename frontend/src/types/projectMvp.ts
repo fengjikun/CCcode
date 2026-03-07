@@ -172,6 +172,14 @@ export interface OntologyVersion {
   relationCount: number
 }
 
+export interface VersionItem {
+  id: string
+  kind: 'ENTITY' | 'RELATION'
+  title: string
+  evidence: string
+  confidence: number
+}
+
 export interface ActionDefinition {
   id: string
   name: string

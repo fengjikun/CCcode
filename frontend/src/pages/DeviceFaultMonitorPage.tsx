@@ -268,14 +268,14 @@ export default function DeviceFaultMonitorPage() {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text strong style={{ fontSize: 13 }}>{alert.deviceName}</Text>
+                  <Text strong style={{ fontSize: 14 }}>{alert.faultType}</Text>
                   <Badge status={STATUS_COLOR[alert.status] as any} text={alert.status} />
                 </div>
-                <div style={{ marginTop: 4 }}>
-                  <Tag color={SEVERITY_COLOR[alert.severity]} style={{ fontSize: 11 }}>{SEVERITY_LABEL[alert.severity]}</Tag>
-                  <Text type="secondary" style={{ fontSize: 12 }}>{alert.faultType}</Text>
+                <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Tag color={SEVERITY_COLOR[alert.severity]} style={{ fontSize: 11, margin: 0 }}>{SEVERITY_LABEL[alert.severity]}</Tag>
+                  <Text type="secondary" style={{ fontSize: 12 }}>{alert.deviceName}</Text>
                 </div>
-                <Text type="secondary" style={{ fontSize: 11 }}>
+                <Text type="secondary" style={{ fontSize: 11, marginTop: 4, display: 'block' }}>
                   <ClockCircleOutlined style={{ marginRight: 4 }} />
                   {new Date(alert.occurredAt).toLocaleString('zh-CN')}
                 </Text>

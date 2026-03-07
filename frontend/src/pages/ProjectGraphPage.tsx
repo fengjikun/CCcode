@@ -31,8 +31,8 @@ import type { ForceGraphHandle } from '../components/graph/ForceGraph'
 import GraphSidebar from '../components/graph/GraphSidebar'
 import type { GraphStats } from '../components/graph/GraphSidebar'
 import NodeDetail from '../components/graph/NodeDetail'
-import { batchUpdateRunReviewItems, getProjectDetail, updateRunReviewItem } from '../api/projectManagement'
-import type { ProjectDetail, ReviewItem, ReviewStatus } from '../types/projectMvp'
+import { batchUpdateRunReviewItems, getProjectDetail, getVersionItems, updateRunReviewItem } from '../api/projectManagement'
+import type { ProjectDetail, ReviewItem, ReviewStatus, VersionItem } from '../types/projectMvp'
 
 const { Title, Text } = Typography
 
@@ -203,6 +203,9 @@ export default function ProjectGraphPage() {
   const [batchReviewing, setBatchReviewing] = useState(false)
   const [selectedReviewItemIds, setSelectedReviewItemIds] = useState<string[]>([])
 
+  const [versionItems, setVersionItems] = useState<VersionItem[]>([])
+  const [versionItemsLoading, setVersionItemsLoading] = useState(false)
+
   const [activeTypes, setActiveTypes] = useState<Set<string>>(new Set())
   const [searchKeyword, setSearchKeyword] = useState('')
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
@@ -292,6 +295,19 @@ export default function ProjectGraphPage() {
     }
   }, [selectedSource])
 
+  useEffect(() => {
+    if (!selectedSource?.startsWith('version:') || !projectId) {
+      setVersionItems([])
+      return
+    }
+    const versionId = selectedSource.replace('version:', '')
+    setVersionItemsLoading(true)
+    getVersionItems(projectId, versionId)
+      .then(items => setVersionItems(items))
+      .catch(() => setVersionItems([]))
+      .finally(() => setVersionItemsLoading(false))
+  }, [selectedSource, projectId])
+
   const effectiveStatusSet = useMemo(
     () => new Set<ReviewStatus>(
       pendingOnly ? ['PENDING'] : (allowedStatuses.length > 0 ? allowedStatuses : ['APPROVED', 'PENDING', 'REJECTED']),
@@ -300,10 +316,13 @@ export default function ProjectGraphPage() {
   )
 
   const filteredReviewItems = useMemo(() => {
-    if (!selectedRun) return []
     const keyword = reviewKeyword.trim().toLowerCase()
-    return selectedRun.reviewItems.filter(item => {
-      if (!effectiveStatusSet.has(item.status)) return false
+    // 版本模式：用 versionItems 并全部视为 APPROVED
+    const baseItems: ReviewItem[] = sourceIsVersion
+      ? versionItems.map(item => ({ ...item, status: 'APPROVED' as ReviewStatus }))
+      : (selectedRun?.reviewItems ?? [])
+    return baseItems.filter(item => {
+      if (!sourceIsVersion && !effectiveStatusSet.has(item.status)) return false
       if (selectedRelations.length > 0 && item.kind === 'RELATION') {
         const relation = parseRelation(item)
         if (!relation || !selectedRelations.includes(relation.rel)) return false
@@ -311,7 +330,7 @@ export default function ProjectGraphPage() {
       if (!keyword) return true
       return item.title.toLowerCase().includes(keyword) || item.evidence.toLowerCase().includes(keyword)
     })
-  }, [effectiveStatusSet, reviewKeyword, selectedRelations, selectedRun])
+  }, [effectiveStatusSet, reviewKeyword, selectedRelations, selectedRun, sourceIsVersion, versionItems])
 
   useEffect(() => {
     const currentIds = new Set(filteredReviewItems.map(item => item.id))
@@ -406,9 +425,17 @@ export default function ProjectGraphPage() {
   ], [handleReviewAction, reviewActionBusy, reviewingItemId, sourceIsVersion])
 
   const rawGraph = useMemo(() => {
+    if (sourceIsVersion) {
+      // 版本视图：用固化的 VersionItem 数据（全部视为 APPROVED）
+      const asReviewItems: ReviewItem[] = versionItems.map(item => ({
+        ...item,
+        status: 'APPROVED' as ReviewStatus,
+      }))
+      return buildGraphFromReviews(asReviewItems, new Set<ReviewStatus>(['APPROVED']))
+    }
     if (!selectedRun) return { nodes: [], links: [] }
     return buildGraphFromReviews(selectedRun.reviewItems, effectiveStatusSet)
-  }, [effectiveStatusSet, selectedRun])
+  }, [sourceIsVersion, versionItems, effectiveStatusSet, selectedRun])
 
   const relationOptions = useMemo(
     () => Array.from(new Set(rawGraph.links.map(link => link.rel))).map(rel => ({ label: rel, value: rel })),
@@ -454,7 +481,7 @@ export default function ProjectGraphPage() {
 
   const stats = useMemo(() => graphStats(filteredGraph), [filteredGraph])
 
-  if (loading) {
+  if (loading || versionItemsLoading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 420 }}>
         <Spin size="large" tip="加载本体图谱..." />
@@ -544,12 +571,22 @@ export default function ProjectGraphPage() {
           <Card title="任务与审核">
             <Space direction="vertical" style={{ width: '100%' }} size={12}>
               <Space wrap>
-                <Tag color={selectedRun.status === 'COMPLETED' ? 'success' : selectedRun.status === 'FAILED' ? 'error' : 'processing'}>
-                  任务状态: {selectedRun.status}
-                </Tag>
-                <Tag color="blue">候选实体 {selectedRun.candidateEntityCount}</Tag>
-                <Tag color="purple">候选关系 {selectedRun.candidateRelationCount}</Tag>
-                <Tag color="orange">待审核 {selectedRun.pendingReviewCount}</Tag>
+                {sourceIsVersion ? (
+                  <>
+                    <Tag color="success">版本视图</Tag>
+                    <Tag color="blue">实体 {versionItems.filter(i => i.kind === 'ENTITY').length}</Tag>
+                    <Tag color="purple">关系 {versionItems.filter(i => i.kind === 'RELATION').length}</Tag>
+                  </>
+                ) : (
+                  <>
+                    <Tag color={selectedRun.status === 'COMPLETED' ? 'success' : selectedRun.status === 'FAILED' ? 'error' : 'processing'}>
+                      任务状态: {selectedRun.status}
+                    </Tag>
+                    <Tag color="blue">候选实体 {selectedRun.candidateEntityCount}</Tag>
+                    <Tag color="purple">候选关系 {selectedRun.candidateRelationCount}</Tag>
+                    <Tag color="orange">待审核 {selectedRun.pendingReviewCount}</Tag>
+                  </>
+                )}
               </Space>
               {sourceIsVersion && (
                 <Alert
