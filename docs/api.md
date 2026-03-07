@@ -1314,16 +1314,19 @@ POST /api/agent/chat
 ```json
 {
   "messages": [
-    { "role": "user", "content": "1号变频器温度告警怎么处理？" }
+    { "role": "user", "content": "总装升降机 #1 液压系统泄漏怎么处理？" }
   ],
-  "projectId": "proj_abc123",
+  "projectId": "proj_01ccfa6841df",
   "deviceContext": {
-    "deviceId": 1,
-    "deviceName": "1号变频器",
-    "deviceType": "变频器",
-    "currentAlerts": ["温度过高"]
+    "deviceId": "EQ-SJ-001",
+    "deviceName": "总装升降机 #1",
+    "productionLine": "总装一线",
+    "faultType": "液压系统泄漏",
+    "faultCode": "E-HYD-001",
+    "severity": "HIGH",
+    "description": "升降机液压缸密封圈破损，液压油渗漏，平台无法正常升降，产线已停线"
   },
-  "digitalHumanType": "maintenance_expert"
+  "digitalHumanType": "fault-repair"
 }
 ```
 
@@ -1351,13 +1354,14 @@ POST /api/agent/work-order
 ```json
 {
   "messages": [
-    { "role": "user", "content": "1号变频器温度告警，需要生成维修工单" }
+    { "role": "user", "content": "总装升降机 #1 液压泄漏，需要生成维修工单" }
   ],
-  "projectId": "proj_abc123",
+  "projectId": "proj_01ccfa6841df",
   "deviceContext": {
-    "deviceId": 1,
-    "deviceName": "1号变频器",
-    "faultType": "温度过高"
+    "deviceId": "EQ-SJ-001",
+    "deviceName": "总装升降机 #1",
+    "productionLine": "总装一线",
+    "faultType": "液压系统泄漏"
   }
 }
 ```

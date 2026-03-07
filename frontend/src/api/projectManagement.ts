@@ -21,6 +21,7 @@ import type {
   SchemaConfig,
   SkillConfig,
   StructuredDataSource,
+  VersionItem,
 } from '../types/projectMvp'
 
 type ApiRunStatus = 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELED'
@@ -550,6 +551,21 @@ export async function publishRunVersion(
     notes: '',
   })
   return mapVersion(row)
+}
+
+function mapVersionItem(item: any): VersionItem {
+  return {
+    id: String(item.id),
+    kind: item.kind as 'ENTITY' | 'RELATION',
+    title: String(item.title || ''),
+    evidence: String(item.evidence || ''),
+    confidence: Number(item.confidence || 0),
+  }
+}
+
+export async function getVersionItems(projectId: string, versionId: string): Promise<VersionItem[]> {
+  const rows = await fetchJSON<any[]>(`/api/projects/${projectId}/versions/${versionId}/items`)
+  return rows.map(mapVersionItem)
 }
 
 export async function createProjectAction(
