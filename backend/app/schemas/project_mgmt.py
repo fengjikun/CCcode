@@ -95,6 +95,11 @@ class ProjectCreateRequest(_CamelModel):
     description: Optional[str] = None
 
 
+class ProjectUpdateRequest(_CamelModel):
+    name: str
+    description: Optional[str] = None
+
+
 class ProjectSummary(_CamelModel):
     id: str
     name: str

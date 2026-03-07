@@ -25,6 +25,7 @@ from app.schemas.project_mgmt import (
     ProjectFunction,
     ProjectSummary,
     ProjectCreateRequest,
+    ProjectUpdateRequest,
     PublishVersionRequest,
     RelationType,
     RelationTypeUpsertRequest,
@@ -90,6 +91,21 @@ def get_project_detail(
         return project_svc.get_project_detail(db, current_user.id, project_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except NotImplementedError as e:
+        _raise_not_implemented(e)
+
+
+@router.patch("/{project_id}", response_model=ProjectSummary)
+def update_project(
+    project_id: str,
+    payload: ProjectUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return project_svc.update_project(db, current_user.id, project_id, payload.model_dump(by_alias=False))
+    except ValueError as e:
+        raise HTTPException(status_code=_value_error_status(str(e)), detail=str(e))
     except NotImplementedError as e:
         _raise_not_implemented(e)
 

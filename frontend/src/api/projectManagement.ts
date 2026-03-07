@@ -296,6 +296,11 @@ export async function deleteProject(projectId: string): Promise<void> {
   await fetchJSON(`/api/projects/${projectId}`, 'DELETE')
 }
 
+export async function updateProject(projectId: string, name: string, description?: string): Promise<ProjectSummary> {
+  const row = await fetchJSON<any>(`/api/projects/${projectId}`, 'PATCH', { name, description: description || '' })
+  return mapProjectSummary(row)
+}
+
 export async function getProjectDetail(projectId: string): Promise<ProjectDetail> {
   const row = await fetchJSON<any>(`/api/projects/${projectId}`)
   return mapProjectDetail(row)

@@ -3325,6 +3325,38 @@ def get_project_detail(db: Session, user_id: int, project_id: str):
     }
 
 
+def update_project(db: Session, user_id: int, project_id: str, payload: dict):
+    project = _ensure_project_owned(db, user_id, project_id)
+    name = _normalize_text(payload.get("name"))
+    if not name:
+        raise ValueError("项目名称不能为空")
+
+    duplicate = (
+        db.query(Project.id)
+        .filter(Project.owner_user_id == user_id, Project.name == name, Project.id != project_id)
+        .first()
+    )
+    if duplicate:
+        raise ValueError("项目名称已存在")
+
+    project.name = name
+    project.description = _normalize_text(payload.get("description", project.description))
+    _touch_project(project)
+    db.commit()
+    db.refresh(project)
+
+    return {
+        "id": project.id,
+        "name": project.name,
+        "description": project.description or "",
+        "created_at": project.created_at,
+        "updated_at": project.updated_at,
+        "document_count": db.query(ProjectDocument).filter(ProjectDocument.project_id == project.id).count(),
+        "version_count": 0,
+        "latest_run_status": None,
+    }
+
+
 def delete_project(db: Session, user_id: int, project_id: str):
     project = _ensure_project_owned(db, user_id, project_id)
 

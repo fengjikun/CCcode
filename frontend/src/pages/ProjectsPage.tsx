@@ -15,8 +15,8 @@ import {
   Typography,
   message,
 } from 'antd'
-import { DeleteOutlined, FolderOpenOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
-import { createProject, deleteProject, listProjects } from '../api/projectManagement'
+import { DeleteOutlined, EditOutlined, FolderOpenOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import { createProject, deleteProject, listProjects, updateProject } from '../api/projectManagement'
 import type { ProjectSummary } from '../types/projectMvp'
 
 const { Title, Text } = Typography
@@ -39,7 +39,11 @@ export default function ProjectsPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [editingProject, setEditingProject] = useState<ProjectSummary | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
   const [form] = Form.useForm<ProjectForm>()
+  const [editForm] = Form.useForm<ProjectForm>()
   const navigate = useNavigate()
 
   const loadProjects = useCallback(async () => {
@@ -47,8 +51,8 @@ export default function ProjectsPage() {
     try {
       const result = await listProjects()
       setProjects(result)
-    } catch (error: any) {
-      message.error(error?.message || '加载本体失败')
+    } catch (error: unknown) {
+      message.error((error as Error)?.message || '加载本体失败')
     } finally {
       setLoading(false)
     }
@@ -68,9 +72,9 @@ export default function ProjectsPage() {
       form.resetFields()
       await loadProjects()
       navigate(`/projects/${created.id}`)
-    } catch (error: any) {
-      if (error?.errorFields) return
-      message.error(error?.message || '创建本体失败')
+    } catch (error: unknown) {
+      if ((error as { errorFields?: unknown })?.errorFields) return
+      message.error((error as Error)?.message || '创建本体失败')
     } finally {
       setCreating(false)
     }
@@ -82,10 +86,36 @@ export default function ProjectsPage() {
       await deleteProject(projectId)
       message.success('本体已删除')
       await loadProjects()
-    } catch (error: any) {
-      message.error(error?.message || '删除失败')
+    } catch (error: unknown) {
+      message.error((error as Error)?.message || '删除失败')
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  const openEdit = (project: ProjectSummary, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditingProject(project)
+    editForm.setFieldsValue({ name: project.name, description: project.description })
+    setEditOpen(true)
+  }
+
+  const handleEdit = async () => {
+    if (!editingProject) return
+    try {
+      const values = await editForm.validateFields()
+      setEditing(true)
+      await updateProject(editingProject.id, values.name, values.description)
+      message.success('本体已更新')
+      setEditOpen(false)
+      setEditingProject(null)
+      editForm.resetFields()
+      await loadProjects()
+    } catch (error: unknown) {
+      if ((error as { errorFields?: unknown })?.errorFields) return
+      message.error((error as Error)?.message || '更新失败')
+    } finally {
+      setEditing(false)
     }
   }
 
@@ -117,20 +147,25 @@ export default function ProjectsPage() {
               <Col key={project.id} xs={24} md={12} xl={8}>
                 <Card
                   hoverable
-                  style={{ height: '100%' }}
+                  style={{ height: '100%', cursor: 'pointer' }}
+                  onClick={() => navigate(`/projects/${project.id}`)}
                   actions={[
-                    <Space key="open" onClick={() => navigate(`/projects/${project.id}`)}>
+                    <Space key="open" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}`) }}>
                       <FolderOpenOutlined />
                       进入本体
+                    </Space>,
+                    <Space key="edit" onClick={e => openEdit(project, e)}>
+                      <EditOutlined />
+                      编辑
                     </Space>,
                     <Popconfirm
                       key="delete"
                       title="确认删除该本体？"
                       description="该操作不可恢复，请谨慎操作。"
-                      onConfirm={() => void handleDelete(project.id)}
+                      onConfirm={(e) => { e?.stopPropagation(); void handleDelete(project.id) }}
                       okButtonProps={{ loading: deletingId === project.id }}
                     >
-                      <Space style={{ color: '#ff4d4f' }}>
+                      <Space style={{ color: '#ff4d4f' }} onClick={e => e.stopPropagation()}>
                         <DeleteOutlined />
                         删除
                       </Space>
@@ -166,6 +201,25 @@ export default function ProjectsPage() {
         confirmLoading={creating}
       >
         <Form<ProjectForm> form={form} layout="vertical">
+          <Form.Item name="name" label="本体名称" rules={[{ required: true, message: '请输入本体名称' }]}>
+            <Input placeholder="例如：设备故障诊断本体-产线A" maxLength={64} />
+          </Form.Item>
+          <Form.Item name="description" label="本体说明">
+            <Input.TextArea rows={4} placeholder="可选，描述该本体的业务范围与边界" maxLength={300} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="编辑本体"
+        open={editOpen}
+        onCancel={() => { setEditOpen(false); setEditingProject(null); editForm.resetFields() }}
+        onOk={() => void handleEdit()}
+        okText="保存"
+        cancelText="取消"
+        confirmLoading={editing}
+      >
+        <Form<ProjectForm> form={editForm} layout="vertical">
           <Form.Item name="name" label="本体名称" rules={[{ required: true, message: '请输入本体名称' }]}>
             <Input placeholder="例如：设备故障诊断本体-产线A" maxLength={64} />
           </Form.Item>
