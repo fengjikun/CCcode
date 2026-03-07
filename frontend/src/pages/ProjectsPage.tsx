@@ -48,7 +48,7 @@ export default function ProjectsPage() {
       const result = await listProjects()
       setProjects(result)
     } catch (error: any) {
-      message.error(error?.message || '加载项目失败')
+      message.error(error?.message || '加载本体失败')
     } finally {
       setLoading(false)
     }
@@ -63,14 +63,14 @@ export default function ProjectsPage() {
       const values = await form.validateFields()
       setCreating(true)
       const created = await createProject(values.name, values.description)
-      message.success('项目创建成功')
+      message.success('本体创建成功')
       setCreateOpen(false)
       form.resetFields()
       await loadProjects()
       navigate(`/projects/${created.id}`)
     } catch (error: any) {
       if (error?.errorFields) return
-      message.error(error?.message || '创建项目失败')
+      message.error(error?.message || '创建本体失败')
     } finally {
       setCreating(false)
     }
@@ -80,7 +80,7 @@ export default function ProjectsPage() {
     setDeletingId(projectId)
     try {
       await deleteProject(projectId)
-      message.success('项目已删除')
+      message.success('本体已删除')
       await loadProjects()
     } catch (error: any) {
       message.error(error?.message || '删除失败')
@@ -94,15 +94,15 @@ export default function ProjectsPage() {
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
           <div>
-            <Title level={4} style={{ marginBottom: 4 }}>项目管理</Title>
-            <Text type="secondary">按项目隔离文档、抽取配置、本体版本、动作和函数。</Text>
+            <Title level={4} style={{ marginBottom: 4 }}>本体管理</Title>
+            <Text type="secondary">按本体管理文档、抽取配置、版本发布、动作与函数，支撑业务落地。</Text>
           </div>
           <Space>
             <Button icon={<ReloadOutlined />} onClick={() => void loadProjects()} loading={loading}>
               刷新
             </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-              新建项目
+              新建本体
             </Button>
           </Space>
         </div>
@@ -110,7 +110,7 @@ export default function ProjectsPage() {
 
       <Card loading={loading}>
         {projects.length === 0 ? (
-          <Empty description="暂无项目，先创建一个项目开始使用" />
+          <Empty description="暂无本体，先创建一个本体开始使用" />
         ) : (
           <Row gutter={[16, 16]}>
             {projects.map(project => (
@@ -121,11 +121,11 @@ export default function ProjectsPage() {
                   actions={[
                     <Space key="open" onClick={() => navigate(`/projects/${project.id}`)}>
                       <FolderOpenOutlined />
-                      进入项目
+                      进入本体
                     </Space>,
                     <Popconfirm
                       key="delete"
-                      title="确认删除该项目？"
+                      title="确认删除该本体？"
                       description="该操作不可恢复，请谨慎操作。"
                       onConfirm={() => void handleDelete(project.id)}
                       okButtonProps={{ loading: deletingId === project.id }}
@@ -143,7 +143,7 @@ export default function ProjectsPage() {
                       {runStatusTag(project.latestRunStatus)}
                     </div>
                     <Text type="secondary" style={{ minHeight: 40 }}>
-                      {project.description || '未填写项目描述'}
+                      {project.description || '未填写本体说明'}
                     </Text>
                     <Text>文档数：{project.documentCount}</Text>
                     <Text>版本数：{project.versionCount}</Text>
@@ -157,7 +157,7 @@ export default function ProjectsPage() {
       </Card>
 
       <Modal
-        title="新建项目"
+        title="新建本体"
         open={createOpen}
         onCancel={() => setCreateOpen(false)}
         onOk={() => void handleCreate()}
@@ -166,11 +166,11 @@ export default function ProjectsPage() {
         confirmLoading={creating}
       >
         <Form<ProjectForm> form={form} layout="vertical">
-          <Form.Item name="name" label="项目名称" rules={[{ required: true, message: '请输入项目名称' }]}>
-            <Input placeholder="例如：设备故障本体-试点项目" maxLength={64} />
+          <Form.Item name="name" label="本体名称" rules={[{ required: true, message: '请输入本体名称' }]}>
+            <Input placeholder="例如：设备故障诊断本体-产线A" maxLength={64} />
           </Form.Item>
-          <Form.Item name="description" label="项目描述">
-            <Input.TextArea rows={4} placeholder="可选，描述项目目标和范围" maxLength={300} />
+          <Form.Item name="description" label="本体说明">
+            <Input.TextArea rows={4} placeholder="可选，描述该本体的业务范围与边界" maxLength={300} />
           </Form.Item>
         </Form>
       </Modal>

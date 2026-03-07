@@ -39,7 +39,7 @@ export default function ProjectWorkspacePage() {
   }
 
   if (!project || !projectId) {
-    return <Empty description="项目不存在或已删除" />
+    return <Empty description="本体不存在或已删除" />
   }
 
   return (
@@ -49,17 +49,17 @@ export default function ProjectWorkspacePage() {
           <Space style={{ justifyContent: 'space-between', width: '100%' }}>
             <Space>
               <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/projects')}>
-                返回项目列表
+                返回本体列表
               </Button>
               <Button icon={<ReloadOutlined />} onClick={() => void loadProject()} loading={loading}>
                 刷新
               </Button>
             </Space>
-            <Tag color="blue">Project ID: {project.id}</Tag>
+            <Tag color="blue">本体 ID: {project.id}</Tag>
           </Space>
 
           <Title level={4} style={{ margin: 0 }}>{project.name}</Title>
-          <Text type="secondary">{project.description || '未填写项目描述'}</Text>
+          <Text type="secondary">{project.description || '未填写本体说明'}</Text>
 
           <Descriptions size="small" column={5} bordered>
             <Descriptions.Item label="文档">{project.documents.length}</Descriptions.Item>
@@ -90,7 +90,7 @@ export default function ProjectWorkspacePage() {
           },
           {
             key: 'schema',
-            label: '2. 配置与Skill',
+            label: '2. 本体建模与技能',
             children: (
               <SchemaTab
                 projectId={projectId}
@@ -135,7 +135,7 @@ export default function ProjectWorkspacePage() {
           },
           {
             key: 'functions',
-            label: '5. Function 管理',
+            label: '5. 函数管理',
             children: (
               <FunctionsTab
                 projectId={projectId}

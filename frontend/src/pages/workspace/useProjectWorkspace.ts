@@ -28,7 +28,7 @@ export function useProjectWorkspace(projectId: string | undefined) {
         setActiveRunId(result.runs[0].id)
       }
     } catch (error: unknown) {
-      message.error(getErrorMessage(error, '加载项目失败'))
+      message.error(getErrorMessage(error, '加载本体失败'))
       navigate('/projects', { replace: true })
     } finally {
       setLoading(false)

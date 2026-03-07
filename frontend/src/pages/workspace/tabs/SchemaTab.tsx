@@ -309,7 +309,7 @@ export default function SchemaTab({
                 <Tag>{schemaEntities.length + schemaRelations.length}</Tag>
                 <Popconfirm
                   title="确认清空全部？"
-                  description="将删除该项目所有实体类型与关系类型，此操作不可恢复。"
+                  description="将删除该本体下所有实体类型与关系类型，此操作不可恢复。"
                   onConfirm={handleClearSchema}
                   okText="清空"
                   okType="danger"

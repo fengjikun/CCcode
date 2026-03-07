@@ -315,6 +315,16 @@ class ReviewStatusUpdateRequest(_CamelModel):
     status: ReviewStatus
 
 
+class ReviewBatchStatusUpdateRequest(_CamelModel):
+    item_ids: list[str] = Field(default_factory=list)
+    status: ReviewStatus
+
+
+class ReviewBatchStatusUpdateResult(_CamelModel):
+    updated_count: int
+    pending_review_count: int
+
+
 class PublishVersionRequest(_CamelModel):
     label: str
     notes: Optional[str] = None

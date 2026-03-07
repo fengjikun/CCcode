@@ -4,6 +4,7 @@ import {
   Alert,
   Button,
   Card,
+  Divider,
   Empty,
   Input,
   Result,
@@ -30,7 +31,7 @@ import type { ForceGraphHandle } from '../components/graph/ForceGraph'
 import GraphSidebar from '../components/graph/GraphSidebar'
 import type { GraphStats } from '../components/graph/GraphSidebar'
 import NodeDetail from '../components/graph/NodeDetail'
-import { getProjectDetail, updateRunReviewItem } from '../api/projectManagement'
+import { batchUpdateRunReviewItems, getProjectDetail, updateRunReviewItem } from '../api/projectManagement'
 import type { ProjectDetail, ReviewItem, ReviewStatus } from '../types/projectMvp'
 
 const { Title, Text } = Typography
@@ -199,6 +200,8 @@ export default function ProjectGraphPage() {
   const [selectedRelations, setSelectedRelations] = useState<string[]>([])
   const [reviewKeyword, setReviewKeyword] = useState('')
   const [reviewingItemId, setReviewingItemId] = useState<string | null>(null)
+  const [batchReviewing, setBatchReviewing] = useState(false)
+  const [selectedReviewItemIds, setSelectedReviewItemIds] = useState<string[]>([])
 
   const [activeTypes, setActiveTypes] = useState<Set<string>>(new Set())
   const [searchKeyword, setSearchKeyword] = useState('')
@@ -230,7 +233,7 @@ export default function ProjectGraphPage() {
         setSelectedSource(undefined)
       }
     } catch (err: any) {
-      const msg = err?.message || '加载项目图谱失败'
+      const msg = err?.message || '加载本体图谱失败'
       setError(msg)
     } finally {
       setLoading(false)
@@ -308,6 +311,11 @@ export default function ProjectGraphPage() {
     })
   }, [effectiveStatusSet, reviewKeyword, selectedRelations, selectedRun])
 
+  useEffect(() => {
+    const currentIds = new Set(filteredReviewItems.map(item => item.id))
+    setSelectedReviewItemIds(prev => prev.filter(id => currentIds.has(id)))
+  }, [filteredReviewItems])
+
   const handleReviewAction = useCallback(async (itemId: string, status: ReviewStatus) => {
     if (!projectId || !selectedRun || sourceIsVersion) return
     setReviewingItemId(itemId)
@@ -321,6 +329,27 @@ export default function ProjectGraphPage() {
       setReviewingItemId(null)
     }
   }, [loadProject, projectId, selectedRun, sourceIsVersion])
+
+  const handleBatchReviewAction = useCallback(async (status: ReviewStatus) => {
+    if (!projectId || !selectedRun || sourceIsVersion) return
+    if (selectedReviewItemIds.length === 0) {
+      message.warning('请先勾选要审核的记录')
+      return
+    }
+    setBatchReviewing(true)
+    try {
+      const result = await batchUpdateRunReviewItems(projectId, selectedRun.id, selectedReviewItemIds, status)
+      message.success(`已批量更新 ${result.updatedCount} 条审核记录`)
+      setSelectedReviewItemIds([])
+      await loadProject()
+    } catch (err: any) {
+      message.error(err?.message || '批量审核失败')
+    } finally {
+      setBatchReviewing(false)
+    }
+  }, [loadProject, projectId, selectedReviewItemIds, selectedRun, sourceIsVersion])
+
+  const reviewActionBusy = Boolean(reviewingItemId) || batchReviewing
 
   const reviewColumns: ColumnsType<ReviewItem> = useMemo(() => [
     {
@@ -353,7 +382,7 @@ export default function ProjectGraphPage() {
             size="small"
             type="primary"
             ghost
-            disabled={sourceIsVersion || record.status === 'APPROVED'}
+            disabled={sourceIsVersion || reviewActionBusy || record.status === 'APPROVED'}
             loading={reviewingItemId === record.id}
             onClick={() => void handleReviewAction(record.id, 'APPROVED')}
           >
@@ -363,7 +392,7 @@ export default function ProjectGraphPage() {
             size="small"
             danger
             ghost
-            disabled={sourceIsVersion || record.status === 'REJECTED'}
+            disabled={sourceIsVersion || reviewActionBusy || record.status === 'REJECTED'}
             loading={reviewingItemId === record.id}
             onClick={() => void handleReviewAction(record.id, 'REJECTED')}
           >
@@ -372,7 +401,7 @@ export default function ProjectGraphPage() {
         </Space>
       ),
     },
-  ], [handleReviewAction, reviewingItemId, sourceIsVersion])
+  ], [handleReviewAction, reviewActionBusy, reviewingItemId, sourceIsVersion])
 
   const rawGraph = useMemo(() => {
     if (!selectedRun) return { nodes: [], links: [] }
@@ -426,7 +455,7 @@ export default function ProjectGraphPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 420 }}>
-        <Spin size="large" tip="加载项目图谱..." />
+        <Spin size="large" tip="加载本体图谱..." />
       </div>
     )
   }
@@ -443,7 +472,7 @@ export default function ProjectGraphPage() {
   }
 
   if (!project) {
-    return <Empty description="项目不存在或已删除" />
+    return <Empty description="本体不存在或已删除" />
   }
 
   return (
@@ -453,13 +482,13 @@ export default function ProjectGraphPage() {
           <Space style={{ justifyContent: 'space-between', width: '100%' }} wrap>
             <Space>
               <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(`/projects/${project.id}`)}>
-                返回项目工作台
+                返回本体工作台
               </Button>
               <Button icon={<ReloadOutlined />} onClick={() => void loadProject()} loading={loading}>
                 刷新
               </Button>
             </Space>
-            <Text type="secondary">项目：{project.name}</Text>
+            <Text type="secondary">本体：{project.name}</Text>
           </Space>
 
           <Title level={5} style={{ margin: 0 }}>抽取结果图谱展示</Title>
@@ -507,7 +536,7 @@ export default function ProjectGraphPage() {
       </Card>
 
       {!selectedRun ? (
-        <Result status="info" title="暂无可展示数据" subTitle="请先在项目中完成抽取任务或发布版本" />
+        <Result status="info" title="暂无可展示数据" subTitle="请先在本体中完成抽取任务或发布版本" />
       ) : (
         <>
           <Card title="任务与审核">
@@ -536,6 +565,30 @@ export default function ProjectGraphPage() {
                   onChange={event => setReviewKeyword(event.target.value)}
                   placeholder="按候选项或证据搜索审核记录"
                 />
+                {!sourceIsVersion && (
+                  <>
+                    <Divider type="vertical" />
+                    <Button
+                      type="primary"
+                      ghost
+                      disabled={reviewActionBusy || selectedReviewItemIds.length === 0}
+                      loading={batchReviewing}
+                      onClick={() => void handleBatchReviewAction('APPROVED')}
+                    >
+                      批量通过
+                    </Button>
+                    <Button
+                      danger
+                      ghost
+                      disabled={reviewActionBusy || selectedReviewItemIds.length === 0}
+                      loading={batchReviewing}
+                      onClick={() => void handleBatchReviewAction('REJECTED')}
+                    >
+                      批量驳回
+                    </Button>
+                    <Text type="secondary">已勾选 {selectedReviewItemIds.length} 条</Text>
+                  </>
+                )}
                 <Text type="secondary">当前列表：{filteredReviewItems.length} 条</Text>
               </Space>
               <Table<ReviewItem>
@@ -543,6 +596,11 @@ export default function ProjectGraphPage() {
                 size="small"
                 columns={reviewColumns}
                 dataSource={filteredReviewItems}
+                rowSelection={sourceIsVersion ? undefined : {
+                  selectedRowKeys: selectedReviewItemIds,
+                  onChange: keys => setSelectedReviewItemIds(keys.map(key => String(key))),
+                  getCheckboxProps: () => ({ disabled: reviewActionBusy }),
+                }}
                 pagination={{ pageSize: 8 }}
               />
             </Space>

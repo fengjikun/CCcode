@@ -29,6 +29,8 @@ from app.schemas.project_mgmt import (
     RelationType,
     RelationTypeUpsertRequest,
     ReviewItem,
+    ReviewBatchStatusUpdateRequest,
+    ReviewBatchStatusUpdateResult,
     ReviewStatusUpdateRequest,
     SchemaConfig,
     SchemaPromptsUpdateRequest,
@@ -504,6 +506,32 @@ def patch_review_item_status(
     try:
         return project_svc.patch_review_item_status(
             db, current_user.id, project_id, run_id, item_id, payload.status.value
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=_value_error_status(str(e)), detail=str(e))
+    except NotImplementedError as e:
+        _raise_not_implemented(e)
+
+
+@router.patch(
+    "/{project_id}/runs/{run_id}/review-items/batch",
+    response_model=ReviewBatchStatusUpdateResult,
+)
+def patch_review_items_status(
+    project_id: str,
+    run_id: str,
+    payload: ReviewBatchStatusUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return project_svc.patch_review_items_status(
+            db,
+            current_user.id,
+            project_id,
+            run_id,
+            payload.item_ids,
+            payload.status.value,
         )
     except ValueError as e:
         raise HTTPException(status_code=_value_error_status(str(e)), detail=str(e))

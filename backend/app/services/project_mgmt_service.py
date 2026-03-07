@@ -2868,6 +2868,80 @@ def _build_mock_skill_load_log_line(skill: dict[str, Any]) -> str:
     return f"load {skill_name} skill"
 
 
+def _select_mock_skills_for_ai_insight(skills: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    enabled_skills = [
+        skill
+        for skill in skills
+        if bool(skill.get("enabled")) and not bool(skill.get("blocked"))
+    ]
+    if not enabled_skills:
+        return []
+
+    normalized: list[dict[str, Any]] = []
+    for skill in enabled_skills:
+        text_blob = " ".join(
+            [
+                _normalize_text(skill.get("name")),
+                _normalize_text(skill.get("code")),
+                _normalize_text(skill.get("description")),
+                " ".join(str(item) for item in (skill.get("tags") or [])),
+            ]
+        ).lower()
+        normalized.append({"skill": skill, "text_blob": text_blob})
+
+    def _pick_first(*, codes: tuple[str, ...], keywords: tuple[str, ...]) -> dict[str, Any] | None:
+        for code in codes:
+            code_norm = _normalize_text(code).lower()
+            for item in normalized:
+                if _normalize_text(item["skill"].get("code")).lower() == code_norm:
+                    return item["skill"]
+        for keyword in keywords:
+            kw = _normalize_text(keyword).lower()
+            if not kw:
+                continue
+            for item in normalized:
+                if kw in item["text_blob"]:
+                    return item["skill"]
+        return None
+
+    selected: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+
+    def _append_unique(skill: dict[str, Any] | None) -> None:
+        if not skill:
+            return
+        identity = _normalize_text(skill.get("id")) or _normalize_text(skill.get("code")) or _normalize_text(
+            skill.get("name")
+        )
+        if not identity or identity in seen_ids:
+            return
+        seen_ids.add(identity)
+        selected.append(skill)
+
+    # 先匹配“文档处理”类 skill（如 document_processing / doc_parse / 相关关键词）
+    _append_unique(
+        _pick_first(
+            codes=("document_processing", "doc_processing", "doc_parse", "data_processing"),
+            keywords=("文档处理", "文档解析", "document processing", "doc parse", "ocr", "文件预处理"),
+        )
+    )
+    # 再匹配“数据处理”类 skill（如 data_processing / cleaning / etl）
+    _append_unique(
+        _pick_first(
+            codes=("data_processing", "data_cleaning", "etl"),
+            keywords=("数据处理", "数据清洗", "标准化", "data processing", "cleaning", "etl"),
+        )
+    )
+    # 最后补充图谱融合类能力（保持与当前内置 skill 兼容）
+    _append_unique(
+        _pick_first(
+            codes=("graph_synthesis",),
+            keywords=("图谱", "抽取", "融合", "graph", "knowledge"),
+        )
+    )
+    return selected
+
+
 def _build_schema_config_response(db: Session, project: Project) -> dict[str, Any]:
     schema_cfg = db.query(SchemaConfig).filter(SchemaConfig.project_id == project.id).first()
     entity_rows = (
@@ -4301,11 +4375,8 @@ def _execute_ai_schema_insight_run(db: Session, user_id: int, project_id: str, r
             return
 
         skills = _build_skills_response(db.query(Skill).filter(Skill.project_id == project.id).all())
-        selected_skill = _select_mock_skill_for_task(
-            skills,
-            preferred_codes=("data_processing", "graph_synthesis"),
-        )
-        if selected_skill:
+        selected_skills = _select_mock_skills_for_ai_insight(skills)
+        for selected_skill in selected_skills:
             _set_ai_insight_runtime_meta(
                 run,
                 append_log=_build_mock_skill_load_log_line(selected_skill),
@@ -4859,6 +4930,59 @@ def patch_review_item_status(
     db.commit()
     db.refresh(review_item)
     return _to_review_item_response(review_item)
+
+
+def patch_review_items_status(
+    db: Session,
+    user_id: int,
+    project_id: str,
+    run_id: str,
+    item_ids: list[str],
+    status: str,
+):
+    project = _ensure_project_owned(db, user_id, project_id)
+    run = (
+        db.query(ExtractionRun)
+        .filter(ExtractionRun.project_id == project.id, ExtractionRun.id == run_id)
+        .first()
+    )
+    if not run:
+        raise ValueError("抽取任务不存在")
+
+    normalized_item_ids: list[str] = []
+    for item_id in item_ids:
+        rid = _normalize_text(item_id)
+        if rid and rid not in normalized_item_ids:
+            normalized_item_ids.append(rid)
+    if not normalized_item_ids:
+        raise ValueError("请选择至少一个审核项")
+
+    review_items = (
+        db.query(ReviewItem)
+        .filter(
+            ReviewItem.project_id == project.id,
+            ReviewItem.run_id == run.id,
+            ReviewItem.id.in_(normalized_item_ids),
+        )
+        .all()
+    )
+    if len(review_items) != len(normalized_item_ids):
+        raise ValueError("部分审核项不存在或不属于当前任务")
+
+    now = _now()
+    for review_item in review_items:
+        review_item.status = status
+        review_item.updated_at = now
+
+    _recalc_run_stats(db, run)
+    run.updated_at = now
+    _touch_project(project)
+    db.commit()
+    db.refresh(run)
+    return {
+        "updated_count": len(review_items),
+        "pending_review_count": run.pending_review_count,
+    }
 
 
 def publish_run_version(db: Session, user_id: int, project_id: str, run_id: str, payload: dict):

@@ -510,6 +510,22 @@ export async function updateRunReviewItem(
   return mapReviewItem(row)
 }
 
+export async function batchUpdateRunReviewItems(
+  projectId: string,
+  runId: string,
+  itemIds: string[],
+  status: ReviewStatus,
+): Promise<{ updatedCount: number; pendingReviewCount: number }> {
+  const row = await fetchJSON<any>(`/api/projects/${projectId}/runs/${runId}/review-items/batch`, 'PATCH', {
+    itemIds,
+    status,
+  })
+  return {
+    updatedCount: Number(row.updatedCount || 0),
+    pendingReviewCount: Number(row.pendingReviewCount || 0),
+  }
+}
+
 export async function publishRunVersion(
   projectId: string,
   runId: string,
