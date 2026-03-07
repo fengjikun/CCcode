@@ -5099,6 +5099,33 @@ def publish_run_version(db: Session, user_id: int, project_id: str, run_id: str,
     return _to_version_response(version)
 
 
+def get_version_items(db: Session, user_id: int, project_id: str, version_id: str) -> list[dict]:
+    project = _ensure_project_owned(db, user_id, project_id)
+    version = (
+        db.query(OntologyVersion)
+        .filter(OntologyVersion.project_id == project.id, OntologyVersion.id == version_id)
+        .first()
+    )
+    if not version:
+        raise ValueError("版本不存在")
+    items = (
+        db.query(VersionItem)
+        .filter(VersionItem.project_id == project.id, VersionItem.version_id == version.id)
+        .order_by(VersionItem.created_at)
+        .all()
+    )
+    return [
+        {
+            "id": item.id,
+            "kind": item.kind,
+            "title": item.title,
+            "evidence": item.evidence,
+            "confidence": item.confidence,
+        }
+        for item in items
+    ]
+
+
 def create_action(db: Session, user_id: int, project_id: str, payload: dict):
     project = _ensure_project_owned(db, user_id, project_id)
     name = _normalize_text(payload.get("name"))

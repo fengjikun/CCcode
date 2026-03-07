@@ -9,7 +9,7 @@ import ActionsTab from './workspace/tabs/ActionsTab'
 import FunctionsTab from './workspace/tabs/FunctionsTab'
 import type { TabKey } from './workspace/types'
 
-const { Title, Text } = Typography
+const { Title } = Typography
 
 export default function ProjectWorkspacePage() {
   const { projectId } = useParams<{ projectId: string }>()
@@ -59,7 +59,13 @@ export default function ProjectWorkspacePage() {
           </Space>
 
           <Title level={4} style={{ margin: 0 }}>{project.name}</Title>
-          <Text type="secondary">{project.description || '未填写本体说明'}</Text>
+          <Typography.Paragraph
+            type="secondary"
+            style={{ margin: 0 }}
+            ellipsis={{ rows: 2, expandable: false, tooltip: project.description }}
+          >
+            {project.description || '未填写本体说明'}
+          </Typography.Paragraph>
 
           <Descriptions size="small" column={5} bordered>
             <Descriptions.Item label="文档">{project.documents.length}</Descriptions.Item>

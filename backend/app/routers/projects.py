@@ -38,6 +38,7 @@ from app.schemas.project_mgmt import (
     SchemaConfig,
     SchemaPromptsUpdateRequest,
     SkillConfig,
+    VersionItemSchema,
 )
 from app.security import get_current_user
 from app.services import project_mgmt_service as project_svc
@@ -510,28 +511,6 @@ def get_extraction_run(
 
 
 @router.patch(
-    "/{project_id}/runs/{run_id}/review-items/{item_id}",
-    response_model=ReviewItem,
-)
-def patch_review_item_status(
-    project_id: str,
-    run_id: str,
-    item_id: str,
-    payload: ReviewStatusUpdateRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        return project_svc.patch_review_item_status(
-            db, current_user.id, project_id, run_id, item_id, payload.status.value
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=_value_error_status(str(e)), detail=str(e))
-    except NotImplementedError as e:
-        _raise_not_implemented(e)
-
-
-@router.patch(
     "/{project_id}/runs/{run_id}/review-items/batch",
     response_model=ReviewBatchStatusUpdateResult,
 )
@@ -557,6 +536,28 @@ def patch_review_items_status(
         _raise_not_implemented(e)
 
 
+@router.patch(
+    "/{project_id}/runs/{run_id}/review-items/{item_id}",
+    response_model=ReviewItem,
+)
+def patch_review_item_status(
+    project_id: str,
+    run_id: str,
+    item_id: str,
+    payload: ReviewStatusUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return project_svc.patch_review_item_status(
+            db, current_user.id, project_id, run_id, item_id, payload.status.value
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=_value_error_status(str(e)), detail=str(e))
+    except NotImplementedError as e:
+        _raise_not_implemented(e)
+
+
 @router.post("/{project_id}/runs/{run_id}/publish", response_model=OntologyVersion, status_code=201)
 def publish_run_version(
     project_id: str,
@@ -573,6 +574,19 @@ def publish_run_version(
         raise HTTPException(status_code=_value_error_status(str(e)), detail=str(e))
     except NotImplementedError as e:
         _raise_not_implemented(e)
+
+
+@router.get("/{project_id}/versions/{version_id}/items", response_model=List[VersionItemSchema])
+def list_version_items(
+    project_id: str,
+    version_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return project_svc.get_version_items(db, current_user.id, project_id, version_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.post("/{project_id}/actions", response_model=ProjectAction, status_code=201)

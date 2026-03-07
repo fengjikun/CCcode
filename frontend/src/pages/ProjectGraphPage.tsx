@@ -293,7 +293,9 @@ export default function ProjectGraphPage() {
   }, [selectedSource])
 
   const effectiveStatusSet = useMemo(
-    () => new Set<ReviewStatus>(pendingOnly ? ['PENDING'] : allowedStatuses),
+    () => new Set<ReviewStatus>(
+      pendingOnly ? ['PENDING'] : (allowedStatuses.length > 0 ? allowedStatuses : ['APPROVED', 'PENDING', 'REJECTED']),
+    ),
     [allowedStatuses, pendingOnly],
   )
 
@@ -601,7 +603,7 @@ export default function ProjectGraphPage() {
                   onChange: keys => setSelectedReviewItemIds(keys.map(key => String(key))),
                   getCheckboxProps: () => ({ disabled: reviewActionBusy }),
                 }}
-                pagination={{ pageSize: 8 }}
+                pagination={{ defaultPageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '50', '100'], showTotal: total => `共 ${total} 条` }}
               />
             </Space>
           </Card>

@@ -346,6 +346,14 @@ class OntologyVersion(_CamelModel):
     relation_count: int
 
 
+class VersionItemSchema(_CamelModel):
+    id: str
+    kind: str
+    title: str
+    evidence: str
+    confidence: float
+
+
 class ActionCreateRequest(_CamelModel):
     name: str
     display_name: Optional[str] = None

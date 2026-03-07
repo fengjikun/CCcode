@@ -173,9 +173,13 @@ export default function ProjectsPage() {
                       <Title level={5} style={{ margin: 0 }}>{project.name}</Title>
                       {runStatusTag(project.latestRunStatus)}
                     </div>
-                    <Text type="secondary" style={{ minHeight: 40 }}>
+                    <Typography.Paragraph
+                      type="secondary"
+                      style={{ margin: 0, minHeight: 40 }}
+                      ellipsis={{ rows: 2, expandable: false, tooltip: project.description }}
+                    >
                       {project.description || '未填写本体说明'}
-                    </Text>
+                    </Typography.Paragraph>
                     <Text>文档数：{project.documentCount}</Text>
                     <Text>版本数：{project.versionCount}</Text>
                     <Text type="secondary">更新时间：{new Date(project.updatedAt).toLocaleString()}</Text>
