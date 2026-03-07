@@ -48,6 +48,9 @@ java/**/target/
 .DS_Store
 Thumbs.db
 
+# ===== Frontend Build Cache =====
+frontend/.vite/
+
 # ===== Misc / Temp =====
 .playwright-mcp/
 prototyype/
