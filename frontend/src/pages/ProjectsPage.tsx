@@ -15,7 +15,7 @@ import {
   Typography,
   message,
 } from 'antd'
-import { DeleteOutlined, EditOutlined, FolderOpenOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { createProject, deleteProject, listProjects, updateProject } from '../api/projectManagement'
 import type { ProjectSummary } from '../types/projectMvp'
 
@@ -150,10 +150,6 @@ export default function ProjectsPage() {
                   style={{ height: '100%', cursor: 'pointer' }}
                   onClick={() => navigate(`/projects/${project.id}`)}
                   actions={[
-                    <Space key="open" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}`) }}>
-                      <FolderOpenOutlined />
-                      进入本体
-                    </Space>,
                     <Space key="edit" onClick={e => openEdit(project, e)}>
                       <EditOutlined />
                       编辑
