@@ -90,6 +90,7 @@ export default function DeviceFaultMonitorPage() {
   // 用 ref 追踪正在流式写入的消息 id，避免闭包陈旧
   const streamingStepsId = useRef<number | null>(null)
   const streamingReplyId = useRef<number | null>(null)
+  const isFollowUpRef = useRef(false)
 
   useEffect(() => {
     if (!id) return
@@ -129,6 +130,7 @@ export default function DeviceFaultMonitorPage() {
     const nextApi = [userMsg]
     setApiMessages(nextApi)
     setDisplayMessages([{ id: nid(), type: 'user', content: userContent }])
+    isFollowUpRef.current = false
     _doStream(nextApi, alert)
   }
 
@@ -140,6 +142,7 @@ export default function DeviceFaultMonitorPage() {
     setApiMessages(nextApi)
     setDisplayMessages(prev => [...prev, { id: nid(), type: 'user', content: text }])
     setInputText('')
+    isFollowUpRef.current = apiMessages.length > 0
     _doStream(nextApi, selectedAlert)
   }
 
@@ -152,6 +155,7 @@ export default function DeviceFaultMonitorPage() {
 
     sendChatMessage(msgs, selectedProjectId, device, dh?.type ?? null, {
       onSkillLoad: (skill) => {
+        if (isFollowUpRef.current) return  // 追问时不显示 skill-load 气泡
         setDisplayMessages(prev => [...prev, { id: nid(), type: 'skill-load', skill }])
       },
       onStepStart: (title) => {
@@ -453,7 +457,9 @@ export default function DeviceFaultMonitorPage() {
                 <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                   <div style={{ padding: '10px 16px', background: '#f5f5f5', borderRadius: '12px 12px 12px 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <LoadingOutlined style={{ color: '#722ed1' }} />
-                    <Text type="secondary" style={{ fontSize: 13 }}>正在加载 Skill 并推理...</Text>
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      {isFollowUpRef.current ? '正在思考...' : '正在加载 Skill 并推理...'}
+                    </Text>
                   </div>
                 </div>
               ) : null

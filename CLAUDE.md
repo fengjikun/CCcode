@@ -10,8 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Backend (from `backend/`)
 ```bash
-# Run dev server
-uvicorn app.main:app --reload
+# Run dev server（端口必须是 9000，与前端 vite proxy 对应）
+uvicorn app.main:app --host 0.0.0.0 --port 9000 --reload
 
 # Install dependencies
 pip install -r requirements.txt

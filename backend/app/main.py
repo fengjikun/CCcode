@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
+from app.logging_config import configure_logging
+configure_logging()
+
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -51,6 +54,7 @@ def on_startup():
 
     alembic_cfg = Config(str(Path(__file__).resolve().parent.parent / "alembic.ini"))
     command.upgrade(alembic_cfg, "head")
+    logger.info("数据库 schema 已升级至最新版本")
 
     # Bootstrap an initial admin account when user table is empty.
     db = SessionLocal()
@@ -69,6 +73,13 @@ def on_startup():
 
     # Load fault knowledge graph
     fault_knowledge_service.load()
+
+    import os
+    logger.info(
+        "服务启动完成 | model=%s | base_url=%s",
+        os.getenv("LLM_MODEL") or "未配置",
+        os.getenv("LLM_BASE_URL") or "未配置",
+    )
 
 
 # Serve React frontend static files (production build)

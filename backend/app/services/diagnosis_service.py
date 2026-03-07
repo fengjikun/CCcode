@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from typing import Dict, Any
 
@@ -6,6 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.models.fault_record import FaultRecord
 from app.services import fault_knowledge_service as knowledge
+
+logger = logging.getLogger(__name__)
 
 # LLM API config (OpenAI-compatible Responses API)
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
@@ -28,11 +31,19 @@ def diagnose(db: Session, request: Dict[str, Any]) -> FaultRecord:
     db.commit()
     db.refresh(record)
 
+    logger.info(
+        "diagnose: 开始诊断 | record_id=%s | device=%s | severity=%s",
+        record.id, request.get("device_name") or request.get("device_id") or "-",
+        request.get("severity", "MEDIUM"),
+    )
+
     try:
         result_json = _run_agent(request)
         record.diagnosis_result = result_json
         record.status = "RESOLVED"
+        logger.info("diagnose: 诊断完成 | record_id=%s | status=RESOLVED", record.id)
     except Exception as e:
+        logger.error("diagnose: 诊断失败 | record_id=%s | %s", record.id, e)
         record.diagnosis_result = json.dumps({
             "error": f"诊断失败：{str(e)}",
             "phenomenon": "未知",
@@ -50,11 +61,13 @@ def diagnose(db: Session, request: Dict[str, Any]) -> FaultRecord:
 
 def _run_agent(request: Dict[str, Any]) -> str:
     if not LLM_API_KEY or not LLM_BASE_URL or not LLM_MODEL:
+        logger.warning("_run_agent: LLM 未配置，使用本地知识图谱诊断")
         return _run_local_diagnosis(request)
 
     try:
         from openai import OpenAI
     except ImportError:
+        logger.warning("_run_agent: openai 包未安装，使用本地知识图谱诊断")
         return _run_local_diagnosis(request)
 
     base_url = LLM_BASE_URL.rstrip("/")
@@ -70,6 +83,8 @@ def _run_agent(request: Dict[str, Any]) -> str:
     tools = _build_tool_definitions()
     diagnosis_conclusion = None
 
+    logger.info("_run_agent: LLM Agent 开始 | model=%s | max_rounds=%d", LLM_MODEL, MAX_AGENT_ROUNDS)
+
     for round_ in range(MAX_AGENT_ROUNDS):
         response = client.chat.completions.create(
             model=LLM_MODEL,
@@ -83,9 +98,15 @@ def _run_agent(request: Dict[str, Any]) -> str:
 
         # No tool calls — model returned final text
         if not tool_calls:
+            logger.info("_run_agent: Agent 完成（无更多 tool call）| round=%d", round_ + 1)
             if diagnosis_conclusion is not None:
                 return diagnosis_conclusion
             return _extract_json_from_text(msg.content or "{}")
+
+        logger.info(
+            "_run_agent: round=%d | tool_calls=%s",
+            round_ + 1, [tc.function.name for tc in tool_calls],
+        )
 
         # Append assistant message (with tool_calls) to history
         messages.append(msg)
@@ -99,6 +120,7 @@ def _run_agent(request: Dict[str, Any]) -> str:
 
             if tc.function.name == "record_diagnosis":
                 diagnosis_conclusion = json.dumps(input_data, ensure_ascii=False)
+                logger.info("_run_agent: record_diagnosis 调用，诊断结论已记录")
 
             result = _execute_tool(tc.function.name, input_data)
             messages.append({
@@ -109,8 +131,10 @@ def _run_agent(request: Dict[str, Any]) -> str:
 
         # Early exit once diagnosis is recorded and we're near the round limit
         if diagnosis_conclusion is not None and round_ >= MAX_AGENT_ROUNDS - 2:
+            logger.info("_run_agent: 提前退出（已记录结论且接近轮次上限）| round=%d", round_ + 1)
             return diagnosis_conclusion
 
+    logger.warning("_run_agent: 达到最大轮次 %d，使用已有结论或本地诊断", MAX_AGENT_ROUNDS)
     return diagnosis_conclusion if diagnosis_conclusion else _run_local_diagnosis(request)
 
 

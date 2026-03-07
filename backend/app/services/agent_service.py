@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import uuid
@@ -18,6 +19,8 @@ from app.models.project_mgmt import (
     RelationType,
     SchemaProperty,
 )
+
+logger = logging.getLogger(__name__)
 
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "")
@@ -289,12 +292,14 @@ def chat_stream(
 
     # 无 LLM 配置时走 fallback
     if not LLM_API_KEY or not LLM_BASE_URL or not LLM_MODEL:
+        logger.warning("chat_stream: LLM 未配置，使用本地 fallback")
         yield from _fallback_stream(messages, device_context, skill_info)
         return
 
     try:
         from openai import OpenAI
     except ImportError:
+        logger.warning("chat_stream: openai 包未安装，使用本地 fallback")
         yield from _fallback_stream(messages, device_context, skill_info)
         return
 
@@ -305,6 +310,11 @@ def chat_stream(
     client = OpenAI(api_key=LLM_API_KEY, base_url=base_url)
     full_messages = [{"role": "system", "content": system_prompt}] + messages
 
+    logger.info(
+        "chat_stream: LLM 调用开始 | model=%s | skill=%s | turns=%d | project_id=%s",
+        LLM_MODEL, skill_info["code"], len(messages), project_id or "-",
+    )
+
     try:
         stream = client.chat.completions.create(
             model=LLM_MODEL,
@@ -313,6 +323,7 @@ def chat_stream(
             stream=True,
         )
     except Exception as e:
+        logger.error("chat_stream: LLM 调用失败 | %s", e)
         yield _sse("error", {"message": str(e)})
         yield _sse("done", {})
         return
@@ -385,6 +396,7 @@ def chat_stream(
     if state == "in_step":
         yield _sse("step-end", {"title": current_step_title})
 
+    logger.info("chat_stream: LLM 流式响应完成 | model=%s", LLM_MODEL)
     yield _sse("done", {})
 
 
@@ -449,11 +461,13 @@ def generate_work_order(
     work_order_id = f"WO-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
 
     if not LLM_API_KEY or not LLM_BASE_URL or not LLM_MODEL:
+        logger.warning("generate_work_order: LLM 未配置，使用本地 fallback")
         return _fallback_work_order(work_order_id, device_context)
 
     try:
         from openai import OpenAI
     except ImportError:
+        logger.warning("generate_work_order: openai 包未安装，使用本地 fallback")
         return _fallback_work_order(work_order_id, device_context)
 
     base_url = LLM_BASE_URL.rstrip("/")
@@ -481,6 +495,11 @@ def generate_work_order(
         {"role": "user", "content": f"请生成工单ID为 {work_order_id} 的维修工单（纯JSON格式）。"}
     ]
 
+    logger.info(
+        "generate_work_order: LLM 调用开始 | model=%s | work_order_id=%s | device=%s",
+        LLM_MODEL, work_order_id, device_context.get("deviceName") if device_context else "-",
+    )
+
     try:
         response = client.chat.completions.create(
             model=LLM_MODEL, messages=full_messages, max_tokens=1500,
@@ -494,8 +513,10 @@ def generate_work_order(
         data = json.loads(clean)
         data.setdefault("workOrderId", work_order_id)
         data.setdefault("createdAt", datetime.now().isoformat())
+        logger.info("generate_work_order: 工单生成成功 | work_order_id=%s", work_order_id)
         return data
-    except Exception:
+    except Exception as e:
+        logger.error("generate_work_order: LLM 响应解析失败 | %s | 降级本地模式", e)
         return _fallback_work_order(work_order_id, device_context)
 
 

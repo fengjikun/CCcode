@@ -1,10 +1,13 @@
 import json
+import logging
 import os
 from typing import Any, Callable
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from app.models.project_mgmt import Project, ProjectDocument
+
+logger = logging.getLogger(__name__)
 
 MAX_AI_INSIGHT_ENTITIES = 80
 MAX_AI_INSIGHT_RELATIONS = 120
@@ -340,6 +343,11 @@ def _run_ai_schema_insight_llm(
 
     client = OpenAI(api_key=llm_cfg["api_key"], base_url=llm_cfg["base_url"])
 
+    logger.info(
+        "ai_insight: LLM 调用开始 | model=%s | project=%s | docs=%d",
+        llm_cfg["model"], project.name, len(enabled_docs),
+    )
+
     try:
         response = client.chat.completions.create(
             model=llm_cfg["model"],
@@ -350,6 +358,7 @@ def _run_ai_schema_insight_llm(
             max_tokens=_resolve_ai_insight_llm_max_tokens(),
         )
     except Exception as exc:
+        logger.error("ai_insight: LLM 调用失败 | model=%s | %s", llm_cfg["model"], exc)
         raise ValueError(f"AI 洞察模型调用失败：{exc}") from exc
 
     text = _normalize_text(response.choices[0].message.content)
@@ -365,6 +374,11 @@ def _run_ai_schema_insight_llm(
         raise ValueError("AI 洞察输出不是合法 JSON，请检查 prompt 与模型响应") from exc
     if not isinstance(parsed, dict):
         raise ValueError("AI 洞察输出格式不正确，根节点必须是 JSON 对象")
+    logger.info(
+        "ai_insight: LLM 响应解析成功 | entities=%d | relations=%d",
+        len(parsed.get("entities") or []),
+        len(parsed.get("relations") or []),
+    )
     return parsed
 
 
