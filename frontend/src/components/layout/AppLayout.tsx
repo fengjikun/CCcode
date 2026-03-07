@@ -53,18 +53,16 @@ export default function AppLayout() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#fff',
           fontWeight: 700,
-          fontSize: collapsed ? 15 : 15,
+          fontSize: 15,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           letterSpacing: collapsed ? 0 : 1,
-          color: '#fff',
           background: 'linear-gradient(90deg, #4096ff, #36cfc9)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
         }}>
-          {collapsed ? 'D' : 'DeepEXI OS'}
+          {collapsed ? 'D' : 'DeepexiOS'}
         </div>
         <Menu
           theme="dark"
