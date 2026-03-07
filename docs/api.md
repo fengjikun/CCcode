@@ -918,6 +918,32 @@ POST /api/projects/{project_id}/data-sources
 > `extractMode`：`TABLE`（指定表）/ `SQL`（自定义 SQL）
 > `syncMode`：`FULL`（全量）/ `INCREMENTAL`（增量）
 
+**示例：在项目 `proj_01ccfa6841df` 新增结构化数据源（故障工单，`fault.faultOrder`）**
+```
+POST /api/projects/proj_01ccfa6841df/data-sources
+```
+**请求体**：
+```json
+{
+  "name": "故障工单",
+  "type": "MYSQL",
+  "host": "192.168.1.100",
+  "port": 3306,
+  "database": "fault",
+  "schema": null,
+  "username": "reader",
+  "password": "secret",
+  "sslEnabled": false,
+  "enabled": true,
+  "extractMode": "TABLE",
+  "tables": ["faultOrder"],
+  "customSql": null,
+  "rowLimit": 10000,
+  "syncMode": "FULL",
+  "incrementalColumn": null
+}
+```
+
 #### 更新数据源
 ```
 PUT /api/projects/{project_id}/data-sources/{data_source_id}

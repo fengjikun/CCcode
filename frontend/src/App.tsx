@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectWorkspacePage from './pages/ProjectWorkspacePage'
 import ProjectGraphPage from './pages/ProjectGraphPage'
+import GraphPage from './pages/GraphPage'
 import DigitalHumanListPage from './pages/DigitalHumanListPage'
 import DeviceFaultMonitorPage from './pages/DeviceFaultMonitorPage'
 
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/projects/:projectId" element={<ProjectWorkspacePage />} />
         <Route path="/projects/:projectId/graph" element={<ProjectGraphPage />} />
+        <Route path="/graph" element={<GraphPage />} />
         <Route path="/ontology" element={<Navigate to="/projects" replace />} />
         <Route path="/digital-human" element={<DigitalHumanListPage />} />
         <Route path="/digital-human/:id" element={<DeviceFaultMonitorPage />} />

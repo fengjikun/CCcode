@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   Badge, Button, Form, Input, Modal, Popconfirm, Select, Space, Table, Tabs, Tag, message,
 } from 'antd'
-import { ArrowDownOutlined, ArrowUpOutlined, DeleteOutlined, PlayCircleOutlined, PlusOutlined, SaveOutlined } from '@ant-design/icons'
+import { ArrowDownOutlined, ArrowUpOutlined, DeleteOutlined, EditOutlined, PlayCircleOutlined, PlusOutlined, SaveOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import {
   createProjectAction, deleteProjectAction, setActionStatus, updateProjectAction,
@@ -193,6 +193,7 @@ interface ParamItem { name: string; displayName: string; dataType: string; requi
 function ParametersTab({ action, projectId, onRefresh }: { action: ActionDefinition; projectId: string; onRefresh: () => void }) {
   const [params, setParams] = useState<ParamItem[]>([])
   const [modalOpen, setModalOpen] = useState(false)
+  const [editingIdx, setEditingIdx] = useState<number | null>(null)
   const [form] = Form.useForm()
 
   useEffect(() => {
@@ -214,10 +215,28 @@ function ParametersTab({ action, projectId, onRefresh }: { action: ActionDefinit
     }
   }
 
-  const handleAdd = async () => {
+  const openAdd = () => {
+    setEditingIdx(null)
+    form.resetFields()
+    setModalOpen(true)
+  }
+
+  const openEdit = (idx: number) => {
+    setEditingIdx(idx)
+    form.setFieldsValue(params[idx])
+    setModalOpen(true)
+  }
+
+  const handleSubmit = async () => {
     try {
       const vals = await form.validateFields()
-      const updated = [...params, { ...vals, required: !!vals.required }]
+      const item: ParamItem = { ...vals, required: !!vals.required }
+      let updated: ParamItem[]
+      if (editingIdx !== null) {
+        updated = params.map((p, i) => i === editingIdx ? item : p)
+      } else {
+        updated = [...params, item]
+      }
       setParams(updated)
       form.resetFields()
       setModalOpen(false)
@@ -239,23 +258,35 @@ function ParametersTab({ action, projectId, onRefresh }: { action: ActionDefinit
     { title: '默认值', dataIndex: 'defaultValue', render: (v: string) => v || '-' },
     {
       title: '操作',
+      width: 100,
       render: (_: unknown, __: unknown, idx: number) => (
-        <Popconfirm title="确认删除？" onConfirm={() => void handleDelete(idx)}>
-          <Button type="text" danger size="small" icon={<DeleteOutlined />} />
-        </Popconfirm>
+        <Space size="small">
+          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openEdit(idx)} />
+          <Popconfirm title="确认删除？" onConfirm={() => void handleDelete(idx)}>
+            <Button type="text" danger size="small" icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
       ),
     },
   ]
 
   return (
     <>
-      <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => setModalOpen(true)} style={{ marginBottom: 12 }}>
+      <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openAdd} style={{ marginBottom: 12 }}>
         添加参数
       </Button>
       <Table dataSource={params.map((p, i) => ({ ...p, _key: i }))} columns={columns} rowKey="_key" size="small" pagination={false} />
-      <Modal title="添加参数" open={modalOpen} onOk={() => void handleAdd()} onCancel={() => { setModalOpen(false); form.resetFields() }} destroyOnClose>
+      <Modal
+        title={editingIdx !== null ? '编辑参数' : '添加参数'}
+        open={modalOpen}
+        onOk={() => void handleSubmit()}
+        onCancel={() => { setModalOpen(false); form.resetFields() }}
+        destroyOnClose
+      >
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="代码名称" rules={[{ required: true }, { pattern: /^[a-zA-Z_][a-zA-Z0-9_]*$/, message: '须为合法标识符' }]}><Input /></Form.Item>
+          <Form.Item name="name" label="代码名称" rules={[{ required: true }, { pattern: /^[a-zA-Z_][a-zA-Z0-9_]*$/, message: '须为合法标识符' }]}>
+            <Input disabled={editingIdx !== null} />
+          </Form.Item>
           <Form.Item name="displayName" label="显示名称" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name="dataType" label="数据类型" rules={[{ required: true }]}>
             <Select>
@@ -360,7 +391,7 @@ function RulesTab({ action, projectId, onRefresh }: { action: ActionDefinition; 
         <Form form={form} layout="vertical">
           <Form.Item name="ruleType" label="规则类型" rules={[{ required: true }]}>
             <Select>
-              {['CREATE_OBJECT', 'UPDATE_OBJECT', 'DELETE_OBJECT', 'CREATE_LINK', 'DELETE_LINK', 'CUSTOM'].map(t => (
+              {['CREATE_OBJECT', 'UPDATE_OBJECT', 'DELETE_OBJECT', 'CREATE_LINK', 'DELETE_LINK', 'UPDATE_LINK'].map(t => (
                 <Select.Option key={t} value={t}>{t}</Select.Option>
               ))}
             </Select>
@@ -387,6 +418,7 @@ function ValidationTab({ action, projectId, onRefresh }: { action: ActionDefinit
   const [rules, setRules] = useState<ValidationRule[]>([])
   const [saving, setSaving] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [editingIdx, setEditingIdx] = useState<number | null>(null)
   const [form] = Form.useForm()
 
   useEffect(() => {
@@ -410,10 +442,27 @@ function ValidationTab({ action, projectId, onRefresh }: { action: ActionDefinit
     setSaving(false)
   }
 
-  const handleAdd = async () => {
+  const openAdd = () => {
+    setEditingIdx(null)
+    form.resetFields()
+    setModalOpen(true)
+  }
+
+  const openEdit = (idx: number) => {
+    setEditingIdx(idx)
+    form.setFieldsValue(rules[idx])
+    setModalOpen(true)
+  }
+
+  const handleSubmit = async () => {
     try {
       const vals = await form.validateFields()
-      const updated = [...rules, vals as ValidationRule]
+      let updated: ValidationRule[]
+      if (editingIdx !== null) {
+        updated = rules.map((r, i) => i === editingIdx ? (vals as ValidationRule) : r)
+      } else {
+        updated = [...rules, vals as ValidationRule]
+      }
       setRules(updated)
       form.resetFields()
       setModalOpen(false)
@@ -433,10 +482,14 @@ function ValidationTab({ action, projectId, onRefresh }: { action: ActionDefinit
     { title: '提示信息', dataIndex: 'message', ellipsis: true },
     {
       title: '操作',
+      width: 100,
       render: (_: unknown, __: unknown, idx: number) => (
-        <Popconfirm title="确认删除？" onConfirm={() => void handleDelete(idx)}>
-          <Button type="text" danger size="small" icon={<DeleteOutlined />} />
-        </Popconfirm>
+        <Space size="small">
+          <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openEdit(idx)} />
+          <Popconfirm title="确认删除？" onConfirm={() => void handleDelete(idx)}>
+            <Button type="text" danger size="small" icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
       ),
     },
   ]
@@ -444,11 +497,17 @@ function ValidationTab({ action, projectId, onRefresh }: { action: ActionDefinit
   return (
     <>
       <Space style={{ marginBottom: 12 }}>
-        <Button size="small" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>添加校验规则</Button>
+        <Button size="small" icon={<PlusOutlined />} onClick={openAdd}>添加校验规则</Button>
         <Button type="primary" size="small" icon={<SaveOutlined />} loading={saving} onClick={() => void save()}>保存</Button>
       </Space>
       <Table dataSource={rules.map((r, i) => ({ ...r, _key: i }))} columns={columns} rowKey="_key" size="small" pagination={false} />
-      <Modal title="添加校验规则" open={modalOpen} onOk={() => void handleAdd()} onCancel={() => { setModalOpen(false); form.resetFields() }} destroyOnClose>
+      <Modal
+        title={editingIdx !== null ? '编辑校验规则' : '添加校验规则'}
+        open={modalOpen}
+        onOk={() => void handleSubmit()}
+        onCancel={() => { setModalOpen(false); form.resetFields() }}
+        destroyOnClose
+      >
         <Form form={form} layout="vertical">
           <Form.Item name="name" label="名称" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name="condition" label="条件表达式" rules={[{ required: true }]}><Input.TextArea rows={2} /></Form.Item>

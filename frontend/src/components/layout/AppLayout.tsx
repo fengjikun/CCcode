@@ -6,6 +6,7 @@ import {
   UserOutlined,
   ProjectOutlined,
   RobotOutlined,
+  SearchOutlined,
 } from '@ant-design/icons'
 import { clearAuthSession, getAuthUser } from '../../auth/session'
 
@@ -13,11 +14,13 @@ const { Sider, Content, Header } = Layout
 
 const menuItems = [
   { key: '/projects', icon: <ProjectOutlined />, label: '本体管理' },
+  { key: '/graph', icon: <SearchOutlined />, label: '图谱检索' },
   { key: '/digital-human', icon: <RobotOutlined />, label: '数字员工' },
 ]
 
 const PAGE_TITLES: Record<string, string> = {
   '/projects': '本体管理',
+  '/graph': '图谱检索',
   '/digital-human': '数字员工',
 }
 

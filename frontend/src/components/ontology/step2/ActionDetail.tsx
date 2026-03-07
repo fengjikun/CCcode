@@ -302,7 +302,7 @@ const RulesTab: React.FC<{ atId: number }> = ({ atId }) => {
         <Form form={form} layout="vertical">
           <Form.Item name="ruleType" label="规则类型" rules={[{ required: true }]}>
             <Select placeholder="选择">
-              {['CREATE_OBJECT', 'UPDATE_OBJECT', 'DELETE_OBJECT', 'CREATE_LINK', 'DELETE_LINK', 'CUSTOM'].map(t => (
+              {['CREATE_OBJECT', 'UPDATE_OBJECT', 'DELETE_OBJECT', 'CREATE_LINK', 'DELETE_LINK', 'UPDATE_LINK'].map(t => (
                 <Select.Option key={t} value={t}>{t}</Select.Option>
               ))}
             </Select>

@@ -1,0 +1,1 @@
+bash ./scripts/start.sh docker up deploy/.env
