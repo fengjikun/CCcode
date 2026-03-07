@@ -1,14 +1,12 @@
 import { useState } from 'react'
-import { Form, Input, Modal, Select, message } from 'antd'
+import { Form, Input, Modal, message } from 'antd'
 import { createProjectFunction } from '../../../api/projectManagement'
-import type { FunctionStatus } from '../../../types/projectMvp'
 import { getErrorMessage } from '../helpers'
 
 interface FunctionFormData {
   name: string
   description?: string
   scriptContent: string
-  status: FunctionStatus
 }
 
 interface FunctionModalProps {
@@ -26,7 +24,7 @@ export default function FunctionModal({ open, onClose, onSuccess, projectId }: F
     try {
       const values = await form.validateFields()
       setSaving(true)
-      await createProjectFunction(projectId, values)
+      await createProjectFunction(projectId, { ...values, status: 'DRAFT' })
       message.success('函数已新增')
       onClose()
       form.resetFields()
@@ -46,11 +44,11 @@ export default function FunctionModal({ open, onClose, onSuccess, projectId }: F
 
   return (
     <Modal
-      title="新增函数"
+      title="新建 Cell"
       open={open}
       onCancel={handleCancel}
       onOk={() => void handleOk()}
-      okText="保存"
+      okText="创建"
       cancelText="取消"
       confirmLoading={saving}
       destroyOnClose
@@ -59,26 +57,19 @@ export default function FunctionModal({ open, onClose, onSuccess, projectId }: F
       <Form<FunctionFormData>
         form={form}
         layout="vertical"
-        initialValues={{ status: 'DRAFT', scriptContent: 'def run(input_data):\n    return input_data' }}
+        initialValues={{ scriptContent: 'def run(input_data):\n    return input_data' }}
       >
         <Form.Item name="name" label="函数名称" rules={[{ required: true, message: '请输入函数名称' }]}>
-          <Input />
+          <Input placeholder="如：sendOrderToSAP" />
         </Form.Item>
         <Form.Item name="description" label="描述">
-          <Input.TextArea rows={3} />
+          <Input.TextArea rows={2} placeholder="（可选）简述函数用途" />
         </Form.Item>
-        <Form.Item name="scriptContent" label="脚本内容" rules={[{ required: true, message: '请输入函数脚本' }]}>
-          <Input.TextArea rows={8} />
-        </Form.Item>
-        <Form.Item name="status" label="初始状态" rules={[{ required: true }]}>
-          <Select
-            options={[
-              { label: 'DRAFT', value: 'DRAFT' },
-              { label: 'ACTIVE', value: 'ACTIVE' },
-            ]}
-          />
+        <Form.Item name="scriptContent" label="初始脚本" rules={[{ required: true, message: '请输入脚本内容' }]}>
+          <Input.TextArea rows={8} style={{ fontFamily: 'monospace', fontSize: 13 }} />
         </Form.Item>
       </Form>
     </Modal>
   )
 }
+

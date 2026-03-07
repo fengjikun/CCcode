@@ -194,9 +194,9 @@ BUILT_IN_SKILL_DEFAULTS = [
         "enabled": True,
         "prompt": "",
         "source": "built_in",
-        "tags": ["openclaw-bundled", "pipeline", "preprocessing"],
+        "tags": ["pipeline", "preprocessing"],
         "blocked": True,
-        "missing": "runtime:openclaw-processor",
+        "missing": "runtime:processor",
         "metadata": {
             "package_format": "builtin",
             "capabilities": ["格式清洗", "字段标准化", "切分与分块"],
@@ -210,7 +210,7 @@ BUILT_IN_SKILL_DEFAULTS = [
         "enabled": True,
         "prompt": "",
         "source": "built_in",
-        "tags": ["openclaw-bundled", "pipeline", "graph"],
+        "tags": ["pipeline", "graph"],
         "blocked": False,
         "missing": "",
         "metadata": {
@@ -2646,8 +2646,17 @@ def _to_action_response(item: ProjectAction) -> dict[str, Any]:
     return {
         "id": item.id,
         "name": item.name,
+        "display_name": item.display_name or "",
         "description": item.description or "",
         "status": item.status,
+        "target_object_type_id": item.target_object_type_id,
+        "trigger_type": item.trigger_type or "MANUAL",
+        "trigger_config_json": item.trigger_config_json or "",
+        "exception_policy": item.exception_policy or "IGNORE",
+        "exception_config_json": item.exception_config_json or "",
+        "validation_rules_json": item.validation_rules_json or "",
+        "parameters_json": item.parameters_json or "",
+        "rules_json": item.rules_json or "",
     }
 
 
@@ -4041,8 +4050,10 @@ def update_schema_prompts(db: Session, user_id: int, project_id: str, payload: d
     for item in skills_raw:
         if not isinstance(item, dict):
             continue
-        code = str(item.get("code") or "")
-        source = str(item.get("source") or "")
+        raw_code = item.get("code") or ""
+        code = raw_code.value if hasattr(raw_code, "value") else str(raw_code)
+        raw_source = item.get("source") or ""
+        source = raw_source.value if hasattr(raw_source, "value") else str(raw_source)
         if code in {"data_processing", "graph_synthesis"}:
             builtin_payload_by_code[code] = item
         elif code == "custom" or source == "uploaded":
@@ -5094,7 +5105,9 @@ def create_action(db: Session, user_id: int, project_id: str, payload: dict):
     if not name:
         raise ValueError("动作名称不能为空")
 
-    status = str(payload.get("status") or "DRAFT")
+    raw_status = payload.get("status") or "DRAFT"
+    # 兼容枚举对象和字符串两种情况
+    status = raw_status.value if hasattr(raw_status, "value") else str(raw_status)
     if status not in {"DRAFT", "ACTIVE"}:
         status = "DRAFT"
     now = _now()
@@ -5102,6 +5115,7 @@ def create_action(db: Session, user_id: int, project_id: str, payload: dict):
         id=_new_id("act"),
         project_id=project.id,
         name=name,
+        display_name=_normalize_text(payload.get("display_name")) or "",
         description=_normalize_text(payload.get("description")),
         status=status,
         created_at=now,
@@ -5125,6 +5139,37 @@ def patch_action_status(db: Session, user_id: int, project_id: str, action_id: s
         raise ValueError("动作不存在")
 
     action.status = status
+    action.updated_at = _now()
+    _touch_project(project)
+    db.commit()
+    db.refresh(action)
+    return _to_action_response(action)
+
+
+def update_action(db: Session, user_id: int, project_id: str, action_id: str, payload: dict):
+    project = _ensure_project_owned(db, user_id, project_id)
+    action = (
+        db.query(ProjectAction)
+        .filter(ProjectAction.project_id == project.id, ProjectAction.id == action_id)
+        .first()
+    )
+    if not action:
+        raise ValueError("动作不存在")
+
+    updatable = [
+        "display_name", "description", "status",
+        "target_object_type_id", "trigger_type", "trigger_config_json",
+        "exception_policy", "exception_config_json",
+        "validation_rules_json", "parameters_json", "rules_json",
+    ]
+    for field in updatable:
+        if field in payload and payload[field] is not None:
+            val = payload[field]
+            # 枚举对象取 .value，避免写入 "FieldName.VALUE" 字符串
+            if hasattr(val, "value"):
+                val = val.value
+            setattr(action, field, val)
+
     action.updated_at = _now()
     _touch_project(project)
     db.commit()
@@ -5184,6 +5229,28 @@ def patch_function_status(db: Session, user_id: int, project_id: str, function_i
     if not row:
         raise ValueError("函数不存在")
     row.status = status
+    row.updated_at = _now()
+    _touch_project(project)
+    db.commit()
+    db.refresh(row)
+    return _to_function_response(row)
+
+
+def update_function(db: Session, user_id: int, project_id: str, function_id: str, payload: dict):
+    project = _ensure_project_owned(db, user_id, project_id)
+    row = (
+        db.query(ProjectFunction)
+        .filter(ProjectFunction.project_id == project.id, ProjectFunction.id == function_id)
+        .first()
+    )
+    if not row:
+        raise ValueError("函数不存在")
+    name = _normalize_text(payload.get("name"))
+    if not name:
+        raise ValueError("函数名称不能为空")
+    row.name = name
+    row.description = payload.get("description")
+    row.script_content = str(payload.get("script_content") or "")
     row.updated_at = _now()
     _touch_project(project)
     db.commit()

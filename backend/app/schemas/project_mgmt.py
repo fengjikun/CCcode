@@ -348,8 +348,23 @@ class OntologyVersion(_CamelModel):
 
 class ActionCreateRequest(_CamelModel):
     name: str
+    display_name: Optional[str] = None
     description: Optional[str] = None
     status: ActionStatus = ActionStatus.DRAFT
+
+
+class ActionUpdateRequest(_CamelModel):
+    display_name: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[ActionStatus] = None
+    target_object_type_id: Optional[int] = None
+    trigger_type: Optional[str] = None
+    trigger_config_json: Optional[str] = None
+    exception_policy: Optional[str] = None
+    exception_config_json: Optional[str] = None
+    validation_rules_json: Optional[str] = None
+    parameters_json: Optional[str] = None
+    rules_json: Optional[str] = None
 
 
 class ActionStatusPatchRequest(_CamelModel):
@@ -359,8 +374,17 @@ class ActionStatusPatchRequest(_CamelModel):
 class ProjectAction(_CamelModel):
     id: str
     name: str
+    display_name: Optional[str] = None
     description: Optional[str] = None
     status: ActionStatus
+    target_object_type_id: Optional[int] = None
+    trigger_type: Optional[str] = None
+    trigger_config_json: Optional[str] = None
+    exception_policy: Optional[str] = None
+    exception_config_json: Optional[str] = None
+    validation_rules_json: Optional[str] = None
+    parameters_json: Optional[str] = None
+    rules_json: Optional[str] = None
 
 
 class FunctionCreateRequest(_CamelModel):
@@ -372,6 +396,12 @@ class FunctionCreateRequest(_CamelModel):
 
 class FunctionStatusPatchRequest(_CamelModel):
     status: FunctionStatus
+
+
+class FunctionUpdateRequest(_CamelModel):
+    name: str
+    description: Optional[str] = None
+    script_content: str
 
 
 class ProjectFunction(_CamelModel):

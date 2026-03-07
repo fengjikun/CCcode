@@ -8,6 +8,7 @@ from app.models.user import User
 from app.schemas.project_mgmt import (
     ActionCreateRequest,
     ActionStatusPatchRequest,
+    ActionUpdateRequest,
     AiInsightRun,
     ConnectionTestResult,
     DataSourceUpsertRequest,
@@ -17,6 +18,7 @@ from app.schemas.project_mgmt import (
     ExtractionRun,
     FunctionCreateRequest,
     FunctionStatusPatchRequest,
+    FunctionUpdateRequest,
     OntologyVersion,
     ProjectAction,
     ProjectDataSource,
@@ -590,6 +592,22 @@ def create_action(
         _raise_not_implemented(e)
 
 
+@router.put("/{project_id}/actions/{action_id}", response_model=ProjectAction)
+def update_action(
+    project_id: str,
+    action_id: str,
+    payload: ActionUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return project_svc.update_action(
+            db, current_user.id, project_id, action_id, payload.model_dump(by_alias=False, exclude_none=True)
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=_value_error_status(str(e)), detail=str(e))
+
+
 @router.patch("/{project_id}/actions/{action_id}", response_model=ProjectAction)
 def patch_action_status(
     project_id: str,
@@ -651,6 +669,24 @@ def patch_function_status(
     try:
         return project_svc.patch_function_status(
             db, current_user.id, project_id, function_id, payload.status.value
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=_value_error_status(str(e)), detail=str(e))
+    except NotImplementedError as e:
+        _raise_not_implemented(e)
+
+
+@router.put("/{project_id}/functions/{function_id}", response_model=ProjectFunction)
+def update_function(
+    project_id: str,
+    function_id: str,
+    payload: FunctionUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return project_svc.update_function(
+            db, current_user.id, project_id, function_id, payload.model_dump(by_alias=False)
         )
     except ValueError as e:
         raise HTTPException(status_code=_value_error_status(str(e)), detail=str(e))

@@ -597,6 +597,15 @@ export async function setFunctionStatus(
   await fetchJSON(`/api/projects/${projectId}/functions/${functionId}`, 'PATCH', { status })
 }
 
+export async function updateProjectFunction(
+  projectId: string,
+  functionId: string,
+  payload: { name: string; description?: string; scriptContent: string },
+): Promise<FunctionDefinition> {
+  const row = await fetchJSON<any>(`/api/projects/${projectId}/functions/${functionId}`, 'PUT', payload)
+  return mapFunction(row)
+}
+
 export async function deleteProjectFunction(projectId: string, functionId: string): Promise<void> {
   await fetchJSON(`/api/projects/${projectId}/functions/${functionId}`, 'DELETE')
 }

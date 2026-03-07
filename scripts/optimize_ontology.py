@@ -180,31 +180,177 @@ NEW_ENTITIES = [
 ]
 
 # 业务动作（替换测试数据）
+# 每条动作包含完整的5个Tab数据：基本信息、参数、规则、校验规则、触发&异常
 BUSINESS_ACTIONS = [
     {
-        "name": "故障应急处理",
+        "name": "emergency_response",
+        "displayName": "故障应急处理",
         "description": "设备发生故障后的第一响应标准动作：隔离设备、通知相关人员、填写故障初始记录，防止故障扩大。",
-        "status": "ACTIVE"
+        "status": "ACTIVE",
+        "triggerType": "EVENT",
+        "triggerConfigJson": json.dumps({
+            "event": "failure.created",
+            "filter": {"severity": ["高", "中"]},
+            "debounce_seconds": 30
+        }, ensure_ascii=False),
+        "exceptionPolicy": "RETRY",
+        "exceptionConfigJson": json.dumps({
+            "maxRetries": 3,
+            "retryDelay": 10000,
+            "notifyOnFail": True
+        }, ensure_ascii=False),
+        "validationRulesJson": json.dumps([
+            {"name": "设备编码非空", "condition": "params.equipCode != null && params.equipCode != ''", "message": "必须指定故障设备编码"},
+            {"name": "故障描述非空", "condition": "params.failDesc != null && params.failDesc.length >= 5", "message": "故障描述不得少于5个字"},
+        ], ensure_ascii=False),
+        "parametersJson": json.dumps([
+            {"name": "equipCode",    "displayName": "设备编码",   "dataType": "STRING",  "required": True,  "defaultValue": ""},
+            {"name": "failDesc",     "displayName": "故障描述",   "dataType": "STRING",  "required": True,  "defaultValue": ""},
+            {"name": "severity",     "displayName": "严重程度",   "dataType": "STRING",  "required": True,  "defaultValue": "中"},
+            {"name": "stopLine",     "displayName": "是否停线",   "dataType": "BOOLEAN", "required": False, "defaultValue": "false"},
+            {"name": "reporterName", "displayName": "报告人姓名", "dataType": "STRING",  "required": False, "defaultValue": ""},
+        ], ensure_ascii=False),
+        "rulesJson": json.dumps([
+            {"ruleType": "CREATE_OBJECT", "target": "Failure",   "conditionJson": '{"auto": true}',          "propertyMappingsJson": '{"fail_desc": "failDesc", "severity": "severity", "stop_line": "stopLine", "fail_date": "now()"}', "sortOrder": 1},
+            {"ruleType": "UPDATE_OBJECT", "target": "Equipment", "conditionJson": '{"field": "equipCode"}',  "propertyMappingsJson": '{"status": "故障"}',  "sortOrder": 2},
+            {"ruleType": "CUSTOM",        "target": "notify",    "conditionJson": '{"channel": "wechat"}',   "propertyMappingsJson": '{"to": "equipManager", "msg": "设备故障告警"}', "sortOrder": 3},
+        ], ensure_ascii=False),
     },
     {
-        "name": "零部件更换执行",
+        "name": "component_replacement",
+        "displayName": "零部件更换执行",
         "description": "根据故障诊断结论，对损坏零部件进行拆卸、更换、安装、调试的完整操作流程，含安全确认和功能验证。",
-        "status": "ACTIVE"
+        "status": "ACTIVE",
+        "triggerType": "MANUAL",
+        "triggerConfigJson": json.dumps({
+            "requireApproval": True,
+            "approver": "equipment_engineer"
+        }, ensure_ascii=False),
+        "exceptionPolicy": "ABORT",
+        "exceptionConfigJson": json.dumps({
+            "rollbackOnFail": True,
+            "notifyOnFail": True,
+            "alertLevel": "HIGH"
+        }, ensure_ascii=False),
+        "validationRulesJson": json.dumps([
+            {"name": "零件编码非空",   "condition": "params.compCode != null && params.compCode != ''",  "message": "必须填写更换零件的物料编码"},
+            {"name": "设备已停机确认", "condition": "params.equipStopped == true",                        "message": "必须确认设备已安全停机后方可执行更换"},
+            {"name": "备件库存充足",   "condition": "params.stockQty > 0",                               "message": "备件库存不足，请先申请采购"},
+        ], ensure_ascii=False),
+        "parametersJson": json.dumps([
+            {"name": "equipCode",    "displayName": "设备编码",     "dataType": "STRING",  "required": True,  "defaultValue": ""},
+            {"name": "compCode",     "displayName": "零件物料编码", "dataType": "STRING",  "required": True,  "defaultValue": ""},
+            {"name": "compName",     "displayName": "零件名称",     "dataType": "STRING",  "required": True,  "defaultValue": ""},
+            {"name": "equipStopped", "displayName": "设备已停机",   "dataType": "BOOLEAN", "required": True,  "defaultValue": "false"},
+            {"name": "stockQty",     "displayName": "备件库存数量", "dataType": "INTEGER", "required": True,  "defaultValue": "0"},
+            {"name": "technicianId", "displayName": "执行技工工号", "dataType": "STRING",  "required": False, "defaultValue": ""},
+            {"name": "remark",       "displayName": "备注",         "dataType": "STRING",  "required": False, "defaultValue": ""},
+        ], ensure_ascii=False),
+        "rulesJson": json.dumps([
+            {"ruleType": "UPDATE_OBJECT", "target": "Component", "conditionJson": '{"field": "compCode"}', "propertyMappingsJson": '{"last_replace": "today()", "status": "已更换"}', "sortOrder": 1},
+            {"ruleType": "UPDATE_OBJECT", "target": "Equipment", "conditionJson": '{"field": "equipCode"}', "propertyMappingsJson": '{"status": "正常"}', "sortOrder": 2},
+            {"ruleType": "CREATE_LINK",   "target": "component_fails", "conditionJson": '{}', "propertyMappingsJson": '{}', "sortOrder": 3},
+        ], ensure_ascii=False),
     },
     {
-        "name": "8D报告提交审核",
+        "name": "eightd_report_review",
+        "displayName": "8D报告提交审核",
         "description": "8D 报告完成 D1-D8 填写后，触发多级审核流程：班组长 → 设备工程师 → 部门主管，逐级确认后关闭报告。",
-        "status": "ACTIVE"
+        "status": "ACTIVE",
+        "triggerType": "EVENT",
+        "triggerConfigJson": json.dumps({
+            "event": "eightd_report.submitted",
+            "filter": {"status": "草稿"},
+            "autoAssign": True
+        }, ensure_ascii=False),
+        "exceptionPolicy": "ROLLBACK",
+        "exceptionConfigJson": json.dumps({
+            "rollbackSteps": ["reset_status"],
+            "maxRetries": 2,
+            "retryDelay": 5000
+        }, ensure_ascii=False),
+        "validationRulesJson": json.dumps([
+            {"name": "报告编号非空",     "condition": "params.reportId != null && params.reportId != ''", "message": "报告编号不能为空"},
+            {"name": "完整性达标",       "condition": "params.completeness >= 80",                        "message": "报告完整度需达到80%方可提交"},
+            {"name": "审核人已指定",     "condition": "params.reviewerId != null",                        "message": "必须指定审核责任人"},
+        ], ensure_ascii=False),
+        "parametersJson": json.dumps([
+            {"name": "reportId",      "displayName": "报告编号",   "dataType": "STRING",  "required": True,  "defaultValue": ""},
+            {"name": "completeness",  "displayName": "完整度(%)",  "dataType": "INTEGER", "required": True,  "defaultValue": "0"},
+            {"name": "reviewerId",    "displayName": "审核人工号", "dataType": "STRING",  "required": True,  "defaultValue": ""},
+            {"name": "reviewLevel",   "displayName": "审核层级",   "dataType": "STRING",  "required": False, "defaultValue": "班组长"},
+            {"name": "autoClose",     "displayName": "通过后自动关闭", "dataType": "BOOLEAN", "required": False, "defaultValue": "false"},
+        ], ensure_ascii=False),
+        "rulesJson": json.dumps([
+            {"ruleType": "UPDATE_OBJECT", "target": "EightDReport", "conditionJson": '{"field": "reportId"}', "propertyMappingsJson": '{"status": "审核中"}', "sortOrder": 1},
+            {"ruleType": "CUSTOM",        "target": "notify_reviewer", "conditionJson": '{"channel": "email"}', "propertyMappingsJson": '{"to": "reviewerId", "template": "8d_review_request"}', "sortOrder": 2},
+        ], ensure_ascii=False),
     },
     {
-        "name": "预防维保执行",
+        "name": "preventive_maintenance",
+        "displayName": "预防维保执行",
         "description": "基于历史故障规律制定周期性维保计划，按计划对高风险设备进行点检、润滑、紧固、参数校验等预防性作业。",
-        "status": "ACTIVE"
+        "status": "ACTIVE",
+        "triggerType": "SCHEDULE",
+        "triggerConfigJson": json.dumps({
+            "cron": "0 8 * * 1",
+            "timezone": "Asia/Shanghai",
+            "description": "每周一早8点自动触发维保计划生成"
+        }, ensure_ascii=False),
+        "exceptionPolicy": "SKIP",
+        "exceptionConfigJson": json.dumps({
+            "skipCondition": "equipment.status == '维修中'",
+            "logSkip": True
+        }, ensure_ascii=False),
+        "validationRulesJson": json.dumps([
+            {"name": "维保周期合法", "condition": "params.intervalDays >= 1 && params.intervalDays <= 365", "message": "维保周期必须在1~365天之间"},
+            {"name": "执行人已指定", "condition": "params.technicianId != null && params.technicianId != ''", "message": "必须指定维保执行人"},
+        ], ensure_ascii=False),
+        "parametersJson": json.dumps([
+            {"name": "equipCode",     "displayName": "设备编码",     "dataType": "STRING",  "required": True,  "defaultValue": ""},
+            {"name": "intervalDays",  "displayName": "维保周期(天)", "dataType": "INTEGER", "required": True,  "defaultValue": "30"},
+            {"name": "technicianId",  "displayName": "执行技工工号", "dataType": "STRING",  "required": True,  "defaultValue": ""},
+            {"name": "taskType",      "displayName": "作业类型",     "dataType": "STRING",  "required": False, "defaultValue": "点检"},
+            {"name": "checklistJson", "displayName": "点检项清单(JSON)", "dataType": "JSON", "required": False, "defaultValue": "[]"},
+        ], ensure_ascii=False),
+        "rulesJson": json.dumps([
+            {"ruleType": "CREATE_OBJECT", "target": "MaintenanceRecord", "conditionJson": '{"auto": true}', "propertyMappingsJson": '{"equip_code": "equipCode", "task_type": "taskType", "plan_date": "today()"}', "sortOrder": 1},
+            {"ruleType": "UPDATE_OBJECT", "target": "Equipment", "conditionJson": '{"field": "equipCode"}', "propertyMappingsJson": '{"last_maintain_date": "today()"}', "sortOrder": 2},
+        ], ensure_ascii=False),
     },
     {
-        "name": "故障知识归档",
+        "name": "failure_knowledge_archive",
+        "displayName": "故障知识归档",
         "description": "将已关闭的 8D 报告关键信息提取入库：设备编码、故障模式、根因类别、有效措施，形成可复用的故障知识条目。",
-        "status": "ACTIVE"
+        "status": "ACTIVE",
+        "triggerType": "EVENT",
+        "triggerConfigJson": json.dumps({
+            "event": "eightd_report.closed",
+            "filter": {"status": "已关闭"},
+            "delay_seconds": 60
+        }, ensure_ascii=False),
+        "exceptionPolicy": "RETRY",
+        "exceptionConfigJson": json.dumps({
+            "maxRetries": 5,
+            "retryDelay": 30000,
+            "notifyOnFail": False
+        }, ensure_ascii=False),
+        "validationRulesJson": json.dumps([
+            {"name": "报告已关闭",   "condition": "params.reportStatus == '已关闭'",    "message": "只有已关闭的8D报告才能归档"},
+            {"name": "根因非空",     "condition": "params.causeDesc != null && params.causeDesc.length > 0", "message": "根本原因描述不能为空"},
+            {"name": "措施有效验证", "condition": "params.verifyResult != null",         "message": "必须填写措施有效性验证结果"},
+        ], ensure_ascii=False),
+        "parametersJson": json.dumps([
+            {"name": "reportId",      "displayName": "报告编号",     "dataType": "STRING", "required": True,  "defaultValue": ""},
+            {"name": "reportStatus",  "displayName": "报告状态",     "dataType": "STRING", "required": True,  "defaultValue": "已关闭"},
+            {"name": "causeDesc",     "displayName": "根本原因描述", "dataType": "STRING", "required": True,  "defaultValue": ""},
+            {"name": "actionSummary", "displayName": "有效措施摘要", "dataType": "STRING", "required": True,  "defaultValue": ""},
+            {"name": "verifyResult",  "displayName": "验证结果",     "dataType": "STRING", "required": True,  "defaultValue": ""},
+            {"name": "tags",          "displayName": "知识标签(逗号分隔)", "dataType": "STRING", "required": False, "defaultValue": ""},
+        ], ensure_ascii=False),
+        "rulesJson": json.dumps([
+            {"ruleType": "CREATE_OBJECT", "target": "KnowledgeEntry", "conditionJson": '{"auto": true}', "propertyMappingsJson": '{"source_report": "reportId", "cause": "causeDesc", "action": "actionSummary", "verify": "verifyResult", "tags": "tags"}', "sortOrder": 1},
+        ], ensure_ascii=False),
     },
 ]
 
@@ -484,7 +630,7 @@ def step4_create_new_entities(h):
 
 
 def step5_replace_actions(h):
-    """替换测试动作 → 专业业务动作"""
+    """替换测试动作 → 专业业务动作（含完整5Tab数据）"""
     section("STEP 5 · 替换业务动作")
 
     import sqlite3
@@ -501,13 +647,39 @@ def step5_replace_actions(h):
         if ok:
             print(f"  🗑  删除旧动作: {act['name']}")
 
-    # 创建新动作
+    # 创建新动作（含全量字段）
     created = 0
     for act in BUSINESS_ACTIONS:
-        result = post(h, f"{BASE}/actions", act)
-        if result:
+        # POST 创建（只传基础字段）
+        result = post(h, f"{BASE}/actions", {
+            "name": act["name"],
+            "displayName": act["displayName"],
+            "description": act["description"],
+            "status": act["status"],
+        })
+        if not result:
+            continue
+
+        action_id = result["id"]
+
+        # PUT 补全详细数据（参数、规则、触发、异常、校验）
+        detail_fields = {
+            "triggerType":         act.get("triggerType", "MANUAL"),
+            "triggerConfigJson":   act.get("triggerConfigJson", ""),
+            "exceptionPolicy":     act.get("exceptionPolicy", "IGNORE"),
+            "exceptionConfigJson": act.get("exceptionConfigJson", ""),
+            "validationRulesJson": act.get("validationRulesJson", ""),
+            "parametersJson":      act.get("parametersJson", ""),
+            "rulesJson":           act.get("rulesJson", ""),
+        }
+        updated = put(h, f"{BASE}/actions/{action_id}", detail_fields)
+        if updated:
             created += 1
-            print(f"  ✅ 创建动作: {act['name']}")
+            params_count = len(json.loads(act.get("parametersJson", "[]")))
+            rules_count  = len(json.loads(act.get("rulesJson", "[]")))
+            vld_count    = len(json.loads(act.get("validationRulesJson", "[]")))
+            print(f"  ✅ 创建动作: {act['displayName']}")
+            print(f"     触发方式: {act.get('triggerType','MANUAL')} | 参数: {params_count} | 规则: {rules_count} | 校验: {vld_count}")
 
     print(f"\n  结果：删除 {len(old_actions)} 条，新建 {created} 条")
 

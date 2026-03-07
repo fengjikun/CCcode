@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Button, Card, Popconfirm, Switch, Table, message } from 'antd'
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
-import type { ColumnsType } from 'antd/es/table'
-import { deleteProjectFunction, setFunctionStatus } from '../../../api/projectManagement'
+import { Button, Input, Popconfirm, Switch, Tag, message } from 'antd'
+import { PlusOutlined, DeleteOutlined, SaveOutlined, PlayCircleOutlined } from '@ant-design/icons'
+import { deleteProjectFunction, setFunctionStatus, updateProjectFunction } from '../../../api/projectManagement'
 import type { FunctionDefinition, FunctionStatus } from '../../../types/projectMvp'
 import { functionStatusTag, getErrorMessage } from '../helpers'
 import FunctionModal from '../modals/FunctionModal'
+import './FunctionsTab.css'
 
 interface FunctionsTabProps {
   projectId: string
@@ -13,68 +13,151 @@ interface FunctionsTabProps {
   loadProject: () => void
 }
 
+interface CellState {
+  name: string
+  description: string
+  scriptContent: string
+  dirty: boolean
+  saving: boolean
+}
+
 export default function FunctionsTab({ projectId, functions, loadProject }: FunctionsTabProps) {
   const [modalOpen, setModalOpen] = useState(false)
+  const [cellStates, setCellStates] = useState<Record<string, CellState>>({})
 
-  const columns: ColumnsType<FunctionDefinition> = [
-    { title: '名称', dataIndex: 'name' },
-    { title: '描述', dataIndex: 'description', render: (value?: string) => value || '-' },
-    { title: '状态', dataIndex: 'status', width: 120, render: (value: FunctionStatus) => functionStatusTag(value) },
-    {
-      title: '切换',
-      key: 'switch',
-      width: 120,
-      render: (_value, record) => (
-        <Switch
-          checked={record.status === 'ACTIVE'}
-          onChange={(checked) => {
-            const status: FunctionStatus = checked ? 'ACTIVE' : 'DRAFT'
-            void setFunctionStatus(projectId, record.id, status)
-              .then(() => loadProject())
-              .catch((error: unknown) => message.error(getErrorMessage(error, '更新状态失败')))
-          }}
-        />
-      ),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: 90,
-      render: (_value, record) => (
-        <Popconfirm
-          title="确认删除函数？"
-          onConfirm={() => {
-            void deleteProjectFunction(projectId, record.id)
-              .then(() => {
-                message.success('函数已删除')
-                return loadProject()
-              })
-              .catch((error: unknown) => message.error(getErrorMessage(error, '删除失败')))
-          }}
-        >
-          <Button type="text" danger icon={<DeleteOutlined />} />
-        </Popconfirm>
-      ),
-    },
-  ]
+  const getCellState = (fn: FunctionDefinition): CellState =>
+    cellStates[fn.id] ?? {
+      name: fn.name,
+      description: fn.description ?? '',
+      scriptContent: fn.scriptContent,
+      dirty: false,
+      saving: false,
+    }
+
+  const updateCell = (fn: FunctionDefinition, patch: Partial<CellState>) => {
+    setCellStates((prev) => {
+      const current = prev[fn.id] ?? {
+        name: fn.name,
+        description: fn.description ?? '',
+        scriptContent: fn.scriptContent,
+        dirty: false,
+        saving: false,
+      }
+      return { ...prev, [fn.id]: { ...current, ...patch } }
+    })
+  }
+
+  const handleScriptChange = (fn: FunctionDefinition, value: string) => {
+    updateCell(fn, { scriptContent: value, dirty: true })
+  }
+
+  const handleSave = async (fn: FunctionDefinition) => {
+    const state = getCellState(fn)
+    const name = state.name || fn.name
+    const description = state.description || undefined
+    const scriptContent = state.scriptContent
+    updateCell(fn, { saving: true })
+    try {
+      await updateProjectFunction(projectId, fn.id, { name, description, scriptContent })
+      message.success('已保存')
+      updateCell(fn, { dirty: false, saving: false })
+      loadProject()
+    } catch (error: unknown) {
+      message.error(getErrorMessage(error, '保存失败'))
+      updateCell(fn, { saving: false })
+    }
+  }
+
+  const handleStatusToggle = (fn: FunctionDefinition, checked: boolean) => {
+    const status: FunctionStatus = checked ? 'ACTIVE' : 'DRAFT'
+    void setFunctionStatus(projectId, fn.id, status)
+      .then(() => loadProject())
+      .catch((error: unknown) => message.error(getErrorMessage(error, '更新状态失败')))
+  }
+
+  const handleDelete = (fn: FunctionDefinition) => {
+    void deleteProjectFunction(projectId, fn.id)
+      .then(() => {
+        message.success('函数已删除')
+        return loadProject()
+      })
+      .catch((error: unknown) => message.error(getErrorMessage(error, '删除失败')))
+  }
 
   return (
-    <>
-      <Card
-        extra={(
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
-            新增函数
-          </Button>
+    <div className="functions-notebook">
+      {/* 顶部 Header */}
+      <div className="notebook-header">
+        <div className="notebook-title">
+          <span className="notebook-icon">&#9679;</span>
+          <span className="notebook-label">GROOVY NOTEBOOK</span>
+          <Tag>Groovy 4.0</Tag>
+          <Tag>JVM 25</Tag>
+          <Tag>30s timeout</Tag>
+        </div>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
+          + 新建 Cell
+        </Button>
+      </div>
+
+      {/* Cell 列表 */}
+      <div className="notebook-cells">
+        {functions.length === 0 && (
+          <div className="notebook-empty">暂无函数，点击「+ 新建 Cell」添加</div>
         )}
-      >
-        <Table<FunctionDefinition>
-          rowKey="id"
-          size="small"
-          columns={columns}
-          dataSource={functions}
-          pagination={{ pageSize: 8 }}
-        />
-      </Card>
+        {functions.map((fn, idx) => {
+          const state = getCellState(fn)
+          return (
+            <div key={fn.id} className="notebook-cell">
+              {/* Cell 头部 */}
+              <div className="cell-header">
+                <span className="cell-index">In [{idx + 1}]:</span>
+                <span className="cell-name">{fn.name}</span>
+                {functionStatusTag(fn.status)}
+                {state.dirty && <Tag color="warning">已修改</Tag>}
+                <div className="cell-actions">
+                  <Switch
+                    size="small"
+                    checked={fn.status === 'ACTIVE'}
+                    onChange={(checked) => handleStatusToggle(fn, checked)}
+                    checkedChildren="ACTIVE"
+                    unCheckedChildren="DRAFT"
+                  />
+                  <Button
+                    size="small"
+                    icon={<SaveOutlined />}
+                    loading={state.saving}
+                    disabled={!state.dirty}
+                    onClick={() => void handleSave(fn)}
+                  >
+                    保存
+                  </Button>
+                  <Button size="small" type="primary" icon={<PlayCircleOutlined />} disabled>
+                    Run
+                  </Button>
+                  <Popconfirm title="确认删除函数？" onConfirm={() => handleDelete(fn)}>
+                    <Button type="text" danger size="small" icon={<DeleteOutlined />} />
+                  </Popconfirm>
+                </div>
+              </div>
+
+              {/* 代码编辑区 */}
+              <div className="cell-editor">
+                <Input.TextArea
+                  className="code-textarea"
+                  value={state.scriptContent}
+                  onChange={(e) => handleScriptChange(fn, e.target.value)}
+                  autoSize={{ minRows: 6, maxRows: 30 }}
+                  spellCheck={false}
+                />
+              </div>
+
+              {/* 输出区 */}
+              <div className="cell-output">– Run 后显示输出 –</div>
+            </div>
+          )
+        })}
+      </div>
 
       <FunctionModal
         open={modalOpen}
@@ -82,6 +165,6 @@ export default function FunctionsTab({ projectId, functions, loadProject }: Func
         onSuccess={loadProject}
         projectId={projectId}
       />
-    </>
+    </div>
   )
 }
