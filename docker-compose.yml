@@ -17,5 +17,5 @@ services:
       AUTH_DEFAULT_USERNAME: ${AUTH_DEFAULT_USERNAME:-admin}
       AUTH_DEFAULT_PASSWORD: ${AUTH_DEFAULT_PASSWORD:-admin123456}
     volumes:
-      - ./backend/data:/app/backend/data
+      - ./deploy/backend/data:/app/backend/data
     restart: unless-stopped

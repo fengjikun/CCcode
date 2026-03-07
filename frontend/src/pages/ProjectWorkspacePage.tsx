@@ -136,6 +136,7 @@ export default function ProjectWorkspacePage() {
                 projectId={projectId}
                 actions={project.actions}
                 functions={project.functions}
+                entityTypes={project.schemaConfig.entityTypes}
                 loadProject={loadProject}
               />
             ),

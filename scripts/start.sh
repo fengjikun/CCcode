@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# If invoked through `sh`, switch to bash before running bash-specific syntax.
+if [ -z "${BASH_VERSION:-}" ]; then
+    exec /usr/bin/env bash "$0" "$@"
+fi
+
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"

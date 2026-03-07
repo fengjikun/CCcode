@@ -19,6 +19,9 @@ backend/.deps/
 dist/
 .pytest_cache/
 .spec-workflow/
+deploy/
+
+hongmacc.sh
 
 # ===== Environment =====
 backend/.env

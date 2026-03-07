@@ -7,13 +7,14 @@ import type { ColumnsType } from 'antd/es/table'
 import {
   createProjectAction, deleteProjectAction, setActionStatus, updateProjectAction,
 } from '../../../api/projectManagement'
-import type { ActionDefinition, ActionStatus, FunctionDefinition } from '../../../types/projectMvp'
+import type { ActionDefinition, ActionStatus, EntityTypeConfig, FunctionDefinition } from '../../../types/projectMvp'
 import { getErrorMessage } from '../helpers'
 
 interface ActionsTabProps {
   projectId: string
   actions: ActionDefinition[]
   functions: FunctionDefinition[]
+  entityTypes: EntityTypeConfig[]
   loadProject: () => void
 }
 
@@ -125,20 +126,22 @@ function ActionsPanel({ actions, selected, onSelect, onRefresh, projectId }: Act
 // ── Tab 1: 基本信息 ──
 const labelStyle: React.CSSProperties = { display: 'block', marginBottom: 4, fontWeight: 500, fontSize: 13 }
 
-function BasicInfoTab({ action, projectId, onRefresh }: { action: ActionDefinition; projectId: string; onRefresh: () => void }) {
+function BasicInfoTab({ action, projectId, entityTypes, onRefresh }: { action: ActionDefinition; projectId: string; entityTypes: EntityTypeConfig[]; onRefresh: () => void }) {
   const [displayName, setDisplayName] = useState(action.displayName || '')
   const [description, setDescription] = useState(action.description || '')
+  const [targetObjectTypeId, setTargetObjectTypeId] = useState<number | null>(action.targetObjectTypeId ?? null)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     setDisplayName(action.displayName || '')
     setDescription(action.description || '')
+    setTargetObjectTypeId(action.targetObjectTypeId ?? null)
   }, [action])
 
   const save = async () => {
     setSaving(true)
     try {
-      await updateProjectAction(projectId, action.id, { displayName, description })
+      await updateProjectAction(projectId, action.id, { displayName, description, targetObjectTypeId })
       message.success('已保存')
       onRefresh()
     } catch (error: unknown) {
@@ -168,6 +171,20 @@ function BasicInfoTab({ action, projectId, onRefresh }: { action: ActionDefiniti
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>状态</label>
         <div><Badge status={action.status === 'ACTIVE' ? 'success' : 'default'} text={action.status} /></div>
+      </div>
+      <div style={{ marginBottom: 16 }}>
+        <label style={labelStyle}>关联目标实体</label>
+        <Select
+          style={{ width: '100%' }}
+          placeholder="请选择目标实体类型"
+          allowClear
+          value={targetObjectTypeId ?? undefined}
+          onChange={(val: number | undefined) => setTargetObjectTypeId(val ?? null)}
+        >
+          {entityTypes.map(et => (
+            <Select.Option key={et.id} value={Number(et.id)}>{et.name}</Select.Option>
+          ))}
+        </Select>
       </div>
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>显示名称</label>
@@ -772,7 +789,7 @@ function TriggerTab({ action, projectId, functions, onRefresh }: { action: Actio
 }
 
 // ── 详情面板 ──
-function ActionDetail({ action, projectId, functions, onRefresh }: { action: ActionDefinition | null; projectId: string; functions: FunctionDefinition[]; onRefresh: () => void }) {
+function ActionDetail({ action, projectId, functions, entityTypes, onRefresh }: { action: ActionDefinition | null; projectId: string; functions: FunctionDefinition[]; entityTypes: EntityTypeConfig[]; onRefresh: () => void }) {
   if (!action) {
     return (
       <div style={detailStyles.empty}>
@@ -783,7 +800,7 @@ function ActionDetail({ action, projectId, functions, onRefresh }: { action: Act
   }
 
   const items = [
-    { key: 'basic', label: '基本信息', children: <BasicInfoTab action={action} projectId={projectId} onRefresh={onRefresh} /> },
+    { key: 'basic', label: '基本信息', children: <BasicInfoTab action={action} projectId={projectId} entityTypes={entityTypes} onRefresh={onRefresh} /> },
     { key: 'params', label: '参数配置', children: <ParametersTab action={action} projectId={projectId} onRefresh={onRefresh} /> },
     { key: 'rules', label: '动作逻辑', children: <RulesTab action={action} projectId={projectId} onRefresh={onRefresh} /> },
     { key: 'validation', label: '业务校验', children: <ValidationTab action={action} projectId={projectId} onRefresh={onRefresh} /> },
@@ -802,7 +819,7 @@ function ActionDetail({ action, projectId, functions, onRefresh }: { action: Act
 }
 
 // ── 主组件 ──
-export default function ActionsTab({ projectId, actions, functions, loadProject }: ActionsTabProps) {
+export default function ActionsTab({ projectId, actions, functions, entityTypes, loadProject }: ActionsTabProps) {
   const [selected, setSelected] = useState<ActionDefinition | null>(null)
 
   // 当 actions 刷新后，同步更新选中项的数据
@@ -822,7 +839,7 @@ export default function ActionsTab({ projectId, actions, functions, loadProject 
         onRefresh={loadProject}
         projectId={projectId}
       />
-      <ActionDetail action={selected} projectId={projectId} functions={functions} onRefresh={loadProject} />
+      <ActionDetail action={selected} projectId={projectId} functions={functions} entityTypes={entityTypes} onRefresh={loadProject} />
     </div>
   )
 }
