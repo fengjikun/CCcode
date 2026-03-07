@@ -27,6 +27,9 @@ deploy/.env
 # ===== SQLite Database =====
 backend/data/*.sqlite
 
+# ===== Uploaded project assets =====
+backend/data/project_assets/
+
 # ===== Runtime / Generated =====
 python/ontology/memory/
 
