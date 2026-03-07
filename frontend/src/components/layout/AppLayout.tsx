@@ -55,11 +55,16 @@ export default function AppLayout() {
           justifyContent: 'center',
           color: '#fff',
           fontWeight: 700,
-          fontSize: collapsed ? 16 : 14,
+          fontSize: collapsed ? 15 : 15,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
+          letterSpacing: collapsed ? 0 : 1,
+          color: '#fff',
+          background: 'linear-gradient(90deg, #4096ff, #36cfc9)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
         }}>
-          {collapsed ? '⚙' : '⚙ FastData Foil'}
+          {collapsed ? 'D' : 'DeepEXI OS'}
         </div>
         <Menu
           theme="dark"
