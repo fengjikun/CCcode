@@ -175,8 +175,17 @@ export interface OntologyVersion {
 export interface ActionDefinition {
   id: string
   name: string
+  displayName?: string
   description?: string
   status: ActionStatus
+  targetObjectTypeId?: number | null
+  triggerType?: string
+  triggerConfigJson?: string
+  exceptionPolicy?: string
+  exceptionConfigJson?: string
+  validationRulesJson?: string
+  parametersJson?: string
+  rulesJson?: string
 }
 
 export interface FunctionDefinition {

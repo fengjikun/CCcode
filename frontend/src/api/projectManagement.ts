@@ -235,8 +235,17 @@ function mapAction(item: any): ActionDefinition {
   return {
     id: String(item.id),
     name: String(item.name || ''),
+    displayName: item.displayName || item.display_name || '',
     description: String(item.description || ''),
     status: item.status as ActionStatus,
+    targetObjectTypeId: item.targetObjectTypeId ?? item.target_object_type_id ?? null,
+    triggerType: item.triggerType || item.trigger_type || 'MANUAL',
+    triggerConfigJson: item.triggerConfigJson || item.trigger_config_json || '',
+    exceptionPolicy: item.exceptionPolicy || item.exception_policy || 'IGNORE',
+    exceptionConfigJson: item.exceptionConfigJson || item.exception_config_json || '',
+    validationRulesJson: item.validationRulesJson || item.validation_rules_json || '',
+    parametersJson: item.parametersJson || item.parameters_json || '',
+    rulesJson: item.rulesJson || item.rules_json || '',
   }
 }
 
@@ -561,6 +570,15 @@ export async function setActionStatus(
 
 export async function deleteProjectAction(projectId: string, actionId: string): Promise<void> {
   await fetchJSON(`/api/projects/${projectId}/actions/${actionId}`, 'DELETE')
+}
+
+export async function updateProjectAction(
+  projectId: string,
+  actionId: string,
+  payload: Partial<ActionDefinition>,
+): Promise<ActionDefinition> {
+  const row = await fetchJSON<any>(`/api/projects/${projectId}/actions/${actionId}`, 'PUT', payload)
+  return mapAction(row)
 }
 
 export async function createProjectFunction(

@@ -5,14 +5,17 @@ import {
 } from 'antd'
 import {
   PlusOutlined, DeleteOutlined, PlayCircleOutlined, SaveOutlined,
+  ArrowUpOutlined, ArrowDownOutlined,
 } from '@ant-design/icons'
 import type {
   ActionType, ActionParameter, ActionRule, ExecutionRecord, ObjectType, ValidationRule,
+  OntologyFunction,
 } from '../../../types/ontology'
 import {
   updateActionType, getActionParameters, createActionParameter, deleteActionParameter,
   getActionRules, createActionRule, deleteActionRule,
   getExecutions, executeAction,
+  getFunctions,
 } from '../../../api/ontology'
 
 interface Props {
@@ -397,6 +400,12 @@ const ValidationTab: React.FC<{ at: ActionType; onRefresh: () => void }> = ({ at
   )
 }
 
+// ── TriggerFunction config ──
+interface TriggerFunctionItem {
+  functionId: number
+  order: number
+}
+
 // ── Tab 5: Trigger & Exception ──
 const TriggerTab: React.FC<{ at: ActionType; onRefresh: () => void }> = ({ at, onRefresh }) => {
   const [triggerType, setTriggerType] = useState(at.triggerType || 'MANUAL')
@@ -405,27 +414,122 @@ const TriggerTab: React.FC<{ at: ActionType; onRefresh: () => void }> = ({ at, o
   const [exceptionConfig, setExceptionConfig] = useState(at.exceptionConfigJson || '')
   const [saving, setSaving] = useState(false)
 
+  // trigger functions
+  const [allFunctions, setAllFunctions] = useState<OntologyFunction[]>([])
+  const [triggerFunctions, setTriggerFunctions] = useState<TriggerFunctionItem[]>([])
+  const [addFuncModalOpen, setAddFuncModalOpen] = useState(false)
+  const [selectedFuncId, setSelectedFuncId] = useState<number | undefined>()
+
+  // parse triggerFunctionsJson from triggerConfigJson
+  const parseTriggerFunctions = (json: string): TriggerFunctionItem[] => {
+    try {
+      const parsed = JSON.parse(json)
+      if (Array.isArray(parsed?.functions)) return parsed.functions
+    } catch {}
+    return []
+  }
+
+  const buildTriggerConfigJson = (fns: TriggerFunctionItem[]) => {
+    // merge with existing non-function fields
+    let existing: Record<string, unknown> = {}
+    try { existing = JSON.parse(triggerConfig) } catch {}
+    return JSON.stringify({ ...existing, functions: fns })
+  }
+
   useEffect(() => {
     setTriggerType(at.triggerType || 'MANUAL')
     setTriggerConfig(at.triggerConfigJson || '')
     setExceptionPolicy(at.exceptionPolicy || '')
     setExceptionConfig(at.exceptionConfigJson || '')
+    setTriggerFunctions(parseTriggerFunctions(at.triggerConfigJson || ''))
   }, [at])
 
-  const save = async () => {
+  useEffect(() => {
+    getFunctions().then(setAllFunctions).catch(() => {})
+  }, [])
+
+  const save = async (fns?: TriggerFunctionItem[]) => {
     setSaving(true)
+    const currentFns = fns ?? triggerFunctions
+    const configJson = buildTriggerConfigJson(currentFns)
     try {
       await updateActionType(at.id, {
         triggerType,
-        triggerConfigJson: triggerConfig,
+        triggerConfigJson: configJson,
         exceptionPolicy,
         exceptionConfigJson: exceptionConfig,
       })
+      setTriggerConfig(configJson)
       message.success('已保存')
       onRefresh()
     } catch {}
     setSaving(false)
   }
+
+  const handleAddFunction = () => {
+    if (!selectedFuncId) return
+    if (triggerFunctions.some(f => f.functionId === selectedFuncId)) {
+      message.warning('该函数已添加')
+      return
+    }
+    const newFns = [...triggerFunctions, { functionId: selectedFuncId, order: triggerFunctions.length + 1 }]
+    setTriggerFunctions(newFns)
+    setAddFuncModalOpen(false)
+    setSelectedFuncId(undefined)
+    save(newFns)
+  }
+
+  const handleRemoveFunction = (funcId: number) => {
+    const newFns = triggerFunctions
+      .filter(f => f.functionId !== funcId)
+      .map((f, i) => ({ ...f, order: i + 1 }))
+    setTriggerFunctions(newFns)
+    save(newFns)
+  }
+
+  const handleMoveUp = (idx: number) => {
+    if (idx === 0) return
+    const newFns = [...triggerFunctions]
+    ;[newFns[idx - 1], newFns[idx]] = [newFns[idx], newFns[idx - 1]]
+    const reordered = newFns.map((f, i) => ({ ...f, order: i + 1 }))
+    setTriggerFunctions(reordered)
+    save(reordered)
+  }
+
+  const handleMoveDown = (idx: number) => {
+    if (idx === triggerFunctions.length - 1) return
+    const newFns = [...triggerFunctions]
+    ;[newFns[idx], newFns[idx + 1]] = [newFns[idx + 1], newFns[idx]]
+    const reordered = newFns.map((f, i) => ({ ...f, order: i + 1 }))
+    setTriggerFunctions(reordered)
+    save(reordered)
+  }
+
+  const funcColumns = [
+    { title: '顺序', dataIndex: 'order', key: 'order', width: 60 },
+    {
+      title: '函数',
+      key: 'func',
+      render: (_: unknown, row: TriggerFunctionItem) => {
+        const fn = allFunctions.find(f => f.id === row.functionId)
+        return fn ? (fn.displayName || fn.name) : `#${row.functionId}`
+      },
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 120,
+      render: (_: unknown, row: TriggerFunctionItem, idx: number) => (
+        <Space>
+          <Button size="small" icon={<ArrowUpOutlined />} disabled={idx === 0} onClick={() => handleMoveUp(idx)} />
+          <Button size="small" icon={<ArrowDownOutlined />} disabled={idx === triggerFunctions.length - 1} onClick={() => handleMoveDown(idx)} />
+          <Popconfirm title="确认移除？" onConfirm={() => handleRemoveFunction(row.functionId)}>
+            <Button type="text" danger size="small" icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ]
 
   return (
     <div style={{ maxWidth: 600 }}>
@@ -439,7 +543,21 @@ const TriggerTab: React.FC<{ at: ActionType; onRefresh: () => void }> = ({ at, o
       </div>
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>触发配置 (JSON)</label>
-        <Input.TextArea rows={4} value={triggerConfig} onChange={e => setTriggerConfig(e.target.value)} style={{ fontFamily: 'monospace' }} />
+        <Input.TextArea rows={3} value={triggerConfig} onChange={e => setTriggerConfig(e.target.value)} style={{ fontFamily: 'monospace' }} />
+      </div>
+      <div style={{ marginBottom: 16 }}>
+        <label style={labelStyle}>触发函数</label>
+        <Space style={{ marginBottom: 8 }}>
+          <Button size="small" icon={<PlusOutlined />} onClick={() => setAddFuncModalOpen(true)}>添加触发函数</Button>
+        </Space>
+        <Table
+          dataSource={triggerFunctions.map((f, i) => ({ ...f, _key: i }))}
+          columns={funcColumns}
+          rowKey="_key"
+          size="small"
+          pagination={false}
+          locale={{ emptyText: '暂无触发函数' }}
+        />
       </div>
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>异常策略</label>
@@ -454,7 +572,36 @@ const TriggerTab: React.FC<{ at: ActionType; onRefresh: () => void }> = ({ at, o
         <label style={labelStyle}>异常配置 (JSON)</label>
         <Input.TextArea rows={4} value={exceptionConfig} onChange={e => setExceptionConfig(e.target.value)} style={{ fontFamily: 'monospace' }} />
       </div>
-      <Button type="primary" icon={<SaveOutlined />} loading={saving} onClick={save}>保存</Button>
+      <Button type="primary" icon={<SaveOutlined />} loading={saving} onClick={() => save()}>保存</Button>
+
+      <Modal
+        title="添加触发函数"
+        open={addFuncModalOpen}
+        onOk={handleAddFunction}
+        onCancel={() => { setAddFuncModalOpen(false); setSelectedFuncId(undefined) }}
+        okText="添加"
+        cancelText="取消"
+        destroyOnClose
+      >
+        <div style={{ marginBottom: 8 }}>
+          <label style={labelStyle}>选择函数</label>
+          <Select
+            style={{ width: '100%' }}
+            placeholder="请选择函数"
+            value={selectedFuncId}
+            onChange={setSelectedFuncId}
+            showSearch
+            optionFilterProp="children"
+          >
+            {allFunctions.map(fn => (
+              <Select.Option key={fn.id} value={fn.id}>
+                {fn.displayName || fn.name}
+                {triggerFunctions.some(f => f.functionId === fn.id) && <Tag color="blue" style={{ marginLeft: 8 }}>已添加</Tag>}
+              </Select.Option>
+            ))}
+          </Select>
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -129,6 +129,7 @@ export default function ProjectWorkspacePage() {
               <ActionsTab
                 projectId={projectId}
                 actions={project.actions}
+                functions={project.functions}
                 loadProject={loadProject}
               />
             ),
