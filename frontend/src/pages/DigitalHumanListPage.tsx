@@ -21,7 +21,7 @@ import {
   ApartmentOutlined,
   BulbOutlined,
   DeleteOutlined,
-  LoginOutlined,
+  EditOutlined,
   PlusOutlined,
   ReloadOutlined,
   TeamOutlined,
@@ -30,6 +30,7 @@ import {
   createDigitalHuman,
   deleteDigitalHuman,
   listDigitalHumans,
+  updateDigitalHuman,
 } from '../api/digitalHuman'
 import type { DigitalHuman, DigitalHumanType } from '../types/digitalHuman'
 import {
@@ -53,11 +54,20 @@ interface CreateForm {
   description?: string
 }
 
+interface EditForm {
+  name: string
+  description?: string
+}
+
 export default function DigitalHumanListPage() {
   const [list, setList] = useState<DigitalHuman[]>([])
   const [createOpen, setCreateOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [form] = Form.useForm<CreateForm>()
+  const [editOpen, setEditOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<DigitalHuman | null>(null)
+  const [editing, setEditing] = useState(false)
+  const [editForm] = Form.useForm<EditForm>()
   const navigate = useNavigate()
 
   const reload = useCallback(() => {
@@ -90,6 +100,29 @@ export default function DigitalHumanListPage() {
     deleteDigitalHuman(id)
     message.success('数字员工已删除')
     reload()
+  }
+
+  const openEdit = (dh: DigitalHuman, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditTarget(dh)
+    editForm.setFieldsValue({ name: dh.name, description: dh.description })
+    setEditOpen(true)
+  }
+
+  const handleEdit = async () => {
+    try {
+      const values = await editForm.validateFields()
+      setEditing(true)
+      updateDigitalHuman(editTarget!.id, { name: values.name, description: values.description })
+      message.success('修改成功')
+      setEditOpen(false)
+      reload()
+    } catch (err: any) {
+      if (err?.errorFields) return
+      message.error('修改失败')
+    } finally {
+      setEditing(false)
+    }
   }
 
   return (
@@ -229,23 +262,28 @@ export default function DigitalHumanListPage() {
               <Col key={dh.id} xs={24} md={12} xl={8}>
                 <Card
                   hoverable
-                  style={{ height: '100%' }}
+                  style={{ height: '100%', cursor: 'pointer' }}
+                  onClick={() => navigate(`/digital-human/${dh.id}`)}
                   actions={[
                     <Space
-                      key="open"
-                      onClick={() => navigate(`/digital-human/${dh.id}`)}
+                      key="edit"
+                      onClick={(e) => openEdit(dh, e)}
                       style={{ cursor: 'pointer' }}
                     >
-                      <LoginOutlined />
-                      进入工作台
+                      <EditOutlined />
+                      编辑
                     </Space>,
                     <Popconfirm
                       key="delete"
                       title="确认删除该数字员工？"
                       description="此操作不可恢复。"
                       onConfirm={() => handleDelete(dh.id)}
+                      onPopupClick={(e) => e.stopPropagation()}
                     >
-                      <Space style={{ color: '#ff4d4f', cursor: 'pointer' }}>
+                      <Space
+                        style={{ color: '#ff4d4f', cursor: 'pointer' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <DeleteOutlined />
                         删除
                       </Space>
@@ -300,6 +338,31 @@ export default function DigitalHumanListPage() {
             extra="选择后将自动加载对应领域的本体模型与 Skill 技能包"
           >
             <Select options={TYPE_OPTIONS} />
+          </Form.Item>
+          <Form.Item name="description" label="职责描述">
+            <Input.TextArea rows={3} placeholder="可选，描述该数字员工的工作职责与专长" maxLength={300} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* ===== 编辑弹窗 ===== */}
+      <Modal
+        title={
+          <Space>
+            <EditOutlined style={{ color: '#1677ff' }} />
+            编辑数字员工
+          </Space>
+        }
+        open={editOpen}
+        onCancel={() => { setEditOpen(false); editForm.resetFields() }}
+        onOk={() => void handleEdit()}
+        okText="保存"
+        cancelText="取消"
+        confirmLoading={editing}
+      >
+        <Form<EditForm> form={editForm} layout="vertical">
+          <Form.Item name="name" label="员工名称" rules={[{ required: true, message: '请输入名称' }]}>
+            <Input placeholder="例如：产线A故障诊断专员" maxLength={64} />
           </Form.Item>
           <Form.Item name="description" label="职责描述">
             <Input.TextArea rows={3} placeholder="可选，描述该数字员工的工作职责与专长" maxLength={300} />
