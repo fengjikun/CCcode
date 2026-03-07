@@ -47,3 +47,7 @@ java/**/target/
 # ===== OS =====
 .DS_Store
 Thumbs.db
+
+# ===== Misc / Temp =====
+.playwright-mcp/
+prototyype/
