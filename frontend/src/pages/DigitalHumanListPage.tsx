@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Col,
+  Divider,
   Empty,
   Form,
   Input,
@@ -17,11 +18,13 @@ import {
   message,
 } from 'antd'
 import {
+  ApartmentOutlined,
+  BulbOutlined,
   DeleteOutlined,
   LoginOutlined,
   PlusOutlined,
   ReloadOutlined,
-  RobotOutlined,
+  TeamOutlined,
 } from '@ant-design/icons'
 import {
   createDigitalHuman,
@@ -34,9 +37,10 @@ import {
   DIGITAL_HUMAN_TYPE_LABELS,
   DIGITAL_HUMAN_TYPE_COLORS,
   DIGITAL_HUMAN_TYPE_ICONS,
+  DIGITAL_HUMAN_TYPE_DESCRIPTIONS,
 } from '../types/digitalHuman'
 
-const { Title, Text } = Typography
+const { Title, Text, Paragraph } = Typography
 
 const TYPE_OPTIONS = DIGITAL_HUMAN_TYPES.map(value => ({
   value,
@@ -69,7 +73,7 @@ export default function DigitalHumanListPage() {
       const values = await form.validateFields()
       setCreating(true)
       const dh = createDigitalHuman(values.name, values.type, values.description)
-      message.success('数字人创建成功')
+      message.success('数字员工创建成功')
       setCreateOpen(false)
       form.resetFields()
       reload()
@@ -84,32 +88,140 @@ export default function DigitalHumanListPage() {
 
   const handleDelete = (id: string) => {
     deleteDigitalHuman(id)
-    message.success('数字人已删除')
+    message.success('数字员工已删除')
     reload()
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Card>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <Title level={4} style={{ marginBottom: 4 }}>数字人管理</Title>
-            <Text type="secondary">创建领域专属数字人，关联本体知识，实现专业化 AI 问答与决策支持。</Text>
-          </div>
-          <Space>
-            <Button icon={<ReloadOutlined />} onClick={reload}>刷新</Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-              新建数字人
-            </Button>
-          </Space>
-        </div>
+      {/* ===== 能力沉淀 Banner ===== */}
+      <Card
+        style={{
+          background: 'linear-gradient(135deg, #0f1e45 0%, #1a3a6b 60%, #0d2f5e 100%)',
+          border: 'none',
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}
+        bodyStyle={{ padding: '28px 32px' }}
+      >
+        <Row gutter={32} align="middle">
+          <Col flex="1">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <TeamOutlined style={{ color: '#4096ff', fontSize: 22 }} />
+              <Text style={{ color: '#4096ff', fontSize: 13, letterSpacing: 2 }}>企业数字员工能力平台</Text>
+            </div>
+            <Title level={3} style={{ color: '#fff', margin: '0 0 10px' }}>
+              已沉淀 <span style={{ color: '#faad14' }}>8 大领域</span> 数字员工能力
+            </Title>
+            <Paragraph style={{ color: '#adc6e8', marginBottom: 16, lineHeight: 1.8 }}>
+              基于企业专有<span style={{ color: '#69b1ff' }}>本体知识图谱</span>与行业<span style={{ color: '#95de64' }}>Skill 技能包</span>，
+              将各领域资深经验系统化沉淀为可复用的数字员工能力，驱动智能决策与专业问答。
+            </Paragraph>
+            <Space size={12}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: 'rgba(64,150,255,0.15)', border: '1px solid rgba(64,150,255,0.4)',
+                borderRadius: 6, padding: '5px 14px',
+              }}>
+                <ApartmentOutlined style={{ color: '#69b1ff', fontSize: 14 }} />
+                <Text style={{ color: '#69b1ff', fontSize: 13 }}>本体构建</Text>
+              </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: 'rgba(149,222,100,0.12)', border: '1px solid rgba(149,222,100,0.4)',
+                borderRadius: 6, padding: '5px 14px',
+              }}>
+                <BulbOutlined style={{ color: '#95de64', fontSize: 14 }} />
+                <Text style={{ color: '#95de64', fontSize: 13 }}>Skill 技能包</Text>
+              </div>
+            </Space>
+          </Col>
+          <Col>
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, width: 340,
+            }}>
+              {DIGITAL_HUMAN_TYPES.map(type => (
+                <div
+                  key={type}
+                  style={{
+                    background: 'rgba(255,255,255,0.07)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 8, padding: '10px 6px',
+                    textAlign: 'center', cursor: 'default',
+                  }}
+                >
+                  <div style={{ fontSize: 20, marginBottom: 4 }}>{DIGITAL_HUMAN_TYPE_ICONS[type]}</div>
+                  <Text style={{ color: '#d0e4ff', fontSize: 11, lineHeight: 1.3, display: 'block' }}>
+                    {DIGITAL_HUMAN_TYPE_LABELS[type]}
+                  </Text>
+                </div>
+              ))}
+            </div>
+          </Col>
+        </Row>
       </Card>
 
-      <Card>
+      {/* ===== 8大领域能力说明 ===== */}
+      <Card
+        title={
+          <Space>
+            <BulbOutlined style={{ color: '#faad14' }} />
+            <span>领域能力矩阵</span>
+            <Text type="secondary" style={{ fontSize: 12, fontWeight: 400 }}>—— 每个领域均具备完整的本体模型与专属 Skill 技能包</Text>
+          </Space>
+        }
+        size="small"
+      >
+        <Row gutter={[12, 12]}>
+          {DIGITAL_HUMAN_TYPES.map(type => (
+            <Col key={type} xs={12} md={6}>
+              <div style={{
+                border: '1px solid #f0f0f0', borderRadius: 8,
+                padding: '12px 14px', background: '#fafafa', height: '100%',
+              }}>
+                <Space align="start">
+                  <span style={{ fontSize: 18 }}>{DIGITAL_HUMAN_TYPE_ICONS[type]}</span>
+                  <div>
+                    <Tag color={DIGITAL_HUMAN_TYPE_COLORS[type]} style={{ marginBottom: 4 }}>
+                      {DIGITAL_HUMAN_TYPE_LABELS[type]}
+                    </Tag>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', lineHeight: 1.6 }}>
+                      {DIGITAL_HUMAN_TYPE_DESCRIPTIONS[type]}
+                    </Text>
+                  </div>
+                </Space>
+              </div>
+            </Col>
+          ))}
+        </Row>
+      </Card>
+
+      {/* ===== 我的数字员工列表 ===== */}
+      <Card
+        title={
+          <Space>
+            <TeamOutlined />
+            <span>我的数字员工</span>
+            <Tag color="blue">{list.length} 位</Tag>
+          </Space>
+        }
+        extra={
+          <Space>
+            <Button icon={<ReloadOutlined />} onClick={reload} size="small">刷新</Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+              新建数字员工
+            </Button>
+          </Space>
+        }
+      >
         {list.length === 0 ? (
           <Empty
-            image={<RobotOutlined style={{ fontSize: 64, color: '#bfbfbf' }} />}
-            description="暂无数字人，点击「新建数字人」开始创建"
+            image={<TeamOutlined style={{ fontSize: 64, color: '#bfbfbf' }} />}
+            description={
+              <span>
+                暂无数字员工，点击「新建数字员工」<br />从8大领域能力中选择并创建
+              </span>
+            }
           />
         ) : (
           <Row gutter={[16, 16]}>
@@ -125,11 +237,11 @@ export default function DigitalHumanListPage() {
                       style={{ cursor: 'pointer' }}
                     >
                       <LoginOutlined />
-                      进入
+                      进入工作台
                     </Space>,
                     <Popconfirm
                       key="delete"
-                      title="确认删除该数字人？"
+                      title="确认删除该数字员工？"
                       description="此操作不可恢复。"
                       onConfirm={() => handleDelete(dh.id)}
                     >
@@ -143,18 +255,19 @@ export default function DigitalHumanListPage() {
                   <Space direction="vertical" size={8} style={{ width: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Space>
-                        <span style={{ fontSize: 20 }}>{DIGITAL_HUMAN_TYPE_ICONS[dh.type]}</span>
+                        <span style={{ fontSize: 22 }}>{DIGITAL_HUMAN_TYPE_ICONS[dh.type]}</span>
                         <Title level={5} style={{ margin: 0 }}>{dh.name}</Title>
                       </Space>
                       <Tag color={DIGITAL_HUMAN_TYPE_COLORS[dh.type]}>
                         {DIGITAL_HUMAN_TYPE_LABELS[dh.type]}
                       </Tag>
                     </div>
-                    <Text type="secondary" style={{ minHeight: 40 }}>
-                      {dh.description || '未填写描述'}
+                    <Text type="secondary" style={{ fontSize: 13, minHeight: 38, lineHeight: 1.6 }}>
+                      {dh.description || DIGITAL_HUMAN_TYPE_DESCRIPTIONS[dh.type]}
                     </Text>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      创建时间：{new Date(dh.createdAt).toLocaleString('zh-CN')}
+                    <Divider style={{ margin: '6px 0' }} />
+                    <Text type="secondary" style={{ fontSize: 11 }}>
+                      创建：{new Date(dh.createdAt).toLocaleString('zh-CN')}
                     </Text>
                   </Space>
                 </Card>
@@ -164,8 +277,14 @@ export default function DigitalHumanListPage() {
         )}
       </Card>
 
+      {/* ===== 新建弹窗 ===== */}
       <Modal
-        title="新建数字人"
+        title={
+          <Space>
+            <TeamOutlined style={{ color: '#1677ff' }} />
+            新建数字员工
+          </Space>
+        }
         open={createOpen}
         onCancel={() => { setCreateOpen(false); form.resetFields() }}
         onOk={() => void handleCreate()}
@@ -174,14 +293,16 @@ export default function DigitalHumanListPage() {
         confirmLoading={creating}
       >
         <Form<CreateForm> form={form} layout="vertical" initialValues={{ type: 'fault-repair' }}>
-          <Form.Item name="name" label="数字人名称" rules={[{ required: true, message: '请输入名称' }]}>
-            <Input placeholder="例如：产线A故障诊断助手" maxLength={64} />
+          <Form.Item name="name" label="员工名称" rules={[{ required: true, message: '请输入名称' }]}>
+            <Input placeholder="例如：产线A故障诊断专员" maxLength={64} />
           </Form.Item>
-          <Form.Item name="type" label="类型" rules={[{ required: true }]}>
+          <Form.Item name="type" label="领域类型" rules={[{ required: true }]}
+            extra="选择后将自动加载对应领域的本体模型与 Skill 技能包"
+          >
             <Select options={TYPE_OPTIONS} />
           </Form.Item>
-          <Form.Item name="description" label="描述">
-            <Input.TextArea rows={3} placeholder="可选，描述该数字人的职责与能力" maxLength={300} />
+          <Form.Item name="description" label="职责描述">
+            <Input.TextArea rows={3} placeholder="可选，描述该数字员工的工作职责与专长" maxLength={300} />
           </Form.Item>
         </Form>
       </Modal>

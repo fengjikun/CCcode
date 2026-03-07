@@ -13,12 +13,12 @@ const { Sider, Content, Header } = Layout
 
 const menuItems = [
   { key: '/projects', icon: <ProjectOutlined />, label: '本体管理' },
-  { key: '/digital-human', icon: <RobotOutlined />, label: '数字人' },
+  { key: '/digital-human', icon: <RobotOutlined />, label: '数字员工' },
 ]
 
 const PAGE_TITLES: Record<string, string> = {
   '/projects': '本体管理',
-  '/digital-human': '数字人管理',
+  '/digital-human': '数字员工',
 }
 
 export default function AppLayout() {

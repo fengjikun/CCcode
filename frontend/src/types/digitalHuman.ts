@@ -52,6 +52,17 @@ export const DIGITAL_HUMAN_TYPE_ICONS: Record<DigitalHumanType, string> = {
   'tax-planning': '💰',
 }
 
+export const DIGITAL_HUMAN_TYPE_DESCRIPTIONS: Record<DigitalHumanType, string> = {
+  'fault-repair': '基于设备本体与故障知识库，精准定位根因，输出结构化维修方案',
+  'engineering-design': '融合工程规范本体，辅助图纸审查、参数校验与设计优化决策',
+  'process-optimization': '结合工艺知识图谱，分析瓶颈工序，提升良率与节拍效率',
+  'bom-analysis': '解析物料清单结构，识别替代料与成本优化空间，支持供应链决策',
+  'operation-decision': '整合运营数据本体，提供实时经营洞察与多维决策支持',
+  'store-matching': '基于门店与商品本体，智能匹配货品结构，提升动销率',
+  'data-ops': '监控数据链路健康度，自动诊断质量问题，保障数据资产稳定运行',
+  'tax-planning': '依托财税知识本体，合规筹划税务结构，降低涉税风险',
+}
+
 export interface DigitalHuman {
   id: string
   name: string
