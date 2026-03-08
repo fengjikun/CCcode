@@ -11,7 +11,6 @@ import {
   Row,
   Select,
   Space,
-  Statistic,
   Table,
   Tag,
   Typography,
@@ -49,7 +48,10 @@ import type { TransformProject, TransformType } from '../../types/transform'
 import { TRANSFORM_TYPE_LABELS } from '../../types/transform'
 import type { DataSource } from '../../types/dataSource'
 
-const { Title, Text } = Typography
+import PageHeader from '../../components/shared/PageHeader'
+import StatCards from '../../components/shared/StatCards'
+
+const { Text } = Typography
 const { TextArea } = Input
 
 /* ──────────── Pipeline 流程可视化 ──────────── */
@@ -152,21 +154,30 @@ export default function TransformPage() {
   )
 
   /* ── 创建 ── */
-  const handleCreate = () => {
-    createForm.validateFields().then(values => {
+  const handleCreate = async () => {
+    try {
+      const values = await createForm.validateFields()
+      const outputs = (values.outputDatasets || []).filter((s: string) => s.trim())
+      if (outputs.length === 0) {
+        message.warning('请至少填写一个输出数据集')
+        return
+      }
       createTransform({
         name: values.name,
         description: values.description || '',
         type: values.type,
         inputSources: values.inputSources,
-        outputDatasets: values.outputDatasets || [],
+        outputDatasets: outputs,
         schedule: values.schedule || '手动触发',
       })
       message.success('转换项目创建成功')
       setCreateOpen(false)
       createForm.resetFields()
       reload()
-    })
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'errorFields' in err) return
+      message.error('创建失败')
+    }
   }
 
   /* ── 编辑 ── */
@@ -183,21 +194,25 @@ export default function TransformPage() {
     setEditOpen(true)
   }
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!current) return
-    editForm.validateFields().then(values => {
+    try {
+      const values = await editForm.validateFields()
       updateTransform(current.id, {
         name: values.name,
         description: values.description,
         type: values.type,
         inputSources: values.inputSources,
-        outputDatasets: values.outputDatasets || [],
+        outputDatasets: (values.outputDatasets || []).filter((s: string) => s.trim()),
         schedule: values.schedule,
       })
       message.success('已更新')
       setEditOpen(false)
       reload()
-    })
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'errorFields' in err) return
+      message.error('更新失败')
+    }
   }
 
   /* ── 删除 ── */
@@ -210,7 +225,6 @@ export default function TransformPage() {
   /* ── 运行 / 停止 ── */
   const handleRun = async (id: string) => {
     setRunningIds(prev => new Set(prev).add(id))
-    reload()
     message.loading({ content: '转换任务运行中...', key: id, duration: 0 })
     await runTransform(id)
     message.success({ content: '转换任务完成', key: id })
@@ -363,34 +377,14 @@ export default function TransformPage() {
     <div className="page-container">
       {/* Pipeline 流程概览 */}
       <Card className="section-card">
-        <div className="page-header">
-          <Title level={4}>数据转换管道</Title>
-          <Text type="secondary">L2 数据转换 — 跨源关联、聚合与规范化，构建高质量企业数据资产</Text>
-        </div>
+        <PageHeader title="数据转换管道" subtitle="L2 数据转换 — 跨源关联、聚合与规范化，构建高质量企业数据资产" />
 
-        {/* 统计 */}
-        <Row gutter={16} style={{ margin: '12px 0 16px' }}>
-          <Col span={6}>
-            <Card size="small" className="stat-card card-hover stat-primary">
-              <Statistic title="转换项目" value={projects.length} prefix={<ForkOutlined style={{ fontSize: 16, marginRight: 4 }} />} />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small" className="stat-card card-hover stat-success">
-              <Statistic title="运行成功" value={successCount} prefix={<CheckCircleOutlined style={{ fontSize: 16, marginRight: 4 }} />} />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small" className="stat-card card-hover stat-warning">
-              <Statistic title="处理记录" value={`${(totalRecords / 10000).toFixed(1)}万`} prefix={<SyncOutlined style={{ fontSize: 16, marginRight: 4 }} />} />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small" className="stat-card card-hover stat-info">
-              <Statistic title="数据源覆盖" value={dsCount} prefix={<DatabaseOutlined style={{ fontSize: 16, marginRight: 4 }} />} />
-            </Card>
-          </Col>
-        </Row>
+        <StatCards items={[
+          { title: '转换项目', value: projects.length, icon: <ForkOutlined />, cls: 'stat-primary' },
+          { title: '运行成功', value: successCount, icon: <CheckCircleOutlined />, cls: 'stat-success' },
+          { title: '处理记录', value: `${(totalRecords / 10000).toFixed(1)}万`, icon: <SyncOutlined />, cls: 'stat-warning' },
+          { title: '数据源覆盖', value: dsCount, icon: <DatabaseOutlined />, cls: 'stat-info' },
+        ]} />
 
         <PipelineFlow />
       </Card>

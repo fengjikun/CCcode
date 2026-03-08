@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Card, Col, Input, Row, Select, Space, Statistic, Table, Tag, Tooltip, Typography } from 'antd'
+import { Card, Input, Select, Space, Table, Tag, Tooltip, Typography } from 'antd'
 import {
   SearchOutlined,
   CheckCircleOutlined,
@@ -13,8 +13,10 @@ import {
 import { getAgentLogs, getAgentNames, getAgentColor, getLogStats } from '../../api/agentLog'
 import type { AgentLog, LogLevel } from '../../types/agentLog'
 import { LOG_LEVEL_COLORS, LOG_LEVEL_LABELS } from '../../types/agentLog'
+import PageHeader from '../../components/shared/PageHeader'
+import StatCards from '../../components/shared/StatCards'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 const LEVEL_ICONS: Record<LogLevel, React.ReactNode> = {
   info: <InfoCircleOutlined />,
@@ -75,7 +77,7 @@ export default function AgentLogsPage() {
       key: 'detail',
       width: 300,
       render: (v: string) => v ? (
-        <Tooltip title={v}>
+        <Tooltip title={v.length > 80 ? v : undefined}>
           <Text type="secondary" style={{ fontSize: 12 }}>{v.length > 50 ? v.slice(0, 50) + '...' : v}</Text>
         </Tooltip>
       ) : <Text type="secondary">—</Text>,
@@ -114,25 +116,9 @@ export default function AgentLogsPage() {
   return (
     <div className="page-container">
       <Card className="section-card">
-        <div className="page-header">
-          <Title level={4}>智能体执行日志</Title>
-          <Text type="secondary">实时追踪 Agent 推理链路、工具调用与决策过程</Text>
-        </div>
+        <PageHeader title="智能体执行日志" subtitle="实时追踪 Agent 推理链路、工具调用与决策过程" />
 
-        {/* 统计 */}
-        <Row gutter={[12, 12]} style={{ margin: '16px 0 20px' }}>
-          {statItems.map(s => (
-            <Col span={4} key={s.title}>
-              <Card size="small" className={`stat-card card-hover ${s.cls}`}>
-                <Statistic
-                  title={s.title}
-                  value={s.value}
-                  prefix={<span style={{ fontSize: 18, marginRight: 4 }}>{s.icon}</span>}
-                />
-              </Card>
-            </Col>
-          ))}
-        </Row>
+        <StatCards items={statItems} />
 
         {/* 过滤 */}
         <Space style={{ marginBottom: 16 }}>
@@ -171,6 +157,33 @@ export default function AgentLogsPage() {
           rowKey="key"
           pagination={logs.length > 10 ? { pageSize: 10, showTotal: t => `共 ${t} 条` } : false}
           size="small"
+          expandable={{
+            expandedRowRender: (record: AgentLog) => (
+              <div style={{ padding: '8px 0', fontSize: 13 }}>
+                {record.detail && (
+                  <div style={{ marginBottom: 8 }}>
+                    <Text strong style={{ fontSize: 12 }}>完整详情：</Text>
+                    <div style={{ whiteSpace: 'pre-wrap', color: '#595959', marginTop: 4 }}>{record.detail}</div>
+                  </div>
+                )}
+                {record.toolsUsed && record.toolsUsed.length > 0 && (
+                  <div>
+                    <Text strong style={{ fontSize: 12 }}>工具调用链：</Text>
+                    <Space size={4} style={{ marginTop: 4 }} wrap>
+                      {record.toolsUsed.map(t => <Tag key={t}>{t}</Tag>)}
+                    </Space>
+                  </div>
+                )}
+                {record.duration !== undefined && (
+                  <div style={{ marginTop: 4 }}>
+                    <Text strong style={{ fontSize: 12 }}>耗时：</Text>
+                    <Text>{record.duration >= 1000 ? `${(record.duration / 1000).toFixed(1)}s` : `${record.duration}ms`}</Text>
+                  </div>
+                )}
+              </div>
+            ),
+            rowExpandable: (record: AgentLog) => !!(record.detail || (record.toolsUsed && record.toolsUsed.length > 0)),
+          }}
         />
       </Card>
     </div>

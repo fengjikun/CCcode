@@ -14,7 +14,6 @@ import {
   Row,
   Select,
   Space,
-  Statistic,
   Table,
   Tag,
   Tooltip,
@@ -55,7 +54,7 @@ import {
 } from '../../types/dataSource'
 import type { SyncFrequency, DataSourceType } from '../../types/dataSource'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 /* ──────────── 表单类型 ──────────── */
 interface CreateForm {
@@ -78,35 +77,12 @@ interface EditForm {
   syncFrequency: SyncFrequency
 }
 
-/* ──────────── 统计卡片 ──────────── */
-function StatsRow({ list }: { list: DataSource[] }) {
-  const structured = list.filter(d => d.category === 'structured').length
-  const unstructured = list.filter(d => d.category === 'unstructured').length
-  const active = list.filter(d => d.status === 'Active' || d.status === 'Syncing').length
-  const totalRecords = list.reduce((sum, d) => sum + d.recordCount, 0)
+import StatCards from '../../components/shared/StatCards'
+import PageHeader from '../../components/shared/PageHeader'
+import StatusCell from '../../components/shared/StatusCell'
 
-  const items = [
-    { title: '数据源总数', value: list.length, icon: <DatabaseOutlined />, cls: 'stat-primary' },
-    { title: '结构化', value: structured, icon: <ApiOutlined />, cls: 'stat-success' },
-    { title: '非结构化', value: unstructured, icon: <FileTextOutlined />, cls: 'stat-purple' },
-    { title: '活跃连接', value: active, icon: <LinkOutlined />, cls: 'stat-warning' },
-    { title: '总记录数', value: totalRecords > 10000 ? `${(totalRecords / 10000).toFixed(1)}万` : totalRecords, icon: <SyncOutlined />, cls: 'stat-info' },
-  ]
-  return (
-    <Row gutter={12} style={{ margin: '16px 0 20px' }}>
-      {items.map(s => (
-        <Col flex={1} key={s.title}>
-          <Card size="small" className={`stat-card card-hover ${s.cls}`}>
-            <Statistic
-              title={s.title}
-              value={s.value}
-              prefix={<span style={{ fontSize: 16, marginRight: 4 }}>{s.icon}</span>}
-            />
-          </Card>
-        </Col>
-      ))}
-    </Row>
-  )
+const DS_STATUS_DOT: Record<string, 'active' | 'warning' | 'error'> = {
+  Active: 'active', Syncing: 'active', Inactive: 'warning', Error: 'error',
 }
 
 /* ──────────── 主页面 ──────────── */
@@ -179,12 +155,16 @@ export default function DataSourcePage() {
   const handleTest = async () => {
     try {
       await form.validateFields(['host', 'port', 'database'])
-      setTesting(true)
-      setTestResult(null)
+    } catch {
+      return // 表单校验失败
+    }
+    setTesting(true)
+    setTestResult(null)
+    try {
       const result = await testConnection(form.getFieldsValue())
       setTestResult(result)
     } catch {
-      // 表单校验失败
+      setTestResult({ success: false, message: '网络异常，请检查连接' })
     } finally {
       setTesting(false)
     }
@@ -284,11 +264,11 @@ export default function DataSourcePage() {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 90,
+      width: 100,
       render: (v: string) => (
         <span>
-          <span className={`status-dot ${v === 'Error' ? 'error' : v === 'Inactive' ? 'warning' : 'active'}`} />
-          <Tag color={STATUS_COLORS[v as keyof typeof STATUS_COLORS] || 'default'}>{v}</Tag>
+          {v === 'Syncing' && <SyncOutlined spin style={{ color: '#1677ff', marginRight: 4 }} />}
+          <StatusCell value={v} colors={STATUS_COLORS} dotMap={DS_STATUS_DOT} />
         </span>
       ),
     },
@@ -322,12 +302,15 @@ export default function DataSourcePage() {
     <div className="page-container">
       {/* ===== Header ===== */}
       <Card className="section-card">
-        <div className="page-header">
-          <Title level={4}>数据源管理</Title>
-          <Text type="secondary">L1 数据接入 — 连接并同步企业结构化与非结构化数据，统一数据接入层</Text>
-        </div>
+        <PageHeader title="数据源管理" subtitle="L1 数据接入 — 连接并同步企业结构化与非结构化数据，统一数据接入层" />
 
-        <StatsRow list={list} />
+        <StatCards items={[
+          { title: '数据源总数', value: list.length, icon: <DatabaseOutlined />, cls: 'stat-primary' },
+          { title: '结构化', value: list.filter(d => d.category === 'structured').length, icon: <ApiOutlined />, cls: 'stat-success' },
+          { title: '非结构化', value: list.filter(d => d.category === 'unstructured').length, icon: <FileTextOutlined />, cls: 'stat-purple' },
+          { title: '活跃连接', value: list.filter(d => d.status === 'Active' || d.status === 'Syncing').length, icon: <LinkOutlined />, cls: 'stat-warning' },
+          { title: '总记录数', value: list.reduce((s, d) => s + d.recordCount, 0) > 10000 ? `${(list.reduce((s, d) => s + d.recordCount, 0) / 10000).toFixed(1)}万` : list.reduce((s, d) => s + d.recordCount, 0), icon: <SyncOutlined />, cls: 'stat-info' },
+        ]} />
 
         {/* 工具栏 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>

@@ -61,6 +61,8 @@ import {
 import type { AgentType } from '../../types/agent'
 import type { Skill } from '../../types/skill'
 import { SKILL_CATEGORY_COLORS, SKILL_CATEGORY_ICONS } from '../../types/skill'
+import PageHeader from '../../components/shared/PageHeader'
+import StatCards from '../../components/shared/StatCards'
 
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
@@ -414,19 +416,35 @@ export default function AgentStudioPage() {
     }
   }
 
-  /* Skill 选择器（复选框列表） */
+  /* Skill 选择器（带搜索的复选框列表） */
+  const [skillSearch, setSkillSearch] = useState('')
+
   const renderSkillSelector = (
     selected: string[],
     onChange: (ids: string[]) => void,
   ) => {
     const activeSkills = skills.filter(s => s.status !== 'Disabled')
+    const searchLower = skillSearch.toLowerCase()
+    const filteredSkills = activeSkills.filter(s =>
+      !skillSearch || s.displayName.toLowerCase().includes(searchLower) || s.name.toLowerCase().includes(searchLower)
+    )
     return (
-      <div style={{ border: '1px solid #d9d9d9', borderRadius: 8, padding: 12, maxHeight: 240, overflowY: 'auto' }}>
-        {activeSkills.length === 0 ? (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无可用 Skill，请先在 Skills 广场注册" />
+      <div style={{ border: '1px solid #d9d9d9', borderRadius: 8, padding: 12 }}>
+        <Input
+          placeholder="搜索 Skill..."
+          prefix={<SearchOutlined />}
+          allowClear
+          size="small"
+          value={skillSearch}
+          onChange={e => setSkillSearch(e.target.value)}
+          style={{ marginBottom: 8 }}
+        />
+        <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+        {filteredSkills.length === 0 ? (
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={activeSkills.length === 0 ? '暂无可用 Skill，请先在 Skills 广场注册' : '无匹配结果'} />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {activeSkills.map(s => {
+            {filteredSkills.map(s => {
               const checked = selected.includes(s.id)
               return (
                 <div
@@ -459,6 +477,7 @@ export default function AgentStudioPage() {
             })}
           </div>
         )}
+        </div>
         {selected.length > 0 && (
           <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #f0f0f0' }}>
             <Text type="secondary" style={{ fontSize: 12 }}>已选择 {selected.length} 个 Skill</Text>
@@ -563,34 +582,14 @@ export default function AgentStudioPage() {
   return (
     <div className="page-container">
       <Card className="section-card">
-        <div className="page-header">
-          <Title level={4}>Co-worker 智能体编排</Title>
-          <Text type="secondary">L4 智能体平台 — 创建、编排和管理 AI 智能体，绑定 Skills 赋能企业数字化运营</Text>
-        </div>
+        <PageHeader title="Co-worker 智能体编排" subtitle="L4 智能体平台 — 创建、编排和管理 AI 智能体，绑定 Skills 赋能企业数字化运营" />
 
-        {/* 统计 */}
-        <Row gutter={16} style={{ margin: '16px 0 20px' }}>
-          <Col span={6}>
-            <Card size="small" className="stat-card card-hover stat-primary">
-              <Statistic title="智能体总数" value={list.length} prefix={<RobotOutlined style={{ fontSize: 18, marginRight: 4 }} />} />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small" className="stat-card card-hover stat-success">
-              <Statistic title="运行中" value={list.filter(a => a.status === 'Active').length} prefix={<CheckCircleOutlined style={{ fontSize: 18, marginRight: 4 }} />} />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small" className="stat-card card-hover stat-warning">
-              <Statistic title="可用 Skills" value={skills.filter(s => s.status === 'Active').length} prefix={<ThunderboltOutlined style={{ fontSize: 18, marginRight: 4 }} />} />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small" className="stat-card card-hover stat-info">
-              <Statistic title="已发布数字员工" value={digitalHumanCount} prefix={<TeamOutlined style={{ fontSize: 18, marginRight: 4 }} />} />
-            </Card>
-          </Col>
-        </Row>
+        <StatCards items={[
+          { title: '智能体总数', value: list.length, icon: <RobotOutlined />, cls: 'stat-primary' },
+          { title: '运行中', value: list.filter(a => a.status === 'Active').length, icon: <CheckCircleOutlined />, cls: 'stat-success' },
+          { title: '可用 Skills', value: skills.filter(s => s.status === 'Active').length, icon: <ThunderboltOutlined />, cls: 'stat-warning' },
+          { title: '已发布数字员工', value: digitalHumanCount, icon: <TeamOutlined />, cls: 'stat-info' },
+        ]} />
 
         {/* 类型说明 */}
         <Row gutter={12} style={{ marginBottom: 20 }}>

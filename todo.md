@@ -8,9 +8,9 @@
 ## 🔴 P0 — 高优先级（通用基础设施 + 核心功能）
 
 ### 提取公共组件
-- [ ] `<StatCards items={[...]} columns={4|6} />` — 统计卡片（10+ 页面重复同一模式）
-- [ ] `<PageHeader title="" subtitle="" />` — 页面标题区块（每个页面都有 page-header div）
-- [ ] `<StatusCell value="" colors={{}} />` — 状态列渲染（status-dot + Tag 重复 5+ 次）
+- [x] `<StatCards items={[...]} columns={4|6} />` — 统计卡片（已应用到 DataSourcePage、TransformPage、AgentStudioPage、AgentLogsPage） ✅
+- [x] `<PageHeader title="" subtitle="" />` — 页面标题区块（已应用到 DataSourcePage、TransformPage、AgentStudioPage、AgentLogsPage） ✅
+- [x] `<StatusCell value="" colors={{}} />` — 状态列渲染（已应用到 DataSourcePage） ✅
 - [ ] `<ModalHeader icon={} title="" />` — 弹窗标题（Space + Icon + Text 重复 30+ 处）
 - [ ] `<ActionColumn actions={[...]} />` — 操作列（查看/编辑/删除 Tooltip + Button 组合）
 
@@ -48,14 +48,14 @@
 ### 演示流程页面具体 Bug / 缺陷
 
 #### DataSourcePage
-- [ ] `testConnection()` 无 `.catch()` 错误处理，网络异常时静默失败
-- [ ] 切换数据源分类（structured→unstructured）时未清除上次测试结果 `testResult`
-- [ ] 缺少 "Syncing" 状态的旋转图标反馈（`SyncOutlined spin`）
-- [ ] 创建表单提交时缺少 `confirmLoading` 加载态
+- [x] `testConnection()` 无 `.catch()` 错误处理，网络异常时静默失败 ✅
+- [x] 切换数据源分类（structured→unstructured）时未清除上次测试结果 `testResult` ✅（已在上轮修复）
+- [x] 缺少 "Syncing" 状态的旋转图标反馈（`SyncOutlined spin`） ✅
+- [x] 创建表单提交时缺少 `confirmLoading` 加载态 ✅（已有 `confirmLoading={creating}`）
 
 #### TransformPage
-- [ ] `outputDatasets` 应至少填写一项（当前允许空提交）
-- [ ] `handleRun` 中 `reload()` + `setRunningIds` 双重状态更新导致闪烁，去掉多余 `reload()`
+- [x] `outputDatasets` 应至少填写一项（当前允许空提交） ✅
+- [x] `handleRun` 中 `reload()` + `setRunningIds` 双重状态更新导致闪烁，去掉多余 `reload()` ✅
 - [ ] 运行中的任务缺少进度指示（可加 `Progress` 组件或脉冲动画）
 
 #### OntologyOverviewPage
@@ -69,12 +69,12 @@
 
 #### AgentStudioPage
 - [x] 编排视图 SVG 节点坐标写死（`x:160, y:80+i*140`），Agent 超过 5 个时溢出 ✅
-- [ ] Skill 选择器列表无搜索过滤（Skill 数量多时不便）
+- [x] Skill 选择器列表无搜索过滤（Skill 数量多时不便） ✅
 - [x] `getSkillObj()` 在渲染中重复调用，应 `useMemo` 构建 Map ✅
 - [x] `listDigitalHumans()` 在 JSX 中直接调用（统计卡片），每次渲染触发 localStorage 读取 ✅
 
 #### AgentLogsPage
-- [ ] 日志详情被截断 50 字只能 Tooltip 查看，应支持行展开显示完整内容
+- [x] 日志详情被截断 50 字只能 Tooltip 查看，应支持行展开显示完整内容 ✅
 - [ ] 无日志导出功能（CSV/JSON）
 
 #### DeviceFaultMonitorPage
@@ -149,7 +149,7 @@
 - [ ] 统一日期格式化工具函数 `formatDate()` / `formatRelativeTime()`
 - [ ] 创建可复用 Form 布局组件（Row + Col + gutter 标准化）
 - [ ] 清理 `global.css` 中未使用的 `stat-rose`、`.worker-card` 样式类（DICWorkerPage 未使用 `.worker-card`）
-- [ ] **TransformPage**: `handleCreate`/`handleEdit` 使用 `.then()` 而非 `async/await`，与其他页面风格不一致
+- [x] **TransformPage**: `handleCreate`/`handleEdit` 使用 `.then()` 而非 `async/await`，与其他页面风格不一致 ✅
 - [ ] **SkillsMarketPage**: 分类筛选有两套 UI（卡片点击 + Select 下拉），逻辑重复应合并
 - [x] **AgentStudioPage:404**: `listDigitalHumans()` 在 JSX 渲染中直接调用，每次渲染都触发 API，应移到 state ✅
 - [ ] **ModelTrainingPage / TrainingDatasetsPage**: Select 选项（数据源、框架、GPU）硬编码在 JSX `<Select.Option>` 中，应提取为常量数组
