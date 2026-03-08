@@ -11,15 +11,17 @@ const workers = [
 
 export default function DICWorkerPage() {
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <Card style={{ marginBottom: 16 }}>
-        <Title level={4} style={{ marginBottom: 4 }}>DIC 数字员工空间</Title>
-        <Text type="secondary">面向数据工程和平台运维的内部数字员工</Text>
+    <div className="page-container">
+      <Card className="section-card">
+        <div className="page-header">
+          <Title level={4}>DIC 数字员工空间</Title>
+          <Text type="secondary">面向数据工程和平台运维的内部数字员工</Text>
+        </div>
 
         <Row gutter={[16, 16]} style={{ marginTop: 20 }}>
           {workers.map((w, i) => (
             <Col span={12} key={i}>
-              <Card hoverable size="small" style={{ height: '100%' }}>
+              <Card hoverable size="small" className="worker-card" style={{ height: '100%' }}>
                 <Title level={5}>{w.icon} {w.title}</Title>
                 <Paragraph type="secondary" style={{ marginBottom: 0 }}>{w.desc}</Paragraph>
               </Card>

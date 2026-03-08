@@ -174,23 +174,19 @@ export default function AppLayout() {
         collapsed={collapsed}
         onCollapse={setCollapsed}
         theme="dark"
-        width={220}
+        width={230}
+        style={{
+          background: 'linear-gradient(180deg, #1e1b4b 0%, #0f172a 100%)',
+          overflow: 'auto',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+        }}
       >
-        <div style={{
-          height: 48,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: 700,
-          fontSize: collapsed ? 16 : 15,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          letterSpacing: collapsed ? 0 : 1,
-          background: 'linear-gradient(90deg, #4096ff, #36cfc9)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-        }}>
-          {collapsed ? 'D' : 'DeepexiOS'}
+        <div className="sidebar-logo">
+          <span className={`logo-text${collapsed ? ' collapsed' : ''}`}>
+            {collapsed ? 'D' : 'DeepexiOS'}
+          </span>
         </div>
         <Menu
           theme="dark"
@@ -200,32 +196,30 @@ export default function AppLayout() {
           onOpenChange={setOpenKeys}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
+          style={{ background: 'transparent', borderRight: 'none' }}
         />
       </Sider>
       <Layout>
-        <Header style={{
-          background: '#fff',
-          padding: '0 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderBottom: '1px solid #f0f0f0',
-          height: 48,
-        }}>
-          <span style={{ fontWeight: 600, fontSize: 16 }}>
+        <Header className="app-header">
+          <span className="header-title">
             {pageTitle}
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ color: '#595959', fontSize: 13 }}>
-              <UserOutlined style={{ marginRight: 6 }} />
+          <div className="header-user">
+            <span className="user-info">
+              <UserOutlined />
               {currentUser?.username || '未知用户'}
             </span>
-            <Button type="text" icon={<LogoutOutlined />} onClick={handleLogout}>
+            <Button
+              type="text"
+              icon={<LogoutOutlined />}
+              onClick={handleLogout}
+              style={{ color: '#64748b' }}
+            >
               退出
             </Button>
           </div>
         </Header>
-        <Content style={{ margin: 16, minHeight: 280 }}>
+        <Content className="app-content-area">
           <Outlet />
         </Content>
       </Layout>

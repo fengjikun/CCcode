@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button, Card, Checkbox, Col, Form, Input, Modal, Row, Select, Space, Statistic, Table, Tag, Typography } from 'antd'
-import { PlusOutlined, SettingOutlined } from '@ant-design/icons'
+import { PlusOutlined, SettingOutlined, ThunderboltOutlined, CodeOutlined } from '@ant-design/icons'
 
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
@@ -41,7 +41,12 @@ export default function AgentStudioPage() {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (v: string) => <Tag color={statusColor[v] || 'default'}>{v}</Tag>,
+      render: (v: string) => (
+        <span>
+          <span className={`status-dot ${v === 'Active' ? 'active' : 'warning'}`} />
+          <Tag color={statusColor[v] || 'default'}>{v}</Tag>
+        </span>
+      ),
     },
     { title: '版本', dataIndex: 'version', key: 'version' },
     {
@@ -60,10 +65,12 @@ export default function AgentStudioPage() {
   ]
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <Card style={{ marginBottom: 16 }}>
-        <Title level={4} style={{ marginBottom: 4 }}>Co-worker 平台</Title>
-        <Text type="secondary">开发、编排和管理 AI 智能体</Text>
+    <div className="page-container">
+      <Card className="section-card">
+        <div className="page-header">
+          <Title level={4}>Co-worker 平台</Title>
+          <Text type="secondary">开发、编排和管理 AI 智能体</Text>
+        </div>
 
         <div style={{ margin: '16px 0' }}>
           <Space>
@@ -80,14 +87,22 @@ export default function AgentStudioPage() {
         <Title level={5} style={{ marginTop: 24 }}>Skills Space</Title>
         <Row gutter={16}>
           <Col span={12}>
-            <Card size="small">
-              <Statistic title="已注册 Actions" value={34} valueStyle={{ color: '#667eea' }} />
+            <Card size="small" className="stat-card card-hover stat-primary">
+              <Statistic
+                title="已注册 Actions"
+                value={34}
+                prefix={<ThunderboltOutlined style={{ fontSize: 18, marginRight: 4 }} />}
+              />
               <Text type="secondary" style={{ fontSize: 12 }}>可供 Agent 调用的本体 Action</Text>
             </Card>
           </Col>
           <Col span={12}>
-            <Card size="small">
-              <Statistic title="已注册 Functions" value={28} valueStyle={{ color: '#667eea' }} />
+            <Card size="small" className="stat-card card-hover stat-info">
+              <Statistic
+                title="已注册 Functions"
+                value={28}
+                prefix={<CodeOutlined style={{ fontSize: 18, marginRight: 4 }} />}
+              />
               <Text type="secondary" style={{ fontSize: 12 }}>用于复杂逻辑的 TypeScript 函数</Text>
             </Card>
           </Col>
@@ -134,19 +149,19 @@ export default function AgentStudioPage() {
       >
         {selectedAgent && (
           <>
-            <Card size="small" style={{ marginBottom: 12, background: '#f8f9fa' }}>
+            <Card size="small" style={{ marginBottom: 12, background: '#f8fafc', borderColor: '#e5e7eb' }}>
               <Title level={5} style={{ marginBottom: 8 }}>Configuration</Title>
               <Paragraph style={{ marginBottom: 4 }}><Text strong>Version：</Text>{selectedAgent.version}</Paragraph>
               <Paragraph style={{ marginBottom: 4 }}><Text strong>Status：</Text>{selectedAgent.status} (Production)</Paragraph>
               <Paragraph style={{ marginBottom: 0 }}><Text strong>Model：</Text>gpt-4-turbo via Model Gateway</Paragraph>
             </Card>
-            <Card size="small" style={{ marginBottom: 12, background: '#f8f9fa' }}>
+            <Card size="small" style={{ marginBottom: 12, background: '#f8fafc', borderColor: '#e5e7eb' }}>
               <Title level={5} style={{ marginBottom: 8 }}>System Prompt</Title>
               <Paragraph style={{ marginBottom: 0 }}>
                 You are an expert equipment diagnostics assistant. Analyze sensor data, identify potential failures, and recommend maintenance actions. Always prioritize safety and equipment longevity.
               </Paragraph>
             </Card>
-            <Card size="small" style={{ background: '#f8f9fa' }}>
+            <Card size="small" style={{ background: '#f8fafc', borderColor: '#e5e7eb' }}>
               <Title level={5} style={{ marginBottom: 8 }}>Registered Tools</Title>
               <ul style={{ margin: 0, paddingLeft: 20 }}>
                 <li>Query Equipment Object (Ontology)</li>

@@ -21,11 +21,14 @@ const columns = [
     title: '状态',
     dataIndex: 'status',
     key: 'status',
-    render: (v: string) => <Tag color={statusColor[v] || 'default'}>{v}</Tag>,
+    render: (v: string) => (
+      <span>
+        <span className={`status-dot ${v === 'Error' ? 'error' : 'active'}`} />
+        <Tag color={statusColor[v] || 'default'}>{v}</Tag>
+      </span>
+    ),
   },
 ]
-
-const treeStyle: React.CSSProperties = { padding: '4px 0 4px 20px', fontSize: 13 }
 
 const configJson = `{
   "name": "ds_sap_orders",
@@ -52,10 +55,12 @@ const configJson = `{
 
 export default function DataSourcePage() {
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <Card style={{ marginBottom: 16 }}>
-        <Title level={4} style={{ marginBottom: 4 }}>数据源管理</Title>
-        <Text type="secondary">连接并同步外部系统数据</Text>
+    <div className="page-container">
+      <Card className="section-card">
+        <div className="page-header">
+          <Title level={4}>数据源管理</Title>
+          <Text type="secondary">连接并同步外部系统数据</Text>
+        </div>
 
         <div style={{ margin: '16px 0' }}>
           <Button type="primary" icon={<PlusOutlined />}>添加数据源</Button>
@@ -64,32 +69,22 @@ export default function DataSourcePage() {
         <Table dataSource={mockSources} columns={columns} pagination={false} size="middle" />
       </Card>
 
-      <Card title="数据源项目结构 — ds_sap_orders">
+      <Card className="section-card" title="数据源项目结构 — ds_sap_orders">
         <Paragraph type="secondary">项目目录</Paragraph>
-        <div style={{ background: '#f8f9fa', borderRadius: 6, padding: 12, marginBottom: 16, fontFamily: 'monospace', fontSize: 13 }}>
-          <div style={treeStyle}>📁 ds_sap_orders/</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 raw/</div>
-          <div style={{ ...treeStyle, paddingLeft: 60 }}>📄 orders_2025_03_08.parquet</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 clean/</div>
-          <div style={{ ...treeStyle, paddingLeft: 60 }}>📄 cleaned_orders</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 output/</div>
-          <div style={{ ...treeStyle, paddingLeft: 60 }}>📄 standardized_orders</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 analysis/</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 documentation/</div>
+        <div className="dir-tree" style={{ marginBottom: 16 }}>
+          <div className="dir-item">ds_sap_orders/</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>raw/</div>
+          <div className="dir-item" style={{ paddingLeft: 40 }}>orders_2025_03_08.parquet</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>clean/</div>
+          <div className="dir-item" style={{ paddingLeft: 40 }}>cleaned_orders</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>output/</div>
+          <div className="dir-item" style={{ paddingLeft: 40 }}>standardized_orders</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>analysis/</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>documentation/</div>
         </div>
 
         <Paragraph type="secondary">连接配置示例</Paragraph>
-        <pre style={{
-          background: '#2d2d2d',
-          color: '#f8f8f2',
-          padding: 16,
-          borderRadius: 6,
-          overflow: 'auto',
-          fontSize: 13,
-          lineHeight: 1.6,
-        }}>
-          {configJson}
-        </pre>
+        <pre className="code-block">{configJson}</pre>
       </Card>
     </div>
   )

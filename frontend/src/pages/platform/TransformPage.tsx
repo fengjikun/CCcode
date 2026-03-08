@@ -19,11 +19,14 @@ const columns = [
     title: '状态',
     dataIndex: 'status',
     key: 'status',
-    render: (v: string) => <Tag color={v === 'Success' ? 'green' : 'orange'}>{v}</Tag>,
+    render: (v: string) => (
+      <span>
+        <span className={`status-dot ${v === 'Success' ? 'active' : 'warning'}`} />
+        <Tag color={v === 'Success' ? 'green' : 'orange'}>{v}</Tag>
+      </span>
+    ),
   },
 ]
-
-const treeStyle: React.CSSProperties = { padding: '4px 0 4px 20px', fontSize: 13 }
 
 const codeExample = `from transforms import Pipeline
 
@@ -44,10 +47,12 @@ def normalize_orders(raw_orders, customer_master):
 
 export default function TransformPage() {
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <Card style={{ marginBottom: 16 }}>
-        <Title level={4} style={{ marginBottom: 4 }}>数据转换项目</Title>
-        <Text type="secondary">跨源关联、聚合与规范化数据</Text>
+    <div className="page-container">
+      <Card className="section-card">
+        <div className="page-header">
+          <Title level={4}>数据转换项目</Title>
+          <Text type="secondary">跨源关联、聚合与规范化数据</Text>
+        </div>
 
         <div style={{ margin: '16px 0' }}>
           <Button type="primary" icon={<PlusOutlined />}>新建转换项目</Button>
@@ -56,32 +61,22 @@ export default function TransformPage() {
         <Table dataSource={mockProjects} columns={columns} pagination={false} size="middle" />
       </Card>
 
-      <Card title="转换管道示例 — transform_orders">
+      <Card className="section-card" title="转换管道示例 — transform_orders">
         <Paragraph type="secondary">项目目录结构</Paragraph>
-        <div style={{ background: '#f8f9fa', borderRadius: 6, padding: 12, marginBottom: 16, fontFamily: 'monospace', fontSize: 13 }}>
-          <div style={treeStyle}>📁 transform_orders/</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 logic/</div>
-          <div style={{ ...treeStyle, paddingLeft: 60 }}>📄 normalize_orders.py</div>
-          <div style={{ ...treeStyle, paddingLeft: 60 }}>📄 join_customer_data.py</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 datasets/</div>
-          <div style={{ ...treeStyle, paddingLeft: 60 }}>📁 transformed/</div>
-          <div style={{ ...treeStyle, paddingLeft: 60 }}>📁 output/</div>
-          <div style={{ ...treeStyle, paddingLeft: 80 }}>📄 normalized_orders</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 documentation/</div>
+        <div className="dir-tree" style={{ marginBottom: 16 }}>
+          <div className="dir-item">transform_orders/</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>logic/</div>
+          <div className="dir-item" style={{ paddingLeft: 40 }}>normalize_orders.py</div>
+          <div className="dir-item" style={{ paddingLeft: 40 }}>join_customer_data.py</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>datasets/</div>
+          <div className="dir-item" style={{ paddingLeft: 40 }}>transformed/</div>
+          <div className="dir-item" style={{ paddingLeft: 40 }}>output/</div>
+          <div className="dir-item" style={{ paddingLeft: 60 }}>normalized_orders</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>documentation/</div>
         </div>
 
         <Paragraph type="secondary">代码示例：normalize_orders.py</Paragraph>
-        <pre style={{
-          background: '#2d2d2d',
-          color: '#f8f8f2',
-          padding: 16,
-          borderRadius: 6,
-          overflow: 'auto',
-          fontSize: 13,
-          lineHeight: 1.6,
-        }}>
-          {codeExample}
-        </pre>
+        <pre className="code-block">{codeExample}</pre>
       </Card>
     </div>
   )

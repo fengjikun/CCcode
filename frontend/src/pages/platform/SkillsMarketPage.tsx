@@ -1,4 +1,5 @@
 import { Card, Col, Row, Statistic, Table, Tag, Typography } from 'antd'
+import { ThunderboltOutlined, CodeOutlined, SearchOutlined, BarChartOutlined } from '@ant-design/icons'
 
 const { Title, Text } = Typography
 
@@ -24,27 +25,48 @@ const columns = [
     render: (v: string) => <Tag color={typeColor[v] || 'default'}>{v}</Tag>,
   },
   { title: '关联 Object Type', dataIndex: 'objectType', key: 'objectType' },
-  { title: '调用次数', dataIndex: 'calls', key: 'calls', sorter: (a: any, b: any) => a.calls - b.calls },
+  { title: '调用次数', dataIndex: 'calls', key: 'calls', sorter: (a: { calls: number }, b: { calls: number }) => a.calls - b.calls },
   {
     title: '状态',
     dataIndex: 'status',
     key: 'status',
-    render: (v: string) => <Tag color={v === 'Active' ? 'green' : 'orange'}>{v}</Tag>,
+    render: (v: string) => (
+      <span>
+        <span className={`status-dot ${v === 'Active' ? 'active' : 'warning'}`} />
+        <Tag color={v === 'Active' ? 'green' : 'orange'}>{v}</Tag>
+      </span>
+    ),
   },
+]
+
+const statItems = [
+  { title: 'Actions', value: 34, icon: <ThunderboltOutlined />, cls: 'stat-primary' },
+  { title: 'Functions', value: 28, icon: <CodeOutlined />, cls: 'stat-success' },
+  { title: 'Queries', value: 15, icon: <SearchOutlined />, cls: 'stat-purple' },
+  { title: '总调用量', value: '9.5K', icon: <BarChartOutlined />, cls: 'stat-warning' },
 ]
 
 export default function SkillsMarketPage() {
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <Card style={{ marginBottom: 16 }}>
-        <Title level={4} style={{ marginBottom: 4 }}>Skills 广场</Title>
-        <Text type="secondary">Action / Function / Query 统一注册与管理</Text>
+    <div className="page-container">
+      <Card className="section-card">
+        <div className="page-header">
+          <Title level={4}>Skills 广场</Title>
+          <Text type="secondary">Action / Function / Query 统一注册与管理</Text>
+        </div>
 
         <Row gutter={16} style={{ margin: '20px 0' }}>
-          <Col span={6}><Card size="small"><Statistic title="Actions" value={34} valueStyle={{ color: '#1677ff' }} /></Card></Col>
-          <Col span={6}><Card size="small"><Statistic title="Functions" value={28} valueStyle={{ color: '#52c41a' }} /></Card></Col>
-          <Col span={6}><Card size="small"><Statistic title="Queries" value={15} valueStyle={{ color: '#722ed1' }} /></Card></Col>
-          <Col span={6}><Card size="small"><Statistic title="总调用量" value={'9.5K'} valueStyle={{ color: '#fa8c16' }} /></Card></Col>
+          {statItems.map((s) => (
+            <Col span={6} key={s.title}>
+              <Card size="small" className={`stat-card card-hover ${s.cls}`}>
+                <Statistic
+                  title={s.title}
+                  value={s.value}
+                  prefix={<span style={{ fontSize: 18, marginRight: 4 }}>{s.icon}</span>}
+                />
+              </Card>
+            </Col>
+          ))}
         </Row>
 
         <Table dataSource={mockSkills} columns={columns} pagination={false} size="middle" />

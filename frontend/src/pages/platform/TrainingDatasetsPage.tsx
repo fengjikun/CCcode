@@ -1,4 +1,5 @@
 import { Card, Col, Row, Statistic, Table, Tag, Typography } from 'antd'
+import { DatabaseOutlined, BarChartOutlined, HistoryOutlined, DeploymentUnitOutlined } from '@ant-design/icons'
 
 const { Title, Text } = Typography
 
@@ -19,22 +20,43 @@ const columns = [
     title: '状态',
     dataIndex: 'status',
     key: 'status',
-    render: (v: string) => <Tag color={v === 'Ready' ? 'green' : 'orange'}>{v}</Tag>,
+    render: (v: string) => (
+      <span>
+        <span className={`status-dot ${v === 'Ready' ? 'active' : 'warning'}`} />
+        <Tag color={v === 'Ready' ? 'green' : 'orange'}>{v}</Tag>
+      </span>
+    ),
   },
+]
+
+const statItems = [
+  { title: '数据集总数', value: 4, icon: <DatabaseOutlined />, cls: 'stat-primary' },
+  { title: '总记录数', value: '89.7K', icon: <BarChartOutlined />, cls: 'stat-info' },
+  { title: '快照版本', value: 8, icon: <HistoryOutlined />, cls: 'stat-success' },
+  { title: '关联模型', value: 4, icon: <DeploymentUnitOutlined />, cls: 'stat-purple' },
 ]
 
 export default function TrainingDatasetsPage() {
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <Card style={{ marginBottom: 16 }}>
-        <Title level={4} style={{ marginBottom: 4 }}>训练数据集</Title>
-        <Text type="secondary">从本体语义层导出、切分和版本管理训练数据</Text>
+    <div className="page-container">
+      <Card className="section-card">
+        <div className="page-header">
+          <Title level={4}>训练数据集</Title>
+          <Text type="secondary">从本体语义层导出、切分和版本管理训练数据</Text>
+        </div>
 
         <Row gutter={16} style={{ margin: '20px 0' }}>
-          <Col span={6}><Card size="small"><Statistic title="数据集总数" value={4} /></Card></Col>
-          <Col span={6}><Card size="small"><Statistic title="总记录数" value={'89.7K'} /></Card></Col>
-          <Col span={6}><Card size="small"><Statistic title="快照版本" value={8} /></Card></Col>
-          <Col span={6}><Card size="small"><Statistic title="关联模型" value={4} /></Card></Col>
+          {statItems.map((s) => (
+            <Col span={6} key={s.title}>
+              <Card size="small" className={`stat-card card-hover ${s.cls}`}>
+                <Statistic
+                  title={s.title}
+                  value={s.value}
+                  prefix={<span style={{ fontSize: 18, marginRight: 4 }}>{s.icon}</span>}
+                />
+              </Card>
+            </Col>
+          ))}
         </Row>
 
         <Table dataSource={mockDatasets} columns={columns} pagination={false} size="middle" />

@@ -1,4 +1,10 @@
 import { Card, Col, Row, Statistic, Table, Tag, Typography } from 'antd'
+import {
+  CloudServerOutlined,
+  ThunderboltOutlined,
+  DashboardOutlined,
+  SafetyCertificateOutlined,
+} from '@ant-design/icons'
 
 const { Title, Text } = Typography
 
@@ -18,28 +24,49 @@ const columns = [
     title: '阶段',
     dataIndex: 'stage',
     key: 'stage',
-    render: (v: string) => <Tag color={stageColor[v] || 'default'}>{v}</Tag>,
+    render: (v: string) => (
+      <span>
+        <span className={`status-dot ${v === 'Production' ? 'active' : 'warning'}`} />
+        <Tag color={stageColor[v] || 'default'}>{v}</Tag>
+      </span>
+    ),
   },
   { title: '准确率', dataIndex: 'accuracy', key: 'accuracy' },
   { title: '框架', dataIndex: 'framework', key: 'framework' },
 ]
 
+const statItems = [
+  { title: '已部署模型', value: 23, icon: <CloudServerOutlined />, cls: 'stat-primary' },
+  { title: '日请求量', value: '156K', icon: <ThunderboltOutlined />, cls: 'stat-info' },
+  { title: '平均延迟', value: '45ms', icon: <DashboardOutlined />, cls: 'stat-success' },
+  { title: '可用率', value: '99.8%', icon: <SafetyCertificateOutlined />, cls: 'stat-purple' },
+]
+
 export default function ModelGatewayPage() {
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <Card style={{ marginBottom: 16 }}>
-        <Title level={4} style={{ marginBottom: 4 }}>模型网关</Title>
-        <Text type="secondary">统一推理入口、路由与监控</Text>
+    <div className="page-container">
+      <Card className="section-card">
+        <div className="page-header">
+          <Title level={4}>模型网关</Title>
+          <Text type="secondary">统一推理入口、路由与监控</Text>
+        </div>
 
         <Row gutter={16} style={{ margin: '20px 0' }}>
-          <Col span={6}><Card size="small"><Statistic title="已部署模型" value={23} /></Card></Col>
-          <Col span={6}><Card size="small"><Statistic title="日请求量" value={'156K'} /></Card></Col>
-          <Col span={6}><Card size="small"><Statistic title="平均延迟" value={'45ms'} /></Card></Col>
-          <Col span={6}><Card size="small"><Statistic title="可用率" value={'99.8%'} /></Card></Col>
+          {statItems.map((s) => (
+            <Col span={6} key={s.title}>
+              <Card size="small" className={`stat-card card-hover ${s.cls}`}>
+                <Statistic
+                  title={s.title}
+                  value={s.value}
+                  prefix={<span style={{ fontSize: 18, marginRight: 4 }}>{s.icon}</span>}
+                />
+              </Card>
+            </Col>
+          ))}
         </Row>
       </Card>
 
-      <Card title="Model Registry">
+      <Card className="section-card" title="Model Registry">
         <Table dataSource={registryData} columns={columns} pagination={false} size="middle" />
       </Card>
     </div>

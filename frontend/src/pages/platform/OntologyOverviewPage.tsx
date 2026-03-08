@@ -1,4 +1,10 @@
 import { Card, Col, Row, Statistic, Table, Typography } from 'antd'
+import {
+  AppstoreOutlined,
+  TagsOutlined,
+  BranchesOutlined,
+  ThunderboltOutlined,
+} from '@ant-design/icons'
 
 const { Title, Text } = Typography
 
@@ -37,49 +43,49 @@ const actionJson = `// Example: ApprovePurchaseOrder Action
   "function": "notifySupplier(orderId)"
 }`
 
+const statItems = [
+  { title: 'Object Types', value: 156, icon: <AppstoreOutlined />, cls: 'stat-primary' },
+  { title: 'Properties', value: 423, icon: <TagsOutlined />, cls: 'stat-info' },
+  { title: 'Link Types', value: 89, icon: <BranchesOutlined />, cls: 'stat-purple' },
+  { title: 'Actions', value: 67, icon: <ThunderboltOutlined />, cls: 'stat-warning' },
+]
+
 export default function OntologyOverviewPage() {
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <Card style={{ marginBottom: 16 }}>
-        <Title level={4} style={{ marginBottom: 4 }}>Deepology — 本体管理</Title>
-        <Text type="secondary">定义和管理业务语义层</Text>
+    <div className="page-container">
+      <Card className="section-card">
+        <div className="page-header">
+          <Title level={4}>Deepology — 本体管理</Title>
+          <Text type="secondary">定义和管理业务语义层</Text>
+        </div>
 
         <Title level={5} style={{ marginTop: 20 }}>本体概览</Title>
         <Row gutter={16} style={{ marginBottom: 24 }}>
-          <Col span={6}><Card size="small" style={{ textAlign: 'center' }}><Statistic title="Object Types" value={156} valueStyle={{ color: '#667eea' }} /></Card></Col>
-          <Col span={6}><Card size="small" style={{ textAlign: 'center' }}><Statistic title="Properties" value={423} valueStyle={{ color: '#667eea' }} /></Card></Col>
-          <Col span={6}><Card size="small" style={{ textAlign: 'center' }}><Statistic title="Link Types" value={89} valueStyle={{ color: '#667eea' }} /></Card></Col>
-          <Col span={6}><Card size="small" style={{ textAlign: 'center' }}><Statistic title="Actions" value={67} valueStyle={{ color: '#667eea' }} /></Card></Col>
+          {statItems.map((s) => (
+            <Col span={6} key={s.title}>
+              <Card size="small" className={`stat-card card-hover ${s.cls}`} style={{ textAlign: 'center' }}>
+                <Statistic
+                  title={s.title}
+                  value={s.value}
+                  prefix={<span style={{ fontSize: 18, marginRight: 4 }}>{s.icon}</span>}
+                />
+              </Card>
+            </Col>
+          ))}
         </Row>
 
         <Title level={5}>Object Type Definitions</Title>
         <Table dataSource={objectTypes} columns={columns} pagination={false} size="middle" />
       </Card>
 
-      <Card title="Action Definitions">
-        <pre style={{
-          background: '#2d2d2d',
-          color: '#f8f8f2',
-          padding: 16,
-          borderRadius: 6,
-          overflow: 'auto',
-          fontSize: 13,
-          lineHeight: 1.6,
-        }}>
-          {actionJson}
-        </pre>
+      <Card className="section-card" title="Action Definitions">
+        <pre className="code-block">{actionJson}</pre>
       </Card>
 
-      <Card style={{ marginTop: 16 }}>
+      <Card className="section-card">
         <Title level={5}>Ontology Graph Visualization</Title>
-        <div style={{
-          background: '#f8f9fa',
-          padding: 40,
-          borderRadius: 8,
-          textAlign: 'center',
-          border: '2px dashed #ddd',
-        }}>
-          <Text style={{ fontSize: 16, color: '#6c757d' }}>🔗 Ontology Entity-Relationship Diagram</Text>
+        <div className="placeholder-box">
+          <Text style={{ fontSize: 16, color: '#64748b' }}>Ontology Entity-Relationship Diagram</Text>
           <br />
           <Text type="secondary">交互式图谱可视化：对象、属性与关系</Text>
           <br />

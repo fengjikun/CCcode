@@ -4,8 +4,6 @@ import { PlusOutlined } from '@ant-design/icons'
 
 const { Title, Text, Paragraph } = Typography
 
-const treeStyle: React.CSSProperties = { padding: '4px 0 4px 20px', fontSize: 13 }
-
 const yamlConfig = `# training_config.yaml
 model_name: purchase-order-classifier
 version: v2.1.0
@@ -37,10 +35,12 @@ export default function ModelTrainingPage() {
   const [form] = Form.useForm()
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <Card style={{ marginBottom: 16 }}>
-        <Title level={4} style={{ marginBottom: 4 }}>模型训练</Title>
-        <Text type="secondary">训练、评估与注册机器学习模型</Text>
+    <div className="page-container">
+      <Card className="section-card">
+        <div className="page-header">
+          <Title level={4}>模型训练</Title>
+          <Text type="secondary">训练、评估与注册机器学习模型</Text>
+        </div>
 
         <div style={{ margin: '16px 0' }}>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
@@ -49,29 +49,19 @@ export default function ModelTrainingPage() {
         </div>
 
         <Paragraph type="secondary">项目目录结构</Paragraph>
-        <div style={{ background: '#f8f9fa', borderRadius: 6, padding: 12, marginBottom: 16, fontFamily: 'monospace', fontSize: 13 }}>
-          <div style={treeStyle}>📁 training_purchase_classifier/</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 data/</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 notebooks/</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 pipelines/</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 experiments/</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 models/</div>
-          <div style={{ ...treeStyle, paddingLeft: 40 }}>📁 evaluation/</div>
+        <div className="dir-tree" style={{ marginBottom: 16 }}>
+          <div className="dir-item">training_purchase_classifier/</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>data/</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>notebooks/</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>pipelines/</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>experiments/</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>models/</div>
+          <div className="dir-item" style={{ paddingLeft: 20 }}>evaluation/</div>
         </div>
       </Card>
 
-      <Card title="训练管道配置示例">
-        <pre style={{
-          background: '#2d2d2d',
-          color: '#f8f8f2',
-          padding: 16,
-          borderRadius: 6,
-          overflow: 'auto',
-          fontSize: 13,
-          lineHeight: 1.6,
-        }}>
-          {yamlConfig}
-        </pre>
+      <Card className="section-card" title="训练管道配置示例">
+        <pre className="code-block">{yamlConfig}</pre>
       </Card>
 
       {/* ── Create Training Modal ── */}

@@ -22,30 +22,19 @@ const agentColor: Record<string, string> = {
 
 export default function AgentLogsPage() {
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <Card>
-        <Title level={4} style={{ marginBottom: 4 }}>智能体执行日志</Title>
-        <Text type="secondary" style={{ display: 'block', marginBottom: 20 }}>
-          实时追踪 Agent 工具调用与推理过程
-        </Text>
+    <div className="page-container">
+      <Card className="section-card">
+        <div className="page-header">
+          <Title level={4}>智能体执行日志</Title>
+          <Text type="secondary">实时追踪 Agent 工具调用与推理过程</Text>
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {logs.map((log, i) => (
-            <div
-              key={i}
-              style={{
-                padding: '10px 14px',
-                borderLeft: '3px solid #667eea',
-                background: '#f8f9fa',
-                borderRadius: 4,
-                fontFamily: 'monospace',
-                fontSize: 13,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-              }}
-            >
-              <Text type="secondary" style={{ fontFamily: 'monospace', flexShrink: 0 }}>{log.time}</Text>
+            <div key={i} className="log-entry">
+              <Text type="secondary" style={{ fontFamily: '"Cascadia Code", Consolas, monospace', flexShrink: 0, fontSize: 12 }}>
+                {log.time}
+              </Text>
               <Tag color={agentColor[log.agent] || 'default'} style={{ flexShrink: 0 }}>{log.agent}</Tag>
               <span>{log.action}</span>
             </div>
