@@ -1,9 +1,9 @@
 import { useState, useRef, useMemo, useCallback } from 'react'
-import { Button, Spin, Result } from 'antd'
+import { Button, Spin, Result, Tooltip } from 'antd'
 import {
   ZoomInOutlined,
   ZoomOutOutlined,
-  ExpandOutlined,
+  FullscreenOutlined,
   ReloadOutlined,
 } from '@ant-design/icons'
 import { useGraphData } from '../hooks/useGraphData'
@@ -76,6 +76,13 @@ export default function GraphPage() {
     )
   }
 
+  const toolbarButtons = [
+    { icon: <ZoomInOutlined />, title: '放大', onClick: () => graphRef.current?.zoomIn() },
+    { icon: <ZoomOutOutlined />, title: '缩小', onClick: () => graphRef.current?.zoomOut() },
+    { icon: <FullscreenOutlined />, title: '重置视图', onClick: () => graphRef.current?.zoomReset() },
+    { icon: <ReloadOutlined />, title: '重新布局', onClick: () => graphRef.current?.restartLayout() },
+  ]
+
   return (
     <div
       style={{
@@ -84,7 +91,8 @@ export default function GraphPage() {
         background: '#fff',
         borderRadius: 8,
         overflow: 'hidden',
-        border: '1px solid #f0f0f0',
+        border: '1px solid #e8e8e8',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
       }}
     >
       <GraphSidebar
@@ -99,44 +107,41 @@ export default function GraphPage() {
       />
 
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {/* Toolbar */}
         <div
           style={{
             position: 'absolute',
-            top: 10,
-            left: 10,
+            top: 12,
+            left: 12,
             zIndex: 15,
             display: 'flex',
-            gap: 4,
-            background: 'rgba(255,255,255,0.9)',
-            borderRadius: 6,
+            gap: 1,
+            background: '#fff',
+            borderRadius: 8,
             padding: 4,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+            border: '1px solid #e8e8e8',
           }}
         >
-          <Button
-            size="small"
-            icon={<ZoomInOutlined />}
-            onClick={() => graphRef.current?.zoomIn()}
-            title="放大"
-          />
-          <Button
-            size="small"
-            icon={<ZoomOutOutlined />}
-            onClick={() => graphRef.current?.zoomOut()}
-            title="缩小"
-          />
-          <Button
-            size="small"
-            icon={<ExpandOutlined />}
-            onClick={() => graphRef.current?.zoomReset()}
-            title="重置视图"
-          />
-          <Button
-            size="small"
-            icon={<ReloadOutlined />}
-            onClick={() => graphRef.current?.restartLayout()}
-            title="重新布局"
-          />
+          {toolbarButtons.map(({ icon, title, onClick }, i) => (
+            <Tooltip key={i} title={title} placement="bottom">
+              <Button
+                type="text"
+                size="small"
+                icon={icon}
+                onClick={onClick}
+                style={{
+                  width: 30,
+                  height: 30,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#555',
+                  borderRadius: 5,
+                }}
+              />
+            </Tooltip>
+          ))}
         </div>
 
         <ForceGraph

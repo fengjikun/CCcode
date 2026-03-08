@@ -169,12 +169,29 @@ const ForceGraph = forwardRef<ForceGraphHandle, ForceGraphProps>(
         .attr('width', '100%')
         .attr('height', '100%')
         .attr('viewBox', `0 0 ${W} ${H}`)
-        .style('background', '#fafbfc')
+        .style('background', '#f8f9fb')
+
+      // Dot-grid pattern
+      const patternDefs = svg.append('defs')
+      const pattern = patternDefs.append('pattern')
+        .attr('id', 'dot-grid')
+        .attr('width', 24)
+        .attr('height', 24)
+        .attr('patternUnits', 'userSpaceOnUse')
+      pattern.append('circle')
+        .attr('cx', 12)
+        .attr('cy', 12)
+        .attr('r', 1)
+        .attr('fill', '#dde1e7')
+      svg.insert('rect', ':first-child')
+        .attr('width', '100%')
+        .attr('height', '100%')
+        .attr('fill', 'url(#dot-grid)')
 
       svgRef.current = svg.node()
 
-      // Arrow markers
-      const defs = svg.append('defs')
+      // Arrow markers (reuse same defs element)
+      const defs = patternDefs
       Object.entries(LINK_CONFIG).forEach(([rel, cfg]) => {
         defs.append('marker')
           .attr('id', `arrow-${rel}`)
@@ -516,23 +533,38 @@ const ForceGraph = forwardRef<ForceGraphHandle, ForceGraphProps>(
               position: 'absolute',
               left: tooltip.x,
               top: tooltip.y,
-              background: '#fff',
-              border: '1px solid #e0e0e0',
-              borderRadius: 6,
-              padding: '8px 12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              background: '#1a1a2e',
+              borderRadius: 8,
+              padding: '10px 14px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
               pointerEvents: 'none',
               zIndex: 10,
               fontSize: 12,
-              minWidth: 120,
+              minWidth: 140,
+              maxWidth: 220,
             }}
           >
-            <div style={{ color: tooltipCfg?.color || '#333', fontWeight: 600, marginBottom: 2 }}>
+            <div
+              style={{
+                display: 'inline-block',
+                padding: '1px 8px',
+                borderRadius: 4,
+                background: tooltipCfg?.color || '#555',
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: 700,
+                marginBottom: 6,
+                letterSpacing: '0.04em',
+              }}
+            >
               {tooltipCfg?.label || tooltip.node.type}
             </div>
-            <div style={{ color: '#333', fontWeight: 500 }}>{tooltip.node.label}</div>
-            <div style={{ color: '#888', marginTop: 2 }}>
-              连接: {tooltip.connCount} 条边
+            <div style={{ color: '#f0f0f0', fontWeight: 600, fontSize: 13, lineHeight: 1.4, marginBottom: 6, wordBreak: 'break-all' }}>
+              {tooltip.node.label}
+            </div>
+            <div style={{ color: '#888', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ color: '#aaa' }}>●</span>
+              <span>{tooltip.connCount} 条关联</span>
             </div>
           </div>
         )}

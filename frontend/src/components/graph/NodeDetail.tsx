@@ -1,5 +1,5 @@
-import { Button } from 'antd'
-import { CloseOutlined } from '@ant-design/icons'
+import { Button, Tag } from 'antd'
+import { CloseOutlined, NodeIndexOutlined } from '@ant-design/icons'
 import type { GraphNode, GraphLink, NodeConfig } from '../../types/graph'
 import { LINK_CONFIG, NODE_CONFIG } from './ForceGraph'
 
@@ -33,127 +33,158 @@ export default function NodeDetail({ node, links, nodes, nodeConfig, onClose }: 
         position: 'absolute',
         top: 12,
         right: 12,
-        width: 280,
+        width: 290,
         maxHeight: 'calc(100% - 24px)',
         overflow: 'auto',
         background: '#fff',
-        borderRadius: 8,
-        boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+        borderRadius: 10,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
         zIndex: 20,
         fontSize: 13,
+        border: '1px solid #e8e8e8',
       }}
     >
       {/* Header */}
       <div
         style={{
-          padding: '12px 14px',
-          borderLeft: `4px solid ${cfg.color}`,
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
+          padding: '14px 14px 12px',
           borderBottom: '1px solid #f0f0f0',
+          background: `linear-gradient(135deg, ${cfg.color}15 0%, ${cfg.color}05 100%)`,
+          borderRadius: '10px 10px 0 0',
         }}
       >
-        <div>
-          <span
-            style={{
-              display: 'inline-block',
-              padding: '1px 8px',
-              borderRadius: 4,
-              background: `${cfg.color}20`,
-              color: cfg.color,
-              fontSize: 11,
-              fontWeight: 600,
-              marginBottom: 4,
-              border: `1px solid ${cfg.color}40`,
-            }}
-          >
-            {cfg.label}
-          </span>
-          <div style={{ fontWeight: 600, fontSize: 15, color: '#222', marginTop: 2 }}>
-            {node.label}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div style={{ flex: 1, paddingRight: 8 }}>
+            <Tag
+              style={{
+                borderColor: `${cfg.color}60`,
+                color: cfg.color,
+                background: `${cfg.color}15`,
+                fontWeight: 700,
+                fontSize: 11,
+                letterSpacing: '0.04em',
+                marginBottom: 6,
+                border: `1px solid ${cfg.color}50`,
+              }}
+            >
+              {cfg.label}
+            </Tag>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a1a', lineHeight: 1.4, wordBreak: 'break-all' }}>
+              {node.label}
+            </div>
           </div>
+          <Button
+            type="text"
+            size="small"
+            icon={<CloseOutlined />}
+            onClick={onClose}
+            style={{ marginTop: -2, marginRight: -4, color: '#999', flexShrink: 0 }}
+          />
         </div>
-        <Button
-          type="text"
-          size="small"
-          icon={<CloseOutlined />}
-          onClick={onClose}
-          style={{ marginTop: -2, marginRight: -6 }}
-        />
       </div>
 
       {/* Properties */}
       {properties.length > 0 && (
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid #f0f0f0' }}>
-          <div style={{ fontWeight: 600, color: '#888', fontSize: 11, marginBottom: 6 }}>
+        <div style={{ padding: '12px 14px', borderBottom: '1px solid #f5f5f5' }}>
+          <div style={{ fontWeight: 700, color: '#999', fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>
             属性
           </div>
-          {properties.map(([key, val]) => (
-            <div
-              key={key}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '3px 0',
-                gap: 8,
-              }}
-            >
-              <span style={{ color: '#888', flexShrink: 0 }}>{key}</span>
-              <span style={{ color: '#333', textAlign: 'right', wordBreak: 'break-all' }}>
-                {val}
-              </span>
-            </div>
-          ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {properties.map(([key, val]) => (
+              <div
+                key={key}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  background: '#fafafa',
+                  borderRadius: 5,
+                  padding: '4px 8px',
+                }}
+              >
+                <span style={{ color: '#888', flexShrink: 0, fontSize: 12 }}>{key}</span>
+                <span style={{ color: '#333', textAlign: 'right', wordBreak: 'break-all', fontSize: 12 }}>
+                  {val}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Connected nodes */}
       {connectedLinks.length > 0 && (
-        <div style={{ padding: '10px 14px' }}>
-          <div style={{ fontWeight: 600, color: '#888', fontSize: 11, marginBottom: 6 }}>
-            关联 ({connectedLinks.length})
+        <div style={{ padding: '12px 14px' }}>
+          <div
+            style={{
+              fontWeight: 700,
+              color: '#999',
+              fontSize: 11,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              marginBottom: 8,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <NodeIndexOutlined style={{ fontSize: 12 }} />
+            关联节点 ({connectedLinks.length})
           </div>
-          {connectedLinks.map((l, i) => {
-            const sid = resolveId(l.source)
-            const tid = resolveId(l.target)
-            const isOut = sid === node.id
-            const otherId = isOut ? tid : sid
-            const other = nodeById.get(otherId)
-            const relCfg = LINK_CONFIG[l.rel] || { color: '#666', label: l.rel }
-            const otherCfg = NODE_CONFIG[other?.type || ''] || { color: '#333' }
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {connectedLinks.map((l, i) => {
+              const sid = resolveId(l.source)
+              const tid = resolveId(l.target)
+              const isOut = sid === node.id
+              const otherId = isOut ? tid : sid
+              const other = nodeById.get(otherId)
+              const relCfg = LINK_CONFIG[l.rel] || { color: '#666', label: l.rel }
+              const otherCfg = NODE_CONFIG[other?.type || ''] || { color: '#555', label: other?.type || '' }
 
-            return (
-              <div
-                key={i}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  marginBottom: 4,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <span
+              return (
+                <div
+                  key={i}
                   style={{
-                    display: 'inline-block',
-                    padding: '1px 6px',
-                    borderRadius: 3,
-                    background: `${relCfg.color}20`,
-                    color: relCfg.color,
-                    fontSize: 11,
-                    border: `1px solid ${relCfg.color}40`,
-                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '5px 8px',
+                    borderRadius: 6,
+                    background: '#fafafa',
+                    border: '1px solid #f0f0f0',
                   }}
                 >
-                  {isOut ? '\u2192' : '\u2190'} {relCfg.label}
-                </span>
-                <span style={{ color: otherCfg.color, fontWeight: 500 }}>
-                  {other?.label || otherId}
-                </span>
-              </div>
-            )
-          })}
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: otherCfg.color,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span style={{ color: '#333', fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>
+                    {other?.label || otherId}
+                  </span>
+                  <span
+                    style={{
+                      padding: '1px 6px',
+                      borderRadius: 3,
+                      background: `${relCfg.color}15`,
+                      color: relCfg.color,
+                      fontSize: 10,
+                      border: `1px solid ${relCfg.color}30`,
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {isOut ? '→' : '←'} {relCfg.label}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
