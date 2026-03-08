@@ -13,7 +13,8 @@ from app.models import *  # noqa: F401, F403 - ensure all models are registered
 config = context.config
 
 # 使用 app.database 中动态构建的 DATABASE_URL，覆盖 alembic.ini 中的静态配置
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+# configparser 使用 % 做插值，需要将 URL 中的 % 转义为 %%
+config.set_main_option("sqlalchemy.url", DATABASE_URL.replace("%", "%%"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -55,6 +56,8 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
+
+    connectable.dispose()
 
 
 if context.is_offline_mode():

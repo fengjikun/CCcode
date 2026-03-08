@@ -22,6 +22,10 @@ from app.services import fault_knowledge_service
 
 logger = logging.getLogger(__name__)
 
+# Alembic migrations are no longer auto-run on startup.
+# To migrate the database schema, run manually:
+#   alembic upgrade head
+
 app = FastAPI(title="大族智控设备故障诊断系统", version="2.0.0")
 setup_request_logging_middleware(app)
 
@@ -47,15 +51,7 @@ app.include_router(agent.router, dependencies=_protected)
 
 
 @app.on_event("startup")
-def on_startup():
-    # Run Alembic migrations to ensure database schema is up to date
-    from alembic.config import Config
-    from alembic import command
-
-    alembic_cfg = Config(str(Path(__file__).resolve().parent.parent / "alembic.ini"))
-    command.upgrade(alembic_cfg, "head")
-    logger.info("数据库 schema 已升级至最新版本")
-
+async def on_startup():
     # Bootstrap an initial admin account when user table is empty.
     db = SessionLocal()
     try:

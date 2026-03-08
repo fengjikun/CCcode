@@ -1,4 +1,5 @@
 import os
+from urllib.parse import quote_plus
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
@@ -12,7 +13,7 @@ if DB_TYPE == "mysql":
     _user = os.getenv("DB_USER", "cccode")
     _password = os.getenv("DB_PASSWORD", "CCcode@2024")
     _name = os.getenv("DB_NAME", "cccode")
-    DATABASE_URL = f"mysql+pymysql://{_user}:{_password}@{_host}:{_port}/{_name}?charset=utf8mb4"
+    DATABASE_URL = f"mysql+pymysql://{quote_plus(_user)}:{quote_plus(_password)}@{_host}:{_port}/{_name}?charset=utf8mb4"
     engine = create_engine(
         DATABASE_URL,
         pool_size=10,
