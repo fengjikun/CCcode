@@ -16,8 +16,8 @@ services:
       AUTH_PASSWORD_HASH_ITERATIONS: ${AUTH_PASSWORD_HASH_ITERATIONS:-200000}
       AUTH_DEFAULT_USERNAME: ${AUTH_DEFAULT_USERNAME:-admin}
       AUTH_DEFAULT_PASSWORD: ${AUTH_DEFAULT_PASSWORD:-admin123456}
-      # 数据库配置：DB_TYPE=sqlite（默认）或 mysql
-      DB_TYPE: ${DB_TYPE:-sqlite}
+      # 数据库配置：仅支持 MySQL
+      DB_TYPE: mysql
       DB_HOST: ${DB_HOST:-cccode-mysql}
       DB_PORT: ${DB_PORT:-3306}
       DB_USER: ${DB_USER:-cccode}
@@ -29,13 +29,10 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-        required: false
 
   mysql:
     image: ${MYSQL_IMAGE:-mysql:8.0}
     container_name: cccode-mysql
-    profiles:
-      - mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-CCcode@root2024}

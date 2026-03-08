@@ -172,32 +172,30 @@ docker logs -f cccode-app
 
 ## 数据持久化
 
-SQLite 数据库通过 Volume 挂载到宿主机：
+MySQL 数据通过 Docker named volume `cccode-mysql-data` 持久化，项目资产通过 bind mount 挂载：
 
 | 宿主机路径 | 容器路径 | 内容 |
 |-----------|---------|------|
-| `./backend/data/` | `/app/backend/data/` | 数据库及相关文件 |
-| `./backend/data/devicedb.sqlite` | `/app/backend/data/devicedb.sqlite` | 主数据库文件 |
+| `./deploy/backend/data` | `/app/backend/data/` | 项目资产文件 |
+| Docker volume `cccode-mysql-data` | `/var/lib/mysql` | MySQL 数据 |
 
-> 停止/重建容器不会丢失数据。执行 `docker compose down -v` 才会清除数据卷。
+> 停止/重建容器不会丢失数据。执行 `docker compose down -v` 才会清除数据卷（包括 MySQL 数据）。
 
 **备份数据库**：
 ```bash
-cp backend/data/devicedb.sqlite backend/data/devicedb.sqlite.bak
+cd deploy/mysql && ./backup.sh
 ```
 
 **恢复数据库**：
 ```bash
-docker compose --env-file deploy/.env down
-cp backend/data/devicedb.sqlite.bak backend/data/devicedb.sqlite
-docker compose --env-file deploy/.env up -d
+cd deploy/mysql && ./restore.sh backup/cccode_<timestamp>.sql.gz
 ```
 
 ---
 
 ## 远端初始化导入（本地数据 -> 远端）
 
-当你本地已有最新 `agent` / 本体数据（含 `backend/data/devicedb.sqlite` 与 `project_assets`）时，可使用：
+当你本地已有最新 `agent` / 本体数据（含 `project_assets`）时，可使用：
 
 ```bash
 ./scripts/init_remote_data.sh \
@@ -266,7 +264,7 @@ ports:
 
 1. **修改默认密码和密钥**：`AUTH_SECRET_KEY`、`AUTH_DEFAULT_PASSWORD` 必须更换。
 2. **配置反向代理**：建议在容器前部署 Nginx/Caddy，处理 HTTPS 和域名绑定。
-3. **定期备份数据库**：`backend/data/devicedb.sqlite` 是唯一持久化存储。
+3. **定期备份数据库**：使用 `deploy/mysql/backup.sh` 定期备份 MySQL。
 4. **固定镜像版本**：生产镜像打 tag，避免 `latest` 导致的不可预期更新。
    ```bash
    docker tag cccode-app:latest cccode-app:v1.0.0
@@ -348,5 +346,4 @@ ontology_poc/
 │   └── start.sh            # 统一管理脚本
 └── backend/
     └── data/               # 持久化数据目录（Volume 挂载点）
-        └── devicedb.sqlite # SQLite 数据库
 ```

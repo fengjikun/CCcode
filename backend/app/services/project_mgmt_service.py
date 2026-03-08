@@ -3174,7 +3174,7 @@ def list_projects(db: Session, user_id: int):
     projects = (
         db.query(Project)
         .filter(Project.owner_user_id == user_id)
-        .order_by(desc(Project.updated_at))
+        .order_by(desc(Project.sort_order), desc(Project.updated_at))
         .all()
     )
 

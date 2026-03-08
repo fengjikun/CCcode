@@ -8,7 +8,7 @@
 |------|------|
 | 前端 | React 19 + TypeScript + Vite + Ant Design 6 |
 | 后端 | FastAPI + SQLAlchemy 2.0 |
-| 数据库 | SQLite |
+| 数据库 | MySQL 8.0 |
 | AI | OpenAI-Compatible Responses API |
 | 可视化 | D3.js v7 |
 
@@ -48,6 +48,13 @@ AUTH_SECRET_KEY=replace-with-a-strong-random-secret
 AUTH_TOKEN_EXPIRE_MINUTES=480
 AUTH_DEFAULT_USERNAME=admin
 AUTH_DEFAULT_PASSWORD=admin123456
+
+# MySQL 数据库配置
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=cccode
+DB_PASSWORD=CCcode@2024
+DB_NAME=cccode
 ```
 
 首次启动时如 `users` 表为空，会自动创建默认管理员账号（可通过上述环境变量覆盖）。
@@ -77,7 +84,7 @@ cp deploy/.env.example deploy/.env
 ./scripts/start.sh docker logs deploy/.env
 ```
 
-将本地最新数据导入远端部署（sqlite + 本体/项目资产）：
+将本地最新数据导入远端部署（本体/项目资产）：
 
 ```bash
 ./scripts/init_remote_data.sh --host <远端IP> --remote-dir <远端项目目录> --yes

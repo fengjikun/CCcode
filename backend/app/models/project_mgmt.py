@@ -14,6 +14,7 @@ class Project(Base):
     category = Column(String(32), nullable=True)
     description = Column(String(300))
     current_version_id = Column(String)
+    sort_order = Column(Integer, nullable=False, default=0, server_default="0")
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 

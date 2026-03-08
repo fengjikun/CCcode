@@ -42,13 +42,13 @@ npm run lint
 ```
 
 ### Environment
-Backend requires a `.env` file in `backend/` with `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL` for AI diagnosis features. Auth config: `AUTH_SECRET_KEY`, `AUTH_TOKEN_EXPIRE_MINUTES`, `AUTH_DEFAULT_USERNAME`, `AUTH_DEFAULT_PASSWORD`. Database is controlled by `DB_TYPE` env var: `sqlite` (default, at `./data/devicedb.sqlite`) or `mysql` (requires `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`). Schema auto-created on startup via Alembic migrations. MySQL deployment docs at `deploy/mysql/README.md`.
+Backend requires a `.env` file in `backend/` with `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL` for AI diagnosis features. Auth config: `AUTH_SECRET_KEY`, `AUTH_TOKEN_EXPIRE_MINUTES`, `AUTH_DEFAULT_USERNAME`, `AUTH_DEFAULT_PASSWORD`. Database is MySQL (requires `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`). Schema auto-created on startup via Alembic migrations. MySQL deployment docs at `deploy/mysql/README.md`.
 
 ## Architecture
 
 ### Backend (`backend/app/`)
 
-FastAPI with SQLAlchemy 2.0 ORM on SQLite. Layered as routers → services → models. Alembic manages DB migrations (auto-upgraded on startup).
+FastAPI with SQLAlchemy 2.0 ORM on MySQL. Layered as routers → services → models. Alembic manages DB migrations (auto-upgraded on startup).
 
 - **Routers** (`routers/`): 8 routers — `auth`, `diagnosis`, `ontology_schema`, `ontology_objects`, `ontology_actions`, `ontology_functions`, `projects`, `agent`. All under `/api/` prefix.
 - **Services** (`services/`): Business logic. `diagnosis_service.py` integrates OpenAI-compatible Responses API for AI-powered fault analysis. `agent_service.py` provides SSE streaming chat with skill orchestration. `project_mgmt_service.py` manages full project lifecycle with AI schema extraction. `fault_knowledge_service.py` loads the knowledge graph on startup.
@@ -103,7 +103,7 @@ Docker multi-stage build (Node 22 + Python 3.11), single container on port 9000.
 
 - UI language is Chinese (zh-CN)
 - API field naming: camelCase in JSON, snake_case in Python
-- Complex ontology data (validation rules, trigger configs) stored as JSON strings in SQLite TEXT columns
+- Complex ontology data (validation rules, trigger configs) stored as JSON strings in MySQL TEXT columns
 - Platform pages in `frontend/src/pages/platform/` currently use mock data; will be connected to real APIs incrementally
 - PRD reference: `docs/PRD_DeepexiOS平台.md`; HTML prototype: `docs/DeepexiOS原型.html`
 
