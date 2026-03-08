@@ -32,7 +32,7 @@ services:
         required: false
 
   mysql:
-    image: ${MYSQL_IMAGE:-docker.m.daocloud.io/mysql:8.0}
+    image: ${MYSQL_IMAGE:-mysql:8.0}
     container_name: cccode-mysql
     profiles:
       - mysql

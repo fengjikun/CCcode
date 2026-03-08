@@ -29,7 +29,8 @@ cp deploy/.env.example deploy/.env
 
 # 2. 编辑 deploy/.env，设置数据库配置
 DB_TYPE=mysql
-MYSQL_IMAGE=docker.m.daocloud.io/mysql:8.0
+# 可选：国内网络可改为镜像站
+# MYSQL_IMAGE=docker.m.daocloud.io/mysql:8.0
 DB_HOST=cccode-mysql
 DB_PORT=3306
 DB_USER=cccode
@@ -239,7 +240,7 @@ SQLite 备份文件位于 `backend/data/devicedb_*_pre_mysql.sqlite`，原数据
 | `DB_USER` | `cccode` | 数据库用户名 |
 | `DB_PASSWORD` | `CCcode@2024` | 数据库密码 |
 | `DB_NAME` | `cccode` | 数据库名 |
-| `MYSQL_IMAGE` | `docker.m.daocloud.io/mysql:8.0` | MySQL 容器镜像（国内网络建议使用镜像站） |
+| `MYSQL_IMAGE` | `mysql:8.0` | MySQL 容器镜像（默认 Docker Hub；国内网络可改为镜像站） |
 | `MYSQL_ROOT_PASSWORD` | `CCcode@root2024` | MySQL root 密码（仅 Docker 部署时使用） |
 | `MYSQL_PORT` | `3306` | MySQL 宿主机映射端口 |
 | `SQLITE_PATH` | `backend/data/devicedb.sqlite` | 升级脚本使用的 SQLite 文件路径 |
