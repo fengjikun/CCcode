@@ -14,6 +14,7 @@ import AgentLogsPage from './pages/platform/AgentLogsPage'
 import SkillsMarketPage from './pages/platform/SkillsMarketPage'
 
 // L3 Deepology 本体
+import OntologyOverviewPage from './pages/platform/OntologyOverviewPage'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectWorkspacePage from './pages/ProjectWorkspacePage'
 import ProjectGraphPage from './pages/ProjectGraphPage'
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="/coworker/skills" element={<SkillsMarketPage />} />
 
         {/* L3 Deepology 本体 */}
+        <Route path="/ontology/overview" element={<OntologyOverviewPage />} />
         <Route path="/ontology/projects" element={<ProjectsPage />} />
         <Route path="/ontology/projects/:projectId" element={<ProjectWorkspacePage />} />
         <Route path="/ontology/projects/:projectId/graph" element={<ProjectGraphPage />} />

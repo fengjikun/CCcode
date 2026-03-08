@@ -1,4 +1,4 @@
-import { Card, Col, Row, Statistic, Tag, Typography, Timeline } from 'antd'
+import { Card, Col, Row, Statistic, Table, Tag, Typography } from 'antd'
 import {
   DatabaseOutlined,
   SwapOutlined,
@@ -7,93 +7,104 @@ import {
   ExperimentOutlined,
   ApiOutlined,
   TeamOutlined,
+  ArrowRightOutlined,
 } from '@ant-design/icons'
+import type { ReactNode } from 'react'
 
 const { Title, Text } = Typography
 
-const pipelineLevels = [
-  { key: 'L1', label: '数据源接入', icon: <DatabaseOutlined />, color: '#52c41a', count: 3, status: '运行中' },
-  { key: 'L2', label: '数据转换', icon: <SwapOutlined />, color: '#faad14', count: 0, status: '待建设' },
-  { key: 'L3', label: '本体语义层', icon: <ApartmentOutlined />, color: '#1677ff', count: 5, status: '运行中' },
-  { key: 'L4', label: 'Co-worker平台', icon: <RobotOutlined />, color: '#722ed1', count: 2, status: '运行中' },
-  { key: 'L5', label: '模型训练', icon: <ExperimentOutlined />, color: '#faad14', count: 0, status: '待建设' },
-  { key: 'L6', label: '模型网关', icon: <ApiOutlined />, color: '#faad14', count: 0, status: '待建设' },
-  { key: 'L7', label: '数字员工应用', icon: <TeamOutlined />, color: '#13c2c2', count: 4, status: '运行中' },
+/* ───── L1→L7 pipeline stages ───── */
+interface Stage { key: string; label: string; icon: ReactNode; color: string }
+
+const stages: Stage[] = [
+  { key: 'L1', label: 'Datasource',      icon: <DatabaseOutlined />,   color: '#52c41a' },
+  { key: 'L2', label: 'Transform',        icon: <SwapOutlined />,       color: '#faad14' },
+  { key: 'L3', label: 'Ontology',         icon: <ApartmentOutlined />,  color: '#1677ff' },
+  { key: 'L4', label: 'Co-worker',        icon: <RobotOutlined />,      color: '#722ed1' },
+  { key: 'L5', label: 'Model Training',   icon: <ExperimentOutlined />, color: '#eb2f96' },
+  { key: 'L6', label: 'Model Gateway',    icon: <ApiOutlined />,        color: '#fa8c16' },
+  { key: 'L7', label: 'Workflow Apps',     icon: <TeamOutlined />,       color: '#13c2c2' },
 ]
 
-const recentActivities = [
-  { color: 'green' as const, children: '本体项目「电梯故障诊断」发布版本 v2.1' },
-  { color: 'blue' as const, children: '数字员工「设备故障诊断助手」完成 12 次对话' },
-  { color: 'blue' as const, children: '数据源「MySQL-生产库」同步成功，新增 1,234 条记录' },
-  { color: 'gray' as const, children: '智能体「BOM分析专家」更新 Skill 配置' },
-  { color: 'green' as const, children: '本体项目「供应链管理」Schema 洞察完成' },
+/* ───── Health table mock data ───── */
+const healthData = [
+  { key: '1', component: 'Data Ingestion Pipeline', status: 'Healthy',  uptime: '99.9%', lastCheck: '2 分钟前' },
+  { key: '2', component: 'Model Gateway',           status: 'Healthy',  uptime: '99.8%', lastCheck: '1 分钟前' },
+  { key: '3', component: 'Agent Runtime',            status: 'Degraded', uptime: '98.5%', lastCheck: '5 分钟前' },
+  { key: '4', component: 'Ontology Service',         status: 'Healthy',  uptime: '99.9%', lastCheck: '1 分钟前' },
+]
+
+const healthColumns = [
+  { title: '组件', dataIndex: 'component', key: 'component' },
+  {
+    title: '状态',
+    dataIndex: 'status',
+    key: 'status',
+    render: (v: string) => (
+      <Tag color={v === 'Healthy' ? 'green' : 'orange'}>{v === 'Healthy' ? '健康' : '降级'}</Tag>
+    ),
+  },
+  { title: '可用率', dataIndex: 'uptime', key: 'uptime' },
+  { title: '最近检查', dataIndex: 'lastCheck', key: 'lastCheck' },
 ]
 
 export default function DashboardPage() {
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-      <Title level={4} style={{ marginBottom: 20 }}>流水线全景</Title>
+      {/* ── Pipeline flow ── */}
+      <Card style={{ marginBottom: 16 }}>
+        <Title level={4} style={{ marginBottom: 4 }}>Pipeline Overview</Title>
+        <Text type="secondary">端到端数据流水线：从数据源接入到智能体部署</Text>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        {pipelineLevels.map((p) => (
-          <Col xs={12} sm={8} md={6} lg={3} key={p.key}>
-            <Card size="small" hoverable style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 24, color: p.color, marginBottom: 4 }}>{p.icon}</div>
-              <Statistic
-                title={<span style={{ fontSize: 12 }}>{p.key} {p.label}</span>}
-                value={p.count}
-                suffix="项"
-                valueStyle={{ fontSize: 20 }}
-              />
-              <Tag
-                color={p.status === '运行中' ? 'green' : 'default'}
-                style={{ marginTop: 4 }}
-              >
-                {p.status}
-              </Tag>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          overflowX: 'auto',
+          padding: '24px 0 8px',
+        }}>
+          {stages.map((s, i) => (
+            <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{
+                minWidth: 130,
+                background: `linear-gradient(135deg, ${s.color}dd, ${s.color}88)`,
+                color: '#fff',
+                padding: '18px 14px',
+                borderRadius: 8,
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 4 }}>{s.key}</div>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>{s.label}</div>
+              </div>
+              {i < stages.length - 1 && (
+                <ArrowRightOutlined style={{ fontSize: 18, color: '#bbb', flexShrink: 0 }} />
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
 
-      <Row gutter={16}>
-        <Col xs={24} lg={14}>
-          <Card title="平台健康度" size="small">
-            <Row gutter={16}>
-              <Col span={8}>
-                <Statistic title="活跃项目" value={5} suffix="个" />
-              </Col>
-              <Col span={8}>
-                <Statistic title="今日 Agent 调用" value={47} suffix="次" />
-              </Col>
-              <Col span={8}>
-                <Statistic title="本体实体总量" value={1283} />
-              </Col>
-            </Row>
-            <Row gutter={16} style={{ marginTop: 16 }}>
-              <Col span={8}>
-                <Statistic title="已注册 Skills" value={8} suffix="个" />
-              </Col>
-              <Col span={8}>
-                <Statistic title="数字员工" value={4} suffix="个" />
-              </Col>
-              <Col span={8}>
-                <Statistic title="模型服务" value={1} suffix="个" />
-              </Col>
-            </Row>
-          </Card>
+      {/* ── Stat cards ── */}
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col span={8}>
+          <Card><Statistic title="活跃项目" value={47} /></Card>
         </Col>
-        <Col xs={24} lg={10}>
-          <Card title="最近活动" size="small">
-            <Timeline items={recentActivities} style={{ marginTop: 12 }} />
-          </Card>
+        <Col span={8}>
+          <Card><Statistic title="已部署 Agent" value={12} /></Card>
+        </Col>
+        <Col span={8}>
+          <Card><Statistic title="已注册模型" value={23} /></Card>
         </Col>
       </Row>
 
-      <Card size="small" style={{ marginTop: 16, textAlign: 'center' }}>
-        <Text type="secondary">
-          DeepexiOS v2.0 — Intelligent Business Operating Platform
-        </Text>
+      {/* ── Health monitoring table ── */}
+      <Card title="平台健康度监控">
+        <Table
+          dataSource={healthData}
+          columns={healthColumns}
+          pagination={false}
+          size="middle"
+        />
       </Card>
     </div>
   )

@@ -1,22 +1,32 @@
-import { ToolOutlined } from '@ant-design/icons'
-import PlaceholderPage from './PlaceholderPage'
+import { Card, Col, Row, Typography } from 'antd'
+
+const { Title, Text, Paragraph } = Typography
+
+const workers = [
+  { icon: '🏗️', title: '本体建模助手', desc: '智能本体设计与验证' },
+  { icon: '📊', title: '数据质量巡检员', desc: '自动化数据质量检查与异常检测' },
+  { icon: '🔗', title: '知识图谱维护员', desc: '实体冲突发现、关系缺失检测' },
+  { icon: '📝', title: 'Schema 迁移助手', desc: '本体升级迁移脚本自动生成' },
+]
 
 export default function DICWorkerPage() {
   return (
-    <PlaceholderPage
-      icon={<ToolOutlined />}
-      title="DIC 数字员工空间"
-      subtitle="DIC Worker Space — 内部工具型数字员工"
-      pipelineLevel="L7 数字员工应用"
-      description="面向数据工程和平台运维的内部数字员工。包括本体建模助手、数据质量巡检员、知识图谱维护员等，帮助平台团队提升工作效率。"
-      features={[
-        { title: '本体建模助手', desc: 'AI 辅助本体设计，自动推荐实体类型、关系和属性', priority: 'P0' },
-        { title: '数据质量巡检', desc: '自动巡检数据源质量，生成异常报告和修复建议', priority: 'P1' },
-        { title: '知识图谱维护', desc: '自动发现实体冲突、关系缺失，辅助图谱优化', priority: 'P1' },
-        { title: 'Schema 迁移助手', desc: '本体版本升级时自动生成迁移脚本和影响分析', priority: 'P2' },
-        { title: '文档生成', desc: '从本体定义自动生成技术文档和 API 说明', priority: 'P2' },
-        { title: '运维监控', desc: '平台健康度巡检、资源使用告警、性能优化建议', priority: 'P2' },
-      ]}
-    />
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <Card style={{ marginBottom: 16 }}>
+        <Title level={4} style={{ marginBottom: 4 }}>DIC 数字员工空间</Title>
+        <Text type="secondary">面向数据工程和平台运维的内部数字员工</Text>
+
+        <Row gutter={[16, 16]} style={{ marginTop: 20 }}>
+          {workers.map((w, i) => (
+            <Col span={12} key={i}>
+              <Card hoverable size="small" style={{ height: '100%' }}>
+                <Title level={5}>{w.icon} {w.title}</Title>
+                <Paragraph type="secondary" style={{ marginBottom: 0 }}>{w.desc}</Paragraph>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      </Card>
+    </div>
   )
 }

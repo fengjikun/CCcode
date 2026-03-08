@@ -1,22 +1,47 @@
-import { ApiOutlined } from '@ant-design/icons'
-import PlaceholderPage from './PlaceholderPage'
+import { Card, Col, Row, Statistic, Table, Tag, Typography } from 'antd'
+
+const { Title, Text } = Typography
+
+const registryData = [
+  { key: '1', name: 'purchase-order-classifier', version: 'v2.1.0', stage: 'Production', accuracy: '95.3%', framework: 'PyTorch' },
+  { key: '2', name: 'equipment-fault-predictor',  version: 'v1.8.2', stage: 'Production', accuracy: '92.7%', framework: 'TensorFlow' },
+  { key: '3', name: 'demand-forecaster',          version: 'v3.0.1', stage: 'Staging',    accuracy: '88.4%', framework: 'scikit-learn' },
+  { key: '4', name: 'sentiment-analyzer',         version: 'v1.2.0', stage: 'Production', accuracy: '91.2%', framework: 'Transformers' },
+]
+
+const stageColor: Record<string, string> = { Production: 'green', Staging: 'orange', Archived: 'default' }
+
+const columns = [
+  { title: '模型名称', dataIndex: 'name', key: 'name', render: (v: string) => <Text strong>{v}</Text> },
+  { title: '版本', dataIndex: 'version', key: 'version' },
+  {
+    title: '阶段',
+    dataIndex: 'stage',
+    key: 'stage',
+    render: (v: string) => <Tag color={stageColor[v] || 'default'}>{v}</Tag>,
+  },
+  { title: '准确率', dataIndex: 'accuracy', key: 'accuracy' },
+  { title: '框架', dataIndex: 'framework', key: 'framework' },
+]
 
 export default function ModelGatewayPage() {
   return (
-    <PlaceholderPage
-      icon={<ApiOutlined />}
-      title="模型网关"
-      subtitle="Model Gateway — 统一推理入口、路由与监控"
-      pipelineLevel="L6 模型网关"
-      description="模型能力的统一发布入口。屏蔽底层模型实现差异（自训练模型、第三方 LLM、微调模型），向上层 Agent 和 Workflow 提供统一的调用接口。"
-      features={[
-        { title: '统一 API 接口', desc: '标准化 REST 推理接口，屏蔽底层模型实现差异', priority: 'P0' },
-        { title: '智能路由', desc: '按模型名+版本路由，支持灰度发布、A/B 测试', priority: 'P0' },
-        { title: '限流熔断', desc: '按租户/用户/API Key 请求速率限制，防级联失败', priority: 'P0' },
-        { title: 'Token 用量追踪', desc: '每次调用记录 Token 消耗，按用户/项目统计费用', priority: 'P0' },
-        { title: '语义缓存', desc: '相似请求命中缓存，减少重复 LLM 调用成本', priority: 'P1' },
-        { title: '内容安全', desc: '输入/输出内容过滤：PII 脱敏、有害内容拦截', priority: 'P0' },
-      ]}
-    />
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <Card style={{ marginBottom: 16 }}>
+        <Title level={4} style={{ marginBottom: 4 }}>模型网关</Title>
+        <Text type="secondary">统一推理入口、路由与监控</Text>
+
+        <Row gutter={16} style={{ margin: '20px 0' }}>
+          <Col span={6}><Card size="small"><Statistic title="已部署模型" value={23} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="日请求量" value={'156K'} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="平均延迟" value={'45ms'} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="可用率" value={'99.8%'} /></Card></Col>
+        </Row>
+      </Card>
+
+      <Card title="Model Registry">
+        <Table dataSource={registryData} columns={columns} pagination={false} size="middle" />
+      </Card>
+    </div>
   )
 }

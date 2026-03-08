@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepexiOS v2.0 - Intelligent Business Operating Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 100px);
+        }
+
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #e1e8ed;
+            overflow-y: auto;
+            padding: 1rem 0;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-item:hover {
+            background: #f8f9fa;
+        }
+
+        .nav-item.active {
+            background: #f0f4ff;
+            border-left-color: #667eea;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        .card h3 {
+            font-size: 1.2rem;
+            margin: 1.5rem 0 0.75rem;
+            color: #34495e;
+        }
+
+        .pipeline-flow {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            overflow-x: auto;
+            padding: 1.5rem 0;
+        }
+
+        .pipeline-stage {
+            min-width: 180px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            position: relative;
+        }
+
+        .pipeline-stage h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+
+        .pipeline-stage p {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .pipeline-arrow {
+            font-size: 1.5rem;
+            color: #667eea;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .badge.primary {
+            background: #cfe2ff;
+            color: #084298;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h4 {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card p {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .tree-view {
+            margin-left: 1.5rem;
+        }
+
+        .tree-item {
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .tree-item:hover {
+            background: #f8f9fa;
+        }
+
+        .tree-item.folder::before {
+            content: '📁 ';
+        }
+
+        .tree-item.file::before {
+            content: '📄 ';
+        }
+
+        .ontology-graph {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #ddd;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #6c757d;
+        }
+
+        .agent-config {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 1rem 0;
+        }
+
+        .log-entry {
+            padding: 0.75rem;
+            border-left: 3px solid #667eea;
+            background: #f8f9fa;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .metric-item .value {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .metric-item .label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid #e1e8ed;
+            }
+
+            .container {
+                flex-direction: column;
+            }
+
+            .grid-2, .grid-3, .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pipeline-flow {
+                flex-direction: column;
+            }
+
+            .pipeline-arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 DeepexiOS v2.0</h1>
+        <p>Intelligent Business Operating Platform - Eight-Level Pipeline Architecture</p>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="nav-item active" data-page="overview">
+                <span class="nav-icon">📊</span>
+                <span>Overview</span>
+            </div>
+            <div class="nav-item" data-page="workflow">
+                <span class="nav-icon">💼</span>
+                <span>Digital Worker Apps</span>
+            </div>
+            <div class="nav-item" data-page="coworker">
+                <span class="nav-icon">🤖</span>
+                <span>Co-worker Platform</span>
+            </div>
+            <div class="nav-item" data-page="ontology">
+                <span class="nav-icon">🔗</span>
+                <span>Deepology</span>
+            </div>
+            <div class="nav-item" data-page="transform">
+                <span class="nav-icon">⚙️</span>
+                <span>Data Transform</span>
+            </div>
+            <div class="nav-item" data-page="model-lab">
+                <span class="nav-icon">🧪</span>
+                <span>Model Lab</span>
+            </div>
+            <div class="nav-item" data-page="datasource">
+                <span class="nav-icon">💾</span>
+                <span>Data Sources</span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Overview Page -->
+            <div class="page active" id="overview">
+                <div class="card">
+                    <h2>Pipeline Overview</h2>
+                    <p>End-to-end data flow from source ingestion to intelligent agent deployment</p>
+                    
+                    <div class="pipeline-flow">
+                        <div class="pipeline-stage">
+                            <h4>L1</h4>
+                            <p>Datasource</p>
+                        </div>
+                        <div class="pipeline-arrow">→</div>
+                        <div class="pipeline-stage">
+                            <h4>L2</h4>
+                            <p>Transform</p>
+                        </div>
+                        <div class="pipeline-arrow">→</div>
+                        <div class="pipeline-stage">
+                            <h4>L3</h4>
+                            <p>Ontology</p>
+                        </div>
+                        <div class="pipeline-arrow">→</div>
+                        <div class="pipeline-stage">
+                            <h4>L4</h4>
+                            <p>Co-worker</p>
+                        </div>
+                        <div class="pipeline-arrow">→</div>
+                        <div class="pipeline-stage">
+                            <h4>L5</h4>
+                            <p>Model Training</p>
+                        </div>
+                        <div class="pipeline-arrow">→</div>
+                        <div class="pipeline-stage">
+                            <h4>L6</h4>
+                            <p>Model Gateway</p>
+                        </div>
+                        <div class="pipeline-arrow">→</div>
+                        <div class="pipeline-stage">
+                            <h4>L7</h4>
+                            <p>Workflow Apps</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-3">
+                    <div class="stat-card">
+                        <h4>Active Projects</h4>
+                        <p>47</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Deployed Agents</h4>
+                        <p>12</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Registered Models</h4>
+                        <p>23</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Platform Health Monitoring</h2>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Component</th>
+                                <th>Status</th>
+                                <th>Uptime</th>
+                                <th>Last Check</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Data Ingestion Pipeline</td>
+                                <td><span class="badge success">Healthy</span></td>
+                                <td>99.9%</td>
+                                <td>2 minutes ago</td>
+                            </tr>
+                            <tr>
+                                <td>Model Gateway</td>
+                                <td><span class="badge success">Healthy</span></td>
+                                <td>99.8%</td>
+                                <td>1 minute ago</td>
+                            </tr>
+                            <tr>
+                                <td>Agent Runtime</td>
+                                <td><span class="badge warning">Degraded</span></td>
+                                <td>98.5%</td>
+                                <td>5 minutes ago</td>
+                            </tr>
+                            <tr>
+                                <td>Ontology Service</td>
+                                <td><span class="badge success">Healthy</span></td>
+                                <td>99.9%</td>
+                                <td>1 minute ago</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Workflow Page -->
+            <div class="page" id="workflow">
+                <div class="card">
+                    <h2>Digital Worker Applications</h2>
+                    <p>Business automation applications powered by AI agents</p>
+
+                    <h3>Business Digital Workers</h3>
+                    <div class="grid-2">
+                        <div class="card">
+                            <h4>🔧 Equipment Fault Diagnosis Assistant</h4>
+                            <p>Automated equipment diagnostics and repair recommendations</p>
+                            <button class="btn btn-primary" onclick="openModal('equipmentModal')">Open Application</button>
+                        </div>
+                        <div class="card">
+                            <h4>📦 Inventory Replenishment Assistant</h4>
+                            <p>Smart inventory management and automated reordering</p>
+                            <button class="btn btn-primary" onclick="openModal('inventoryModal')">Open Application</button>
+                        </div>
+                    </div>
+
+                    <h3>DIC Digital Worker Space</h3>
+                    <div class="grid-2">
+                        <div class="card">
+                            <h4>🏗️ Ontology Modeling Assistant</h4>
+                            <p>Intelligent ontology design and validation</p>
+                            <button class="btn btn-primary">Launch Studio</button>
+                        </div>
+                        <div class="card">
+                            <h4>📊 Data Quality Monitor</h4>
+                            <p>Automated data quality checks and anomaly detection</p>
+                            <button class="btn btn-primary">View Dashboard</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Application Events Stream</h2>
+                    <div class="log-entry">
+                        <strong>2025-03-08 14:32:15</strong> - Equipment Assistant processed fault report #FT-8921
+                    </div>
+                    <div class="log-entry">
+                        <strong>2025-03-08 14:28:43</strong> - Inventory Assistant created purchase order #PO-4567
+                    </div>
+                    <div class="log-entry">
+                        <strong>2025-03-08 14:15:22</strong> - Ontology Assistant validated 12 new object types
+                    </div>
+                </div>
+            </div>
+
+            <!-- Co-worker Platform Page -->
+            <div class="page" id="coworker">
+                <div class="card">
+                    <h2>Co-worker Platform</h2>
+                    <p>Develop, orchestrate, and manage AI agents</p>
+
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                        <button class="btn btn-primary" onclick="openModal('createAgentModal')">+ Create Agent</button>
+                        <button class="btn btn-secondary">Import Agent</button>
+                    </div>
+
+                    <h3>Agent Space</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Agent Name</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Version</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Equipment Diagnostics Agent</td>
+                                <td><span class="badge primary">Operational</span></td>
+                                <td><span class="badge success">Active</span></td>
+                                <td>v2.3.1</td>
+                                <td>
+                                    <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="openModal('agentDetailsModal')">Configure</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Inventory Manager Agent</td>
+                                <td><span class="badge primary">Operational</span></td>
+                                <td><span class="badge success">Active</span></td>
+                                <td>v1.8.2</td>
+                                <td>
+                                    <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">Configure</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Customer Service Agent</td>
+                                <td><span class="badge info">Support</span></td>
+                                <td><span class="badge warning">Testing</span></td>
+                                <td>v0.9.5</td>
+                                <td>
+                                    <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">Configure</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Skills Space</h3>
+                    <div class="grid-2">
+                        <div class="card">
+                            <h4>Registered Actions</h4>
+                            <p style="font-size: 2rem; font-weight: 600; color: #667eea;">34</p>
+                            <p style="color: #6c757d;">Ontology actions available to agents</p>
+                        </div>
+                        <div class="card">
+                            <h4>Registered Functions</h4>
+                            <p style="font-size: 2rem; font-weight: 600; color: #667eea;">28</p>
+                            <p style="color: #6c757d;">TypeScript functions for complex logic</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Agent Execution Logs</h2>
+                    <div class="log-entry">
+                        <strong>[Equipment Agent]</strong> 2025-03-08 14:32:15 - Analyzed sensor data for device #DV-8921
+                    </div>
+                    <div class="log-entry">
+                        <strong>[Equipment Agent]</strong> 2025-03-08 14:32:18 - Invoked diagnostic function checkMotorHealth()
+                    </div>
+                    <div class="log-entry">
+                        <strong>[Equipment Agent]</strong> 2025-03-08 14:32:22 - Executed action: CreateMaintenanceTicket
+                    </div>
+                    <div class="log-entry">
+                        <strong>[Inventory Agent]</strong> 2025-03-08 14:28:43 - Detected low stock for SKU #12345
+                    </div>
+                    <div class="log-entry">
+                        <strong>[Inventory Agent]</strong> 2025-03-08 14:28:45 - Executed action: CreatePurchaseOrder
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ontology Page -->
+            <div class="page" id="ontology">
+                <div class="card">
+                    <h2>Deepology - Ontology Management</h2>
+                    <p>Define and manage the semantic layer of your business</p>
+
+                    <h3>Ontology Overview</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <div class="value">156</div>
+                            <div class="label">Object Types</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="value">423</div>
+                            <div class="label">Properties</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="value">89</div>
+                            <div class="label">Link Types</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="value">67</div>
+                            <div class="label">Actions</div>
+                        </div>
+                    </div>
+
+                    <h3>Object Type Definitions</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Object Type</th>
+                                <th>Properties</th>
+                                <th>Actions</th>
+                                <th>Backing Dataset</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>PurchaseOrder</strong></td>
+                                <td>12</td>
+                                <td>5</td>
+                                <td>transform_orders/output/normalized_orders</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Equipment</strong></td>
+                                <td>18</td>
+                                <td>8</td>
+                                <td>transform_assets/output/equipment_master</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Customer</strong></td>
+                                <td>15</td>
+                                <td>4</td>
+                                <td>transform_crm/output/customer_360</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Inventory</strong></td>
+                                <td>10</td>
+                                <td>6</td>
+                                <td>transform_inventory/output/stock_levels</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Action Definitions</h3>
+                    <div class="code-block">
+// Example: ApprovePurchaseOrder Action
+{
+  "name": "ApprovePurchaseOrder",
+  "objectType": "PurchaseOrder",
+  "parameters": {
+    "orderId": "string",
+    "approver": "string",
+    "comments": "string"
+  },
+  "preconditions": [
+    "status == 'Pending'",
+    "totalAmount < approver.approvalLimit"
+  ],
+  "effects": [
+    "status = 'Approved'",
+    "approvedBy = approver",
+    "approvalDate = now()"
+  ],
+  "function": "notifySupplier(orderId)"
+}
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Ontology Graph Visualization</h2>
+                    <div class="ontology-graph">
+                        <div style="text-align: center;">
+                            <p style="font-size: 1.2rem; color: #6c757d; margin-bottom: 1rem;">🔗 Ontology Entity-Relationship Diagram</p>
+                            <p style="color: #999;">Interactive graph visualization of objects, properties, and relationships</p>
+                            <p style="color: #999; margin-top: 0.5rem; font-size: 0.9rem;">[Visual representation would include nodes for PurchaseOrder, Equipment, Customer, Inventory with connecting edges showing relationships]</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transform Page -->
+            <div class="page" id="transform">
+                <div class="card">
+                    <h2>Data Transform Projects</h2>
+                    <p>Transform and normalize data from multiple sources</p>
+
+                    <button class="btn btn-primary" style="margin-bottom: 1.5rem;">+ New Transform Project</button>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Input Sources</th>
+                                <th>Output Datasets</th>
+                                <th>Last Run</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>transform_orders</strong></td>
+                                <td>3</td>
+                                <td>2</td>
+                                <td>5 minutes ago</td>
+                                <td><span class="badge success">Success</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>transform_assets</strong></td>
+                                <td>2</td>
+                                <td>3</td>
+                                <td>15 minutes ago</td>
+                                <td><span class="badge success">Success</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>transform_crm</strong></td>
+                                <td>4</td>
+                                <td>2</td>
+                                <td>1 hour ago</td>
+                                <td><span class="badge success">Success</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>transform_inventory</strong></td>
+                                <td>2</td>
+                                <td>1</td>
+                                <td>2 hours ago</td>
+                                <td><span class="badge warning">Running</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h2>Transform Pipeline Example</h2>
+                    <h3>Project: transform_orders</h3>
+                    
+                    <div class="tree-view">
+                        <div class="tree-item folder">📁 transform_orders/</div>
+                        <div class="tree-view">
+                            <div class="tree-item folder">📁 logic/</div>
+                            <div class="tree-view">
+                                <div class="tree-item file">📄 normalize_orders.py</div>
+                                <div class="tree-item file">📄 join_customer_data.py</div>
+                            </div>
+                            <div class="tree-item folder">📁 datasets/</div>
+                            <div class="tree-view">
+                                <div class="tree-item folder">📁 transformed/</div>
+                                <div class="tree-item folder">📁 output/</div>
+                                <div class="tree-view">
+                                    <div class="tree-item file">📄 normalized_orders</div>
+                                </div>
+                            </div>
+                            <div class="tree-item folder">📁 documentation/</div>
+                        </div>
+                    </div>
+
+                    <div class="code-block" style="margin-top: 1.5rem;">
+# normalize_orders.py
+from transforms import Pipeline
+
+@Pipeline.transform()
+def normalize_orders(raw_orders, customer_master):
+    return (
+        raw_orders
+        .join(customer_master, on='customer_id')
+        .select([
+            'order_id',
+            'customer_name',
+            'order_date',
+            'total_amount',
+            'status'
+        ])
+        .filter(lambda row: row['status'] != 'Cancelled')
+    )
+                    </div>
+                </div>
+            </div>
+
+            <!-- Model Lab Page -->
+            <div class="page" id="model-lab">
+                <div class="card">
+                    <h2>Model Lab</h2>
+                    <p>Train, evaluate, and deploy machine learning models</p>
+
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                        <button class="btn btn-primary" onclick="openModal('trainingModal')">+ New Training Project</button>
+                        <button class="btn btn-secondary">Model Registry</button>
+                    </div>
+
+                    <h3>Model Gateway</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <div class="value">23</div>
+                            <div class="label">Deployed Models</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="value">156K</div>
+                            <div class="label">Requests/Day</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="value">45ms</div>
+                            <div class="label">Avg Latency</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="value">99.8%</div>
+                            <div class="label">Uptime</div>
+                        </div>
+                    </div>
+
+                    <h3>Model Registry</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Model Name</th>
+                                <th>Version</th>
+                                <th>Stage</th>
+                                <th>Accuracy</th>
+                                <th>Framework</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>purchase-order-classifier</strong></td>
+                                <td>v2.1.0</td>
+                                <td><span class="badge success">Production</span></td>
+                                <td>95.3%</td>
+                                <td>PyTorch</td>
+                            </tr>
+                            <tr>
+                                <td><strong>equipment-fault-predictor</strong></td>
+                                <td>v1.8.2</td>
+                                <td><span class="badge success">Production</span></td>
+                                <td>92.7%</td>
+                                <td>TensorFlow</td>
+                            </tr>
+                            <tr>
+                                <td><strong>demand-forecaster</strong></td>
+                                <td>v3.0.1</td>
+                                <td><span class="badge warning">Staging</span></td>
+                                <td>88.4%</td>
+                                <td>scikit-learn</td>
+                            </tr>
+                            <tr>
+                                <td><strong>sentiment-analyzer</strong></td>
+                                <td>v1.2.0</td>
+                                <td><span class="badge success">Production</span></td>
+                                <td>91.2%</td>
+                                <td>Transformers</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h2>Model Training Projects</h2>
+                    <div class="tree-view">
+                        <div class="tree-item folder">📁 training_purchase_classifier/</div>
+                        <div class="tree-view">
+                            <div class="tree-item folder">📁 data/</div>
+                            <div class="tree-item folder">📁 notebooks/</div>
+                            <div class="tree-item folder">📁 pipelines/</div>
+                            <div class="tree-item folder">📁 experiments/</div>
+                            <div class="tree-item folder">📁 models/</div>
+                            <div class="tree-item folder">📁 evaluation/</div>
+                        </div>
+                    </div>
+
+                    <h3>Training Pipeline Configuration</h3>
+                    <div class="code-block">
+# training_config.yaml
+model_name: purchase-order-classifier
+version: v2.1.0
+framework: PyTorch
+
+data:
+  source: ontology://PurchaseOrder/output
+  train_split: 0.7
+  test_split: 0.15
+  val_split: 0.15
+
+hyperparameters:
+  learning_rate: 0.001
+  batch_size: 32
+  epochs: 50
+  optimizer: Adam
+
+resources:
+  gpu_type: V100
+  memory: 16GB
+  
+deployment:
+  stage: Production
+  endpoint: /api/v1/models/purchase-classifier
+  max_throughput: 1000 req/s
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datasource Page -->
+            <div class="page" id="datasource">
+                <div class="card">
+                    <h2>Data Source Projects</h2>
+                    <p>Connect and synchronize data from external systems</p>
+
+                    <button class="btn btn-primary" style="margin-bottom: 1.5rem;">+ Add Data Source</button>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Source Name</th>
+                                <th>Type</th>
+                                <th>Sync Frequency</th>
+                                <th>Last Sync</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>ds_sap_orders</strong></td>
+                                <td>SAP ERP</td>
+                                <td>Every 15 min</td>
+                                <td>3 minutes ago</td>
+                                <td><span class="badge success">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>ds_salesforce_crm</strong></td>
+                                <td>Salesforce</td>
+                                <td>Hourly</td>
+                                <td>45 minutes ago</td>
+                                <td><span class="badge success">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>ds_iot_sensors</strong></td>
+                                <td>IoT Platform</td>
+                                <td>Real-time</td>
+                                <td>Live</td>
+                                <td><span class="badge success">Streaming</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>ds_warehouse_db</strong></td>
+                                <td>PostgreSQL</td>
+                                <td>Daily</td>
+                                <td>6 hours ago</td>
+                                <td><span class="badge success">Active</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h2>Datasource Project Structure</h2>
+                    <h3>Example: ds_sap_orders</h3>
+                    
+                    <div class="tree-view">
+                        <div class="tree-item folder">📁 ds_sap_orders/</div>
+                        <div class="tree-view">
+                            <div class="tree-item folder">📁 raw/</div>
+                            <div class="tree-view">
+                                <div class="tree-item file">📄 orders_2025_03_08.parquet</div>
+                            </div>
+                            <div class="tree-item folder">📁 clean/</div>
+                            <div class="tree-view">
+                                <div class="tree-item file">📄 cleaned_orders</div>
+                            </div>
+                            <div class="tree-item folder">📁 output/</div>
+                            <div class="tree-view">
+                                <div class="tree-item file">📄 standardized_orders</div>
+                            </div>
+                            <div class="tree-item folder">📁 analysis/</div>
+                            <div class="tree-item folder">📁 documentation/</div>
+                        </div>
+                    </div>
+
+                    <div class="code-block" style="margin-top: 1.5rem;">
+# Data Source Configuration
+{
+  "name": "ds_sap_orders",
+  "type": "SAP_ERP",
+  "connection": {
+    "host": "sap.company.com",
+    "port": 3300,
+    "database": "PRD",
+    "auth_method": "oauth2"
+  },
+  "sync": {
+    "frequency": "*/15 * * * *",
+    "incremental_key": "modified_date",
+    "batch_size": 1000
+  },
+  "schema": {
+    "order_id": "string",
+    "customer_id": "string",
+    "order_date": "timestamp",
+    "total_amount": "decimal",
+    "status": "string"
+  }
+}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="createAgentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Agent</h2>
+                <span class="modal-close" onclick="closeModal('createAgentModal')">&times;</span>
+            </div>
+            <form onsubmit="event.preventDefault(); closeModal('createAgentModal'); alert('Agent created successfully!');">
+                <div class="form-group">
+                    <label>Agent Name</label>
+                    <input type="text" placeholder="e.g., Customer Support Agent" required>
+                </div>
+                <div class="form-group">
+                    <label>Agent Type</label>
+                    <select required>
+                        <option value="">Select type...</option>
+                        <option>Operational</option>
+                        <option>Support</option>
+                        <option>Analytical</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>System Prompt</label>
+                    <textarea placeholder="You are a helpful assistant that..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Select Tools</label>
+                    <div style="margin-top: 0.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem;">
+                            <input type="checkbox"> Query Purchase Orders
+                        </label>
+                        <label style="display: block; margin-bottom: 0.5rem;">
+                            <input type="checkbox"> Create Maintenance Ticket
+                        </label>
+                        <label style="display: block; margin-bottom: 0.5rem;">
+                            <input type="checkbox"> Send Notification
+                        </label>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary">Create Agent</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createAgentModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="agentDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Equipment Diagnostics Agent</h2>
+                <span class="modal-close" onclick="closeModal('agentDetailsModal')">&times;</span>
+            </div>
+            <div class="agent-config">
+                <h3>Configuration</h3>
+                <p><strong>Version:</strong> v2.3.1</p>
+                <p><strong>Status:</strong> Active (Production)</p>
+                <p><strong>Model:</strong> gpt-4-turbo via Model Gateway</p>
+            </div>
+            <div class="agent-config">
+                <h3>System Prompt</h3>
+                <p>You are an expert equipment diagnostics assistant. Analyze sensor data, identify potential failures, and recommend maintenance actions. Always prioritize safety and equipment longevity.</p>
+            </div>
+            <div class="agent-config">
+                <h3>Registered Tools</h3>
+                <ul style="margin-left: 1.5rem;">
+                    <li>Query Equipment Object (Ontology)</li>
+                    <li>Check Sensor History (Function)</li>
+                    <li>Create Maintenance Ticket (Action)</li>
+                    <li>Notify Maintenance Team (Function)</li>
+                </ul>
+            </div>
+            <button class="btn btn-secondary" onclick="closeModal('agentDetailsModal')">Close</button>
+        </div>
+    </div>
+
+    <div id="trainingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Model Training Project</h2>
+                <span class="modal-close" onclick="closeModal('trainingModal')">&times;</span>
+            </div>
+            <form onsubmit="event.preventDefault(); closeModal('trainingModal'); alert('Training project created!');">
+                <div class="form-group">
+                    <label>Project Name</label>
+                    <input type="text" placeholder="e.g., training_churn_predictor" required>
+                </div>
+                <div class="form-group">
+                    <label>Data Source</label>
+                    <select required>
+                        <option value="">Select ontology object...</option>
+                        <option>ontology://Customer/output</option>
+                        <option>ontology://PurchaseOrder/output</option>
+                        <option>ontology://Equipment/output</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Framework</label>
+                    <select required>
+                        <option value="">Select framework...</option>
+                        <option>PyTorch</option>
+                        <option>TensorFlow</option>
+                        <option>scikit-learn</option>
+                        <option>Transformers (HuggingFace)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>GPU Resources</label>
+                    <select required>
+                        <option>V100 - 16GB</option>
+                        <option>A100 - 40GB</option>
+                        <option>CPU Only</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary">Create Project</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('trainingModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="equipmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Equipment Fault Diagnosis Assistant</h2>
+                <span class="modal-close" onclick="closeModal('equipmentModal')">&times;</span>
+            </div>
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                <p><strong>🤖 Agent:</strong> Equipment Diagnostics Agent v2.3.1</p>
+                <p style="margin-top: 0.5rem; color: #6c757d;">Ask me about equipment health, sensor readings, or maintenance recommendations.</p>
+            </div>
+            <div style="border: 1px solid #ddd; border-radius: 6px; padding: 1rem; min-height: 300px; background: white; margin-bottom: 1rem;">
+                <div style="margin-bottom: 1rem; padding: 0.75rem; background: #e3f2fd; border-radius: 6px;">
+                    <strong>You:</strong> Check status of motor #DV-8921
+                </div>
+                <div style="margin-bottom: 1rem; padding: 0.75rem; background: #f1f3f5; border-radius: 6px;">
+                    <strong>🤖 Agent:</strong> I've analyzed motor #DV-8921. The vibration sensor shows abnormal readings (3.2mm/s, threshold: 2.5mm/s). Temperature is elevated at 78°C. I recommend scheduling preventive maintenance within 48 hours. Shall I create a maintenance ticket?
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="text" placeholder="Type your message..." style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px;">
+                <button class="btn btn-primary">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="inventoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Inventory Replenishment Assistant</h2>
+                <span class="modal-close" onclick="closeModal('inventoryModal')">&times;</span>
+            </div>
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                <p><strong>🤖 Agent:</strong> Inventory Manager Agent v1.8.2</p>
+                <p style="margin-top: 0.5rem; color: #6c757d;">I monitor stock levels and automate reordering based on demand forecasts.</p>
+            </div>
+            <div style="border: 1px solid #ddd; border-radius: 6px; padding: 1rem; min-height: 300px; background: white; margin-bottom: 1rem;">
+                <div style="margin-bottom: 1rem; padding: 0.75rem; background: #fff3cd; border-radius: 6px;">
+                    <strong>🤖 System Alert:</strong> Low stock detected for SKU #12345 (Current: 45 units, Threshold: 100)
+                </div>
+                <div style="margin-bottom: 1rem; padding: 0.75rem; background: #f1f3f5; border-radius: 6px;">
+                    <strong>🤖 Agent:</strong> Based on 30-day demand forecast (avg 25 units/day), I recommend ordering 500 units from Supplier #S-7891. Lead time: 5 days. Estimated delivery: March 13. Shall I create the purchase order?
+                </div>
+                <div style="margin-bottom: 1rem; padding: 0.75rem; background: #e3f2fd; border-radius: 6px;">
+                    <strong>You:</strong> Yes, proceed with the order
+                </div>
+                <div style="margin-bottom: 1rem; padding: 0.75rem; background: #d4edda; border-radius: 6px;">
+                    <strong>🤖 Agent:</strong> ✓ Purchase Order #PO-4567 created successfully. Order value: $12,450. Awaiting approval from procurement team.
+                </div>
+            </div>
+            <button class="btn btn-secondary" onclick="closeModal('inventoryModal')">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                
+                this.classList.add('active');
+                const pageId = this.getAttribute('data-page');
+                document.getElementById(pageId).classList.add('active');
+            });
+        });
+
+        // Modal Functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Close modal on outside click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
+        // Simulated real-time updates
+        setInterval(() => {
+            const statCards = document.querySelectorAll('.stat-card p');
+            if (statCards.length > 0) {
+                statCards[0].textContent = Math.floor(Math.random() * 10) + 45;
+            }
+        }, 5000);
+
+        // Initialize
+        console.log('DeepexiOS v2.0 Platform Initialized');
+    </script>
+</body>
+</html>

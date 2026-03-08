@@ -1,22 +1,54 @@
-import { AppstoreOutlined } from '@ant-design/icons'
-import PlaceholderPage from './PlaceholderPage'
+import { Card, Col, Row, Statistic, Table, Tag, Typography } from 'antd'
+
+const { Title, Text } = Typography
+
+const mockSkills = [
+  { key: '1', name: 'ApprovePurchaseOrder',  type: 'Action',   objectType: 'PurchaseOrder', calls: 1245, status: 'Active' },
+  { key: '2', name: 'CreateMaintenanceTicket', type: 'Action', objectType: 'Equipment',     calls: 876,  status: 'Active' },
+  { key: '3', name: 'checkMotorHealth',       type: 'Function', objectType: 'Equipment',     calls: 2341, status: 'Active' },
+  { key: '4', name: 'notifySupplier',         type: 'Function', objectType: 'PurchaseOrder', calls: 534,  status: 'Active' },
+  { key: '5', name: 'sendOrderToSAP',         type: 'Function', objectType: 'PurchaseOrder', calls: 421,  status: 'Active' },
+  { key: '6', name: 'QueryEquipmentStatus',   type: 'Query',    objectType: 'Equipment',     calls: 3102, status: 'Active' },
+  { key: '7', name: 'forecastDemand',         type: 'Function', objectType: 'Inventory',     calls: 189,  status: 'Testing' },
+  { key: '8', name: 'detectAnomaly',          type: 'Function', objectType: 'Equipment',     calls: 756,  status: 'Active' },
+]
+
+const typeColor: Record<string, string> = { Action: 'blue', Function: 'green', Query: 'purple' }
+
+const columns = [
+  { title: 'Skill 名称', dataIndex: 'name', key: 'name', render: (v: string) => <Text strong>{v}</Text> },
+  {
+    title: '类型',
+    dataIndex: 'type',
+    key: 'type',
+    render: (v: string) => <Tag color={typeColor[v] || 'default'}>{v}</Tag>,
+  },
+  { title: '关联 Object Type', dataIndex: 'objectType', key: 'objectType' },
+  { title: '调用次数', dataIndex: 'calls', key: 'calls', sorter: (a: any, b: any) => a.calls - b.calls },
+  {
+    title: '状态',
+    dataIndex: 'status',
+    key: 'status',
+    render: (v: string) => <Tag color={v === 'Active' ? 'green' : 'orange'}>{v}</Tag>,
+  },
+]
 
 export default function SkillsMarketPage() {
   return (
-    <PlaceholderPage
-      icon={<AppstoreOutlined />}
-      title="Skills 广场"
-      subtitle="Skills Market — Action/Function/Skill 注册与管理"
-      pipelineLevel="L4 Co-worker平台"
-      description="统一管理平台所有可复用能力。将 Ontology Action、Function 和自定义 Skill 注册为标准化工具，供 Agent 和工作流调用。支持发布、搜索、评分和版本管理。"
-      features={[
-        { title: 'Action 注册', desc: '将本体 Action 注册为标准工具，配置参数映射和权限', priority: 'P0' },
-        { title: 'Function 注册', desc: '将 Python/Groovy 函数注册为可调用工具', priority: 'P0' },
-        { title: 'Skill 包管理', desc: '上传、审核、版本管理自定义 Skill 包（ZIP）', priority: 'P0' },
-        { title: 'Skills 广场', desc: '统一搜索、浏览、评分所有已注册 Skill', priority: 'P1' },
-        { title: '分类与标签', desc: '按业务域、能力类型、适用场景分类管理', priority: 'P1' },
-        { title: '调用统计', desc: '每个 Skill 的调用频次、成功率和用户反馈', priority: 'P2' },
-      ]}
-    />
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <Card style={{ marginBottom: 16 }}>
+        <Title level={4} style={{ marginBottom: 4 }}>Skills 广场</Title>
+        <Text type="secondary">Action / Function / Query 统一注册与管理</Text>
+
+        <Row gutter={16} style={{ margin: '20px 0' }}>
+          <Col span={6}><Card size="small"><Statistic title="Actions" value={34} valueStyle={{ color: '#1677ff' }} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="Functions" value={28} valueStyle={{ color: '#52c41a' }} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="Queries" value={15} valueStyle={{ color: '#722ed1' }} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="总调用量" value={'9.5K'} valueStyle={{ color: '#fa8c16' }} /></Card></Col>
+        </Row>
+
+        <Table dataSource={mockSkills} columns={columns} pagination={false} size="middle" />
+      </Card>
+    </div>
   )
 }

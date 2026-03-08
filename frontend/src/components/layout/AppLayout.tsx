@@ -54,6 +54,7 @@ const menuItems: MenuItem[] = [
     icon: <ApartmentOutlined />,
     label: 'Deepology',
     children: [
+      { key: '/ontology/overview', label: '本体概览' },
       { key: '/ontology/projects', label: '本体管理' },
       { key: '/ontology/graph', icon: <SearchOutlined />, label: '图谱检索' },
     ],
@@ -88,6 +89,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/coworker/agents': '智能体编排',
   '/coworker/agents/logs': '智能体日志',
   '/coworker/skills': 'Skills 广场',
+  '/ontology/overview': '本体概览',
   '/ontology/projects': '本体管理',
   '/ontology/graph': '图谱检索',
   '/transform': '数据转换',
