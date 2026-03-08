@@ -21,8 +21,8 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.create_table(
         "pm_extraction_runs",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("project_id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("project_id", sa.String(length=255), nullable=False),
         sa.Column("status", sa.String(length=32), nullable=False),
         sa.Column("progress", sa.Integer(), nullable=False),
         sa.Column("source_snapshot_json", sa.Text(), nullable=True),
@@ -50,9 +50,9 @@ def upgrade() -> None:
 
     op.create_table(
         "pm_review_items",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("project_id", sa.String(), nullable=False),
-        sa.Column("run_id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("project_id", sa.String(length=255), nullable=False),
+        sa.Column("run_id", sa.String(length=255), nullable=False),
         sa.Column("kind", sa.String(length=16), nullable=False),
         sa.Column("title", sa.Text(), nullable=False),
         sa.Column("evidence", sa.Text(), nullable=False),
@@ -83,13 +83,13 @@ def upgrade() -> None:
 
     op.create_table(
         "pm_ontology_versions",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("project_id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("project_id", sa.String(length=255), nullable=False),
         sa.Column("version_no", sa.Integer(), nullable=False),
         sa.Column("version", sa.String(length=16), nullable=False),
         sa.Column("label", sa.String(length=128), nullable=False),
         sa.Column("notes", sa.Text(), nullable=True),
-        sa.Column("source_run_id", sa.String(), nullable=False),
+        sa.Column("source_run_id", sa.String(length=255), nullable=False),
         sa.Column("entity_count", sa.Integer(), nullable=False),
         sa.Column("relation_count", sa.Integer(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=True),
@@ -105,10 +105,10 @@ def upgrade() -> None:
 
     op.create_table(
         "pm_version_items",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("project_id", sa.String(), nullable=False),
-        sa.Column("version_id", sa.String(), nullable=False),
-        sa.Column("run_item_id", sa.String(), nullable=True),
+        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("project_id", sa.String(length=255), nullable=False),
+        sa.Column("version_id", sa.String(length=255), nullable=False),
+        sa.Column("run_item_id", sa.String(length=255), nullable=True),
         sa.Column("kind", sa.String(length=16), nullable=False),
         sa.Column("title", sa.Text(), nullable=False),
         sa.Column("evidence", sa.Text(), nullable=False),
@@ -126,8 +126,8 @@ def upgrade() -> None:
 
     op.create_table(
         "pm_project_actions",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("project_id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("project_id", sa.String(length=255), nullable=False),
         sa.Column("name", sa.String(length=128), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("status", sa.String(length=16), nullable=False),
@@ -144,8 +144,8 @@ def upgrade() -> None:
 
     op.create_table(
         "pm_project_functions",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("project_id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("project_id", sa.String(length=255), nullable=False),
         sa.Column("name", sa.String(length=128), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("script_content", sa.Text(), nullable=False),

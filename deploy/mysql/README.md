@@ -19,6 +19,9 @@ deploy/mysql/
 ## 快速启动
 
 ```bash
+# 先在 .env 中设置镜像（国内网络建议）
+# MYSQL_IMAGE=docker.m.daocloud.io/mysql:8.0
+
 # 独立启动 MySQL
 docker compose -f docker-compose.mysql.yml --env-file .env up -d
 

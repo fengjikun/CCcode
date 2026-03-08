@@ -21,11 +21,11 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.create_table(
         "pm_projects",
-        sa.Column("id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(length=255), nullable=False),
         sa.Column("owner_user_id", sa.Integer(), nullable=False),
         sa.Column("name", sa.String(length=64), nullable=False),
         sa.Column("description", sa.String(length=300), nullable=True),
-        sa.Column("current_version_id", sa.String(), nullable=True),
+        sa.Column("current_version_id", sa.String(length=255), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=True),
         sa.Column("updated_at", sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
@@ -40,8 +40,8 @@ def upgrade() -> None:
 
     op.create_table(
         "pm_project_documents",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("project_id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("project_id", sa.String(length=255), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("file_type", sa.String(length=16), nullable=False),
         sa.Column("size_bytes", sa.Integer(), nullable=False),
@@ -62,8 +62,8 @@ def upgrade() -> None:
 
     op.create_table(
         "pm_project_data_sources",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("project_id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("project_id", sa.String(length=255), nullable=False),
         sa.Column("name", sa.String(length=128), nullable=False),
         sa.Column("type", sa.String(length=32), nullable=False),
         sa.Column("host", sa.String(length=255), nullable=False),

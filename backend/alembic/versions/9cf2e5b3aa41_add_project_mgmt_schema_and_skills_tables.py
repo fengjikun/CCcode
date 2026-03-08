@@ -21,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.create_table(
         "pm_schema_configs",
-        sa.Column("project_id", sa.String(), nullable=False),
+        sa.Column("project_id", sa.String(length=255), nullable=False),
         sa.Column("entity_scope", sa.Text(), nullable=True),
         sa.Column("relation_scope", sa.Text(), nullable=True),
         sa.Column("updated_at", sa.DateTime(), nullable=True),
@@ -30,8 +30,8 @@ def upgrade() -> None:
 
     op.create_table(
         "pm_entity_types",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("project_id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("project_id", sa.String(length=255), nullable=False),
         sa.Column("name", sa.String(length=64), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=True),
@@ -42,11 +42,11 @@ def upgrade() -> None:
 
     op.create_table(
         "pm_relation_types",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("project_id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("project_id", sa.String(length=255), nullable=False),
         sa.Column("name", sa.String(length=64), nullable=False),
-        sa.Column("domain_entity_type_id", sa.String(), nullable=False),
-        sa.Column("range_entity_type_id", sa.String(), nullable=False),
+        sa.Column("domain_entity_type_id", sa.String(length=255), nullable=False),
+        sa.Column("range_entity_type_id", sa.String(length=255), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=True),
         sa.Column("updated_at", sa.DateTime(), nullable=True),
@@ -62,10 +62,10 @@ def upgrade() -> None:
 
     op.create_table(
         "pm_schema_properties",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("project_id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("project_id", sa.String(length=255), nullable=False),
         sa.Column("owner_kind", sa.String(length=16), nullable=False),
-        sa.Column("owner_id", sa.String(), nullable=False),
+        sa.Column("owner_id", sa.String(length=255), nullable=False),
         sa.Column("name", sa.String(length=64), nullable=False),
         sa.Column("display_name", sa.String(length=64), nullable=False),
         sa.Column("data_type", sa.String(length=16), nullable=False),
@@ -93,8 +93,8 @@ def upgrade() -> None:
 
     op.create_table(
         "pm_skills",
-        sa.Column("id", sa.String(), nullable=False),
-        sa.Column("project_id", sa.String(), nullable=False),
+        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("project_id", sa.String(length=255), nullable=False),
         sa.Column("code", sa.String(length=32), nullable=False),
         sa.Column("name", sa.String(length=128), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),

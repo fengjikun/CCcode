@@ -27,6 +27,7 @@ sys.path.insert(0, str(_backend_dir))
 os.chdir(_backend_dir)
 
 from sqlalchemy import create_engine, inspect, text, MetaData
+from sqlalchemy.engine import URL
 from sqlalchemy.orm import Session
 
 
@@ -135,7 +136,15 @@ def main():
     db_user = os.getenv("DB_USER", "cccode")
     db_password = os.getenv("DB_PASSWORD", "CCcode@2024")
     db_name = os.getenv("DB_NAME", "cccode")
-    mysql_url = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}?charset=utf8mb4"
+    mysql_url = URL.create(
+        "mysql+pymysql",
+        username=db_user,
+        password=db_password,
+        host=db_host,
+        port=int(db_port),
+        database=db_name,
+        query={"charset": "utf8mb4"},
+    ).render_as_string(hide_password=False)
     mysql_engine = create_engine(mysql_url, pool_pre_ping=True)
 
     # ─── 反射 SQLite 表结构 ─────────────────────────────────────────────

@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mysql:8.0
+    image: ${MYSQL_IMAGE:-docker.m.daocloud.io/mysql:8.0}
     container_name: cccode-mysql
     restart: unless-stopped
     environment:

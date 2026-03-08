@@ -58,6 +58,15 @@ done
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BACKEND_DIR="$PROJECT_ROOT/backend"
 
+# ─── 选择 Python 解释器（优先 python，其次 python3）────────────────────────
+if command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+else
+    fail "未找到 python/python3，请先安装 Python 3.10+"
+fi
+
 # ─── 加载环境变量 ───────────────────────────────────────────────────────────
 if [ -n "$ENV_FILE" ]; then
     if [ ! -f "$ENV_FILE" ]; then
@@ -76,7 +85,18 @@ DB_PORT="${DB_PORT:-3306}"
 DB_USER="${DB_USER:-cccode}"
 DB_PASSWORD="${DB_PASSWORD:-CCcode@2024}"
 DB_NAME="${DB_NAME:-cccode}"
+MYSQL_PORT="${MYSQL_PORT:-3306}"
 SQLITE_PATH="${SQLITE_PATH:-$BACKEND_DIR/data/devicedb.sqlite}"
+if [[ "$SQLITE_PATH" != /* ]]; then
+    SQLITE_PATH="$PROJECT_ROOT/$SQLITE_PATH"
+fi
+
+# 当脚本在宿主机执行且 DB_HOST 是容器名时，自动回落到 localhost:MYSQL_PORT。
+if [ "$DB_HOST" = "cccode-mysql" ] && ! getent hosts "$DB_HOST" >/dev/null 2>&1; then
+    DB_HOST="127.0.0.1"
+    DB_PORT="$MYSQL_PORT"
+    info "检测到宿主机执行环境，自动使用 MySQL 映射端口: ${DB_HOST}:${DB_PORT}"
+fi
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
@@ -96,11 +116,11 @@ ok "SQLite 文件存在 ($(du -h "$SQLITE_PATH" | cut -f1))"
 
 # 检查 Python 依赖
 cd "$BACKEND_DIR"
-python -c "import pymysql" 2>/dev/null || fail "缺少 pymysql 依赖，请先执行: pip install -r requirements.txt"
+"$PYTHON_BIN" -c "import pymysql" 2>/dev/null || fail "缺少 pymysql 依赖，请先执行: pip install -r requirements.txt"
 ok "Python 依赖已就绪"
 
 # 检查 MySQL 连通性
-python -c "
+"$PYTHON_BIN" -c "
 import pymysql
 try:
     conn = pymysql.connect(host='${DB_HOST}', port=${DB_PORT}, user='${DB_USER}', password='${DB_PASSWORD}', database='${DB_NAME}', charset='utf8mb4')
@@ -137,7 +157,7 @@ ok "SQLite 已备份: $BACKUP_PATH"
 # ─── Step 2: Alembic migration on MySQL ─────────────────────────────────────
 info "在 MySQL 上执行 Alembic migration ..."
 DB_TYPE=mysql DB_HOST="$DB_HOST" DB_PORT="$DB_PORT" DB_USER="$DB_USER" DB_PASSWORD="$DB_PASSWORD" DB_NAME="$DB_NAME" \
-    python -c "
+    "$PYTHON_BIN" -c "
 from alembic.config import Config
 from alembic import command
 from pathlib import Path
@@ -152,11 +172,15 @@ ok "MySQL 表结构已创建"
 info "开始迁移数据 ..."
 
 DB_TYPE=mysql DB_HOST="$DB_HOST" DB_PORT="$DB_PORT" DB_USER="$DB_USER" DB_PASSWORD="$DB_PASSWORD" DB_NAME="$DB_NAME" \
-    python "$PROJECT_ROOT/scripts/migrate_sqlite_to_mysql.py" \
+    "$PYTHON_BIN" "$PROJECT_ROOT/scripts/migrate_sqlite_to_mysql.py" \
         --sqlite-path "$SQLITE_PATH"
 
 # ─── Step 4: 更新 .env ─────────────────────────────────────────────────────
-ENV_TARGET="$BACKEND_DIR/.env"
+if [ -n "$ENV_FILE" ]; then
+    ENV_TARGET="$ENV_FILE"
+else
+    ENV_TARGET="$BACKEND_DIR/.env"
+fi
 if [ -f "$ENV_TARGET" ]; then
     # 更新 DB_TYPE
     if grep -q "^DB_TYPE=" "$ENV_TARGET"; then
