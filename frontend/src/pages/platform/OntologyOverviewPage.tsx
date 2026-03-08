@@ -1,68 +1,176 @@
-import { Card, Col, Row, Statistic, Table, Typography } from 'antd'
+import { useEffect, useState } from 'react'
+import { Card, Col, Row, Statistic, Table, Tag, Typography, Tabs, Space, Input } from 'antd'
 import {
   AppstoreOutlined,
   TagsOutlined,
   BranchesOutlined,
   ThunderboltOutlined,
+  DatabaseOutlined,
+  SearchOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons'
+import { getOntologyStats, getObjectTypes, getLinkTypes, getActions } from '../../api/ontologyOverview'
+import type { ObjectTypeSummary, ActionDefinition } from '../../types/ontologyOverview'
 
 const { Title, Text } = Typography
 
-const objectTypes = [
-  { key: '1', name: 'PurchaseOrder', properties: 12, actions: 5, backingDataset: 'transform_orders/output/normalized_orders' },
-  { key: '2', name: 'Equipment',     properties: 18, actions: 8, backingDataset: 'transform_assets/output/equipment_master' },
-  { key: '3', name: 'Customer',      properties: 15, actions: 4, backingDataset: 'transform_crm/output/customer_360' },
-  { key: '4', name: 'Inventory',     properties: 10, actions: 6, backingDataset: 'transform_inventory/output/stock_levels' },
-]
-
-const columns = [
-  { title: 'Object Type', dataIndex: 'name', key: 'name', render: (v: string) => <Text strong>{v}</Text> },
-  { title: 'Properties', dataIndex: 'properties', key: 'properties' },
-  { title: 'Actions', dataIndex: 'actions', key: 'actions' },
-  { title: 'Backing Dataset', dataIndex: 'backingDataset', key: 'backingDataset', render: (v: string) => <Text code style={{ fontSize: 12 }}>{v}</Text> },
-]
-
-const actionJson = `// Example: ApprovePurchaseOrder Action
-{
-  "name": "ApprovePurchaseOrder",
-  "objectType": "PurchaseOrder",
-  "parameters": {
-    "orderId": "string",
-    "approver": "string",
-    "comments": "string"
-  },
-  "preconditions": [
-    "status == 'Pending'",
-    "totalAmount < approver.approvalLimit"
-  ],
-  "effects": [
-    "status = 'Approved'",
-    "approvedBy = approver",
-    "approvalDate = now()"
-  ],
-  "function": "notifySupplier(orderId)"
-}`
-
-const statItems = [
-  { title: 'Object Types', value: 156, icon: <AppstoreOutlined />, cls: 'stat-primary' },
-  { title: 'Properties', value: 423, icon: <TagsOutlined />, cls: 'stat-info' },
-  { title: 'Link Types', value: 89, icon: <BranchesOutlined />, cls: 'stat-purple' },
-  { title: 'Actions', value: 67, icon: <ThunderboltOutlined />, cls: 'stat-warning' },
-]
+const STATUS_COLORS: Record<string, string> = { Active: 'green', Draft: 'orange', Deprecated: 'default' }
 
 export default function OntologyOverviewPage() {
+  const [stats, setStats] = useState(() => getOntologyStats())
+  const [objectTypes, setObjectTypes] = useState(() => getObjectTypes())
+  const [linkTypes, setLinkTypes] = useState(() => getLinkTypes())
+  const [actions, setActions] = useState(() => getActions())
+  const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    setStats(getOntologyStats())
+    setObjectTypes(getObjectTypes())
+    setLinkTypes(getLinkTypes())
+    setActions(getActions())
+  }, [])
+
+  const searchLower = search.toLowerCase()
+
+  const filteredObjects = objectTypes.filter(o =>
+    !search || o.name.toLowerCase().includes(searchLower) || o.displayName.includes(search)
+  )
+
+  const filteredLinks = linkTypes.filter(l =>
+    !search || l.name.toLowerCase().includes(searchLower)
+    || l.sourceType.toLowerCase().includes(searchLower)
+    || l.targetType.toLowerCase().includes(searchLower)
+  )
+
+  const filteredActions = actions.filter(a =>
+    !search || a.name.toLowerCase().includes(searchLower)
+    || a.objectType.toLowerCase().includes(searchLower)
+  )
+
+  const statItems = [
+    { title: 'Object Types', value: stats.objectTypes, icon: <AppstoreOutlined />, cls: 'stat-primary' },
+    { title: 'Properties', value: stats.totalProperties, icon: <TagsOutlined />, cls: 'stat-info' },
+    { title: 'Link Types', value: stats.linkTypes, icon: <BranchesOutlined />, cls: 'stat-purple' },
+    { title: 'Actions', value: stats.actions, icon: <ThunderboltOutlined />, cls: 'stat-warning' },
+    { title: '总记录数', value: stats.totalRecords, icon: <DatabaseOutlined />, cls: 'stat-success' },
+    { title: '已启用 Actions', value: stats.activeActions, icon: <CheckCircleOutlined />, cls: 'stat-primary' },
+  ]
+
+  /* Object Type 列 */
+  const objectColumns = [
+    {
+      title: 'Object Type',
+      key: 'name',
+      render: (_: unknown, r: ObjectTypeSummary) => (
+        <div>
+          <Text strong>{r.name}</Text>
+          <br />
+          <Text type="secondary" style={{ fontSize: 11 }}>{r.displayName}</Text>
+        </div>
+      ),
+    },
+    { title: 'Properties', dataIndex: 'properties', key: 'properties', width: 90 },
+    { title: 'Actions', dataIndex: 'actions', key: 'actions', width: 80 },
+    { title: 'Links', dataIndex: 'links', key: 'links', width: 70 },
+    {
+      title: '记录数',
+      dataIndex: 'recordCount',
+      key: 'recordCount',
+      width: 100,
+      sorter: (a: ObjectTypeSummary, b: ObjectTypeSummary) => a.recordCount - b.recordCount,
+      render: (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v,
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 90,
+      filters: [
+        { text: 'Active', value: 'Active' },
+        { text: 'Draft', value: 'Draft' },
+      ],
+      onFilter: (value: unknown, record: ObjectTypeSummary) => record.status === value,
+      render: (v: string) => (
+        <span>
+          <span className={`status-dot ${v === 'Active' ? 'active' : 'warning'}`} />
+          <Tag color={STATUS_COLORS[v]}>{v}</Tag>
+        </span>
+      ),
+    },
+    {
+      title: 'Backing Dataset',
+      dataIndex: 'backingDataset',
+      key: 'backingDataset',
+      render: (v: string) => <Text code style={{ fontSize: 11 }}>{v}</Text>,
+    },
+    { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 100 },
+  ]
+
+  /* Link Type 列 */
+  const linkColumns = [
+    { title: 'Link Name', dataIndex: 'name', key: 'name', render: (v: string) => <Text strong>{v}</Text> },
+    { title: 'Source', dataIndex: 'sourceType', key: 'sourceType', render: (v: string) => <Tag>{v}</Tag> },
+    { title: 'Target', dataIndex: 'targetType', key: 'targetType', render: (v: string) => <Tag>{v}</Tag> },
+    { title: '基数', dataIndex: 'cardinality', key: 'cardinality', width: 80, render: (v: string) => <Tag color="blue">{v}</Tag> },
+    { title: '说明', dataIndex: 'description', key: 'description' },
+  ]
+
+  /* Action 列 */
+  const actionColumns = [
+    { title: 'Action Name', dataIndex: 'name', key: 'name', render: (v: string) => <Text strong>{v}</Text> },
+    { title: 'Object Type', dataIndex: 'objectType', key: 'objectType', render: (v: string) => <Tag>{v}</Tag> },
+    { title: '参数数', dataIndex: 'parameters', key: 'parameters', width: 80 },
+    { title: '前置条件', dataIndex: 'preconditions', key: 'preconditions', width: 80 },
+    { title: '效果数', dataIndex: 'effects', key: 'effects', width: 80 },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 90,
+      render: (v: string) => <Tag color={STATUS_COLORS[v]}>{v}</Tag>,
+    },
+    {
+      title: '调用次数',
+      dataIndex: 'callCount',
+      key: 'callCount',
+      width: 90,
+      sorter: (a: ActionDefinition, b: ActionDefinition) => a.callCount - b.callCount,
+      render: (v: number) => v > 0 ? v.toLocaleString() : <Text type="secondary">—</Text>,
+    },
+  ]
+
+  const tabItems = [
+    {
+      key: 'objects',
+      label: <span><AppstoreOutlined /> Object Types ({filteredObjects.length})</span>,
+      children: (
+        <Table dataSource={filteredObjects} columns={objectColumns} pagination={false} size="small" rowKey="key" />
+      ),
+    },
+    {
+      key: 'links',
+      label: <span><BranchesOutlined /> Link Types ({filteredLinks.length})</span>,
+      children: <Table dataSource={filteredLinks} columns={linkColumns} pagination={false} size="small" rowKey="key" />,
+    },
+    {
+      key: 'actions',
+      label: <span><ThunderboltOutlined /> Actions ({filteredActions.length})</span>,
+      children: <Table dataSource={filteredActions} columns={actionColumns} pagination={false} size="small" rowKey="key" />,
+    },
+  ]
+
   return (
     <div className="page-container">
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>Deepology — 本体管理</Title>
-          <Text type="secondary">定义和管理企业业务语义层，构建领域知识图谱</Text>
+          <Text type="secondary">L3 语义层 — 定义和管理企业业务语义层，构建领域知识图谱</Text>
         </div>
 
-        <Title level={5} style={{ marginTop: 20 }}>本体概览</Title>
-        <Row gutter={16} style={{ marginBottom: 24 }}>
+        {/* 统计 */}
+        <Row gutter={[12, 12]} style={{ margin: '16px 0 20px' }}>
           {statItems.map((s) => (
-            <Col span={6} key={s.title}>
+            <Col span={4} key={s.title}>
               <Card size="small" className={`stat-card card-hover ${s.cls}`} style={{ textAlign: 'center' }}>
                 <Statistic
                   title={s.title}
@@ -74,14 +182,41 @@ export default function OntologyOverviewPage() {
           ))}
         </Row>
 
-        <Title level={5}>Object Type Definitions</Title>
-        <Table dataSource={objectTypes} columns={columns} pagination={false} size="middle" />
+        {/* 关系速览 */}
+        <Card size="small" style={{ background: '#f6f8fa', marginBottom: 20, borderColor: '#e1e4e8' }} styles={{ body: { padding: '12px 16px' } }}>
+          <Space align="start">
+            <BranchesOutlined style={{ fontSize: 20, color: '#4f46e5', marginTop: 2 }} />
+            <div>
+              <Text strong>本体关系概览</Text>
+              <div style={{ marginTop: 4 }}>
+                {linkTypes.slice(0, 4).map(l => (
+                  <Tag key={l.key} style={{ marginBottom: 4 }}>
+                    {l.sourceType} <span style={{ color: '#8c8c8c' }}>→</span> {l.targetType}
+                    <Text type="secondary" style={{ fontSize: 10, marginLeft: 4 }}>({l.cardinality})</Text>
+                  </Tag>
+                ))}
+                {linkTypes.length > 4 && <Tag>+{linkTypes.length - 4} more</Tag>}
+              </div>
+            </div>
+          </Space>
+        </Card>
+
+        {/* 搜索 + Tab 表格 */}
+        <div style={{ marginBottom: 12 }}>
+          <Input
+            placeholder="搜索名称"
+            prefix={<SearchOutlined />}
+            allowClear
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ width: 280 }}
+            size="small"
+          />
+        </div>
+        <Tabs items={tabItems} />
       </Card>
 
-      <Card className="section-card" title="Action Definitions">
-        <pre className="code-block">{actionJson}</pre>
-      </Card>
-
+      {/* 图谱可视化占位 */}
       <Card className="section-card">
         <Title level={5}>Ontology Graph Visualization</Title>
         <div className="placeholder-box">
@@ -90,7 +225,7 @@ export default function OntologyOverviewPage() {
           <Text type="secondary">交互式图谱可视化：对象、属性与关系</Text>
           <br />
           <Text type="secondary" style={{ fontSize: 12 }}>
-            [PurchaseOrder, Equipment, Customer, Inventory 等节点及其关系连线]
+            [{objectTypes.map(o => o.name).join(', ')} 等 {objectTypes.length} 个节点及其关系连线]
           </Text>
         </div>
       </Card>

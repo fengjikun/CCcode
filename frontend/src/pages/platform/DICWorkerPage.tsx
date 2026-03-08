@@ -1,34 +1,190 @@
-import { Card, Col, Row, Typography } from 'antd'
+import { useEffect, useState } from 'react'
+import {
+  Badge,
+  Card,
+  Col,
+  Modal,
+  Row,
+  Select,
+  Space,
+  Statistic,
+  Tag,
+  Typography,
+} from 'antd'
+import {
+  TeamOutlined,
+  CheckCircleOutlined,
+  SyncOutlined,
+  DashboardOutlined,
+  ThunderboltOutlined,
+  ClockCircleOutlined,
+  ToolOutlined,
+  PercentageOutlined,
+} from '@ant-design/icons'
+import { listDICWorkers, getDICStats } from '../../api/dicWorker'
+import type { DICWorker } from '../../types/dicWorker'
+import { DIC_STATUS_COLORS, DIC_CATEGORY_LABELS, DIC_CATEGORY_COLORS } from '../../types/dicWorker'
 
 const { Title, Text, Paragraph } = Typography
 
-const workers = [
-  { icon: '🏗️', title: '本体建模助手', desc: '智能本体设计与验证' },
-  { icon: '📊', title: '数据质量巡检员', desc: '自动化数据质量检查与异常检测' },
-  { icon: '🔗', title: '知识图谱维护员', desc: '实体冲突发现、关系缺失检测' },
-  { icon: '📝', title: 'Schema 迁移助手', desc: '本体升级迁移脚本自动生成' },
-]
-
 export default function DICWorkerPage() {
+  const [workers, setWorkers] = useState<DICWorker[]>([])
+  const [stats, setStats] = useState(() => getDICStats())
+  const [filterCategory, setFilterCategory] = useState<string | undefined>()
+
+  useEffect(() => {
+    setWorkers(listDICWorkers())
+    setStats(getDICStats())
+  }, [])
+  const [detailWorker, setDetailWorker] = useState<DICWorker | null>(null)
+
+  const filtered = workers.filter(w =>
+    !filterCategory || w.category === filterCategory
+  )
+
+  const statItems = [
+    { title: '数字员工总数', value: stats.total, icon: <TeamOutlined />, cls: 'stat-primary' },
+    { title: '在线', value: stats.online, icon: <CheckCircleOutlined />, cls: 'stat-success' },
+    { title: '忙碌中', value: stats.busy, icon: <SyncOutlined />, cls: 'stat-info' },
+    { title: '今日任务', value: stats.totalTasksToday, icon: <ThunderboltOutlined />, cls: 'stat-warning' },
+    { title: '累计完成', value: stats.totalTasksCompleted, icon: <DashboardOutlined />, cls: 'stat-purple' },
+  ]
+
   return (
     <div className="page-container">
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>DIC 数字员工空间</Title>
-          <Text type="secondary">面向数据工程与平台运维的内部 AI 数字员工</Text>
+          <Text type="secondary">L7 内部 AI 数字员工 — 面向数据工程与平台运维的智能化工作助手</Text>
         </div>
 
-        <Row gutter={[16, 16]} style={{ marginTop: 20 }}>
-          {workers.map((w, i) => (
-            <Col span={12} key={i}>
-              <Card hoverable size="small" className="worker-card" style={{ height: '100%' }}>
-                <Title level={5}>{w.icon} {w.title}</Title>
-                <Paragraph type="secondary" style={{ marginBottom: 0 }}>{w.desc}</Paragraph>
+        {/* 统计 */}
+        <Row gutter={[12, 12]} style={{ margin: '16px 0 20px' }}>
+          {statItems.map(s => (
+            <Col flex={1} key={s.title}>
+              <Card size="small" className={`stat-card card-hover ${s.cls}`}>
+                <Statistic
+                  title={s.title}
+                  value={s.value}
+                  prefix={<span style={{ fontSize: 18, marginRight: 4 }}>{s.icon}</span>}
+                />
               </Card>
             </Col>
           ))}
         </Row>
+
+        {/* 分类筛选 */}
+        <div style={{ marginBottom: 16 }}>
+          <Select
+            value={filterCategory}
+            onChange={setFilterCategory}
+            allowClear
+            placeholder="筛选类别"
+            style={{ width: 160 }}
+            size="small"
+            options={Object.entries(DIC_CATEGORY_LABELS).map(([k, v]) => ({ value: k, label: v }))}
+          />
+        </div>
+
+        {/* Worker 卡片网格 */}
+        <Row gutter={[16, 16]}>
+          {filtered.map(w => (
+            <Col span={8} key={w.key}>
+              <Badge.Ribbon
+                text={w.status}
+                color={DIC_STATUS_COLORS[w.status]}
+              >
+                <Card
+                  hoverable
+                  size="small"
+                  style={{ height: '100%' }}
+                  onClick={() => setDetailWorker(w)}
+                >
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 32 }}>{w.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <Text strong style={{ fontSize: 14 }}>{w.name}</Text>
+                      <br />
+                      <Tag color={DIC_CATEGORY_COLORS[w.category]} style={{ fontSize: 10, marginTop: 4 }}>
+                        {DIC_CATEGORY_LABELS[w.category]}
+                      </Tag>
+                      <Paragraph
+                        type="secondary"
+                        style={{ fontSize: 12, margin: '8px 0 0', lineHeight: 1.6 }}
+                        ellipsis={{ rows: 2 }}
+                      >
+                        {w.description}
+                      </Paragraph>
+                      <div style={{ marginTop: 8, display: 'flex', gap: 16, fontSize: 11, color: '#8c8c8c' }}>
+                        <span><ThunderboltOutlined /> 今日 {w.tasksToday}</span>
+                        <span><ClockCircleOutlined /> {w.avgResponseTime}</span>
+                        <span><PercentageOutlined /> {w.successRate}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </Badge.Ribbon>
+            </Col>
+          ))}
+        </Row>
       </Card>
+
+      {/* 详情弹窗 */}
+      <Modal
+        title={detailWorker ? <span>{detailWorker.icon} {detailWorker.name}</span> : ''}
+        open={!!detailWorker}
+        onCancel={() => setDetailWorker(null)}
+        footer={null}
+        width={560}
+      >
+        {detailWorker && (
+          <>
+            <div style={{ textAlign: 'center', padding: '16px 0' }}>
+              <span style={{ fontSize: 48 }}>{detailWorker.icon}</span>
+              <Title level={4} style={{ margin: '8px 0 4px' }}>{detailWorker.name}</Title>
+              <Space>
+                <Tag color={DIC_CATEGORY_COLORS[detailWorker.category]}>{DIC_CATEGORY_LABELS[detailWorker.category]}</Tag>
+                <Tag color={DIC_STATUS_COLORS[detailWorker.status]}>{detailWorker.status}</Tag>
+              </Space>
+              <Paragraph type="secondary" style={{ margin: '12px auto 0', maxWidth: 400 }}>
+                {detailWorker.description}
+              </Paragraph>
+            </div>
+
+            <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+              <Col span={8}>
+                <Card size="small" style={{ textAlign: 'center' }}>
+                  <Statistic title="累计任务" value={detailWorker.tasksCompleted.toLocaleString()} />
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card size="small" style={{ textAlign: 'center' }}>
+                  <Statistic title="今日任务" value={detailWorker.tasksToday} />
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card size="small" style={{ textAlign: 'center' }}>
+                  <Statistic title="成功率" value={detailWorker.successRate} />
+                </Card>
+              </Col>
+            </Row>
+
+            <Card size="small" title={<span><ToolOutlined /> 技能列表</span>} style={{ marginBottom: 16 }}>
+              <Space wrap>
+                {detailWorker.skills.map(s => <Tag key={s} color="blue">{s}</Tag>)}
+              </Space>
+            </Card>
+
+            <div style={{ fontSize: 12, color: '#8c8c8c' }}>
+              <Space split={<span>·</span>}>
+                <span>平均响应 {detailWorker.avgResponseTime}</span>
+                <span>最近活跃 {detailWorker.lastActive}</span>
+                <span>ID: {detailWorker.id}</span>
+              </Space>
+            </div>
+          </>
+        )}
+      </Modal>
     </div>
   )
 }

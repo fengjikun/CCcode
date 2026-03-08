@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Button, Layout, Menu } from 'antd'
 import type { MenuProps } from 'antd'
@@ -121,10 +121,10 @@ const allLeafKeys = getAllLeafKeys(menuItems)
 function findSelectedKey(pathname: string): string {
   // Exact match first
   if (allLeafKeys.includes(pathname)) return pathname
-  // Prefix match (longest first)
+  // Prefix match (longest first) — require trailing '/' to avoid false matches
   const sorted = [...allLeafKeys].sort((a, b) => b.length - a.length)
   for (const key of sorted) {
-    if (pathname.startsWith(key + '/') || pathname.startsWith(key)) {
+    if (pathname.startsWith(key + '/')) {
       return key
     }
   }
@@ -162,6 +162,15 @@ export default function AppLayout() {
   const currentUser = getAuthUser()
   const [collapsed, setCollapsed] = useState(false)
   const [openKeys, setOpenKeys] = useState<string[]>(findOpenKeys(location.pathname))
+
+  // URL 变化时自动展开对应的父级菜单
+  useEffect(() => {
+    const requiredKeys = findOpenKeys(location.pathname)
+    setOpenKeys(prev => {
+      const merged = new Set([...prev, ...requiredKeys])
+      return [...merged]
+    })
+  }, [location.pathname])
 
   const selectedKey = findSelectedKey(location.pathname)
   const pageTitle = findPageTitle(location.pathname)

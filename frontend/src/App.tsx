@@ -1,7 +1,9 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import AppLayout from './components/layout/AppLayout'
 import RequireAuth from './components/auth/RequireAuth'
+import ErrorBoundary from './components/ErrorBoundary'
 import LoginPage from './pages/LoginPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 // L7 数字员工应用
 import DigitalHumanListPage from './pages/DigitalHumanListPage'
@@ -34,6 +36,17 @@ import DataSourcePage from './pages/platform/DataSourcePage'
 // 总览
 import DashboardPage from './pages/platform/DashboardPage'
 
+// 旧路由重定向辅助组件（保留路径参数）
+function RedirectWithProjectId() {
+  const { projectId } = useParams()
+  return <Navigate to={`/ontology/projects/${projectId}`} replace />
+}
+
+function RedirectWithDigitalWorkerId() {
+  const { id } = useParams()
+  return <Navigate to={`/digital-worker/business/${id}`} replace />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -41,7 +54,9 @@ export default function App() {
       <Route
         element={(
           <RequireAuth>
-            <AppLayout />
+            <ErrorBoundary>
+              <AppLayout />
+            </ErrorBoundary>
           </RequireAuth>
         )}
       >
@@ -78,14 +93,17 @@ export default function App() {
 
         {/* 兼容旧路由 */}
         <Route path="/projects" element={<Navigate to="/ontology/projects" replace />} />
-        <Route path="/projects/:projectId" element={<Navigate to="/ontology/projects" replace />} />
+        <Route path="/projects/:projectId" element={<RedirectWithProjectId />} />
         <Route path="/graph" element={<Navigate to="/ontology/graph" replace />} />
         <Route path="/ontology" element={<Navigate to="/ontology/projects" replace />} />
         <Route path="/digital-human" element={<Navigate to="/digital-worker/business" replace />} />
-        <Route path="/digital-human/:id" element={<Navigate to="/digital-worker/business" replace />} />
+        <Route path="/digital-human/:id" element={<RedirectWithDigitalWorkerId />} />
 
         {/* 默认跳转 */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+        {/* 404 兜底 */}
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   )

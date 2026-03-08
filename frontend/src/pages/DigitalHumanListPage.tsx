@@ -88,8 +88,8 @@ export default function DigitalHumanListPage() {
       form.resetFields()
       reload()
       navigate(`/digital-worker/business/${dh.id}`)
-    } catch (err: any) {
-      if (err?.errorFields) return
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'errorFields' in err) return
       message.error('创建失败')
     } finally {
       setCreating(false)
@@ -117,8 +117,8 @@ export default function DigitalHumanListPage() {
       message.success('修改成功')
       setEditOpen(false)
       reload()
-    } catch (err: any) {
-      if (err?.errorFields) return
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'errorFields' in err) return
       message.error('修改失败')
     } finally {
       setEditing(false)

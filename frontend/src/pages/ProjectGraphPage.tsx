@@ -235,8 +235,8 @@ export default function ProjectGraphPage() {
       } else {
         setSelectedSource(undefined)
       }
-    } catch (err: any) {
-      const msg = err?.message || '加载本体图谱失败'
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '加载本体图谱失败'
       setError(msg)
     } finally {
       setLoading(false)
@@ -344,8 +344,8 @@ export default function ProjectGraphPage() {
       await updateRunReviewItem(projectId, selectedRun.id, itemId, status)
       message.success('审核状态已更新')
       await loadProject()
-    } catch (err: any) {
-      message.error(err?.message || '审核失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '审核失败')
     } finally {
       setReviewingItemId(null)
     }
@@ -363,8 +363,8 @@ export default function ProjectGraphPage() {
       message.success(`已批量更新 ${result.updatedCount} 条审核记录`)
       setSelectedReviewItemIds([])
       await loadProject()
-    } catch (err: any) {
-      message.error(err?.message || '批量审核失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '批量审核失败')
     } finally {
       setBatchReviewing(false)
     }

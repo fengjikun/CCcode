@@ -252,7 +252,7 @@ const RulesTab: React.FC<{ atId: number }> = ({ atId }) => {
       message.success('执行成功')
       setExecModalOpen(false)
       load()
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof SyntaxError) message.error('参数 JSON 格式错误')
     }
     setExecuting(false)
