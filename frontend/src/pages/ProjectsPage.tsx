@@ -71,7 +71,7 @@ export default function ProjectsPage() {
       setCreateOpen(false)
       form.resetFields()
       await loadProjects()
-      navigate(`/projects/${created.id}`)
+      navigate(`/ontology/projects/${created.id}`)
     } catch (error: unknown) {
       if ((error as { errorFields?: unknown })?.errorFields) return
       message.error((error as Error)?.message || '创建本体失败')
@@ -148,7 +148,7 @@ export default function ProjectsPage() {
                 <Card
                   hoverable
                   style={{ height: '100%', cursor: 'pointer' }}
-                  onClick={() => navigate(`/projects/${project.id}`)}
+                  onClick={() => navigate(`/ontology/projects/${project.id}`)}
                   actions={[
                     <Space key="edit" onClick={e => openEdit(project, e)}>
                       <EditOutlined />

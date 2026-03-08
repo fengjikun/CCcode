@@ -510,7 +510,7 @@ export default function ProjectGraphPage() {
         <Space direction="vertical" style={{ width: '100%' }} size={10}>
           <Space style={{ justifyContent: 'space-between', width: '100%' }} wrap>
             <Space>
-              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(`/projects/${project.id}`)}>
+              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(`/ontology/projects/${project.id}`)}>
                 返回本体工作台
               </Button>
               <Button icon={<ReloadOutlined />} onClick={() => void loadProject()} loading={loading}>

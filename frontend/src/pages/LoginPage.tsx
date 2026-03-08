@@ -12,7 +12,7 @@ export default function LoginPage() {
   const navigate = useNavigate()
 
   if (isAuthenticated()) {
-    return <Navigate to="/projects" replace />
+    return <Navigate to="/dashboard" replace />
   }
 
   const onFinish = async (values: LoginPayload) => {
@@ -20,7 +20,7 @@ export default function LoginPage() {
     try {
       const result = await login(values)
       setAuthSession(result.accessToken, result.user)
-      navigate('/projects', { replace: true })
+      navigate('/dashboard', { replace: true })
     } finally {
       setLoading(false)
     }

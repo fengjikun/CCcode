@@ -95,7 +95,7 @@ export default function DeviceFaultMonitorPage() {
   useEffect(() => {
     if (!id) return
     const found = getDigitalHuman(id)
-    if (!found) { message.error('数字人不存在'); navigate('/digital-human'); return }
+    if (!found) { message.error('数字人不存在'); navigate('/digital-worker/business'); return }
     setDh(found)
     if (found.projectId) setSelectedProjectId(found.projectId)
   }, [id, navigate])
@@ -236,7 +236,7 @@ export default function DeviceFaultMonitorPage() {
     <div style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* 面包屑 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/digital-human')} size="small">
+        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/digital-worker/business')} size="small">
           数字员工列表
         </Button>
         <span style={{ color: '#d9d9d9' }}>/</span>

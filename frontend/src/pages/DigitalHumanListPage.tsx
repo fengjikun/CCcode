@@ -87,7 +87,7 @@ export default function DigitalHumanListPage() {
       setCreateOpen(false)
       form.resetFields()
       reload()
-      navigate(`/digital-human/${dh.id}`)
+      navigate(`/digital-worker/business/${dh.id}`)
     } catch (err: any) {
       if (err?.errorFields) return
       message.error('创建失败')
@@ -263,7 +263,7 @@ export default function DigitalHumanListPage() {
                 <Card
                   hoverable
                   style={{ height: '100%', cursor: 'pointer' }}
-                  onClick={() => navigate(`/digital-human/${dh.id}`)}
+                  onClick={() => navigate(`/digital-worker/business/${dh.id}`)}
                   actions={[
                     <Space
                       key="edit"

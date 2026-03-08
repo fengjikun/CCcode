@@ -29,7 +29,7 @@ export function useProjectWorkspace(projectId: string | undefined) {
       }
     } catch (error: unknown) {
       message.error(getErrorMessage(error, '加载本体失败'))
-      navigate('/projects', { replace: true })
+      navigate('/ontology/projects', { replace: true })
     } finally {
       setLoading(false)
     }

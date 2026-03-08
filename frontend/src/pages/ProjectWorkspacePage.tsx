@@ -48,7 +48,7 @@ export default function ProjectWorkspacePage() {
         <Space direction="vertical" size={10} style={{ width: '100%' }}>
           <Space style={{ justifyContent: 'space-between', width: '100%' }}>
             <Space>
-              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/projects')}>
+              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/ontology/projects')}>
                 返回本体列表
               </Button>
               <Button icon={<ReloadOutlined />} onClick={() => void loadProject()} loading={loading}>

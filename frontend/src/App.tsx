@@ -2,12 +2,36 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from './components/layout/AppLayout'
 import RequireAuth from './components/auth/RequireAuth'
 import LoginPage from './pages/LoginPage'
+
+// L7 数字员工应用
+import DigitalHumanListPage from './pages/DigitalHumanListPage'
+import DeviceFaultMonitorPage from './pages/DeviceFaultMonitorPage'
+import DICWorkerPage from './pages/platform/DICWorkerPage'
+
+// L4 Co-worker 平台
+import AgentStudioPage from './pages/platform/AgentStudioPage'
+import AgentLogsPage from './pages/platform/AgentLogsPage'
+import SkillsMarketPage from './pages/platform/SkillsMarketPage'
+
+// L3 Deepology 本体
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectWorkspacePage from './pages/ProjectWorkspacePage'
 import ProjectGraphPage from './pages/ProjectGraphPage'
 import GraphPage from './pages/GraphPage'
-import DigitalHumanListPage from './pages/DigitalHumanListPage'
-import DeviceFaultMonitorPage from './pages/DeviceFaultMonitorPage'
+
+// L2 数据转换
+import TransformPage from './pages/platform/TransformPage'
+
+// L5+L6 大模型 Lab
+import ModelGatewayPage from './pages/platform/ModelGatewayPage'
+import ModelTrainingPage from './pages/platform/ModelTrainingPage'
+import TrainingDatasetsPage from './pages/platform/TrainingDatasetsPage'
+
+// L1 数据源
+import DataSourcePage from './pages/platform/DataSourcePage'
+
+// 总览
+import DashboardPage from './pages/platform/DashboardPage'
 
 export default function App() {
   return (
@@ -20,14 +44,46 @@ export default function App() {
           </RequireAuth>
         )}
       >
-        <Route path="/projects" element={<ProjectsPage />} />
-        <Route path="/projects/:projectId" element={<ProjectWorkspacePage />} />
-        <Route path="/projects/:projectId/graph" element={<ProjectGraphPage />} />
-        <Route path="/graph" element={<GraphPage />} />
-        <Route path="/ontology" element={<Navigate to="/projects" replace />} />
-        <Route path="/digital-human" element={<DigitalHumanListPage />} />
-        <Route path="/digital-human/:id" element={<DeviceFaultMonitorPage />} />
-        <Route path="/" element={<Navigate to="/projects" replace />} />
+        {/* 总览 */}
+        <Route path="/dashboard" element={<DashboardPage />} />
+
+        {/* L7 数字员工应用 */}
+        <Route path="/digital-worker/business" element={<DigitalHumanListPage />} />
+        <Route path="/digital-worker/business/:id" element={<DeviceFaultMonitorPage />} />
+        <Route path="/digital-worker/dic" element={<DICWorkerPage />} />
+
+        {/* L4 Co-worker 平台 */}
+        <Route path="/coworker/agents" element={<AgentStudioPage />} />
+        <Route path="/coworker/agents/logs" element={<AgentLogsPage />} />
+        <Route path="/coworker/skills" element={<SkillsMarketPage />} />
+
+        {/* L3 Deepology 本体 */}
+        <Route path="/ontology/projects" element={<ProjectsPage />} />
+        <Route path="/ontology/projects/:projectId" element={<ProjectWorkspacePage />} />
+        <Route path="/ontology/projects/:projectId/graph" element={<ProjectGraphPage />} />
+        <Route path="/ontology/graph" element={<GraphPage />} />
+
+        {/* L2 数据转换 */}
+        <Route path="/transform" element={<TransformPage />} />
+
+        {/* L5+L6 大模型 Lab */}
+        <Route path="/model-lab/gateway" element={<ModelGatewayPage />} />
+        <Route path="/model-lab/training" element={<ModelTrainingPage />} />
+        <Route path="/model-lab/datasets" element={<TrainingDatasetsPage />} />
+
+        {/* L1 数据源 */}
+        <Route path="/datasource" element={<DataSourcePage />} />
+
+        {/* 兼容旧路由 */}
+        <Route path="/projects" element={<Navigate to="/ontology/projects" replace />} />
+        <Route path="/projects/:projectId" element={<Navigate to="/ontology/projects" replace />} />
+        <Route path="/graph" element={<Navigate to="/ontology/graph" replace />} />
+        <Route path="/ontology" element={<Navigate to="/ontology/projects" replace />} />
+        <Route path="/digital-human" element={<Navigate to="/digital-worker/business" replace />} />
+        <Route path="/digital-human/:id" element={<Navigate to="/digital-worker/business" replace />} />
+
+        {/* 默认跳转 */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>
   )

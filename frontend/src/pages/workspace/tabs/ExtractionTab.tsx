@@ -81,7 +81,7 @@ export default function ExtractionTab({
       title: '操作',
       width: 100,
       render: (_value, record) => (
-        <Button size="small" onClick={() => navigate(`/projects/${project.id}/graph?versionId=${record.id}`)}>
+        <Button size="small" onClick={() => navigate(`/ontology/projects/${project.id}/graph?versionId=${record.id}`)}>
           图谱
         </Button>
       ),
@@ -106,7 +106,7 @@ export default function ExtractionTab({
           </div>
           <Space>
             {selectedRun && (
-              <Button onClick={() => navigate(`/projects/${project.id}/graph?runId=${selectedRun.id}`)}>
+              <Button onClick={() => navigate(`/ontology/projects/${project.id}/graph?runId=${selectedRun.id}`)}>
                 进入图谱审核
               </Button>
             )}
@@ -213,7 +213,7 @@ export default function ExtractionTab({
                 当前任务：{selectedRun.id}，状态：{selectedRun.status}，待审核：{selectedRun.pendingReviewCount}
               </Text>
               <Space>
-                <Button onClick={() => navigate(`/projects/${project.id}/graph?runId=${selectedRun.id}`)}>
+                <Button onClick={() => navigate(`/ontology/projects/${project.id}/graph?runId=${selectedRun.id}`)}>
                   查看图谱
                 </Button>
                 <Button
