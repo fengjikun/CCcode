@@ -42,7 +42,7 @@ export default function TrainingDatasetsPage() {
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>训练数据集</Title>
-          <Text type="secondary">从本体语义层导出、切分和版本管理训练数据</Text>
+          <Text type="secondary">基于本体语义层，自动导出、切分与版本管理训练数据</Text>
         </div>
 
         <Row gutter={16} style={{ margin: '20px 0' }}>

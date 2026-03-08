@@ -61,7 +61,7 @@ export default function DashboardPage() {
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>Pipeline Overview</Title>
-          <Text type="secondary">端到端数据流水线：从数据源接入到智能体部署</Text>
+          <Text type="secondary">端到端 AI 流水线：从数据源接入到智能体应用</Text>
         </div>
 
         <div style={{

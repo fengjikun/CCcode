@@ -141,14 +141,14 @@ export default function DigitalHumanListPage() {
           <Col flex="1">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <TeamOutlined style={{ color: '#4096ff', fontSize: 22 }} />
-              <Text style={{ color: '#4096ff', fontSize: 13, letterSpacing: 2 }}>企业数字员工能力平台</Text>
+              <Text style={{ color: '#4096ff', fontSize: 13, letterSpacing: 2 }}>DeepexiOS 企业数字员工能力中心</Text>
             </div>
             <Title level={3} style={{ color: '#fff', margin: '0 0 10px' }}>
               已沉淀 <span style={{ color: '#faad14' }}>8 大领域</span> 数字员工能力
             </Title>
             <Paragraph style={{ color: '#adc6e8', marginBottom: 16, lineHeight: 1.8 }}>
               基于企业专有<span style={{ color: '#69b1ff' }}>本体知识图谱</span>与行业<span style={{ color: '#95de64' }}>Skill 技能包</span>，
-              将各领域资深经验系统化沉淀为可复用的数字员工能力，驱动智能决策与专业问答。
+              将各领域资深经验系统化沉淀为可复用的 AI 数字员工能力，驱动智能决策与专业问答。
             </Paragraph>
             <Space size={12}>
               <div style={{
@@ -332,7 +332,7 @@ export default function DigitalHumanListPage() {
       >
         <Form<CreateForm> form={form} layout="vertical" initialValues={{ type: 'fault-repair' }}>
           <Form.Item name="name" label="员工名称" rules={[{ required: true, message: '请输入名称' }]}>
-            <Input placeholder="例如：产线A故障诊断专员" maxLength={64} />
+            <Input placeholder="例如：供应链运营专员" maxLength={64} />
           </Form.Item>
           <Form.Item name="type" label="领域类型" rules={[{ required: true }]}
             extra="选择后将自动加载对应领域的本体模型与 Skill 技能包"
@@ -362,7 +362,7 @@ export default function DigitalHumanListPage() {
       >
         <Form<EditForm> form={editForm} layout="vertical">
           <Form.Item name="name" label="员工名称" rules={[{ required: true, message: '请输入名称' }]}>
-            <Input placeholder="例如：产线A故障诊断专员" maxLength={64} />
+            <Input placeholder="例如：供应链运营专员" maxLength={64} />
           </Form.Item>
           <Form.Item name="description" label="职责描述">
             <Input.TextArea rows={3} placeholder="可选，描述该数字员工的工作职责与专长" maxLength={300} />

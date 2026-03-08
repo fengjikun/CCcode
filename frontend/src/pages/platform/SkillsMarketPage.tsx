@@ -52,7 +52,7 @@ export default function SkillsMarketPage() {
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>Skills 广场</Title>
-          <Text type="secondary">Action / Function / Query 统一注册与管理</Text>
+          <Text type="secondary">企业能力资产统一注册与管理：Action / Function / Query</Text>
         </div>
 
         <Row gutter={16} style={{ margin: '20px 0' }}>

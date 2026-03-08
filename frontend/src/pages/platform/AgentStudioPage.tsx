@@ -69,7 +69,7 @@ export default function AgentStudioPage() {
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>Co-worker 平台</Title>
-          <Text type="secondary">开发、编排和管理 AI 智能体</Text>
+          <Text type="secondary">开发、编排和管理 AI 智能体，赋能企业数字化运营</Text>
         </div>
 
         <div style={{ margin: '16px 0' }}>

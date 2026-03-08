@@ -5,9 +5,9 @@ const STORAGE_KEY = 'digital_humans'
 const DEFAULT_DIGITAL_HUMANS: DigitalHuman[] = [
   {
     id: 'dh-default-device-fault',
-    name: '设备故障监控助手',
+    name: '设备运维诊断专员',
     type: 'fault-repair',
-    description: '专注于设备故障告警监控与诊断，支持关联本体知识进行专业分析，并可自动生成维修工单。',
+    description: '基于设备本体与故障知识图谱，智能监控告警、精准定位根因，自动生成维修工单与处置建议。',
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   },

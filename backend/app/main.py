@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # To migrate the database schema, run manually:
 #   alembic upgrade head
 
-app = FastAPI(title="大族智控设备故障诊断系统", version="2.0.0")
+app = FastAPI(title="DeepexiOS — AI 级企业操作系统", version="2.0.0")
 setup_request_logging_middleware(app)
 
 # CORS
@@ -95,4 +95,4 @@ if _frontend_dist.is_dir():
 else:
     @app.get("/")
     def root():
-        return {"message": "大族智控设备故障诊断系统 API", "version": "2.0.0"}
+        return {"message": "DeepexiOS API", "version": "2.0.0"}

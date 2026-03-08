@@ -39,7 +39,7 @@ export default function ModelTrainingPage() {
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>模型训练</Title>
-          <Text type="secondary">训练、评估与注册机器学习模型</Text>
+          <Text type="secondary">端到端模型训练、评估与注册，加速 AI 能力落地</Text>
         </div>
 
         <div style={{ margin: '16px 0' }}>

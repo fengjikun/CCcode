@@ -48,7 +48,7 @@ export default function ModelGatewayPage() {
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>模型网关</Title>
-          <Text type="secondary">统一推理入口、路由与监控</Text>
+          <Text type="secondary">统一 AI 推理入口，智能路由、限流与全链路监控</Text>
         </div>
 
         <Row gutter={16} style={{ margin: '20px 0' }}>

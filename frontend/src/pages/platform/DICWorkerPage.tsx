@@ -15,7 +15,7 @@ export default function DICWorkerPage() {
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>DIC 数字员工空间</Title>
-          <Text type="secondary">面向数据工程和平台运维的内部数字员工</Text>
+          <Text type="secondary">面向数据工程与平台运维的内部 AI 数字员工</Text>
         </div>
 
         <Row gutter={[16, 16]} style={{ marginTop: 20 }}>

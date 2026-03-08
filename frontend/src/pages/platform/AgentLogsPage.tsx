@@ -26,7 +26,7 @@ export default function AgentLogsPage() {
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>智能体执行日志</Title>
-          <Text type="secondary">实时追踪 Agent 工具调用与推理过程</Text>
+          <Text type="secondary">实时追踪 Agent 推理链路、工具调用与决策过程</Text>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

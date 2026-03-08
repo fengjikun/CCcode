@@ -59,7 +59,7 @@ export default function DataSourcePage() {
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>数据源管理</Title>
-          <Text type="secondary">连接并同步外部系统数据</Text>
+          <Text type="secondary">连接并同步企业外部系统数据，统一数据接入</Text>
         </div>
 
         <div style={{ margin: '16px 0' }}>

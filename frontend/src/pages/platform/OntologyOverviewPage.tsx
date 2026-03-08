@@ -56,7 +56,7 @@ export default function OntologyOverviewPage() {
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>Deepology — 本体管理</Title>
-          <Text type="secondary">定义和管理业务语义层</Text>
+          <Text type="secondary">定义和管理企业业务语义层，构建领域知识图谱</Text>
         </div>
 
         <Title level={5} style={{ marginTop: 20 }}>本体概览</Title>

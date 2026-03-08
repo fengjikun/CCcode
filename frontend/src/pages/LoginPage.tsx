@@ -32,7 +32,7 @@ export default function LoginPage() {
       <Card className="login-card">
         <div className="login-brand">
           <div className="brand-name">DeepexiOS</div>
-          <div className="brand-sub">AI 智能业务运营平台</div>
+          <div className="brand-sub">AI 级企业操作系统</div>
         </div>
 
         <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginBottom: 24 }}>

@@ -182,7 +182,7 @@ def _build_user_message(req: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _build_system_prompt() -> str:
-    return """你是工业设备故障诊断专家，基于大族智控设备故障诊断本体知识图谱进行专业分析。
+    return """你是工业设备故障诊断专家，基于 DeepexiOS 设备本体知识图谱进行专业分析。
 
 本体结构：
 - Phenomenon（现象级问题）→ contains → SubPhenomenon（子现象）

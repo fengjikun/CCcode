@@ -51,7 +51,7 @@ export default function TransformPage() {
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>数据转换项目</Title>
-          <Text type="secondary">跨源关联、聚合与规范化数据</Text>
+          <Text type="secondary">跨源关联、聚合与规范化，构建高质量企业数据资产</Text>
         </div>
 
         <div style={{ margin: '16px 0' }}>

@@ -241,14 +241,14 @@ export default function DeviceFaultMonitorPage() {
         </Button>
         <span style={{ color: '#d9d9d9' }}>/</span>
         <RobotOutlined style={{ color: '#fa8c16' }} />
-        <Text strong>{dh?.name || '设备故障监控'}</Text>
+        <Text strong>{dh?.name || '设备运维诊断'}</Text>
       </div>
 
       <div style={{ flex: 1, display: 'flex', gap: 16, minHeight: 0 }}>
         {/* ===== 左侧 ===== */}
         <div style={{ width: 340, display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0 }}>
           <Card
-            title={<span><AlertOutlined style={{ color: '#ff4d4f', marginRight: 8 }} />设备故障监控告警</span>}
+            title={<span><AlertOutlined style={{ color: '#ff4d4f', marginRight: 8 }} />设备运行告警</span>}
             bodyStyle={{ padding: '8px 0', overflowY: 'auto', maxHeight: 360 }}
             size="small"
           >
@@ -314,7 +314,7 @@ export default function DeviceFaultMonitorPage() {
           bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '12px 16px', minHeight: 0 }}
           title={
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span><RobotOutlined style={{ color: '#fa8c16', marginRight: 8 }} />故障诊断助手</span>
+              <span><RobotOutlined style={{ color: '#fa8c16', marginRight: 8 }} />AI 诊断助手</span>
               <Select
                 placeholder="关联本体（可选）" style={{ width: 200 }} allowClear size="small"
                 value={selectedProjectId} onChange={handleProjectChange}
