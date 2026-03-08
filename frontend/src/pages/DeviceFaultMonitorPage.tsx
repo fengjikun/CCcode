@@ -34,6 +34,7 @@ import { getDigitalHuman, updateDigitalHuman } from '../api/digitalHuman'
 import type { DigitalHuman } from '../types/digitalHuman'
 import { listProjects } from '../api/projectManagement'
 import type { ProjectSummary } from '../types/projectMvp'
+import ModalHeader from '../components/shared/ModalHeader'
 
 const { Text } = Typography
 
@@ -492,11 +493,12 @@ export default function DeviceFaultMonitorPage() {
 
       {/* 维修工单 Modal */}
       <Modal
-        title={<span><FileTextOutlined style={{ color: '#1677ff', marginRight: 8 }} />维修工单 — {workOrder?.workOrderId}</span>}
+        title={<ModalHeader icon={<FileTextOutlined />} title={`维修工单 — ${workOrder?.workOrderId || ''}`} />}
         open={workOrderVisible}
         onCancel={() => setWorkOrderVisible(false)}
         footer={[<Button key="close" onClick={() => setWorkOrderVisible(false)}>关闭</Button>]}
-        width={680}
+        width={640}
+        destroyOnClose
       >
         {workOrder && (
           <Descriptions bordered column={2} size="small">

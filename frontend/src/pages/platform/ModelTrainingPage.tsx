@@ -32,6 +32,7 @@ import {
 import { listTrainingJobs, listTrainingProjects, createTrainingProject, getTrainingStats } from '../../api/modelTraining'
 import type { TrainingJob, TrainingStatus, Framework } from '../../types/modelTraining'
 import { TRAINING_STATUS_COLORS, FRAMEWORK_COLORS } from '../../types/modelTraining'
+import ModalHeader from '../../components/shared/ModalHeader'
 
 const { Title, Text } = Typography
 
@@ -201,7 +202,7 @@ export default function ModelTrainingPage() {
 
       {/* 创建弹窗 */}
       <Modal
-        title="新建训练项目"
+        title={<ModalHeader icon={<ExperimentOutlined />} title="新建训练项目" />}
         open={createOpen}
         onCancel={() => { setCreateOpen(false); form.resetFields() }}
         onOk={() => void handleCreate()}

@@ -50,6 +50,7 @@ import type { DataSource } from '../../types/dataSource'
 
 import PageHeader from '../../components/shared/PageHeader'
 import StatCards from '../../components/shared/StatCards'
+import ModalHeader from '../../components/shared/ModalHeader'
 
 const { Text } = Typography
 const { TextArea } = Input
@@ -419,12 +420,12 @@ export default function TransformPage() {
 
       {/* 创建弹窗 */}
       <Modal
-        title="新建转换项目"
+        title={<ModalHeader icon={<PlusOutlined />} title="新建转换项目" />}
         open={createOpen}
         onCancel={() => { setCreateOpen(false); createForm.resetFields() }}
         onOk={handleCreate}
         okText="创建"
-        width={600}
+        width={640}
         destroyOnClose
       >
         <Form form={createForm} layout="vertical" style={{ marginTop: 16 }}>
@@ -434,12 +435,12 @@ export default function TransformPage() {
 
       {/* 编辑弹窗 */}
       <Modal
-        title="编辑转换项目"
+        title={<ModalHeader icon={<EditOutlined />} title="编辑转换项目" />}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={handleEdit}
         okText="保存"
-        width={600}
+        width={640}
         destroyOnClose
       >
         <Form form={editForm} layout="vertical" style={{ marginTop: 16 }}>
@@ -449,11 +450,12 @@ export default function TransformPage() {
 
       {/* 详情弹窗 */}
       <Modal
-        title="转换项目详情"
+        title={<ModalHeader icon={<EyeOutlined />} title="转换项目详情" />}
         open={detailOpen}
         onCancel={() => setDetailOpen(false)}
         footer={null}
         width={640}
+        destroyOnClose
       >
         {current && (
           <div style={{ lineHeight: 2.2 }}>

@@ -11,11 +11,11 @@
 - [x] `<StatCards items={[...]} columns={4|6} />` — 统计卡片（已应用到 DataSourcePage、TransformPage、AgentStudioPage、AgentLogsPage） ✅
 - [x] `<PageHeader title="" subtitle="" />` — 页面标题区块（已应用到 DataSourcePage、TransformPage、AgentStudioPage、AgentLogsPage） ✅
 - [x] `<StatusCell value="" colors={{}} />` — 状态列渲染（已应用到 DataSourcePage） ✅
-- [ ] `<ModalHeader icon={} title="" />` — 弹窗标题（Space + Icon + Text 重复 30+ 处）
-- [ ] `<ActionColumn actions={[...]} />` — 操作列（查看/编辑/删除 Tooltip + Button 组合）
+- [x] `<ModalHeader icon={} title="" />` — 弹窗标题（已应用到 DataSourcePage、AgentStudioPage、SkillsMarketPage、TransformPage、DeviceFaultMonitorPage、ProjectsPage、ModelTrainingPage、TrainingDatasetsPage） ✅
+- [x] `<ActionColumn actions={[...]} />` — 操作列（已应用到 DataSourcePage、AgentStudioPage、SkillsMarketPage） ✅
 
 ### 统一设计规范
-- [ ] 统一 Modal 宽度：小 560、中 640、大 800（当前 560/600/640/680/760/800 混用）
+- [x] 统一 Modal 宽度：小 560、中 640、大 800（已统一全部 Modal 宽度） ✅
 - [ ] 统一 StatCard span：4 项用 `span={6}`，6 项用 `span={4}`（DICWorkerPage 未设 gutter）
 - [ ] 统一 Table gutter：全部使用 `gutter={[12, 12]}`
 - [ ] 统一状态命名：当前中英文混用（Active/Draft vs 健康/降级），统一为英文状态 + 中文 label
@@ -180,7 +180,7 @@
 | Form layout | Row+Col vs 平铺 | 统一 Row+Col |
 | Action 按钮 | 有/无 Tooltip 混用 | 统一有 Tooltip |
 | Date format | toLocaleDateString vs 自定义 | 统一 `formatDate()` |
-| destroyOnClose | 部分有部分无 | 全部 `true` |
+| destroyOnClose | ✅ 全部已添加 | 全部 `true` |
 | 表单验证风格 | `.then()` vs `async/await` 混用 | 统一 `async/await` |
 | 空数据状态 | `<Empty>` / 条件文本 / 无处理 混用 | 统一 `<Empty>` + 引导操作 |
 | 加载状态命名 | `loading/creating/editing/fetching` 混用 | 统一 `isLoading` / `isSubmitting` |

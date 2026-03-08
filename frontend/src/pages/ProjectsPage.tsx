@@ -38,6 +38,7 @@ import {
   ToolOutlined,
 } from '@ant-design/icons'
 import { createProject, deleteProject, listProjects, updateProject } from '../api/projectManagement'
+import ModalHeader from '../components/shared/ModalHeader'
 import type { ProjectSummary } from '../types/projectMvp'
 
 const { Title, Text, Paragraph } = Typography
@@ -455,13 +456,14 @@ export default function ProjectsPage() {
 
       {/* ═══ Create Modal ═══ */}
       <Modal
-        title="新建本体"
+        title={<ModalHeader icon={<PlusOutlined />} title="新建本体" />}
         open={createOpen}
         onCancel={() => { setCreateOpen(false); form.resetFields() }}
         onOk={() => void handleCreate()}
         okText="创建"
         cancelText="取消"
         confirmLoading={creating}
+        destroyOnClose
       >
         <Form<ProjectForm> form={form} layout="vertical">
           <Form.Item name="category" label="业务环节" rules={[{ required: true, message: '请选择业务环节' }]}>
@@ -478,13 +480,14 @@ export default function ProjectsPage() {
 
       {/* ═══ Edit Modal ═══ */}
       <Modal
-        title="编辑本体"
+        title={<ModalHeader icon={<EditOutlined />} title="编辑本体" />}
         open={editOpen}
         onCancel={() => { setEditOpen(false); setEditingProject(null); editForm.resetFields() }}
         onOk={() => void handleEdit()}
         okText="保存"
         cancelText="取消"
         confirmLoading={editing}
+        destroyOnClose
       >
         <Form<ProjectForm> form={editForm} layout="vertical">
           <Form.Item name="category" label="业务环节" rules={[{ required: true, message: '请选择业务环节' }]}>

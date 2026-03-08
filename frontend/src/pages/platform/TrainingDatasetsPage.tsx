@@ -29,6 +29,7 @@ import {
 import { listDatasets, createDataset, deleteDataset, getDatasetStats } from '../../api/trainingDataset'
 import type { TrainingDataset, DatasetStatus } from '../../types/trainingDataset'
 import { DATASET_STATUS_COLORS } from '../../types/trainingDataset'
+import ModalHeader from '../../components/shared/ModalHeader'
 
 const { Title, Text } = Typography
 
@@ -172,7 +173,7 @@ export default function TrainingDatasetsPage() {
       </Card>
 
       <Modal
-        title="新建数据集"
+        title={<ModalHeader icon={<DatabaseOutlined />} title="新建数据集" />}
         open={createOpen}
         onCancel={() => { setCreateOpen(false); form.resetFields() }}
         onOk={() => void handleCreate()}

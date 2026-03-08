@@ -9,14 +9,12 @@ import {
   Input,
   InputNumber,
   Modal,
-  Popconfirm,
   Radio,
   Row,
   Select,
   Space,
   Table,
   Tag,
-  Tooltip,
   Typography,
   message,
 } from 'antd'
@@ -80,6 +78,8 @@ interface EditForm {
 import StatCards from '../../components/shared/StatCards'
 import PageHeader from '../../components/shared/PageHeader'
 import StatusCell from '../../components/shared/StatusCell'
+import ModalHeader from '../../components/shared/ModalHeader'
+import ActionColumn from '../../components/shared/ActionColumn'
 
 const DS_STATUS_DOT: Record<string, 'active' | 'warning' | 'error'> = {
   Active: 'active', Syncing: 'active', Inactive: 'warning', Error: 'error',
@@ -277,23 +277,11 @@ export default function DataSourcePage() {
       key: 'action',
       width: 150,
       render: (_: unknown, record: DataSource) => (
-        <Space size="small">
-          <Tooltip title="查看详情">
-            <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
-          </Tooltip>
-          <Tooltip title="编辑">
-            <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
-          </Tooltip>
-          <Popconfirm
-            title="确认删除该数据源？"
-            description="删除后不可恢复"
-            onConfirm={() => handleDelete(record.id)}
-          >
-            <Tooltip title="删除">
-              <Button type="text" size="small" danger icon={<DeleteOutlined />} />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
+        <ActionColumn actions={[
+          { key: 'view', icon: <EyeOutlined />, tooltip: '查看详情', onClick: () => openDetail(record) },
+          { key: 'edit', icon: <EditOutlined />, tooltip: '编辑', onClick: () => openEdit(record) },
+          { key: 'delete', icon: <DeleteOutlined />, tooltip: '删除', danger: true, confirm: '确认删除该数据源？', onClick: () => handleDelete(record.id) },
+        ]} />
       ),
     },
   ]
@@ -359,19 +347,14 @@ export default function DataSourcePage() {
 
       {/* ===== 创建弹窗 ===== */}
       <Modal
-        title={
-          <Space>
-            <DatabaseOutlined style={{ color: '#1677ff' }} />
-            添加数据源
-          </Space>
-        }
+        title={<ModalHeader icon={<DatabaseOutlined />} title="添加数据源" />}
         open={createOpen}
         onCancel={() => { setCreateOpen(false); form.resetFields(); setTestResult(null) }}
         onOk={() => void handleCreate()}
         okText="创建"
         cancelText="取消"
         confirmLoading={creating}
-        width={600}
+        width={640}
         destroyOnClose
       >
         <Form<CreateForm>
@@ -494,12 +477,7 @@ export default function DataSourcePage() {
 
       {/* ===== 编辑弹窗 ===== */}
       <Modal
-        title={
-          <Space>
-            <EditOutlined style={{ color: '#1677ff' }} />
-            编辑数据源
-          </Space>
-        }
+        title={<ModalHeader icon={<EditOutlined />} title="编辑数据源" />}
         open={editOpen}
         onCancel={() => { setEditOpen(false); editForm.resetFields() }}
         onOk={() => void handleEdit()}
@@ -523,16 +501,12 @@ export default function DataSourcePage() {
 
       {/* ===== 详情弹窗 ===== */}
       <Modal
-        title={
-          <Space>
-            <EyeOutlined style={{ color: '#1677ff' }} />
-            数据源详情
-          </Space>
-        }
+        title={<ModalHeader icon={<EyeOutlined />} title="数据源详情" />}
         open={detailOpen}
         onCancel={() => setDetailOpen(false)}
         footer={<Button onClick={() => setDetailOpen(false)}>关闭</Button>}
-        width={600}
+        width={640}
+        destroyOnClose
       >
         {detailTarget && (
           <>

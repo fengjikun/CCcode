@@ -10,7 +10,6 @@ import {
   Form,
   Input,
   Modal,
-  Popconfirm,
   Radio,
   Row,
   Select,
@@ -18,7 +17,6 @@ import {
   Statistic,
   Table,
   Tag,
-  Tooltip,
   Typography,
   message,
 } from 'antd'
@@ -63,6 +61,8 @@ import type { Skill } from '../../types/skill'
 import { SKILL_CATEGORY_COLORS, SKILL_CATEGORY_ICONS } from '../../types/skill'
 import PageHeader from '../../components/shared/PageHeader'
 import StatCards from '../../components/shared/StatCards'
+import ModalHeader from '../../components/shared/ModalHeader'
+import ActionColumn from '../../components/shared/ActionColumn'
 
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
@@ -559,22 +559,12 @@ export default function AgentStudioPage() {
       key: 'action',
       width: 200,
       render: (_: unknown, record: Agent) => (
-        <Space size="small">
-          <Tooltip title="详情">
-            <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
-          </Tooltip>
-          <Tooltip title="编辑">
-            <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
-          </Tooltip>
-          <Tooltip title="发布为数字员工">
-            <Button type="text" size="small" icon={<RocketOutlined />} style={{ color: '#52c41a' }} onClick={() => openPublish(record)} />
-          </Tooltip>
-          <Popconfirm title="确认删除该智能体？" onConfirm={() => handleDelete(record.id)}>
-            <Tooltip title="删除">
-              <Button type="text" size="small" danger icon={<DeleteOutlined />} />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
+        <ActionColumn actions={[
+          { key: 'view', icon: <EyeOutlined />, tooltip: '详情', onClick: () => openDetail(record) },
+          { key: 'edit', icon: <EditOutlined />, tooltip: '编辑', onClick: () => openEdit(record) },
+          { key: 'publish', icon: <RocketOutlined />, tooltip: '发布为数字员工', style: { color: '#52c41a' }, onClick: () => openPublish(record) },
+          { key: 'delete', icon: <DeleteOutlined />, tooltip: '删除', danger: true, confirm: '确认删除该智能体？', onClick: () => handleDelete(record.id) },
+        ]} />
       ),
     },
   ]
@@ -656,14 +646,14 @@ export default function AgentStudioPage() {
 
       {/* ===== 创建弹窗 ===== */}
       <Modal
-        title={<Space><RobotOutlined style={{ color: '#1677ff' }} />创建智能体</Space>}
+        title={<ModalHeader icon={<RobotOutlined />} title="创建智能体" />}
         open={createOpen}
         onCancel={() => { setCreateOpen(false); form.resetFields(); setSelectedSkillIds([]) }}
         onOk={() => void handleCreate()}
         okText="创建"
         cancelText="取消"
         confirmLoading={creating}
-        width={680}
+        width={640}
         destroyOnClose
       >
         <Form<CreateForm>
@@ -712,14 +702,14 @@ export default function AgentStudioPage() {
 
       {/* ===== 编辑弹窗 ===== */}
       <Modal
-        title={<Space><EditOutlined style={{ color: '#1677ff' }} />编辑智能体</Space>}
+        title={<ModalHeader icon={<EditOutlined />} title="编辑智能体" />}
         open={editOpen}
         onCancel={() => { setEditOpen(false); editForm.resetFields() }}
         onOk={() => void handleEdit()}
         okText="保存"
         cancelText="取消"
         confirmLoading={editing}
-        width={680}
+        width={640}
         destroyOnClose
       >
         <Form<CreateForm> form={editForm} layout="vertical" style={{ marginTop: 16 }}>
@@ -758,7 +748,7 @@ export default function AgentStudioPage() {
 
       {/* ===== 详情弹窗 ===== */}
       <Modal
-        title={<Space><EyeOutlined style={{ color: '#1677ff' }} />智能体详情</Space>}
+        title={<ModalHeader icon={<EyeOutlined />} title="智能体详情" />}
         open={detailOpen}
         onCancel={() => setDetailOpen(false)}
         footer={
@@ -772,6 +762,7 @@ export default function AgentStudioPage() {
           </Space>
         }
         width={640}
+        destroyOnClose
       >
         {detailTarget && (
           <>
@@ -835,7 +826,7 @@ export default function AgentStudioPage() {
 
       {/* ===== 发布为数字员工弹窗 ===== */}
       <Modal
-        title={<Space><RocketOutlined style={{ color: '#52c41a' }} />发布为数字员工</Space>}
+        title={<ModalHeader icon={<RocketOutlined />} title="发布为数字员工" color="#52c41a" />}
         open={publishOpen}
         onCancel={() => setPublishOpen(false)}
         onOk={handlePublish}
@@ -843,6 +834,7 @@ export default function AgentStudioPage() {
         cancelText="取消"
         confirmLoading={publishing}
         okButtonProps={{ style: { background: '#52c41a', borderColor: '#52c41a' } }}
+        destroyOnClose
       >
         {publishTarget && (
           <div style={{ marginTop: 16 }}>

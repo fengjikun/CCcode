@@ -136,6 +136,7 @@ export default function DICWorkerPage() {
         onCancel={() => setDetailWorker(null)}
         footer={null}
         width={560}
+        destroyOnClose
       >
         {detailWorker && (
           <>

@@ -9,7 +9,6 @@ import {
   Form,
   Input,
   Modal,
-  Popconfirm,
   Row,
   Select,
   Space,
@@ -59,6 +58,8 @@ import {
   SKILL_CATEGORY_LABELS,
   SKILL_STATUS_COLORS,
 } from '../../types/skill'
+import ModalHeader from '../../components/shared/ModalHeader'
+import ActionColumn from '../../components/shared/ActionColumn'
 import type { SkillCategory, SkillStatus } from '../../types/skill'
 
 const { Title, Text, Paragraph } = Typography
@@ -588,22 +589,12 @@ export default function SkillsMarketPage() {
       key: 'action',
       width: 160,
       render: (_: unknown, record: Skill) => (
-        <Space size="small">
-          <Tooltip title="查看详情">
-            <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
-          </Tooltip>
-          <Tooltip title="编辑">
-            <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)} />
-          </Tooltip>
-          <Tooltip title={record.status === 'Active' ? '禁用' : '启用'}>
-            <Button type="text" size="small" icon={<CheckCircleOutlined />} onClick={() => handleToggle(record.id)} />
-          </Tooltip>
-          <Popconfirm title="确认删除该 Skill？" onConfirm={() => handleDelete(record.id)}>
-            <Tooltip title="删除">
-              <Button type="text" size="small" danger icon={<DeleteOutlined />} />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
+        <ActionColumn actions={[
+          { key: 'view', icon: <EyeOutlined />, tooltip: '查看详情', onClick: () => openDetail(record) },
+          { key: 'edit', icon: <EditOutlined />, tooltip: '编辑', onClick: () => openEdit(record) },
+          { key: 'toggle', icon: <CheckCircleOutlined />, tooltip: record.status === 'Active' ? '禁用' : '启用', onClick: () => handleToggle(record.id) },
+          { key: 'delete', icon: <DeleteOutlined />, tooltip: '删除', danger: true, confirm: '确认删除该 Skill？', onClick: () => handleDelete(record.id) },
+        ]} />
       ),
     },
   ]
@@ -764,7 +755,7 @@ export default function SkillsMarketPage() {
 
       {/* ===== 创建弹窗 ===== */}
       <Modal
-        title={<Space><FolderOpenOutlined style={{ color: '#faad14' }} />创建 Skill</Space>}
+        title={<ModalHeader icon={<FolderOpenOutlined />} title="创建 Skill" color="#faad14" />}
         open={createOpen}
         onCancel={() => { setCreateOpen(false); form.resetFields(); setTemplates([]); setScripts([]) }}
         onOk={() => void handleCreate()}
@@ -779,7 +770,7 @@ export default function SkillsMarketPage() {
 
       {/* ===== 编辑弹窗 ===== */}
       <Modal
-        title={<Space><EditOutlined style={{ color: '#1677ff' }} />编辑 Skill</Space>}
+        title={<ModalHeader icon={<EditOutlined />} title="编辑 Skill" />}
         open={editOpen}
         onCancel={() => { setEditOpen(false); editForm.resetFields() }}
         onOk={() => void handleEdit()}
@@ -794,11 +785,12 @@ export default function SkillsMarketPage() {
 
       {/* ===== 详情弹窗 ===== */}
       <Modal
-        title={<Space><EyeOutlined style={{ color: '#1677ff' }} />Skill 详情</Space>}
+        title={<ModalHeader icon={<EyeOutlined />} title="Skill 详情" />}
         open={detailOpen}
         onCancel={() => setDetailOpen(false)}
         footer={<Button onClick={() => setDetailOpen(false)}>关闭</Button>}
-        width={760}
+        width={800}
+        destroyOnClose
       >
         {detailTarget && (
           <>
@@ -873,14 +865,14 @@ export default function SkillsMarketPage() {
 
       {/* ===== 从本体导入弹窗 ===== */}
       <Modal
-        title={<Space><ImportOutlined style={{ color: '#7c3aed' }} />从本体 Function 导入</Space>}
+        title={<ModalHeader icon={<ImportOutlined />} title="从本体 Function 导入" color="#7c3aed" />}
         open={importOpen}
         onCancel={() => setImportOpen(false)}
         onOk={handleImport}
         okText={`导入 (${selectedImports.length})`}
         cancelText="取消"
         okButtonProps={{ disabled: selectedImports.length === 0 }}
-        width={700}
+        width={640}
         destroyOnClose
       >
         <div style={{ marginTop: 16 }}>
