@@ -77,6 +77,12 @@ cp deploy/.env.example deploy/.env
 ./scripts/start.sh docker logs deploy/.env
 ```
 
+将本地最新数据导入远端部署（sqlite + 本体/项目资产）：
+
+```bash
+./scripts/init_remote_data.sh --host <远端IP> --remote-dir <远端项目目录> --yes
+```
+
 ### 重新构建并重启（前后端）
 
 ```bash

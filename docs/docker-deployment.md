@@ -58,3 +58,34 @@ cp deploy/.env.example deploy/.env
 - 宿主机目录：`./backend/data`
 - 容器目录：`/app/backend/data`
 - SQLite 文件：`/app/backend/data/devicedb.sqlite`
+
+## 远端初始化导入（本地数据 -> 远端）
+
+当你本地已有最新 `agent` / 本体数据（含 `backend/data/devicedb.sqlite` 与 `project_assets`）时，可使用：
+
+```bash
+./scripts/init_remote_data.sh \
+  --host <远端IP或域名> \
+  --user root \
+  --remote-dir <远端项目目录> \
+  --identity ~/.ssh/id_rsa \
+  --yes
+```
+
+脚本会自动执行：
+
+1. 打包本地 `backend/data`
+2. 上传到远端 `/tmp`
+3. 远端备份旧数据到 `backups/backend-data-<timestamp>.tar.gz`
+4. 覆盖导入新数据
+5. 重启 Docker 服务并输出状态
+
+先演练（不实际上传/覆盖）：
+
+```bash
+./scripts/init_remote_data.sh \
+  --host <远端IP或域名> \
+  --remote-dir <远端项目目录> \
+  --dry-run \
+  --yes
+```
