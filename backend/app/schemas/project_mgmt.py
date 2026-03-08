@@ -92,17 +92,20 @@ class SkillSource(str, Enum):
 
 class ProjectCreateRequest(_CamelModel):
     name: str
+    category: Optional[str] = None
     description: Optional[str] = None
 
 
 class ProjectUpdateRequest(_CamelModel):
     name: str
+    category: Optional[str] = None
     description: Optional[str] = None
 
 
 class ProjectSummary(_CamelModel):
     id: str
     name: str
+    category: Optional[str] = None
     description: Optional[str] = None
     created_at: datetime
     updated_at: datetime
@@ -423,6 +426,7 @@ class ProjectFunction(_CamelModel):
 class ProjectDetail(_CamelModel):
     id: str
     name: str
+    category: Optional[str] = None
     description: Optional[str] = None
     created_at: datetime
     updated_at: datetime

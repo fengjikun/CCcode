@@ -207,6 +207,7 @@ export interface FunctionDefinition {
 export interface ProjectDetail {
   id: string
   name: string
+  category?: string
   description?: string
   createdAt: string
   updatedAt: string
@@ -224,6 +225,7 @@ export interface ProjectDetail {
 export interface ProjectSummary {
   id: string
   name: string
+  category?: string
   description?: string
   createdAt: string
   updatedAt: string

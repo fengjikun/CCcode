@@ -11,6 +11,7 @@ class Project(Base):
     id = Column(String, primary_key=True)
     owner_user_id = Column(Integer, nullable=False)
     name = Column(String(64), nullable=False)
+    category = Column(String(32), nullable=True)
     description = Column(String(300))
     current_version_id = Column(String)
     created_at = Column(DateTime, default=datetime.now)

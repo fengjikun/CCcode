@@ -264,6 +264,7 @@ function mapProjectSummary(item: any): ProjectSummary {
   return {
     id: String(item.id),
     name: String(item.name || ''),
+    category: String(item.category || ''),
     description: String(item.description || ''),
     createdAt: String(item.createdAt || new Date().toISOString()),
     updatedAt: String(item.updatedAt || new Date().toISOString()),
@@ -277,6 +278,7 @@ function mapProjectDetail(item: any): ProjectDetail {
   return {
     id: String(item.id),
     name: String(item.name || ''),
+    category: String(item.category || ''),
     description: String(item.description || ''),
     createdAt: String(item.createdAt || new Date().toISOString()),
     updatedAt: String(item.updatedAt || new Date().toISOString()),
@@ -297,8 +299,8 @@ export async function listProjects(): Promise<ProjectSummary[]> {
   return rows.map(mapProjectSummary)
 }
 
-export async function createProject(name: string, description?: string): Promise<ProjectSummary> {
-  const row = await fetchJSON<any>('/api/projects', 'POST', { name, description: description || '' })
+export async function createProject(name: string, description?: string, category?: string): Promise<ProjectSummary> {
+  const row = await fetchJSON<any>('/api/projects', 'POST', { name, category: category || '', description: description || '' })
   return mapProjectSummary(row)
 }
 
@@ -306,8 +308,8 @@ export async function deleteProject(projectId: string): Promise<void> {
   await fetchJSON(`/api/projects/${projectId}`, 'DELETE')
 }
 
-export async function updateProject(projectId: string, name: string, description?: string): Promise<ProjectSummary> {
-  const row = await fetchJSON<any>(`/api/projects/${projectId}`, 'PATCH', { name, description: description || '' })
+export async function updateProject(projectId: string, name: string, description?: string, category?: string): Promise<ProjectSummary> {
+  const row = await fetchJSON<any>(`/api/projects/${projectId}`, 'PATCH', { name, category: category || '', description: description || '' })
   return mapProjectSummary(row)
 }
 

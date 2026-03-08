@@ -3203,6 +3203,7 @@ def list_projects(db: Session, user_id: int):
             {
                 "id": project.id,
                 "name": project.name,
+                "category": project.category or "",
                 "description": project.description or "",
                 "created_at": project.created_at,
                 "updated_at": project.updated_at,
@@ -3233,6 +3234,7 @@ def create_project(db: Session, user_id: int, payload: dict):
         id=_new_id("proj"),
         owner_user_id=user_id,
         name=name,
+        category=_normalize_text(payload.get("category")),
         description=_normalize_text(payload.get("description")),
         created_at=now,
         updated_at=now,
@@ -3251,6 +3253,7 @@ def create_project(db: Session, user_id: int, payload: dict):
     return {
         "id": project.id,
         "name": project.name,
+        "category": project.category or "",
         "description": project.description or "",
         "created_at": project.created_at,
         "updated_at": project.updated_at,
@@ -3319,6 +3322,7 @@ def get_project_detail(db: Session, user_id: int, project_id: str):
     return {
         "id": project.id,
         "name": project.name,
+        "category": project.category or "",
         "description": project.description or "",
         "created_at": project.created_at,
         "updated_at": project.updated_at,
@@ -3349,6 +3353,8 @@ def update_project(db: Session, user_id: int, project_id: str, payload: dict):
         raise ValueError("项目名称已存在")
 
     project.name = name
+    if "category" in payload:
+        project.category = _normalize_text(payload.get("category"))
     project.description = _normalize_text(payload.get("description", project.description))
     _touch_project(project)
     db.commit()
@@ -3357,6 +3363,7 @@ def update_project(db: Session, user_id: int, project_id: str, payload: dict):
     return {
         "id": project.id,
         "name": project.name,
+        "category": project.category or "",
         "description": project.description or "",
         "created_at": project.created_at,
         "updated_at": project.updated_at,

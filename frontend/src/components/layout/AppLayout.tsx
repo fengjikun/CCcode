@@ -17,6 +17,10 @@ import {
   FileSearchOutlined,
   FolderOpenOutlined,
   SearchOutlined,
+  SolutionOutlined,
+  DesktopOutlined,
+  EyeOutlined,
+  ProjectOutlined,
 } from '@ant-design/icons'
 import { clearAuthSession, getAuthUser } from '../../auth/session'
 
@@ -35,8 +39,8 @@ const menuItems: MenuItem[] = [
     icon: <TeamOutlined />,
     label: '数字员工应用',
     children: [
-      { key: '/digital-worker/business', label: '业务数字员工' },
-      { key: '/digital-worker/dic', label: 'DIC 数字员工' },
+      { key: '/digital-worker/business', icon: <SolutionOutlined />, label: '业务数字员工' },
+      { key: '/digital-worker/dic', icon: <DesktopOutlined />, label: 'DIC 数字员工' },
     ],
   },
   {
@@ -54,8 +58,8 @@ const menuItems: MenuItem[] = [
     icon: <ApartmentOutlined />,
     label: 'Deepology',
     children: [
-      { key: '/ontology/overview', label: '本体概览' },
-      { key: '/ontology/projects', label: '本体管理' },
+      { key: '/ontology/overview', icon: <EyeOutlined />, label: '本体概览' },
+      { key: '/ontology/projects', icon: <ProjectOutlined />, label: '本体管理' },
       { key: '/ontology/graph', icon: <SearchOutlined />, label: '图谱检索' },
     ],
   },
