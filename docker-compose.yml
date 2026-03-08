@@ -16,6 +16,53 @@ services:
       AUTH_PASSWORD_HASH_ITERATIONS: ${AUTH_PASSWORD_HASH_ITERATIONS:-200000}
       AUTH_DEFAULT_USERNAME: ${AUTH_DEFAULT_USERNAME:-admin}
       AUTH_DEFAULT_PASSWORD: ${AUTH_DEFAULT_PASSWORD:-admin123456}
+      # 数据库配置：DB_TYPE=sqlite（默认）或 mysql
+      DB_TYPE: ${DB_TYPE:-sqlite}
+      DB_HOST: ${DB_HOST:-cccode-mysql}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER:-cccode}
+      DB_PASSWORD: ${DB_PASSWORD:-CCcode@2024}
+      DB_NAME: ${DB_NAME:-cccode}
     volumes:
       - ./deploy/backend/data:/app/backend/data
     restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+        required: false
+
+  mysql:
+    image: mysql:8.0
+    container_name: cccode-mysql
+    profiles:
+      - mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-CCcode@root2024}
+      MYSQL_DATABASE: ${DB_NAME:-cccode}
+      MYSQL_USER: ${DB_USER:-cccode}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-CCcode@2024}
+      TZ: Asia/Shanghai
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./deploy/mysql/conf/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+      - ./deploy/mysql/backup:/backup
+      - ./deploy/mysql/initdb:/docker-entrypoint-initdb.d:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --max-connections=500
+      - --innodb-buffer-pool-size=256M
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-CCcode@root2024}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  mysql_data:
+    name: cccode-mysql-data

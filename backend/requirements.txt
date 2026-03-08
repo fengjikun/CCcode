@@ -6,3 +6,5 @@ openai
 python-dotenv
 alembic
 python-multipart
+pymysql
+cryptography

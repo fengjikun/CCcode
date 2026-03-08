@@ -42,7 +42,7 @@ npm run lint
 ```
 
 ### Environment
-Backend requires a `.env` file in `backend/` with `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL` for AI diagnosis features. Auth config: `AUTH_SECRET_KEY`, `AUTH_TOKEN_EXPIRE_MINUTES`, `AUTH_DEFAULT_USERNAME`, `AUTH_DEFAULT_PASSWORD`. The database is SQLite at `./data/devicedb.sqlite`, auto-created on startup via Alembic migrations.
+Backend requires a `.env` file in `backend/` with `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL` for AI diagnosis features. Auth config: `AUTH_SECRET_KEY`, `AUTH_TOKEN_EXPIRE_MINUTES`, `AUTH_DEFAULT_USERNAME`, `AUTH_DEFAULT_PASSWORD`. Database is controlled by `DB_TYPE` env var: `sqlite` (default, at `./data/devicedb.sqlite`) or `mysql` (requires `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`). Schema auto-created on startup via Alembic migrations. MySQL deployment docs at `deploy/mysql/README.md`.
 
 ## Architecture
 

@@ -19,7 +19,11 @@ backend/.deps/
 dist/
 .pytest_cache/
 .spec-workflow/
-deploy/
+deploy/*
+!deploy/.env.example
+!deploy/mysql/
+deploy/mysql/.env
+deploy/mysql/backup/*.sql.gz
 
 hongmacc.sh
 

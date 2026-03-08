@@ -1,0 +1,42 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: cccode-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-CCcode@root2024}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-cccode}
+      MYSQL_USER: ${MYSQL_USER:-cccode}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-CCcode@2024}
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+      TZ: Asia/Shanghai
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./conf/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+      - ./backup:/backup
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --max-connections=500
+      - --innodb-buffer-pool-size=256M
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-CCcode@root2024}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - cccode-net
+
+volumes:
+  mysql_data:
+    name: cccode-mysql-data
+
+networks:
+  cccode-net:
+    name: cccode-net
