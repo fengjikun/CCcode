@@ -14,7 +14,6 @@ import {
   Row,
   Select,
   Space,
-  Statistic,
   Tag,
   Typography,
   message,
@@ -22,7 +21,6 @@ import {
 import {
   ApartmentOutlined,
   AppstoreOutlined,
-  BulbOutlined,
   DeleteOutlined,
   EditOutlined,
   ExperimentOutlined,
@@ -34,7 +32,6 @@ import {
   SearchOutlined,
   SettingOutlined,
   ShoppingCartOutlined,
-  ThunderboltOutlined,
   ToolOutlined,
 } from '@ant-design/icons'
 import { createProject, deleteProject, listProjects, updateProject } from '../api/projectManagement'
@@ -55,12 +52,11 @@ interface DomainDef {
 }
 
 const DOMAINS: DomainDef[] = [
-  { key: 'rd', label: '研发 R&D', shortLabel: '研发', icon: <BulbOutlined />, color: '#4f46e5', gradient: 'linear-gradient(135deg, #4f46e5, #6366f1)' },
-  { key: 'process', label: '工艺 Process', shortLabel: '工艺', icon: <SettingOutlined />, color: '#d97706', gradient: 'linear-gradient(135deg, #d97706, #f59e0b)' },
-  { key: 'mfg', label: '生产 Mfg', shortLabel: '生产', icon: <ToolOutlined />, color: '#16a34a', gradient: 'linear-gradient(135deg, #16a34a, #22c55e)' },
-  { key: 'scm', label: '供应链 SCM', shortLabel: '供应链', icon: <ShoppingCartOutlined />, color: '#0891b2', gradient: 'linear-gradient(135deg, #0891b2, #06b6d4)' },
-  { key: 'sales', label: '销售 Sales', shortLabel: '销售', icon: <RocketOutlined />, color: '#7c3aed', gradient: 'linear-gradient(135deg, #7c3aed, #8b5cf6)' },
-  { key: 'service', label: '售后 Service', shortLabel: '售后', icon: <ExperimentOutlined />, color: '#e11d48', gradient: 'linear-gradient(135deg, #e11d48, #f43f5e)' },
+  { key: 'manufacturing', label: '制造行业', shortLabel: '制造', icon: <ToolOutlined />, color: '#4f46e5', gradient: 'linear-gradient(135deg, #4f46e5, #6366f1)' },
+  { key: 'retail', label: '零售行业', shortLabel: '零售', icon: <ShoppingCartOutlined />, color: '#d97706', gradient: 'linear-gradient(135deg, #d97706, #f59e0b)' },
+  { key: 'medical', label: '医疗行业', shortLabel: '医疗', icon: <ExperimentOutlined />, color: '#16a34a', gradient: 'linear-gradient(135deg, #16a34a, #22c55e)' },
+  { key: 'transport', label: '交通行业', shortLabel: '交通', icon: <RocketOutlined />, color: '#0891b2', gradient: 'linear-gradient(135deg, #0891b2, #06b6d4)' },
+  { key: 'general', label: '通用业务', shortLabel: '通用', icon: <SettingOutlined />, color: '#7c3aed', gradient: 'linear-gradient(135deg, #7c3aed, #8b5cf6)' },
 ]
 
 const DOMAIN_MAP = Object.fromEntries(DOMAINS.map(d => [d.key, d]))
@@ -159,13 +155,7 @@ export default function ProjectsPage() {
     )
   }, [projects, grouped, activeTab, searchText])
 
-  // Stats
   const totalProjects = projects.length
-  const totalDocs = projects.reduce((s, p) => s + p.documentCount, 0)
-  const totalVersions = projects.reduce((s, p) => s + p.versionCount, 0)
-  const coveredDomains = new Set(
-    projects.map(p => p.category).filter(c => c && DOMAIN_MAP[c])
-  ).size
 
   const handleCreate = async () => {
     try {
@@ -333,7 +323,7 @@ export default function ProjectsPage() {
               本体管理
             </Title>
             <Text type="secondary">
-              覆盖研发、工艺、生产、供应链、销售、售后 6 大业务环节，按分类管理本体项目。
+              覆盖制造、零售、医疗、交通、通用 5 大行业领域，按行业分类管理本体项目。
             </Text>
           </div>
           <Space>
@@ -346,30 +336,6 @@ export default function ProjectsPage() {
           </Space>
         </div>
       </Card>
-
-      {/* ═══ Stats ═══ */}
-      <Row gutter={[16, 16]}>
-        <Col xs={12} md={6}>
-          <Card className="stat-card" hoverable>
-            <Statistic title="本体项目" value={totalProjects} prefix={<ApartmentOutlined />} className="stat-primary" />
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card className="stat-card" hoverable>
-            <Statistic title="覆盖环节" value={coveredDomains} suffix={<Text type="secondary" style={{ fontSize: 14 }}>/ 6</Text>} className="stat-info" />
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card className="stat-card" hoverable>
-            <Statistic title="文档 / 版本" value={totalDocs} suffix={<Text type="secondary" style={{ fontSize: 14 }}>/ {totalVersions} 版本</Text>} prefix={<FileTextOutlined />} className="stat-success" />
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card className="stat-card" hoverable>
-            <Statistic title="运行中任务" value={projects.filter(p => p.latestRunStatus === 'RUNNING').length} prefix={<ThunderboltOutlined />} className="stat-warning" />
-          </Card>
-        </Col>
-      </Row>
 
       {/* ═══ Tab Bar + Search ═══ */}
       <Card className="section-card" bodyStyle={{ padding: '12px 16px' }}>
@@ -466,11 +432,11 @@ export default function ProjectsPage() {
         destroyOnClose
       >
         <Form<ProjectForm> form={form} layout="vertical">
-          <Form.Item name="category" label="业务环节" rules={[{ required: true, message: '请选择业务环节' }]}>
-            <Select placeholder="选择所属业务环节" options={categoryOptions} />
+          <Form.Item name="category" label="行业分类" rules={[{ required: true, message: '请选择行业分类' }]}>
+            <Select placeholder="选择所属行业分类" options={categoryOptions} />
           </Form.Item>
           <Form.Item name="name" label="本体名称" rules={[{ required: true, message: '请输入本体名称' }]}>
-            <Input placeholder="例如：设备维修本体、CPQ(配置报价)本体" maxLength={64} />
+            <Input placeholder="例如：设备维修本体、CPQ配置逻辑本体" maxLength={64} />
           </Form.Item>
           <Form.Item name="description" label="本体说明">
             <Input.TextArea rows={3} placeholder="可选，描述该本体的业务范围与边界" maxLength={300} />
@@ -490,11 +456,11 @@ export default function ProjectsPage() {
         destroyOnClose
       >
         <Form<ProjectForm> form={editForm} layout="vertical">
-          <Form.Item name="category" label="业务环节" rules={[{ required: true, message: '请选择业务环节' }]}>
-            <Select placeholder="选择所属业务环节" options={categoryOptions} />
+          <Form.Item name="category" label="行业分类" rules={[{ required: true, message: '请选择行业分类' }]}>
+            <Select placeholder="选择所属行业分类" options={categoryOptions} />
           </Form.Item>
           <Form.Item name="name" label="本体名称" rules={[{ required: true, message: '请输入本体名称' }]}>
-            <Input placeholder="例如：供应链管理本体" maxLength={64} />
+            <Input placeholder="例如：供应商画像本体" maxLength={64} />
           </Form.Item>
           <Form.Item name="description" label="本体说明">
             <Input.TextArea rows={3} placeholder="可选，描述该本体的业务范围与边界" maxLength={300} />
