@@ -1,38 +1,7 @@
 import type { ObjectTypeSummary, LinkTypeSummary, ActionDefinition } from '../types/ontologyOverview'
-import { delay, rand } from './mockConfig'
+import { fetchJSON } from './client'
 
-const OBJECT_TYPES: ObjectTypeSummary[] = [
-  { key: '1', name: 'Equipment', displayName: '设备', properties: 3, actions: 2, links: 1, backingDataset: 'fault_ontology/equipment_master', status: 'Active', recordCount: 1, updatedAt: '2025-03-08' },
-  { key: '2', name: 'Phenomenon', displayName: '故障现象', properties: 2, actions: 1, links: 3, backingDataset: 'fault_ontology/phenomena', status: 'Active', recordCount: 4, updatedAt: '2025-03-08' },
-  { key: '3', name: 'SubPhenomenon', displayName: '子现象', properties: 1, actions: 0, links: 3, backingDataset: 'fault_ontology/sub_phenomena', status: 'Active', recordCount: 12, updatedAt: '2025-03-07' },
-  { key: '4', name: 'Checkpoint', displayName: '检查点', properties: 4, actions: 1, links: 3, backingDataset: 'fault_ontology/checkpoints', status: 'Active', recordCount: 12, updatedAt: '2025-03-07' },
-  { key: '5', name: 'Cause', displayName: '故障原因', properties: 1, actions: 0, links: 1, backingDataset: 'fault_ontology/causes', status: 'Active', recordCount: 11, updatedAt: '2025-03-06' },
-  { key: '6', name: 'Solution', displayName: '解决方案', properties: 4, actions: 1, links: 1, backingDataset: 'fault_ontology/solutions', status: 'Active', recordCount: 11, updatedAt: '2025-03-06' },
-  { key: '7', name: 'Component', displayName: '部件', properties: 1, actions: 0, links: 1, backingDataset: 'fault_ontology/components', status: 'Active', recordCount: 8, updatedAt: '2025-03-05' },
-  { key: '8', name: 'Parameter', displayName: '参数', properties: 4, actions: 0, links: 1, backingDataset: 'fault_ontology/parameters', status: 'Active', recordCount: 6, updatedAt: '2025-03-05' },
-]
-
-const LINK_TYPES: LinkTypeSummary[] = [
-  { key: '1', name: 'prone_to', sourceType: 'Equipment', targetType: 'Phenomenon', cardinality: '1:N', description: '设备易发生的故障现象' },
-  { key: '2', name: 'contains', sourceType: 'Phenomenon', targetType: 'SubPhenomenon', cardinality: '1:N', description: '故障现象包含的细分子现象' },
-  { key: '3', name: 'needs_check', sourceType: 'Phenomenon', targetType: 'Checkpoint', cardinality: '1:N', description: '故障现象/子现象需要的检查项' },
-  { key: '4', name: 'discovers', sourceType: 'Checkpoint', targetType: 'SubPhenomenon', cardinality: '1:N', description: '检查点可发现的子现象' },
-  { key: '5', name: 'located_at', sourceType: 'SubPhenomenon', targetType: 'Component', cardinality: 'N:1', description: '子现象/检查点关联的设备部件' },
-  { key: '6', name: 'caused_by', sourceType: 'SubPhenomenon', targetType: 'Cause', cardinality: 'N:1', description: '子现象由该原因导致' },
-  { key: '7', name: 'solved_by', sourceType: 'Cause', targetType: 'Solution', cardinality: '1:N', description: '故障原因的推荐解决方案' },
-  { key: '8', name: 'supports', sourceType: 'Parameter', targetType: 'Checkpoint', cardinality: 'N:1', description: '参数为检查点提供数据支撑' },
-]
-
-const ACTIONS: ActionDefinition[] = [
-  { key: '1', name: 'AutoDiagnose', objectType: 'Phenomenon', parameters: 3, preconditions: 1, effects: 3, status: 'Active', callCount: 1856 },
-  { key: '2', name: 'GenerateWorkOrder', objectType: 'Solution', parameters: 2, preconditions: 1, effects: 2, status: 'Active', callCount: 742 },
-  { key: '3', name: 'MatchFaultPattern', objectType: 'Phenomenon', parameters: 2, preconditions: 1, effects: 1, status: 'Active', callCount: 2340 },
-  { key: '4', name: 'GenerateCheckList', objectType: 'Checkpoint', parameters: 1, preconditions: 1, effects: 1, status: 'Active', callCount: 1560 },
-  { key: '5', name: 'CalcRepairPriority', objectType: 'Cause', parameters: 3, preconditions: 1, effects: 1, status: 'Active', callCount: 980 },
-  { key: '6', name: 'CheckSpareParts', objectType: 'Component', parameters: 2, preconditions: 1, effects: 1, status: 'Draft', callCount: 0 },
-  { key: '7', name: 'CollectParameter', objectType: 'Parameter', parameters: 2, preconditions: 1, effects: 1, status: 'Active', callCount: 3200 },
-  { key: '8', name: 'TraceRootCause', objectType: 'SubPhenomenon', parameters: 2, preconditions: 1, effects: 2, status: 'Active', callCount: 1120 },
-]
+const OVERVIEW_BASE = '/api/ontology/overview'
 
 export interface OntologyStats {
   objectTypes: number
@@ -44,28 +13,25 @@ export interface OntologyStats {
 }
 
 export async function getOntologyStats(): Promise<OntologyStats> {
-  await delay(rand(300, 500))
+  const data = await fetchJSON<Record<string, any>>(`${OVERVIEW_BASE}/stats`)
   return {
-    objectTypes: OBJECT_TYPES.length,
-    totalProperties: OBJECT_TYPES.reduce((s, o) => s + o.properties, 0),
-    linkTypes: LINK_TYPES.length,
-    actions: ACTIONS.length,
-    totalRecords: `${(OBJECT_TYPES.reduce((s, o) => s + o.recordCount, 0) / 1000).toFixed(1)}K`,
-    activeActions: ACTIONS.filter(a => a.status === 'Active').length,
+    objectTypes: Number(data.objectTypes ?? data.objectTypesCount ?? 0),
+    totalProperties: Number(data.totalProperties ?? 0),
+    linkTypes: Number(data.linkTypes ?? data.linkTypesCount ?? 0),
+    actions: Number(data.actions ?? data.actionsCount ?? 0),
+    totalRecords: String(data.totalRecords ?? '0'),
+    activeActions: Number(data.activeActions ?? 0),
   }
 }
 
 export async function getObjectTypes(): Promise<ObjectTypeSummary[]> {
-  await delay(rand(300, 500))
-  return OBJECT_TYPES
+  return fetchJSON<ObjectTypeSummary[]>(`${OVERVIEW_BASE}/object-types`)
 }
 
 export async function getLinkTypes(): Promise<LinkTypeSummary[]> {
-  await delay(rand(200, 400))
-  return LINK_TYPES
+  return fetchJSON<LinkTypeSummary[]>(`${OVERVIEW_BASE}/link-types`)
 }
 
 export async function getActions(): Promise<ActionDefinition[]> {
-  await delay(rand(200, 400))
-  return ACTIONS
+  return fetchJSON<ActionDefinition[]>(`${OVERVIEW_BASE}/actions`)
 }

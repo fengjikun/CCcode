@@ -1,5 +1,6 @@
 """Mock ontology router – serves data from JSON files, no DB required."""
 
+import json
 import random
 from datetime import datetime
 
@@ -14,6 +15,13 @@ from app.services.mock_json_store import (
 
 router = APIRouter(prefix="/api/ontology", tags=["mock-ontology"])
 
+
+def _find_by_id(items: list[dict], item_id: int, detail: str):
+    for item in items:
+        if item.get("id") == item_id:
+            return item
+    raise HTTPException(status_code=404, detail=detail)
+
 # ---------------------------------------------------------------------------
 # Overview
 # ---------------------------------------------------------------------------
@@ -27,7 +35,7 @@ def overview_stats():
     actions = d.get("actions", [])
     total_records_raw = sum(o.get("recordCount", 0) for o in ots)
     total_records = f"{total_records_raw / 1000:.1f}K"
-    active_actions = sum(1 for a in actions if a.get("status") == "active")
+    active_actions = sum(1 for a in actions if str(a.get("status", "")).lower() == "active")
     return {
         "objectTypesCount": len(ots),
         "totalProperties": total_props,
@@ -79,6 +87,20 @@ async def create_object_type(request: Request):
     return ot
 
 
+@router.get("/object-types/{ot_id}")
+def get_object_type(ot_id: int):
+    return _find_by_id(ontology_store.data.get("objectTypes", []), ot_id, "ObjectType not found")
+
+
+@router.put("/object-types/{ot_id}")
+async def update_object_type(ot_id: int, request: Request):
+    body = await request.json()
+    target = _find_by_id(ontology_store.data.get("objectTypes", []), ot_id, "ObjectType not found")
+    target.update(body)
+    ontology_store.save()
+    return target
+
+
 @router.delete("/object-types/{ot_id}")
 def delete_object_type(ot_id: int):
     ots = ontology_store.data.get("objectTypes", [])
@@ -114,6 +136,19 @@ async def create_property(ot_id: int, request: Request):
     props.setdefault(str(ot_id), []).append(prop)
     ontology_store.save()
     return prop
+
+
+@router.put("/properties/{prop_id}")
+async def update_property(prop_id: int, request: Request):
+    body = await request.json()
+    props = ontology_store.data.get("properties", {})
+    for key in list(props.keys()):
+        for item in props[key]:
+            if item.get("id") == prop_id:
+                item.update(body)
+                ontology_store.save()
+                return item
+    raise HTTPException(status_code=404, detail="Property not found")
 
 
 @router.delete("/properties/{prop_id}")
@@ -152,6 +187,20 @@ async def create_link_type(request: Request):
     return lt
 
 
+@router.get("/link-types/{lt_id}")
+def get_link_type(lt_id: int):
+    return _find_by_id(ontology_store.data.get("linkTypes", []), lt_id, "LinkType not found")
+
+
+@router.put("/link-types/{lt_id}")
+async def update_link_type(lt_id: int, request: Request):
+    body = await request.json()
+    target = _find_by_id(ontology_store.data.get("linkTypes", []), lt_id, "LinkType not found")
+    target.update(body)
+    ontology_store.save()
+    return target
+
+
 @router.delete("/link-types/{lt_id}")
 def delete_link_type(lt_id: int):
     lts = ontology_store.data.get("linkTypes", [])
@@ -163,6 +212,15 @@ def delete_link_type(lt_id: int):
 # ---------------------------------------------------------------------------
 # Schema (bulk clear)
 # ---------------------------------------------------------------------------
+
+@router.get("/schema")
+def get_schema():
+    return {
+        "objectTypes": ontology_store.data.get("objectTypes", []),
+        "properties": ontology_store.data.get("properties", {}),
+        "linkTypes": ontology_store.data.get("linkTypes", []),
+    }
+
 
 @router.delete("/schema")
 def clear_schema():
@@ -184,10 +242,7 @@ def list_action_types():
 
 @router.get("/action-types/{at_id}")
 def get_action_type(at_id: int):
-    for at in ontology_store.data.get("actionTypes", []):
-        if at.get("id") == at_id:
-            return at
-    raise HTTPException(status_code=404, detail="ActionType not found")
+    return _find_by_id(ontology_store.data.get("actionTypes", []), at_id, "ActionType not found")
 
 
 @router.post("/action-types")
@@ -241,6 +296,19 @@ async def create_action_parameter(at_id: int, request: Request):
     return body
 
 
+@router.put("/parameters/{param_id}")
+async def update_action_parameter(param_id: int, request: Request):
+    body = await request.json()
+    params = ontology_store.data.get("actionParameters", {})
+    for key in list(params.keys()):
+        for item in params[key]:
+            if item.get("id") == param_id:
+                item.update(body)
+                ontology_store.save()
+                return item
+    raise HTTPException(status_code=404, detail="ActionParameter not found")
+
+
 @router.delete("/parameters/{param_id}")
 def delete_action_parameter(param_id: int):
     params = ontology_store.data.get("actionParameters", {})
@@ -270,6 +338,19 @@ async def create_action_rule(at_id: int, request: Request):
     return body
 
 
+@router.put("/rules/{rule_id}")
+async def update_action_rule(rule_id: int, request: Request):
+    body = await request.json()
+    rules = ontology_store.data.get("actionRules", {})
+    for key in list(rules.keys()):
+        for item in rules[key]:
+            if item.get("id") == rule_id:
+                item.update(body)
+                ontology_store.save()
+                return item
+    raise HTTPException(status_code=404, detail="ActionRule not found")
+
+
 @router.delete("/rules/{rule_id}")
 def delete_action_rule(rule_id: int):
     rules = ontology_store.data.get("actionRules", {})
@@ -290,44 +371,115 @@ def list_executions(at_id: int):
         {
             "id": 1,
             "actionTypeId": at_id,
-            "status": "success",
-            "startedAt": now,
-            "duration": 1230,
-            "triggeredBy": "system",
-            "result": "Completed successfully",
+            "status": "SUCCESS",
+            "executedAt": now,
+            "durationMs": 1230,
+            "outputDataJson": "{\"message\":\"Completed successfully\"}",
         },
         {
             "id": 2,
             "actionTypeId": at_id,
-            "status": "success",
-            "startedAt": now,
-            "duration": 890,
-            "triggeredBy": "user",
-            "result": "Completed successfully",
+            "status": "SUCCESS",
+            "executedAt": now,
+            "durationMs": 890,
+            "outputDataJson": "{\"message\":\"Completed successfully\"}",
         },
         {
             "id": 3,
             "actionTypeId": at_id,
-            "status": "failed",
-            "startedAt": now,
-            "duration": 450,
-            "triggeredBy": "schedule",
-            "result": "Timeout error",
+            "status": "FAILED",
+            "executedAt": now,
+            "durationMs": 450,
+            "errorMessage": "Timeout error",
         },
     ]
 
 
 @router.post("/action-types/{at_id}/execute")
-async def execute_action(at_id: int):
+async def execute_action(at_id: int, request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
     return {
         "id": random.randint(100, 9999),
         "actionTypeId": at_id,
-        "status": "success",
-        "startedAt": datetime.now().isoformat(),
-        "duration": random.randint(200, 3000),
-        "triggeredBy": "user",
-        "result": "Execution completed successfully",
+        "status": "SUCCESS",
+        "executedAt": datetime.now().isoformat(),
+        "durationMs": random.randint(200, 3000),
+        "outputDataJson": "{\"message\":\"Execution completed successfully\"}",
+        "parametersJson": json.dumps(body, ensure_ascii=False),
     }
+
+
+# ---------------------------------------------------------------------------
+# Objects & Links
+# ---------------------------------------------------------------------------
+
+@router.get("/objects/{type_id}")
+def list_objects(type_id: int):
+    return [
+        o
+        for o in ontology_store.data.setdefault("objects", [])
+        if o.get("objectTypeId") == type_id
+    ]
+
+
+@router.post("/objects/{type_id}")
+async def create_object(type_id: int, request: Request):
+    body = await request.json()
+    new_id = next_onto_id()
+    item = {
+        "id": new_id,
+        "objectTypeId": type_id,
+        "externalId": body.get("externalId"),
+        "propertiesJson": body.get("propertiesJson"),
+    }
+    ontology_store.data.setdefault("objects", []).append(item)
+    ontology_store.save()
+    return item
+
+
+@router.delete("/objects/{object_id}")
+def delete_object(object_id: int):
+    objects = ontology_store.data.get("objects", [])
+    ontology_store.data["objects"] = [o for o in objects if o.get("id") != object_id]
+    links = ontology_store.data.get("links", [])
+    ontology_store.data["links"] = [
+        l
+        for l in links
+        if l.get("sourceObjectId") != object_id and l.get("targetObjectId") != object_id
+    ]
+    ontology_store.save()
+    return Response(status_code=204)
+
+
+@router.get("/links")
+def list_links():
+    return ontology_store.data.setdefault("links", [])
+
+
+@router.post("/links")
+async def create_link(request: Request):
+    body = await request.json()
+    new_id = next_onto_id()
+    item = {
+        "id": new_id,
+        "linkTypeId": body.get("linkTypeId"),
+        "sourceObjectId": body.get("sourceObjectId"),
+        "targetObjectId": body.get("targetObjectId"),
+    }
+    ontology_store.data.setdefault("links", []).append(item)
+    ontology_store.save()
+    return item
+
+
+@router.delete("/links/{link_id}")
+def delete_link(link_id: int):
+    links = ontology_store.data.get("links", [])
+    ontology_store.data["links"] = [l for l in links if l.get("id") != link_id]
+    ontology_store.save()
+    return Response(status_code=204)
 
 
 # ---------------------------------------------------------------------------
@@ -339,6 +491,11 @@ def list_functions():
     return ontology_store.data.get("functions", [])
 
 
+@router.get("/functions/{fn_id}")
+def get_function(fn_id: int):
+    return _find_by_id(ontology_store.data.get("functions", []), fn_id, "Function not found")
+
+
 @router.post("/functions")
 async def create_function(request: Request):
     body = await request.json()
@@ -348,8 +505,8 @@ async def create_function(request: Request):
         "name": body.get("name", ""),
         "displayName": body.get("displayName", ""),
         "description": body.get("description", ""),
-        "status": body.get("status", "draft"),
-        "scriptType": body.get("scriptType", "python"),
+        "status": body.get("status", "DRAFT"),
+        "scriptType": body.get("scriptType", "PYTHON"),
         "scriptContent": body.get("scriptContent", ""),
     }
     ontology_store.data.setdefault("functions", []).append(fn)
@@ -377,12 +534,32 @@ def delete_function(fn_id: int):
 
 
 @router.post("/functions/{fn_id}/execute")
-async def execute_function(fn_id: int):
+async def execute_function(fn_id: int, request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
     return {
         "id": random.randint(100, 9999),
         "functionId": fn_id,
-        "status": "success",
-        "startedAt": datetime.now().isoformat(),
-        "duration": random.randint(100, 2000),
-        "result": "Function executed successfully",
+        "status": "SUCCESS",
+        "executedAt": datetime.now().isoformat(),
+        "durationMs": random.randint(100, 2000),
+        "inputDataJson": json.dumps(body, ensure_ascii=False),
+        "outputDataJson": "{\"message\":\"Function executed successfully\"}",
     }
+
+
+@router.get("/functions/{fn_id}/logs")
+def list_function_logs(fn_id: int):
+    now = datetime.now().isoformat()
+    return [
+        {
+            "id": random.randint(100, 9999),
+            "functionId": fn_id,
+            "status": "SUCCESS",
+            "durationMs": random.randint(100, 800),
+            "executedAt": now,
+            "outputDataJson": "{\"message\":\"Function executed successfully\"}",
+        }
+    ]

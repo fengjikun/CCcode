@@ -1,39 +1,35 @@
 import type { DigitalHuman, DigitalHumanType } from '../types/digitalHuman'
-import { delay, rand } from './mockConfig'
+import { ensureMockStore, setMockStore } from './mockStoreClient'
 
-const STORAGE_KEY = 'digital_humans'
+const STORE_KEY = 'digital-humans'
 
-const DEFAULT_DIGITAL_HUMANS: DigitalHuman[] = [
-  {
-    id: 'dh-default-device-fault',
-    name: '设备运维诊断专员',
-    type: 'fault-repair',
-    description: '基于设备本体与故障知识图谱，智能监控告警、精准定位根因，自动生成维修工单与处置建议。',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-  },
-]
-
-function load(): DigitalHuman[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw === null) {
-      save(DEFAULT_DIGITAL_HUMANS)
-      return DEFAULT_DIGITAL_HUMANS
-    }
-    return JSON.parse(raw)
-  } catch {
-    return []
-  }
+interface DHStore {
+  items: DigitalHuman[]
 }
 
-function save(list: DigitalHuman[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+const DEFAULT_STORE: DHStore = {
+  items: [
+    {
+      id: 'dh-default-device-fault',
+      name: '设备运维诊断专员',
+      type: 'fault-repair',
+      description: '基于设备本体与故障知识图谱，智能监控告警与处置建议。',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    },
+  ],
+}
+
+async function loadStore(): Promise<DHStore> {
+  return ensureMockStore<DHStore>(STORE_KEY, DEFAULT_STORE)
+}
+
+async function saveStore(store: DHStore): Promise<void> {
+  await setMockStore(STORE_KEY, store)
 }
 
 export async function listDigitalHumans(): Promise<DigitalHuman[]> {
-  await delay(rand(300, 600))
-  return load()
+  return (await loadStore()).items
 }
 
 export async function createDigitalHuman(
@@ -41,7 +37,6 @@ export async function createDigitalHuman(
   type: DigitalHumanType,
   description?: string,
 ): Promise<DigitalHuman> {
-  await delay(rand(400, 700))
   const now = new Date().toISOString()
   const dh: DigitalHuman = {
     id: `dh-${Date.now()}`,
@@ -51,9 +46,9 @@ export async function createDigitalHuman(
     createdAt: now,
     updatedAt: now,
   }
-  const list = load()
-  list.push(dh)
-  save(list)
+  const store = await loadStore()
+  store.items.push(dh)
+  await saveStore(store)
   return dh
 }
 
@@ -61,21 +56,20 @@ export async function updateDigitalHuman(
   id: string,
   patch: Partial<Pick<DigitalHuman, 'name' | 'description' | 'projectId'>>,
 ): Promise<DigitalHuman | null> {
-  await delay(rand(300, 500))
-  const list = load()
-  const idx = list.findIndex(d => d.id === id)
+  const store = await loadStore()
+  const idx = store.items.findIndex(d => d.id === id)
   if (idx < 0) return null
-  list[idx] = { ...list[idx], ...patch, updatedAt: new Date().toISOString() }
-  save(list)
-  return list[idx]
+  store.items[idx] = { ...store.items[idx], ...patch, updatedAt: new Date().toISOString() }
+  await saveStore(store)
+  return store.items[idx]
 }
 
 export async function deleteDigitalHuman(id: string): Promise<void> {
-  await delay(rand(300, 500))
-  save(load().filter(d => d.id !== id))
+  const store = await loadStore()
+  store.items = store.items.filter(d => d.id !== id)
+  await saveStore(store)
 }
 
 export async function getDigitalHuman(id: string): Promise<DigitalHuman | null> {
-  await delay(rand(200, 400))
-  return load().find(d => d.id === id) ?? null
+  return (await loadStore()).items.find(d => d.id === id) ?? null
 }

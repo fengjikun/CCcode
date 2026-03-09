@@ -1,5 +1,6 @@
 from pathlib import Path
 import logging
+import os
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
@@ -15,7 +16,7 @@ from app.database import SessionLocal
 from app.middleware.request_logging import setup_request_logging_middleware
 from app.models import *  # noqa: F401, F403 - ensure all models are imported
 from app.routers import (
-    agent, auth, diagnosis, ontology_schema, ontology_objects, ontology_actions, ontology_functions, projects
+    agent, auth, diagnosis, ontology_schema, ontology_objects, ontology_actions, ontology_functions, projects, mock_ontology, mock_projects, mock_store
 )
 from app.security import bootstrap_default_user, get_current_user
 from app.services import fault_knowledge_service
@@ -42,11 +43,20 @@ app.add_middleware(
 _protected = [Depends(get_current_user)]
 app.include_router(auth.router)
 app.include_router(diagnosis.router, dependencies=_protected)
-app.include_router(ontology_schema.router, dependencies=_protected)
-app.include_router(ontology_objects.router, dependencies=_protected)
-app.include_router(ontology_actions.router, dependencies=_protected)
-app.include_router(ontology_functions.router, dependencies=_protected)
-app.include_router(projects.router)
+app.include_router(mock_store.router, dependencies=_protected)
+ontology_mock_enabled = os.getenv("ONTOLOGY_MOCK_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+if ontology_mock_enabled:
+    app.include_router(mock_ontology.router, dependencies=_protected)
+else:
+    app.include_router(ontology_schema.router, dependencies=_protected)
+    app.include_router(ontology_objects.router, dependencies=_protected)
+    app.include_router(ontology_actions.router, dependencies=_protected)
+    app.include_router(ontology_functions.router, dependencies=_protected)
+project_mock_enabled = os.getenv("PROJECT_MOCK_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+if project_mock_enabled:
+    app.include_router(mock_projects.router, dependencies=_protected)
+else:
+    app.include_router(projects.router)
 app.include_router(agent.router, dependencies=_protected)
 
 
@@ -70,11 +80,12 @@ async def on_startup():
     # Load fault knowledge graph
     fault_knowledge_service.load()
 
-    import os
     logger.info(
-        "服务启动完成 | model=%s | base_url=%s",
+        "服务启动完成 | model=%s | base_url=%s | ontology_mock=%s | project_mock=%s",
         os.getenv("LLM_MODEL") or "未配置",
         os.getenv("LLM_BASE_URL") or "未配置",
+        "enabled" if ontology_mock_enabled else "disabled",
+        "enabled" if project_mock_enabled else "disabled",
     )
 
 
