@@ -4,6 +4,8 @@
 
 export type TrainingStatus = 'Running' | 'Completed' | 'Failed' | 'Queued' | 'Stopped'
 export type Framework = 'PyTorch' | 'TensorFlow' | 'scikit-learn' | 'Transformers'
+export type TrainMethod = 'full' | 'lora' | 'qlora'
+export type BaseModel = 'DeepSeek-V3' | 'DeepSeek-R1' | 'Qwen-72B' | 'GLM-4' | 'Llama-3.1-70B'
 
 export interface TrainingJob {
   key: string
@@ -20,6 +22,17 @@ export interface TrainingJob {
   startedAt: string
   duration: string
   createdBy: string
+  learningRate: number
+  batchSize: number
+  warmupSteps: number
+  totalSteps: number
+  currentStep: number
+  trainLoss: number[]
+  valLoss: number[]
+  lrHistory: number[]
+  gpuMemUsage: string
+  gpuUtil: string
+  logs: string[]
 }
 
 export interface TrainingProject {
@@ -32,6 +45,16 @@ export interface TrainingProject {
   jobs: number
   bestMetric: string
   createdAt: string
+  trainMethod: TrainMethod
+  baseModel: BaseModel
+  datasetName: string
+  hyperParams: {
+    learningRate: number
+    batchSize: number
+    epochs: number
+    warmupSteps: number
+    maxSeqLen: number
+  }
 }
 
 export const TRAINING_STATUS_COLORS: Record<TrainingStatus, string> = {

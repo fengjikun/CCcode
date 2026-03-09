@@ -29,6 +29,7 @@ import TransformPage from './pages/platform/TransformPage'
 import ModelGatewayPage from './pages/platform/ModelGatewayPage'
 import ModelTrainingPage from './pages/platform/ModelTrainingPage'
 import TrainingDatasetsPage from './pages/platform/TrainingDatasetsPage'
+import ModelEvaluationPage from './pages/platform/ModelEvaluationPage'
 
 // L1 数据源
 import DataSourcePage from './pages/platform/DataSourcePage'
@@ -86,6 +87,7 @@ export default function App() {
         {/* L5+L6 大模型 Lab */}
         <Route path="/model-lab/gateway" element={<ModelGatewayPage />} />
         <Route path="/model-lab/training" element={<ModelTrainingPage />} />
+        <Route path="/model-lab/evaluation" element={<ModelEvaluationPage />} />
         <Route path="/model-lab/datasets" element={<TrainingDatasetsPage />} />
 
         {/* L1 数据源 */}

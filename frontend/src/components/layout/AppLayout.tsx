@@ -21,6 +21,7 @@ import {
   DesktopOutlined,
   EyeOutlined,
   ProjectOutlined,
+  LineChartOutlined,
 } from '@ant-design/icons'
 import { clearAuthSession, getAuthUser } from '../../auth/session'
 
@@ -75,6 +76,7 @@ const menuItems: MenuItem[] = [
     children: [
       { key: '/model-lab/gateway', icon: <ApiOutlined />, label: '模型网关' },
       { key: '/model-lab/training', icon: <ExperimentOutlined />, label: '模型训练' },
+      { key: '/model-lab/evaluation', icon: <LineChartOutlined />, label: '模型评估' },
       { key: '/model-lab/datasets', icon: <FolderOpenOutlined />, label: '训练数据集' },
     ],
   },
@@ -99,6 +101,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/transform': '数据转换',
   '/model-lab/gateway': '模型网关',
   '/model-lab/training': '模型训练',
+  '/model-lab/evaluation': '模型评估',
   '/model-lab/datasets': '训练数据集',
   '/datasource': '数据源管理',
 }

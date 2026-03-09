@@ -17,6 +17,13 @@ export interface RegisteredModel {
   latencyP50: string
   latencyP99: string
   lastDeployed: string
+  description: string
+  trainedFrom: string
+  evalAccuracy: string
+  evalF1: string
+  replicas: number
+  gpuType: string
+  createdAt: string
 }
 
 export interface GatewayRoute {
@@ -27,6 +34,13 @@ export interface GatewayRoute {
   weight: number
   rateLimit: number
   status: 'Active' | 'Disabled'
+}
+
+export interface DeployConfig {
+  replicas: number
+  gpuType: string
+  maxQps: number
+  canaryWeight: number // 0-100
 }
 
 export const MODEL_STAGE_COLORS: Record<ModelStage, string> = {
