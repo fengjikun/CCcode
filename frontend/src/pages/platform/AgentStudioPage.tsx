@@ -442,7 +442,7 @@ export default function AgentStudioPage() {
         />
         <div style={{ maxHeight: 220, overflowY: 'auto' }}>
         {filteredSkills.length === 0 ? (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={activeSkills.length === 0 ? '暂无可用 Skill，请先在 Skills 广场注册' : '无匹配结果'} />
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={activeSkills.length === 0 ? '暂无可用 Skill，请先在 Skills Hub注册' : '无匹配结果'} />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {filteredSkills.map(s => {
