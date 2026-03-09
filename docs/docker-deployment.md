@@ -15,10 +15,13 @@ Dockerfile (多阶段)
 - 前端静态文件：React SPA（`/assets/*` + SPA fallback）
 - API 文档：`/docs`
 
-启动时自动执行：
-1. Alembic 数据库迁移（升级至最新 schema）
-2. 初始化默认管理员账号（仅用户表为空时）
-3. 加载故障知识图谱
+Docker Compose 部署默认以 `prod` 模式运行，并依赖 `mysql` 服务。
+
+启动时会执行：
+1. 初始化默认管理员账号（仅用户表为空时）
+2. 加载故障知识图谱
+
+数据库迁移不再在应用启动时自动执行。首次部署或升级数据库 schema 后，需要手动执行 `alembic upgrade head`。
 
 ---
 
@@ -56,6 +59,18 @@ docker compose --env-file deploy/.env up -d --build
 启动成功后访问：
 - **应用入口**：`http://localhost:9000`
 - **API 文档**：`http://localhost:9000/docs`
+
+首次部署或升级后，执行数据库迁移：
+
+```bash
+docker compose --env-file deploy/.env exec app alembic upgrade head
+```
+
+如果 `app` 容器尚未处于可 `exec` 状态，可改用：
+
+```bash
+docker compose --env-file deploy/.env run --rm app alembic upgrade head
+```
 
 ---
 
@@ -146,19 +161,26 @@ docker compose --env-file deploy/.env down
 docker compose --env-file deploy/.env down -v
 ```
 
-### 单独 docker 命令
+### 单独 docker 命令（仅调试已有外部 MySQL 时使用）
+
+> 这一方式不会自动提供 MySQL。若没有现成数据库，请使用 `docker compose` 方式部署。
 
 ```bash
 # 手动构建镜像
 docker build -t cccode-app:latest .
 
-# 手动运行容器
+# 手动运行容器（需自行提供可访问的 MySQL）
 docker run -d \
   --name cccode-app \
   -p 9000:9000 \
-  -v $(pwd)/backend/data:/app/backend/data \
+  -v $(pwd)/deploy/backend/data:/app/backend/data \
   -e LLM_API_KEY=your-key \
   -e AUTH_SECRET_KEY=your-secret \
+  -e DB_HOST=your-mysql-host \
+  -e DB_PORT=3306 \
+  -e DB_USER=cccode \
+  -e DB_PASSWORD=your-db-password \
+  -e DB_NAME=cccode \
   cccode-app:latest
 
 # 进入容器调试
@@ -307,13 +329,14 @@ docker compose --env-file deploy/.env logs app
 
 ### 数据库迁移失败
 
-容器启动时自动执行 Alembic 迁移。若迁移失败，日志会显示具体错误。
+应用启动时不会自动执行 Alembic 迁移。首次部署、升级 schema 或排查数据库结构问题时，请手动执行迁移。
 
 ```bash
-# 进入容器手动执行迁移
-docker exec -it cccode-app bash
-cd /app/backend
-alembic upgrade head
+# 容器已启动时
+docker compose --env-file deploy/.env exec app alembic upgrade head
+
+# 容器未启动或需要一次性执行时
+docker compose --env-file deploy/.env run --rm app alembic upgrade head
 ```
 
 ### AI 功能无响应
