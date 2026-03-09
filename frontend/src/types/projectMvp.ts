@@ -47,6 +47,10 @@ export interface EntityTypeConfig {
   id: string
   name: string
   description?: string
+  dataSourceId?: string
+  mappedTable?: string
+  isBigTable?: boolean
+  icon?: string
   properties: EntityPropertyConfig[]
 }
 
@@ -77,6 +81,9 @@ export interface EntityPropertyConfig {
   required: boolean
   defaultValue?: string
   description?: string
+  mappedColumn?: string
+  searchable?: boolean
+  sortable?: boolean
   sortOrder: number
 }
 

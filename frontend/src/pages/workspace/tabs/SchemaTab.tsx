@@ -568,6 +568,7 @@ export default function SchemaTab({
         projectId={projectId}
         schemaConfig={project.schemaConfig}
         entityOptions={entityOptions}
+        dataSources={project.dataSources}
       />
     </Space>
   )
