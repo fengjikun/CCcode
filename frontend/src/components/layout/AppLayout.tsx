@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Button, Layout, Menu } from 'antd'
+import { Button, Dropdown, Layout, Menu, Tooltip } from 'antd'
 import type { MenuProps } from 'antd'
 import {
   LogoutOutlined,
@@ -22,6 +22,10 @@ import {
   EyeOutlined,
   ProjectOutlined,
   LineChartOutlined,
+  BellOutlined,
+  SettingOutlined,
+  QuestionCircleOutlined,
+  RightOutlined,
 } from '@ant-design/icons'
 import { clearAuthSession, getAuthUser } from '../../auth/session'
 
@@ -87,26 +91,25 @@ const menuItems: MenuItem[] = [
   },
 ]
 
-// Flat lookup: route path → page title
-const PAGE_TITLES: Record<string, string> = {
-  '/dashboard': '总览',
-  '/digital-worker/business': '业务数字员工空间',
-  '/digital-worker/dic': 'DIC 数字员工空间',
-  '/coworker/agents': '智能体编排',
-  '/coworker/agents/logs': '智能体日志',
-  '/coworker/skills': 'Skills 广场',
-  '/ontology/overview': '本体概览',
-  '/ontology/projects': '本体管理',
-  '/ontology/graph': '图谱检索',
-  '/transform': '数据转换',
-  '/model-lab/gateway': '模型网关',
-  '/model-lab/training': '模型训练',
-  '/model-lab/evaluation': '模型评估',
-  '/model-lab/datasets': '训练数据集',
-  '/datasource': '数据源管理',
+// Flat lookup: route path → [parent label, page title]
+const PAGE_TITLES: Record<string, [string, string]> = {
+  '/dashboard': ['', '总览'],
+  '/digital-worker/business': ['数字员工应用', '业务数字员工空间'],
+  '/digital-worker/dic': ['数字员工应用', 'DIC 数字员工空间'],
+  '/coworker/agents': ['Co-worker平台', '智能体编排'],
+  '/coworker/agents/logs': ['Co-worker平台', '智能体日志'],
+  '/coworker/skills': ['Co-worker平台', 'Skills 广场'],
+  '/ontology/overview': ['Deepology', '本体概览'],
+  '/ontology/projects': ['Deepology', '本体管理'],
+  '/ontology/graph': ['Deepology', '图谱检索'],
+  '/transform': ['', '数据转换'],
+  '/model-lab/gateway': ['大模型Lab', '模型网关'],
+  '/model-lab/training': ['大模型Lab', '模型训练'],
+  '/model-lab/evaluation': ['大模型Lab', '模型评估'],
+  '/model-lab/datasets': ['大模型Lab', '训练数据集'],
+  '/datasource': ['', '数据源管理'],
 }
 
-// Collect all leaf keys for selectedKeys matching
 function getAllLeafKeys(items: MenuItem[]): string[] {
   const keys: string[] = []
   for (const item of items) {
@@ -122,9 +125,7 @@ function getAllLeafKeys(items: MenuItem[]): string[] {
 const allLeafKeys = getAllLeafKeys(menuItems)
 
 function findSelectedKey(pathname: string): string {
-  // Exact match first
   if (allLeafKeys.includes(pathname)) return pathname
-  // Prefix match (longest first) — require trailing '/' to avoid false matches
   const sorted = [...allLeafKeys].sort((a, b) => b.length - a.length)
   for (const key of sorted) {
     if (pathname.startsWith(key + '/')) {
@@ -134,16 +135,13 @@ function findSelectedKey(pathname: string): string {
   return '/dashboard'
 }
 
-function findPageTitle(pathname: string): string {
-  // Special sub-pages
-  if (pathname.match(/^\/ontology\/projects\/.+\/graph$/)) return '本体图谱展示'
-  if (pathname.match(/^\/ontology\/projects\/.+$/)) return '本体工作台'
-  if (pathname.match(/^\/digital-worker\/business\/.+$/)) return '数字员工对话'
-  // Direct match
-  return PAGE_TITLES[pathname] || ''
+function findPageInfo(pathname: string): [string, string] {
+  if (pathname.match(/^\/ontology\/projects\/.+\/graph$/)) return ['Deepology', '本体图谱展示']
+  if (pathname.match(/^\/ontology\/projects\/.+$/)) return ['Deepology', '本体工作台']
+  if (pathname.match(/^\/digital-worker\/business\/.+$/)) return ['数字员工应用', '数字员工对话']
+  return PAGE_TITLES[pathname] || ['', '']
 }
 
-// Auto-open parent submenus for current route
 function findOpenKeys(pathname: string): string[] {
   const selected = findSelectedKey(pathname)
   const keys: string[] = []
@@ -166,7 +164,6 @@ export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const [openKeys, setOpenKeys] = useState<string[]>(findOpenKeys(location.pathname))
 
-  // URL 变化时自动展开对应的父级菜单
   useEffect(() => {
     const requiredKeys = findOpenKeys(location.pathname)
     setOpenKeys(prev => {
@@ -176,12 +173,30 @@ export default function AppLayout() {
   }, [location.pathname])
 
   const selectedKey = findSelectedKey(location.pathname)
-  const pageTitle = findPageTitle(location.pathname)
+  const [parentLabel, pageTitle] = findPageInfo(location.pathname)
 
   const handleLogout = () => {
     clearAuthSession()
     navigate('/login', { replace: true })
   }
+
+  const userMenuItems: MenuProps['items'] = [
+    {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: '个人设置',
+    },
+    { type: 'divider' },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: '退出登录',
+      danger: true,
+      onClick: handleLogout,
+    },
+  ]
+
+  const username = currentUser?.username || '用户'
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -190,51 +205,130 @@ export default function AppLayout() {
         collapsed={collapsed}
         onCollapse={setCollapsed}
         theme="dark"
-        width={230}
+        width={240}
+        collapsedWidth={68}
         style={{
-          background: 'linear-gradient(180deg, #1e1b4b 0%, #0f172a 100%)',
+          background: 'linear-gradient(195deg, #1a1642 0%, #0c1026 50%, #0a0e1f 100%)',
           overflow: 'auto',
           position: 'sticky',
           top: 0,
           height: '100vh',
+          borderRight: '1px solid rgba(255,255,255,0.04)',
         }}
+        trigger={null}
       >
-        <div className="sidebar-logo">
-          <span className={`logo-text${collapsed ? ' collapsed' : ''}`}>
-            {collapsed ? 'D' : 'DeepexiOS'}
-          </span>
+        <div className="sidebar-wrapper">
+          {/* Logo */}
+          <div className="sidebar-logo">
+            {!collapsed && (
+              <>
+                <div className="logo-icon">Dx</div>
+                <span className="logo-text">DeepexiOS</span>
+                <span className="sidebar-version">v2.0</span>
+              </>
+            )}
+            {collapsed && (
+              <div className="logo-icon" style={{ margin: 0 }}>Dx</div>
+            )}
+          </div>
+
+          {/* Menu */}
+          <Menu
+            className="sidebar-menu"
+            theme="dark"
+            mode="inline"
+            selectedKeys={[selectedKey]}
+            openKeys={collapsed ? [] : openKeys}
+            onOpenChange={setOpenKeys}
+            items={menuItems}
+            onClick={({ key }) => navigate(key)}
+            style={{ background: 'transparent', borderRight: 'none', padding: '8px 0' }}
+          />
+
+          {/* Footer user area */}
+          {!collapsed && (
+            <div className="sidebar-footer">
+              <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="topRight">
+                <div className="sidebar-footer-content">
+                  <div className="sidebar-footer-avatar">
+                    {username.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="sidebar-footer-info">
+                    <div className="sidebar-footer-name">{username}</div>
+                    <div className="sidebar-footer-role">管理员</div>
+                  </div>
+                  <LogoutOutlined style={{ color: '#64748b', fontSize: 12 }} />
+                </div>
+              </Dropdown>
+            </div>
+          )}
+
+          {collapsed && (
+            <div style={{ padding: '12px 0', marginTop: 'auto', textAlign: 'center' }}>
+              <Tooltip title={username} placement="right">
+                <div className="sidebar-footer-avatar" style={{ margin: '0 auto', cursor: 'pointer' }}>
+                  {username.charAt(0).toUpperCase()}
+                </div>
+              </Tooltip>
+            </div>
+          )}
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          openKeys={collapsed ? [] : openKeys}
-          onOpenChange={setOpenKeys}
-          items={menuItems}
-          onClick={({ key }) => navigate(key)}
-          style={{ background: 'transparent', borderRight: 'none' }}
-        />
       </Sider>
+
       <Layout>
         <Header className="app-header">
-          <span className="header-title">
-            {pageTitle}
-          </span>
-          <div className="header-user">
-            <span className="user-info">
-              <UserOutlined />
-              {currentUser?.username || '未知用户'}
-            </span>
+          <div className="header-left">
+            {/* Collapse toggle */}
             <Button
               type="text"
-              icon={<LogoutOutlined />}
-              onClick={handleLogout}
-              style={{ color: '#64748b' }}
+              size="small"
+              onClick={() => setCollapsed(!collapsed)}
+              style={{ color: '#5e6687', fontSize: 14, padding: '4px 8px' }}
             >
-              退出
+              {collapsed ? '☰' : '☰'}
             </Button>
+
+            {/* Breadcrumb */}
+            <div className="header-breadcrumb">
+              {parentLabel && (
+                <>
+                  <span className="header-breadcrumb-item">{parentLabel}</span>
+                  <RightOutlined className="header-breadcrumb-divider" />
+                </>
+              )}
+              <span className="header-breadcrumb-current">{pageTitle}</span>
+            </div>
+          </div>
+
+          <div className="header-right">
+            <Tooltip title="帮助">
+              <button className="header-icon-btn">
+                <QuestionCircleOutlined />
+              </button>
+            </Tooltip>
+            <Tooltip title="通知">
+              <button className="header-icon-btn">
+                <BellOutlined />
+                <span className="badge-dot" />
+              </button>
+            </Tooltip>
+            <Tooltip title="设置">
+              <button className="header-icon-btn">
+                <SettingOutlined />
+              </button>
+            </Tooltip>
+
+            <Dropdown menu={{ items: userMenuItems }} trigger={['click']}>
+              <button className="header-user-btn">
+                <div className="header-user-avatar">
+                  <UserOutlined />
+                </div>
+                <span className="header-user-name">{username}</span>
+              </button>
+            </Dropdown>
           </div>
         </Header>
+
         <Content className="app-content-area">
           <Outlet />
         </Content>

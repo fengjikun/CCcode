@@ -73,7 +73,7 @@ interface SchemaFormModalProps {
   dataSources: StructuredDataSource[]
 }
 
-function EntityPropertyFormList({ fieldName, dataSources, form }: {
+function EntityPropertyFormList({ fieldName, dataSources: _dataSources, form }: {
   fieldName: string
   dataSources: StructuredDataSource[]
   form: ReturnType<typeof Form.useForm<SchemaCreateFormData>>[0]

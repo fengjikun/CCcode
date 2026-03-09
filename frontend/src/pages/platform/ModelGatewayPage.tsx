@@ -13,7 +13,6 @@ import {
   ExperimentOutlined,
   RocketOutlined,
   RollbackOutlined,
-  ArrowRightOutlined,
   FieldTimeOutlined,
   WarningOutlined,
   LineChartOutlined,
@@ -71,12 +70,12 @@ export default function ModelGatewayPage() {
   }, [])
 
   const statItems = [
-    { title: '已部署模型', value: stats.deployedModels, icon: <CloudServerOutlined />, cls: 'stat-primary' },
-    { title: '日请求量', value: stats.totalQps, icon: <ThunderboltOutlined />, cls: 'stat-info' },
-    { title: '平均延迟', value: stats.avgLatency, icon: <DashboardOutlined />, cls: 'stat-success' },
-    { title: '可用率', value: stats.availability, icon: <SafetyCertificateOutlined />, cls: 'stat-purple' },
-    { title: 'Production', value: stats.productionCount, icon: <CheckCircleOutlined />, cls: 'stat-primary' },
-    { title: 'Canary', value: stats.canaryCount, icon: <ExperimentOutlined />, cls: 'stat-warning' },
+    { title: '已部署模型', value: stats.deployedModels, icon: <CloudServerOutlined />, color: '#4f46e5', bg: '#eef2ff' },
+    { title: '日请求量', value: stats.totalQps, icon: <ThunderboltOutlined />, color: '#0891b2', bg: '#ecfeff' },
+    { title: '平均延迟', value: stats.avgLatency, icon: <DashboardOutlined />, color: '#16a34a', bg: '#f0fdf4' },
+    { title: '可用率', value: stats.availability, icon: <SafetyCertificateOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
+    { title: 'Production', value: stats.productionCount, icon: <CheckCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
+    { title: 'Canary', value: stats.canaryCount, icon: <ExperimentOutlined />, color: '#d97706', bg: '#fffbeb' },
   ]
 
   /* ============ Deployment Pipeline ============ */
@@ -387,12 +386,16 @@ export default function ModelGatewayPage() {
         <Row gutter={[12, 12]} style={{ margin: '16px 0 20px' }}>
           {statItems.map(s => (
             <Col span={4} key={s.title}>
-              <Card size="small" className={`stat-card card-hover ${s.cls}`}>
-                <Statistic
-                  title={s.title}
-                  value={s.value}
-                  prefix={<span style={{ fontSize: 18, marginRight: 4 }}>{s.icon}</span>}
-                />
+              <Card size="small" className="stat-card card-hover" styles={{ body: { padding: '14px 16px' } }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div className="stat-icon-wrap" style={{ background: s.bg, color: s.color, width: 38, height: 38, borderRadius: 10, fontSize: 18 }}>
+                    {s.icon}
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>{s.title}</Text>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: s.color, lineHeight: 1.3 }}>{s.value}</div>
+                  </div>
+                </div>
               </Card>
             </Col>
           ))}
@@ -401,28 +404,28 @@ export default function ModelGatewayPage() {
         {/* Deployment Pipeline Visualization */}
         <Card
           size="small"
-          style={{ marginBottom: 16, background: '#fafafa' }}
-          styles={{ body: { padding: '16px 24px' } }}
+          style={{ marginBottom: 16, background: '#f8f9fc', borderColor: '#e2e5f0' }}
+          styles={{ body: { padding: '20px 28px' } }}
         >
-          <Text strong style={{ display: 'block', marginBottom: 12, fontSize: 13 }}>
+          <Text strong style={{ display: 'block', marginBottom: 16, fontSize: 13, color: '#5e6687' }}>
             <RocketOutlined style={{ marginRight: 6 }} />
             模型发布流水线
           </Text>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
             {pipelineStages.map((stage, idx) => (
               <div key={stage.label} style={{ display: 'flex', alignItems: 'center' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 120 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 130 }}>
                   <div
                     style={{
-                      width: 48, height: 48, borderRadius: '50%',
-                      background: stage.color, color: '#fff',
+                      width: 52, height: 52, borderRadius: 14,
+                      background: `linear-gradient(135deg, ${stage.color}, ${stage.color}cc)`, color: '#fff',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 20, boxShadow: `0 2px 8px ${stage.color}40`,
+                      fontSize: 22, boxShadow: `0 4px 14px ${stage.color}30`,
                     }}
                   >
                     {stage.icon}
                   </div>
-                  <Text strong style={{ marginTop: 8, fontSize: 13 }}>{stage.label}</Text>
+                  <Text strong style={{ marginTop: 10, fontSize: 13 }}>{stage.label}</Text>
                   <Tag
                     color={stage.count > 0 ? undefined : 'default'}
                     style={{ marginTop: 4, fontWeight: 600 }}
@@ -431,9 +434,10 @@ export default function ModelGatewayPage() {
                   </Tag>
                 </div>
                 {idx < pipelineStages.length - 1 && (
-                  <div style={{ display: 'flex', alignItems: 'center', margin: '0 8px', marginBottom: 36 }}>
-                    <div style={{ width: 48, height: 2, background: `linear-gradient(90deg, ${stage.color}, ${pipelineStages[idx + 1].color})` }} />
-                    <ArrowRightOutlined style={{ color: pipelineStages[idx + 1].color, fontSize: 14, margin: '0 2px' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', margin: '0 6px', marginBottom: 40 }}>
+                    <svg width="40" height="12" viewBox="0 0 40 12">
+                      <path d="M0 6h32M28 1l8 5-8 5" stroke={`${pipelineStages[idx + 1].color}80`} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                   </div>
                 )}
               </div>

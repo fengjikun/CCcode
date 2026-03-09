@@ -15,7 +15,6 @@ import {
   Row,
   Select,
   Space,
-  Statistic,
   Table,
   Tabs,
   Tag,
@@ -220,11 +219,11 @@ export default function TrainingDatasetsPage() {
   ]
 
   const statItems = [
-    { title: '数据集总数', value: stats.total, icon: <DatabaseOutlined />, cls: 'stat-primary' },
-    { title: '总记录数', value: stats.totalRecords, icon: <BarChartOutlined />, cls: 'stat-info' },
-    { title: '已就绪', value: stats.readyCount, icon: <CheckCircleOutlined />, cls: 'stat-success' },
-    { title: '构建中', value: stats.buildingCount, icon: <SyncOutlined spin={stats.buildingCount > 0} />, cls: 'stat-warning' },
-    { title: '总存储', value: stats.totalSize, icon: <HddOutlined />, cls: 'stat-purple' },
+    { title: '数据集总数', value: stats.total, icon: <DatabaseOutlined />, color: '#4f46e5', bg: '#eef2ff' },
+    { title: '总记录数', value: stats.totalRecords, icon: <BarChartOutlined />, color: '#0891b2', bg: '#ecfeff' },
+    { title: '已就绪', value: stats.readyCount, icon: <CheckCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
+    { title: '构建中', value: stats.buildingCount, icon: <SyncOutlined spin={stats.buildingCount > 0} />, color: '#d97706', bg: '#fffbeb' },
+    { title: '总存储', value: stats.totalSize, icon: <HddOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
   ]
 
   return (
@@ -235,15 +234,19 @@ export default function TrainingDatasetsPage() {
           <Text type="secondary">L5 数据准备 — 基于本体语义层，自动导出、切分与版本管理训练数据</Text>
         </div>
 
-        <Row gutter={16} style={{ margin: '16px 0 20px' }}>
+        <Row gutter={[14, 14]} style={{ margin: '16px 0 20px' }}>
           {statItems.map(s => (
             <Col span={Math.floor(24 / statItems.length)} key={s.title}>
-              <Card size="small" className={`stat-card card-hover ${s.cls}`}>
-                <Statistic
-                  title={s.title}
-                  value={s.value}
-                  prefix={<span style={{ fontSize: 18, marginRight: 4 }}>{s.icon}</span>}
-                />
+              <Card size="small" className="stat-card card-hover" styles={{ body: { padding: '16px 18px' } }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div className="stat-icon-wrap" style={{ background: s.bg, color: s.color }}>
+                    {s.icon}
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{s.title}</Text>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>{s.value}</div>
+                  </div>
+                </div>
               </Card>
             </Col>
           ))}

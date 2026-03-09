@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, Col, Row, Statistic, Table, Tag, Typography, Tabs, Space, Input } from 'antd'
+import { Card, Col, Row, Table, Tag, Typography, Tabs, Space, Input } from 'antd'
 import {
   AppstoreOutlined,
   TagsOutlined,
@@ -48,12 +48,12 @@ export default function OntologyOverviewPage() {
   )
 
   const statItems = [
-    { title: 'Object Types', value: stats.objectTypes, icon: <AppstoreOutlined />, cls: 'stat-primary' },
-    { title: 'Properties', value: stats.totalProperties, icon: <TagsOutlined />, cls: 'stat-info' },
-    { title: 'Link Types', value: stats.linkTypes, icon: <BranchesOutlined />, cls: 'stat-purple' },
-    { title: 'Actions', value: stats.actions, icon: <ThunderboltOutlined />, cls: 'stat-warning' },
-    { title: '总记录数', value: stats.totalRecords, icon: <DatabaseOutlined />, cls: 'stat-success' },
-    { title: '已启用 Actions', value: stats.activeActions, icon: <CheckCircleOutlined />, cls: 'stat-primary' },
+    { title: 'Object Types', value: stats.objectTypes, icon: <AppstoreOutlined />, color: '#4f46e5', bg: '#eef2ff' },
+    { title: 'Properties', value: stats.totalProperties, icon: <TagsOutlined />, color: '#0891b2', bg: '#ecfeff' },
+    { title: 'Link Types', value: stats.linkTypes, icon: <BranchesOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
+    { title: 'Actions', value: stats.actions, icon: <ThunderboltOutlined />, color: '#d97706', bg: '#fffbeb' },
+    { title: '总记录数', value: stats.totalRecords, icon: <DatabaseOutlined />, color: '#16a34a', bg: '#f0fdf4' },
+    { title: '已启用 Actions', value: stats.activeActions, icon: <CheckCircleOutlined />, color: '#4f46e5', bg: '#eef2ff' },
   ]
 
   /* Object Type 列 */
@@ -168,15 +168,19 @@ export default function OntologyOverviewPage() {
         </div>
 
         {/* 统计 */}
-        <Row gutter={[12, 12]} style={{ margin: '16px 0 20px' }}>
+        <Row gutter={[14, 14]} style={{ margin: '16px 0 20px' }}>
           {statItems.map((s) => (
             <Col span={4} key={s.title}>
-              <Card size="small" className={`stat-card card-hover ${s.cls}`} style={{ textAlign: 'center' }}>
-                <Statistic
-                  title={s.title}
-                  value={s.value}
-                  prefix={<span style={{ fontSize: 18, marginRight: 4 }}>{s.icon}</span>}
-                />
+              <Card size="small" className="stat-card card-hover" styles={{ body: { padding: '16px 18px' } }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div className="stat-icon-wrap" style={{ background: s.bg, color: s.color }}>
+                    {s.icon}
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{s.title}</Text>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>{s.value}</div>
+                  </div>
+                </div>
               </Card>
             </Col>
           ))}

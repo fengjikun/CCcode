@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, Col, Row, Statistic, Table, Tag, Timeline, Typography } from 'antd'
+import { Card, Col, Row, Table, Tag, Timeline, Typography } from 'antd'
 import {
   DatabaseOutlined,
   SwapOutlined,
@@ -8,7 +8,6 @@ import {
   ExperimentOutlined,
   ApiOutlined,
   TeamOutlined,
-  ArrowRightOutlined,
   CloudServerOutlined,
   ThunderboltOutlined,
   DashboardOutlined,
@@ -17,6 +16,7 @@ import {
   UserOutlined,
   AppstoreOutlined,
   ToolOutlined,
+  ArrowUpOutlined,
 } from '@ant-design/icons'
 import { getHealthData, getActivityData, getPlatformStats } from '../../api/dashboard'
 import type { HealthEntry, ActivityEntry } from '../../types/dashboard'
@@ -76,22 +76,22 @@ export default function DashboardPage() {
     setStats(getPlatformStats())
   }, [])
 
-  /* 统计卡片 */
+  /* 统计卡片 — 带图标背景 */
   const statCards = [
-    { title: '数据源', value: stats.datasources, icon: <DatabaseOutlined />, color: '#16a34a' },
-    { title: 'Object Types', value: stats.objectTypes, icon: <AppstoreOutlined />, color: '#4f46e5' },
-    { title: 'Agent / Skills', value: `${stats.agents} / ${stats.skills}`, icon: <RobotOutlined />, color: '#7c3aed' },
-    { title: '已部署模型', value: stats.deployedModels, icon: <CloudServerOutlined />, color: '#ea580c' },
-    { title: '日请求总量', value: stats.totalRequests, icon: <ThunderboltOutlined />, color: '#e11d48' },
-    { title: '平均延迟', value: stats.avgLatency, icon: <DashboardOutlined />, color: '#0891b2' },
-    { title: '平台可用率', value: stats.uptime, icon: <SafetyCertificateOutlined />, color: '#16a34a' },
-    { title: '活跃用户', value: stats.activeUsers, icon: <UserOutlined />, color: '#d97706' },
+    { title: '数据源', value: stats.datasources, icon: <DatabaseOutlined />, color: '#16a34a', bg: '#f0fdf4', trend: '+3' },
+    { title: 'Object Types', value: stats.objectTypes, icon: <AppstoreOutlined />, color: '#4f46e5', bg: '#eef2ff', trend: '+12' },
+    { title: 'Agent / Skills', value: `${stats.agents} / ${stats.skills}`, icon: <RobotOutlined />, color: '#7c3aed', bg: '#f5f3ff', trend: '+5' },
+    { title: '已部署模型', value: stats.deployedModels, icon: <CloudServerOutlined />, color: '#ea580c', bg: '#fff7ed', trend: '+2' },
+    { title: '日请求总量', value: stats.totalRequests, icon: <ThunderboltOutlined />, color: '#e11d48', bg: '#fff1f2', trend: '+18%' },
+    { title: '平均延迟', value: stats.avgLatency, icon: <DashboardOutlined />, color: '#0891b2', bg: '#ecfeff', trend: '-5ms' },
+    { title: '平台可用率', value: stats.uptime, icon: <SafetyCertificateOutlined />, color: '#16a34a', bg: '#f0fdf4' },
+    { title: '活跃用户', value: stats.activeUsers, icon: <UserOutlined />, color: '#d97706', bg: '#fffbeb', trend: '+8' },
   ]
 
   return (
     <div className="page-container">
       {/* ── Pipeline flow ── */}
-      <Card className="section-card">
+      <Card className="section-card" styles={{ body: { padding: '24px 28px' } }}>
         <div className="page-header">
           <Title level={4}>Pipeline Overview</Title>
           <Text type="secondary">端到端 AI 流水线：从数据源接入到智能体应用</Text>
@@ -100,43 +100,75 @@ export default function DashboardPage() {
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
+          justifyContent: 'center',
+          gap: 0,
           overflowX: 'auto',
-          padding: '20px 0 8px',
+          padding: '24px 0 12px',
         }}>
           {stages.map((s, i) => (
-            <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div key={s.key} style={{ display: 'flex', alignItems: 'center' }}>
               <div
                 className="pipeline-stage"
                 style={{
-                  background: `linear-gradient(135deg, ${s.color} 0%, ${s.color}cc 100%)`,
+                  background: `linear-gradient(135deg, ${s.color} 0%, ${s.color}bb 100%)`,
                   color: '#fff',
+                  minWidth: 140,
                 }}
               >
-                <div style={{ fontSize: 22, marginBottom: 6, opacity: 0.9 }}>{s.icon}</div>
-                <div style={{ fontSize: 11, opacity: 0.8, marginBottom: 2, fontWeight: 500 }}>{s.key}</div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{s.label}</div>
-                <div style={{ fontSize: 10, opacity: 0.7, marginTop: 2 }}>{s.labelZh} · {s.count}</div>
+                <div style={{ fontSize: 24, marginBottom: 8, opacity: 0.9 }}>{s.icon}</div>
+                <div style={{
+                  fontSize: 10, opacity: 0.65, marginBottom: 2, fontWeight: 600,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                }}>{s.key}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em' }}>{s.label}</div>
+                <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>
+                  {s.labelZh} · <span style={{ fontWeight: 600 }}>{s.count}</span>
+                </div>
               </div>
               {i < stages.length - 1 && (
-                <ArrowRightOutlined style={{ fontSize: 16, color: '#cbd5e1', flexShrink: 0 }} />
+                <div className="pipeline-arrow" style={{ margin: '0 4px' }}>
+                  <svg width="28" height="12" viewBox="0 0 28 12">
+                    <path d="M0 6h22M18 1l6 5-6 5" stroke="#cbd5e1" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
               )}
             </div>
           ))}
         </div>
       </Card>
 
-      {/* ── Stat cards ── */}
-      <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+      {/* ── Stat cards — 带图标和趋势 ── */}
+      <Row gutter={[14, 14]} style={{ marginBottom: 16 }}>
         {statCards.map(s => (
           <Col span={6} key={s.title}>
-            <Card size="small" className="stat-card card-hover">
-              <Statistic
-                title={s.title}
-                value={s.value}
-                prefix={<span style={{ color: s.color, fontSize: 20, marginRight: 4 }}>{s.icon}</span>}
-                valueStyle={{ color: s.color }}
-              />
+            <Card
+              size="small"
+              className="stat-card card-hover"
+              styles={{ body: { padding: '16px 18px' } }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div style={{ flex: 1 }}>
+                  <Text type="secondary" style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 6 }}>{s.title}</Text>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>
+                    {s.value}
+                  </div>
+                  {s.trend && (
+                    <Text style={{ fontSize: 11, color: s.trend.startsWith('-') ? '#16a34a' : '#16a34a', marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                      <ArrowUpOutlined style={{ fontSize: 10 }} />
+                      {s.trend}
+                    </Text>
+                  )}
+                </div>
+                <div
+                  className="stat-icon-wrap"
+                  style={{
+                    background: s.bg,
+                    color: s.color,
+                  }}
+                >
+                  {s.icon}
+                </div>
+              </div>
             </Card>
           </Col>
         ))}
@@ -145,7 +177,22 @@ export default function DashboardPage() {
       {/* ── Health + Activity ── */}
       <Row gutter={16}>
         <Col span={16}>
-          <Card className="section-card" title={<span><SafetyCertificateOutlined style={{ marginRight: 8 }} />平台健康度监控</span>}>
+          <Card
+            className="section-card"
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: 8,
+                  background: '#f0fdf4', color: '#16a34a',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14,
+                }}>
+                  <SafetyCertificateOutlined />
+                </div>
+                <span style={{ fontWeight: 600 }}>平台健康度监控</span>
+              </div>
+            }
+          >
             <Table
               dataSource={health}
               columns={healthColumns}
@@ -155,17 +202,32 @@ export default function DashboardPage() {
           </Card>
         </Col>
         <Col span={8}>
-          <Card className="section-card" title={<span><ClockCircleOutlined style={{ marginRight: 8 }} />实时活动</span>}>
+          <Card
+            className="section-card"
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: 8,
+                  background: '#eef2ff', color: '#4f46e5',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14,
+                }}>
+                  <ClockCircleOutlined />
+                </div>
+                <span style={{ fontWeight: 600 }}>实时活动</span>
+              </div>
+            }
+          >
             <Timeline
               items={activities.map(a => ({
                 color: levelColor[a.level],
                 children: (
                   <div style={{ fontSize: 12 }}>
-                    <Text type="secondary" style={{ fontFamily: 'monospace', marginRight: 8 }}>{a.time}</Text>
-                    <Tag color={levelColor[a.level]} style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>{a.user}</Tag>
+                    <Text type="secondary" style={{ fontFamily: 'monospace', marginRight: 8, fontSize: 11 }}>{a.time}</Text>
+                    <Tag color={levelColor[a.level]} style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px', borderRadius: 4 }}>{a.user}</Tag>
                     <br />
-                    <span>{a.action}</span>
-                    <Text type="secondary" style={{ marginLeft: 4 }}>{a.target}</Text>
+                    <span style={{ color: '#1a1f36' }}>{a.action}</span>
+                    <Text type="secondary" style={{ marginLeft: 4, fontSize: 11 }}>{a.target}</Text>
                   </div>
                 ),
               }))}
@@ -175,23 +237,46 @@ export default function DashboardPage() {
       </Row>
 
       {/* ── 平台资源概览 ── */}
-      <Card className="section-card" title={<span><ToolOutlined style={{ marginRight: 8 }} />平台资源一览</span>}>
-        <Row gutter={[16, 16]}>
+      <Card
+        className="section-card"
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 8,
+              background: '#f5f3ff', color: '#7c3aed',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14,
+            }}>
+              <ToolOutlined />
+            </div>
+            <span style={{ fontWeight: 600 }}>平台资源一览</span>
+          </div>
+        }
+      >
+        <Row gutter={[14, 14]}>
           {stages.map(s => (
             <Col span={6} key={s.key}>
-              <Card size="small" hoverable styles={{ body: { padding: '12px 16px' } }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Card
+                size="small"
+                hoverable
+                styles={{ body: { padding: '14px 16px' } }}
+                style={{ borderColor: 'transparent' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
-                    width: 40, height: 40, borderRadius: 8,
-                    background: `${s.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: s.color, fontSize: 18,
+                    width: 44, height: 44, borderRadius: 12,
+                    background: `${s.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: s.color, fontSize: 20,
+                    transition: 'all 0.25s',
                   }}>
                     {s.icon}
                   </div>
                   <div>
-                    <Text strong style={{ fontSize: 13 }}>{s.key} {s.labelZh}</Text>
+                    <Text strong style={{ fontSize: 13, color: '#1a1f36' }}>{s.key} {s.labelZh}</Text>
                     <br />
-                    <Text type="secondary" style={{ fontSize: 11 }}>{s.count} 个资源</Text>
+                    <Text style={{ fontSize: 12, color: '#5e6687' }}>
+                      <span style={{ fontWeight: 600, color: s.color }}>{s.count}</span> 个资源
+                    </Text>
                   </div>
                 </div>
               </Card>

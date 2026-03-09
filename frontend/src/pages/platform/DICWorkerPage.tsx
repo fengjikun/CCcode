@@ -43,11 +43,11 @@ export default function DICWorkerPage() {
   )
 
   const statItems = [
-    { title: '数字员工总数', value: stats.total, icon: <TeamOutlined />, cls: 'stat-primary' },
-    { title: '在线', value: stats.online, icon: <CheckCircleOutlined />, cls: 'stat-success' },
-    { title: '忙碌中', value: stats.busy, icon: <SyncOutlined />, cls: 'stat-info' },
-    { title: '今日任务', value: stats.totalTasksToday, icon: <ThunderboltOutlined />, cls: 'stat-warning' },
-    { title: '累计完成', value: stats.totalTasksCompleted, icon: <DashboardOutlined />, cls: 'stat-purple' },
+    { title: '数字员工总数', value: stats.total, icon: <TeamOutlined />, color: '#4f46e5', bg: '#eef2ff' },
+    { title: '在线', value: stats.online, icon: <CheckCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
+    { title: '忙碌中', value: stats.busy, icon: <SyncOutlined />, color: '#0891b2', bg: '#ecfeff' },
+    { title: '今日任务', value: stats.totalTasksToday, icon: <ThunderboltOutlined />, color: '#d97706', bg: '#fffbeb' },
+    { title: '累计完成', value: stats.totalTasksCompleted, icon: <DashboardOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
   ]
 
   return (
@@ -59,15 +59,19 @@ export default function DICWorkerPage() {
         </div>
 
         {/* 统计 */}
-        <Row gutter={[12, 12]} style={{ margin: '16px 0 20px' }}>
+        <Row gutter={[14, 14]} style={{ margin: '16px 0 20px' }}>
           {statItems.map(s => (
             <Col flex={1} key={s.title}>
-              <Card size="small" className={`stat-card card-hover ${s.cls}`}>
-                <Statistic
-                  title={s.title}
-                  value={s.value}
-                  prefix={<span style={{ fontSize: 18, marginRight: 4 }}>{s.icon}</span>}
-                />
+              <Card size="small" className="stat-card card-hover" styles={{ body: { padding: '16px 18px' } }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div className="stat-icon-wrap" style={{ background: s.bg, color: s.color }}>
+                    {s.icon}
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{s.title}</Text>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>{s.value}</div>
+                  </div>
+                </div>
               </Card>
             </Col>
           ))}

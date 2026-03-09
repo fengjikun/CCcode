@@ -219,12 +219,12 @@ export default function ModelTrainingPage() {
   }
 
   const statItems = [
-    { title: '训练项目', value: stats.projects, icon: <ProjectOutlined />, cls: 'stat-primary' },
-    { title: '训练任务', value: stats.totalJobs, icon: <ExperimentOutlined />, cls: 'stat-info' },
-    { title: '运行中', value: stats.running, icon: <PlayCircleOutlined />, cls: 'stat-success' },
-    { title: '已完成', value: stats.completed, icon: <CheckCircleOutlined />, cls: 'stat-purple' },
-    { title: 'GPU 使用率', value: stats.gpuUtilization, icon: <DashboardOutlined />, cls: 'stat-warning' },
-    { title: '平均训练时长', value: stats.avgTrainTime, icon: <ClockCircleOutlined />, cls: 'stat-primary' },
+    { title: '训练项目', value: stats.projects, icon: <ProjectOutlined />, color: '#4f46e5', bg: '#eef2ff' },
+    { title: '训练任务', value: stats.totalJobs, icon: <ExperimentOutlined />, color: '#0891b2', bg: '#ecfeff' },
+    { title: '运行中', value: stats.running, icon: <PlayCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
+    { title: '已完成', value: stats.completed, icon: <CheckCircleOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
+    { title: 'GPU 使用率', value: stats.gpuUtilization, icon: <DashboardOutlined />, color: '#d97706', bg: '#fffbeb' },
+    { title: '平均训练时长', value: stats.avgTrainTime, icon: <ClockCircleOutlined />, color: '#4f46e5', bg: '#eef2ff' },
   ]
 
   /* 训练任务列 */
@@ -439,15 +439,19 @@ export default function ModelTrainingPage() {
           <Text type="secondary">L5 训练平台 — 端到端模型训练、评估与注册，加速 AI 能力落地</Text>
         </div>
 
-        <Row gutter={[12, 12]} style={{ margin: '16px 0 20px' }}>
+        <Row gutter={[14, 14]} style={{ margin: '16px 0 20px' }}>
           {statItems.map(s => (
             <Col span={4} key={s.title}>
-              <Card size="small" className={`stat-card card-hover ${s.cls}`}>
-                <Statistic
-                  title={s.title}
-                  value={s.value}
-                  prefix={<span style={{ fontSize: 18, marginRight: 4 }}>{s.icon}</span>}
-                />
+              <Card size="small" className="stat-card card-hover" styles={{ body: { padding: '16px 18px' } }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div className="stat-icon-wrap" style={{ background: s.bg, color: s.color }}>
+                    {s.icon}
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{s.title}</Text>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>{s.value}</div>
+                  </div>
+                </div>
               </Card>
             </Col>
           ))}

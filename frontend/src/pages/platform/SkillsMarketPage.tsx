@@ -12,7 +12,6 @@ import {
   Row,
   Select,
   Space,
-  Statistic,
   Table,
   Tag,
   Tooltip,
@@ -601,10 +600,10 @@ export default function SkillsMarketPage() {
 
   /* 统计卡片 */
   const statItems = [
-    { title: 'Skills 总数', value: list.length, icon: <AppstoreOutlined />, cls: 'stat-primary' },
-    { title: '已启用', value: activeCount, icon: <CheckCircleOutlined />, cls: 'stat-success' },
-    { title: '分类覆盖', value: new Set(list.map(s => s.category)).size, icon: <TagOutlined />, cls: 'stat-purple' },
-    { title: '总安装量', value: totalInstalls >= 1000 ? `${(totalInstalls / 1000).toFixed(1)}K` : totalInstalls, icon: <CloudDownloadOutlined />, cls: 'stat-warning' },
+    { title: 'Skills 总数', value: list.length, icon: <AppstoreOutlined />, color: '#4f46e5', bg: '#eef2ff' },
+    { title: '已启用', value: activeCount, icon: <CheckCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
+    { title: '分类覆盖', value: new Set(list.map(s => s.category)).size, icon: <TagOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
+    { title: '总安装量', value: totalInstalls >= 1000 ? `${(totalInstalls / 1000).toFixed(1)}K` : totalInstalls, icon: <CloudDownloadOutlined />, color: '#d97706', bg: '#fffbeb' },
   ]
 
   return (
@@ -618,15 +617,19 @@ export default function SkillsMarketPage() {
         </div>
 
         {/* 统计 */}
-        <Row gutter={16} style={{ margin: '16px 0 20px' }}>
+        <Row gutter={[14, 14]} style={{ margin: '16px 0 20px' }}>
           {statItems.map(s => (
             <Col span={6} key={s.title}>
-              <Card size="small" className={`stat-card card-hover ${s.cls}`}>
-                <Statistic
-                  title={s.title}
-                  value={s.value}
-                  prefix={<span style={{ fontSize: 18, marginRight: 4 }}>{s.icon}</span>}
-                />
+              <Card size="small" className="stat-card card-hover" styles={{ body: { padding: '16px 18px' } }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div className="stat-icon-wrap" style={{ background: s.bg, color: s.color }}>
+                    {s.icon}
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{s.title}</Text>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>{s.value}</div>
+                  </div>
+                </div>
               </Card>
             </Col>
           ))}
@@ -657,48 +660,6 @@ export default function SkillsMarketPage() {
             </Col>
           ))}
         </Row>
-
-        {/* Skill 标准目录结构说明 */}
-        <Card size="small" style={{ background: '#f6f8fa', marginBottom: 20, borderColor: '#e1e4e8' }} styles={{ body: { padding: '12px 16px' } }}>
-          <Space align="start">
-            <FolderOpenOutlined style={{ fontSize: 20, color: '#faad14', marginTop: 2 }} />
-            <div>
-              <Text strong>Skill 标准目录结构</Text>
-              <div style={{
-                fontFamily: '"Cascadia Code", "Fira Code", Consolas, monospace',
-                fontSize: 12,
-                margin: '8px 0 0',
-                lineHeight: 1.9,
-                color: '#595959',
-              }}>
-                <div>
-                  <Text code>skill-name/</Text>
-                </div>
-                <div style={{ paddingLeft: 20 }}>
-                  <FileMarkdownOutlined style={{ marginRight: 4, color: '#7c3aed' }} />
-                  <Text code>SKILL.md</Text>
-                  <Tag color="purple" style={{ fontSize: 10, marginLeft: 6, lineHeight: '16px', padding: '0 4px' }}>必要</Tag>
-                  <Text type="secondary"> — 主设定：名称、触发时机、可用工具、执行流程</Text>
-                </div>
-                <div style={{ paddingLeft: 20 }}>
-                  <FileTextOutlined style={{ marginRight: 4, color: '#1677ff' }} />
-                  <Text code>reference.md</Text>
-                  <Text type="secondary"> — 补充参考：格式范本、专有名词、填写范例（如果需要）</Text>
-                </div>
-                <div style={{ paddingLeft: 20 }}>
-                  <FolderOutlined style={{ marginRight: 4, color: '#faad14' }} />
-                  <Text code>template/</Text>
-                  <Text type="secondary"> — 输出模板：需要固定格式时才需要（如果需要）</Text>
-                </div>
-                <div style={{ paddingLeft: 20 }}>
-                  <FolderOutlined style={{ marginRight: 4, color: '#52c41a' }} />
-                  <Text code>scripts/</Text>
-                  <Text type="secondary"> — 执行脚本：执行过程需要跑的程式码（如果需要）</Text>
-                </div>
-              </div>
-            </div>
-          </Space>
-        </Card>
 
         {/* 工具栏 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>

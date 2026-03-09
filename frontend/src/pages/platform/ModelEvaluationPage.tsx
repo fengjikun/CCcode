@@ -119,11 +119,11 @@ export default function ModelEvaluationPage() {
 
   /* ---------- 统计卡片 ---------- */
   const statItems = [
-    { title: '评估任务数', value: stats.totalTasks, icon: <ExperimentOutlined />, cls: 'stat-primary' },
-    { title: '已完成', value: stats.completed, icon: <CheckCircleOutlined />, cls: 'stat-success' },
-    { title: '运行中', value: stats.running, icon: <PlayCircleOutlined />, cls: 'stat-info' },
-    { title: '平均准确率', value: stats.avgAccuracy, icon: <DashboardOutlined />, cls: 'stat-purple' },
-    { title: '平均 F1', value: stats.avgF1, icon: <SafetyCertificateOutlined />, cls: 'stat-warning' },
+    { title: '评估任务数', value: stats.totalTasks, icon: <ExperimentOutlined />, color: '#4f46e5', bg: '#eef2ff' },
+    { title: '已完成', value: stats.completed, icon: <CheckCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
+    { title: '运行中', value: stats.running, icon: <PlayCircleOutlined />, color: '#0891b2', bg: '#ecfeff' },
+    { title: '平均准确率', value: stats.avgAccuracy, icon: <DashboardOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
+    { title: '平均 F1', value: stats.avgF1, icon: <SafetyCertificateOutlined />, color: '#d97706', bg: '#fffbeb' },
   ]
 
   /* ---------- 评估任务表列 ---------- */
@@ -502,15 +502,19 @@ export default function ModelEvaluationPage() {
           <Text type="secondary">L5 评估中心 — 多维度模型质量评估、样本级对比与版本追踪</Text>
         </div>
 
-        <Row gutter={[12, 12]} style={{ margin: '16px 0 20px' }}>
+        <Row gutter={[14, 14]} style={{ margin: '16px 0 20px' }}>
           {statItems.map(s => (
             <Col flex="1" key={s.title}>
-              <Card size="small" className={`stat-card card-hover ${s.cls}`}>
-                <Statistic
-                  title={s.title}
-                  value={s.value}
-                  prefix={<span style={{ fontSize: 18, marginRight: 4 }}>{s.icon}</span>}
-                />
+              <Card size="small" className="stat-card card-hover" styles={{ body: { padding: '16px 18px' } }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div className="stat-icon-wrap" style={{ background: s.bg, color: s.color }}>
+                    {s.icon}
+                  </div>
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{s.title}</Text>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>{s.value}</div>
+                  </div>
+                </div>
               </Card>
             </Col>
           ))}
