@@ -360,7 +360,7 @@ export default function ProjectsPage() {
               <Text style={{ color: '#818cf8', fontSize: 13, letterSpacing: 2, fontWeight: 500 }}>Deepology 本体语义层</Text>
             </div>
             <Title level={3} style={{ color: '#fff', margin: '0 0 12px', fontWeight: 700 }}>
-              覆盖 <span style={{ color: '#faad14' }}>{coveredDomains} 大领域</span> 的企业知识本体
+              覆盖 <span style={{ color: '#faad14' }}>{coveredDomains} 大行业</span> 的企业知识本体
             </Title>
             <Paragraph style={{ color: '#94a8d0', marginBottom: 18, lineHeight: 1.8, fontSize: 14, maxWidth: 520 }}>
               基于 <span style={{ color: '#a5b4fc' }}>Object / Property / Link / Action / Function</span> 五元语义模型，
