@@ -1,34 +1,18 @@
-import { fetchJSON } from './client'
 import type { CurrentUser, LoginPayload, LoginResponse } from '../types/auth'
 
-const API = '/api/auth'
+const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
 
-export async function login(payload: LoginPayload): Promise<LoginResponse> {
-  const row = await fetchJSON<any>(`${API}/login`, 'POST', payload)
-  const accessToken = typeof row?.accessToken === 'string'
-    ? row.accessToken
-    : (typeof row?.access_token === 'string' ? row.access_token : '')
-  if (!accessToken) {
-    throw new Error('登录响应缺少 accessToken')
-  }
-  const tokenType = typeof row?.tokenType === 'string'
-    ? row.tokenType
-    : (typeof row?.token_type === 'string' ? row.token_type : 'bearer')
-  const expiresIn = typeof row?.expiresIn === 'number'
-    ? row.expiresIn
-    : (typeof row?.expires_in === 'number' ? row.expires_in : 0)
-  const userRow = row?.user || {}
+export async function login(_payload: LoginPayload): Promise<LoginResponse> {
+  await delay(600 + Math.random() * 400) // 600-1000ms 模拟登录验证
   return {
-    accessToken,
-    tokenType,
-    expiresIn,
-    user: {
-      id: Number(userRow.id || 0),
-      username: String(userRow.username || ''),
-    },
+    accessToken: `mock_token_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+    tokenType: 'bearer',
+    expiresIn: 86400,
+    user: { id: 1, username: _payload.username || 'admin' },
   }
 }
 
 export async function getCurrentUser(): Promise<CurrentUser> {
-  return fetchJSON(`${API}/me`)
+  await delay(150 + Math.random() * 200)
+  return { id: 1, username: 'admin' }
 }
