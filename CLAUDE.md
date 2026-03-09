@@ -72,7 +72,7 @@ React 18 + TypeScript + Vite. Uses Ant Design 5 for UI components and D3.js v7 f
 /digital-worker/dic               — L7 FDE 数字员工空间
 /coworker/agents                  — L4 智能体编排（Agent 表格 + 创建/详情弹窗）
 /coworker/agents/logs             — L4 智能体执行日志
-/coworker/skills                  — L4 Skills 广场（Action/Function/Query 表格）
+/coworker/skills                  — L4 Skills Hub（Action/Function/Query 表格）
 /ontology/overview                — L3 本体概览（指标 + ObjectType 表格 + Action 示例）
 /ontology/projects                — L3 本体项目管理（CRUD）
 /ontology/projects/:projectId     — L3 本体工作台（5-tab: 文档/Schema/抽取/动作/函数）

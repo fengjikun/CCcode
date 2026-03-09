@@ -610,7 +610,7 @@ export default function SkillsMarketPage() {
     <div className="page-container">
       <Card className="section-card">
         <div className="page-header">
-          <Title level={4}>Skills 广场</Title>
+          <Title level={4}>Skills Hub</Title>
           <Text type="secondary">
             L4 能力资产 — 将专业知识、工作流与最佳实践封装为可复用的 AI Skill，Agent 按需自动加载
           </Text>

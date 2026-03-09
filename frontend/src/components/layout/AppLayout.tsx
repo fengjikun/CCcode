@@ -55,7 +55,7 @@ const menuItems: MenuItem[] = [
     children: [
       { key: '/coworker/agents', icon: <RobotOutlined />, label: '智能体编排' },
       { key: '/coworker/agents/logs', icon: <FileSearchOutlined />, label: '智能体日志' },
-      { key: '/coworker/skills', icon: <AppstoreOutlined />, label: 'Skills 广场' },
+      { key: '/coworker/skills', icon: <AppstoreOutlined />, label: 'Skills Hub' },
     ],
   },
   {
@@ -98,7 +98,7 @@ const PAGE_TITLES: Record<string, [string, string]> = {
   '/digital-worker/dic': ['数字员工应用', 'FDE 数字员工空间'],
   '/coworker/agents': ['Co-worker平台', '智能体编排'],
   '/coworker/agents/logs': ['Co-worker平台', '智能体日志'],
-  '/coworker/skills': ['Co-worker平台', 'Skills 广场'],
+  '/coworker/skills': ['Co-worker平台', 'Skills Hub'],
   '/ontology/overview': ['Deepology', '本体概览'],
   '/ontology/projects': ['Deepology', '本体管理'],
   '/ontology/graph': ['Deepology', '图谱检索'],

@@ -1,7 +1,7 @@
 # DeepexiOS 前端优化 TODO
 
 > 基于 L1-L7 全部平台页面的系统性审查，按优先级排列。
-> 演示主流程：数据源 → 数据转换 → 本体定义 → Skills 生成 → Skills 广场 → 多智能体编排 → 数字员工
+> 演示主流程：数据源 → 数据转换 → 本体定义 → Skills 生成 → Skills Hub → 多智能体编排 → 数字员工
 > 技术栈：React 19 + TypeScript 5.9 + Vite 7 + Ant Design 6 + D3.js 7 + React Router v7
 > 代码规模：~95 个 TSX 文件，~21K LOC
 

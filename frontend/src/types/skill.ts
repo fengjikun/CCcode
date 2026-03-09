@@ -1,5 +1,5 @@
 /**
- * L4 Skills 广场类型定义
+ * L4 Skills Hub类型定义
  *
  * Skill = 可复用的 AI 指令包，标准目录结构：
  *   skill-name/
