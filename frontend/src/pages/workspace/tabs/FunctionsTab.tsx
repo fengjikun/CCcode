@@ -90,7 +90,7 @@ export default function FunctionsTab({ projectId, functions, loadProject }: Func
       <div className="notebook-header">
         <div className="notebook-title">
           <span className="notebook-icon">&#9679;</span>
-          <span className="notebook-label">GROOVY NOTEBOOK</span>
+          <span className="notebook-label">Skills 清单</span>
           <Tag>Groovy 4.0</Tag>
           <Tag>JVM 25</Tag>
           <Tag>30s timeout</Tag>

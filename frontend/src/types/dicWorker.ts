@@ -1,5 +1,5 @@
 /**
- * L7 DIC 数字员工类型定义
+ * L7 FDE 数字员工类型定义
  */
 
 export type DICWorkerStatus = 'Online' | 'Busy' | 'Offline' | 'Maintenance'

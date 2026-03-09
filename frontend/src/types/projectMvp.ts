@@ -11,7 +11,7 @@ export type DataSourceSyncMode = 'FULL' | 'INCREMENTAL'
 export interface ProjectDocument {
   id: string
   name: string
-  fileType: 'docx' | 'md' | 'xlsx'
+  fileType: 'docx' | 'md' | 'xlsx' | 'jsonl'
   size: number
   status: DocumentStatus
   enabled: boolean
@@ -87,7 +87,7 @@ export interface EntityPropertyConfig {
   sortOrder: number
 }
 
-export type SkillCode = 'data_processing' | 'graph_synthesis' | 'custom'
+export type SkillCode = 'data_processing' | 'graph_synthesis' | 'custom' | 'fault_graph_loading' | 'symptom_matching' | 'root_cause_analysis'
 export type SkillSource = 'built_in' | 'uploaded'
 
 export interface SkillMetadata {

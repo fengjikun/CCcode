@@ -45,7 +45,7 @@ const menuItems: MenuItem[] = [
     label: '数字员工应用',
     children: [
       { key: '/digital-worker/business', icon: <SolutionOutlined />, label: '业务数字员工' },
-      { key: '/digital-worker/dic', icon: <DesktopOutlined />, label: 'DIC 数字员工' },
+      { key: '/digital-worker/dic', icon: <DesktopOutlined />, label: 'FDE 数字员工' },
     ],
   },
   {
@@ -95,7 +95,7 @@ const menuItems: MenuItem[] = [
 const PAGE_TITLES: Record<string, [string, string]> = {
   '/dashboard': ['', '总览'],
   '/digital-worker/business': ['数字员工应用', '业务数字员工空间'],
-  '/digital-worker/dic': ['数字员工应用', 'DIC 数字员工空间'],
+  '/digital-worker/dic': ['数字员工应用', 'FDE 数字员工空间'],
   '/coworker/agents': ['Co-worker平台', '智能体编排'],
   '/coworker/agents/logs': ['Co-worker平台', '智能体日志'],
   '/coworker/skills': ['Co-worker平台', 'Skills 广场'],

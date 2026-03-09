@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **L4 Co-worker 平台** — Agent 设计、Skills 注册与管理、多智能体编排
 - **L5 模型训练** — 数据准备、训练、评估、注册
 - **L6 模型网关** — 统一推理入口、路由、限流、监控
-- **L7 数字员工应用** — 业务数字员工空间、DIC 数字员工空间
+- **L7 数字员工应用** — 业务数字员工空间、FDE 数字员工空间
 
 ## Commands
 
@@ -69,7 +69,7 @@ React 18 + TypeScript + Vite. Uses Ant Design 5 for UI components and D3.js v7 f
 /dashboard                        — 总览：流水线全景 + 健康度监控
 /digital-worker/business          — L7 业务数字员工列表（CRUD）
 /digital-worker/business/:id      — L7 设备故障监控对话（SSE streaming）
-/digital-worker/dic               — L7 DIC 数字员工空间
+/digital-worker/dic               — L7 FDE 数字员工空间
 /coworker/agents                  — L4 智能体编排（Agent 表格 + 创建/详情弹窗）
 /coworker/agents/logs             — L4 智能体执行日志
 /coworker/skills                  — L4 Skills 广场（Action/Function/Query 表格）

@@ -9,7 +9,7 @@ interface StepDef {
 const STEPS: StepDef[] = [
   { key: 1, label: 'Step 01', sub: '实体 & 关系 (Object / Link Types)' },
   { key: 2, label: 'Step 02', sub: 'Actions (动作引擎)' },
-  { key: 3, label: 'Step 03', sub: 'Functions (Groovy Notebook)' },
+  { key: 3, label: 'Step 03', sub: 'Functions (Skills)' },
 ]
 
 interface StepNavProps {

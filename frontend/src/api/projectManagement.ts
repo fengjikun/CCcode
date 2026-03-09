@@ -27,7 +27,7 @@ import { delay, rand } from './mockConfig'
 
 const STORAGE_KEY = 'deepexios_projects_v3'
 /** 当默认数据结构变化时递增此值，自动清除旧缓存 */
-const DATA_VERSION = 3
+const DATA_VERSION = 4
 
 /* ========== 持久化存储 ========== */
 
@@ -42,7 +42,9 @@ interface ProjectStore {
 type OntologyDef = [string, string, string, string, string, string, string, number]
 
 const ONTOLOGY_DEFS: OntologyDef[] = [
-  // ── 01 制造行业（30 个）── 设备维修本体排第一 ──
+  // ── 00 故障诊断本体（排第一）──
+  ['0.0.1', '故障诊断本体', 'manufacturing', '生产', '(故障现象:W轴限位报警) -[caused_by]-> (IO点位常闭常开状态错误)', '故障诊断Agent：根据设备报警现象自动定位根因并推荐解决方案', '分析类', 8500],
+  // ── 01 制造行业（30 个）──
   ['1.3.11', '设备维修本体', 'manufacturing', '生产', '(传感器:振动) -[异常映射]-> (主轴轴承磨损)', '预测性维护Agent：监测设备状态三元组，在故障发生前触发工单', '分析类', 7100],
   ['1.1.1', '需求规范本体', 'manufacturing', '研发', '(静音需求) -[量化为]-> (声压值<40dB)', '需求冲突检测Agent：自动发现设计指标间的物理矛盾', '分析类', 6200],
   ['1.1.2', 'FBS功能结构本体', 'manufacturing', '研发', '(减速功能) -[实现于]-> (斜齿轮组)', '方案生成Agent：根据功能描述自动检索历史拓扑结构', '分析类', 6200],
@@ -232,15 +234,144 @@ function generateProject(def: OntologyDef, idx: number): ProjectDetail {
 function defaultProjects(): ProjectDetail[] {
   const projects = ONTOLOGY_DEFS.map((def, idx) => generateProject(def, idx))
 
-  // ── 第一个项目（设备维修本体）增加丰富的详情数据 ──
+  // ── 第一个项目（故障诊断本体）增加丰富的详情数据 ──
   const first = projects[0]
   first.documents = [
+    { id: 'doc-fd-001', name: 'A型激光切割机故障诊断手册.docx', fileType: 'docx', size: 3145728, status: 'READY', enabled: true, uploadedAt: '2025-01-10T08:00:00.000Z' },
+    { id: 'doc-fd-002', name: '激光切割机维护保养规范.docx', fileType: 'docx', size: 1572864, status: 'READY', enabled: true, uploadedAt: '2025-01-12T09:30:00.000Z' },
+    { id: 'doc-fd-003', name: '设备故障知识图谱数据.jsonl', fileType: 'jsonl', size: 28500, status: 'READY', enabled: true, uploadedAt: '2025-01-15T14:00:00.000Z' },
+    { id: 'doc-fd-004', name: '故障诊断流程与检查清单.md', fileType: 'md', size: 524288, status: 'READY', enabled: true, uploadedAt: '2025-01-20T10:00:00.000Z' },
+    { id: 'doc-fd-005', name: 'OPC-UA参数采集配置表.xlsx', fileType: 'xlsx', size: 204800, status: 'READY', enabled: false, uploadedAt: '2025-02-01T11:00:00.000Z' },
+  ]
+  first.dataSources = [{
+    id: 'ds-fd-001', name: '故障知识图谱数据库', type: 'MYSQL', host: '127.0.0.1', port: 3307,
+    database: 'cccode', username: 'cccode', password: '', sslEnabled: false,
+    enabled: true, extractMode: 'TABLE', tables: ['fault_records', 'onto_objects', 'onto_links'],
+    rowLimit: 100000, syncMode: 'FULL', incrementalColumn: '',
+    status: 'SUCCESS', lastTestAt: '2025-03-08T10:00:00.000Z', lastError: '',
+    createdAt: '2025-01-10T10:00:00.000Z', updatedAt: '2025-03-08T10:00:00.000Z',
+  }]
+  first.schemaConfig = {
+    entityTypes: [
+      {
+        id: 'et-fd-001', name: 'Equipment', description: '生产设备实体（如A型激光切割机）',
+        properties: [
+          { id: 'ep-fd-001', name: 'model', displayName: '型号', dataType: 'STRING', required: true, sortOrder: 1 },
+          { id: 'ep-fd-002', name: 'manufacturer', displayName: '制造商', dataType: 'STRING', required: true, sortOrder: 2 },
+          { id: 'ep-fd-003', name: 'description', displayName: '描述', dataType: 'TEXT', required: false, sortOrder: 3 },
+        ],
+      },
+      {
+        id: 'et-fd-002', name: 'Phenomenon', description: '故障现象（如W轴限位报警、激光无输出）',
+        properties: [
+          { id: 'ep-fd-011', name: 'code', displayName: '故障码', dataType: 'STRING', required: true, sortOrder: 1 },
+          { id: 'ep-fd-012', name: 'description', displayName: '现象描述', dataType: 'TEXT', required: true, sortOrder: 2 },
+        ],
+      },
+      {
+        id: 'et-fd-003', name: 'SubPhenomenon', description: '细分子现象（如开机就报W轴限位、焦点参数超出范围）',
+        properties: [
+          { id: 'ep-fd-021', name: 'description', displayName: '描述', dataType: 'TEXT', required: true, sortOrder: 1 },
+        ],
+      },
+      {
+        id: 'et-fd-004', name: 'Checkpoint', description: '诊断检查点（如检查IO点位背景色、检查W轴位置）',
+        properties: [
+          { id: 'ep-fd-031', name: 'priority', displayName: '优先级', dataType: 'INTEGER', required: true, sortOrder: 1 },
+          { id: 'ep-fd-032', name: 'method', displayName: '检查方法', dataType: 'TEXT', required: true, sortOrder: 2 },
+          { id: 'ep-fd-033', name: 'expectedValue', displayName: '期望值', dataType: 'STRING', required: true, sortOrder: 3 },
+          { id: 'ep-fd-034', name: 'description', displayName: '描述', dataType: 'TEXT', required: false, sortOrder: 4 },
+        ],
+      },
+      {
+        id: 'et-fd-005', name: 'Cause', description: '故障根因（如IO点位状态错误、焦点参数超出范围）',
+        properties: [
+          { id: 'ep-fd-041', name: 'description', displayName: '原因描述', dataType: 'TEXT', required: true, sortOrder: 1 },
+        ],
+      },
+      {
+        id: 'et-fd-006', name: 'Solution', description: '解决方案（如修改IO点位、调整焦点参数、清洁光路）',
+        properties: [
+          { id: 'ep-fd-051', name: 'steps', displayName: '操作步骤', dataType: 'TEXT', required: true, sortOrder: 1 },
+          { id: 'ep-fd-052', name: 'estimatedTime', displayName: '预计耗时', dataType: 'STRING', required: true, sortOrder: 2 },
+          { id: 'ep-fd-053', name: 'effectiveness', displayName: '有效性', dataType: 'STRING', required: true, sortOrder: 3 },
+          { id: 'ep-fd-054', name: 'riskLevel', displayName: '风险等级', dataType: 'STRING', required: true, sortOrder: 4 },
+        ],
+      },
+      {
+        id: 'et-fd-007', name: 'Component', description: '设备组件（如IO控制模块、激光器、切割头、电源模块）',
+        properties: [
+          { id: 'ep-fd-061', name: 'description', displayName: '组件描述', dataType: 'TEXT', required: true, sortOrder: 1 },
+        ],
+      },
+      {
+        id: 'et-fd-008', name: 'Parameter', description: '设备参数（如W轴位置、激光功率，支持OPC-UA/HTTP采集）',
+        properties: [
+          { id: 'ep-fd-071', name: 'dataType', displayName: '数据类型', dataType: 'STRING', required: true, sortOrder: 1 },
+          { id: 'ep-fd-072', name: 'source', displayName: '采集方式', dataType: 'STRING', required: true, sortOrder: 2 },
+          { id: 'ep-fd-073', name: 'unit', displayName: '单位', dataType: 'STRING', required: false, sortOrder: 3 },
+          { id: 'ep-fd-074', name: 'description', displayName: '描述', dataType: 'TEXT', required: false, sortOrder: 4 },
+        ],
+      },
+    ],
+    relationTypes: [
+      { id: 'rt-fd-001', name: 'prone_to', domain: 'Equipment', range: 'Phenomenon', description: '设备易发生的故障现象', properties: [] },
+      { id: 'rt-fd-002', name: 'contains', domain: 'Phenomenon', range: 'SubPhenomenon', description: '故障现象包含的细分子现象', properties: [] },
+      { id: 'rt-fd-003', name: 'needs_check', domain: 'Phenomenon', range: 'Checkpoint', description: '故障现象/子现象需要的检查项', properties: [] },
+      { id: 'rt-fd-004', name: 'discovers', domain: 'Checkpoint', range: 'SubPhenomenon', description: '检查点可发现的子现象', properties: [] },
+      { id: 'rt-fd-005', name: 'located_at', domain: 'SubPhenomenon', range: 'Component', description: '子现象/检查点关联的设备部件', properties: [] },
+      { id: 'rt-fd-006', name: 'caused_by', domain: 'SubPhenomenon', range: 'Cause', description: '子现象由该原因导致', properties: [] },
+      { id: 'rt-fd-007', name: 'solved_by', domain: 'Cause', range: 'Solution', description: '故障原因的推荐解决方案', properties: [] },
+      { id: 'rt-fd-008', name: 'supports', domain: 'Parameter', range: 'Checkpoint', description: '参数为检查点提供数据支撑', properties: [] },
+    ],
+    entityScope: '激光切割机故障诊断领域的设备、故障现象、子现象、检查点、原因、方案、组件、参数实体',
+    relationScope: 'Equipment→Phenomenon→SubPhenomenon→Cause→Solution 完整诊断链路，含Checkpoint检查与Component定位',
+    skills: [
+      { id: 'sk-fd-001', code: 'fault_graph_loading', name: '知识图谱加载', enabled: true, prompt: '从 graph.jsonl 加载故障诊断本体的节点与关系数据', source: 'built_in', tags: ['graph', 'loading'] },
+      { id: 'sk-fd-002', code: 'symptom_matching', name: '症状匹配', enabled: true, prompt: '根据设备报警症状匹配故障现象并展开诊断树', source: 'built_in', tags: ['diagnosis', 'nlp'] },
+      { id: 'sk-fd-003', code: 'root_cause_analysis', name: '根因分析', enabled: true, prompt: '沿诊断链路从子现象追溯根因并推荐解决方案', source: 'built_in', tags: ['diagnosis', 'analysis'] },
+    ],
+    updatedAt: '2025-03-09T10:00:00.000Z',
+  }
+  first.runs = [{
+    id: 'run-fd-001', status: 'COMPLETED', progress: 100,
+    createdAt: '2025-03-01T10:00:00.000Z', completedAt: '2025-03-01T10:08:00.000Z',
+    candidateEntityCount: 65, candidateRelationCount: 99, pendingReviewCount: 0,
+    stage: '完成', logs: ['从 graph.jsonl 提取完成，共发现 65 个实体节点，99 条关系'], warnings: [],
+    reviewItems: [
+      { id: 'ri-fd-001', kind: 'ENTITY', title: 'A型激光切割机 (Equipment)', evidence: 'graph.jsonl - equip_laser_a', confidence: 0.98, status: 'APPROVED' },
+      { id: 'ri-fd-002', kind: 'ENTITY', title: 'W轴限位报警 (Phenomenon)', evidence: 'graph.jsonl - phen_w_limit', confidence: 0.97, status: 'APPROVED' },
+      { id: 'ri-fd-003', kind: 'ENTITY', title: '激光无输出 (Phenomenon)', evidence: 'graph.jsonl - phen_no_laser', confidence: 0.96, status: 'APPROVED' },
+      { id: 'ri-fd-004', kind: 'ENTITY', title: 'IO点位常闭常开状态错误 (Cause)', evidence: 'graph.jsonl - cause_io_state_error', confidence: 0.95, status: 'APPROVED' },
+      { id: 'ri-fd-005', kind: 'RELATION', title: 'A型激光切割机 → prone_to → W轴限位报警', evidence: 'graph.jsonl relation', confidence: 0.97, status: 'APPROVED' },
+      { id: 'ri-fd-006', kind: 'RELATION', title: 'IO点位常闭常开状态错误 → solved_by → 修改IO点位常闭常开状态', evidence: 'graph.jsonl relation', confidence: 0.96, status: 'APPROVED' },
+      { id: 'ri-fd-007', kind: 'ENTITY', title: '修改IO点位常闭常开状态 (Solution)', evidence: 'graph.jsonl - sol_fix_io_state', confidence: 0.95, status: 'APPROVED' },
+      { id: 'ri-fd-008', kind: 'RELATION', title: 'W轴限位报警 → contains → 开机就报W轴限位', evidence: 'graph.jsonl relation', confidence: 0.94, status: 'APPROVED' },
+    ],
+  }]
+  first.versions = [
+    { id: 'ver-fd-001', version: 'v1.0', label: '初始版本 - 激光切割机故障诊断图谱', createdAt: '2025-03-01T10:10:00.000Z', sourceRunId: 'run-fd-001', entityCount: 65, relationCount: 99 },
+  ]
+  first.actions = [
+    { id: 'act-fd-001', name: 'auto_diagnose', displayName: '自动故障诊断', description: '根据设备报警信号自动匹配故障现象，沿诊断链路定位根因并推荐解决方案', status: 'ACTIVE', triggerType: 'EVENT', triggerConfigJson: '{"event":"device.alarm","match":"phenomenon"}', exceptionPolicy: 'RETRY', parametersJson: '[{"name":"deviceId","type":"STRING"},{"name":"symptoms","type":"STRING"},{"name":"deviceType","type":"STRING"}]' },
+    { id: 'act-fd-002', name: 'generate_checklist', displayName: '生成检查清单', description: '根据故障现象自动生成按优先级排序的诊断检查清单', status: 'ACTIVE', triggerType: 'MANUAL', triggerConfigJson: '{}', exceptionPolicy: 'SKIP', parametersJson: '[{"name":"phenomenonId","type":"STRING"}]' },
+    { id: 'act-fd-003', name: 'collect_parameters', displayName: '采集设备参数', description: '通过OPC-UA/HTTP接口采集检查点关联的设备参数', status: 'DRAFT', triggerType: 'SCHEDULE', triggerConfigJson: '{"cron":"*/5 * * * *"}' },
+  ]
+  first.functions = [
+    { id: 'fn-fd-001', name: 'search_phenomena', description: '搜索匹配的故障现象节点', scriptContent: 'def search_phenomena(query: str):\n    """根据关键词搜索故障现象，返回匹配的 Phenomenon 节点列表"""\n    return [n for n in nodes if n["entity"] == "Phenomenon"\n            and query in n["label"] or query in n["properties"].get("description", "")]', status: 'ACTIVE' },
+    { id: 'fn-fd-002', name: 'get_causes_and_solutions', description: '获取子现象的根因与解决方案', scriptContent: 'def get_causes_and_solutions(sub_phen_id: str):\n    """沿 caused_by → solved_by 链路获取根因与解决方案"""\n    causes = [r["to"] for r in relations if r["from"] == sub_phen_id and r["relation"] == "caused_by"]\n    solutions = [r["to"] for r in relations if r["from"] in causes and r["relation"] == "solved_by"]\n    return {"causes": causes, "solutions": solutions}', status: 'ACTIVE' },
+    { id: 'fn-fd-003', name: 'graph_data', description: '返回完整图谱的节点与边数据（用于可视化）', scriptContent: 'def graph_data():\n    """返回 {nodes: [...], links: [...]} 格式的完整图谱数据"""\n    return {"nodes": list(nodes.values()), "links": list(relations.values())}', status: 'ACTIVE' },
+  ]
+
+  // ── 第二个项目（设备维修本体）保留丰富详情 ──
+  const second = projects[1]
+  second.documents = [
     { id: 'doc-001', name: 'CNC数控机床维修手册.docx', fileType: 'docx', size: 2458624, status: 'READY', enabled: true, uploadedAt: '2025-01-15T08:30:00.000Z' },
     { id: 'doc-002', name: '离心泵故障诊断指南.docx', fileType: 'docx', size: 1835008, status: 'READY', enabled: true, uploadedAt: '2025-01-16T09:15:00.000Z' },
     { id: 'doc-003', name: '电机常见故障手册.md', fileType: 'md', size: 524288, status: 'READY', enabled: true, uploadedAt: '2025-01-20T14:00:00.000Z' },
     { id: 'doc-004', name: '设备编码规范.xlsx', fileType: 'xlsx', size: 153600, status: 'READY', enabled: false, uploadedAt: '2025-02-01T10:00:00.000Z' },
   ]
-  first.dataSources = [{
+  second.dataSources = [{
     id: 'ds-001', name: '设备主数据库', type: 'MYSQL', host: '10.0.1.100', port: 3306,
     database: 'equipment_db', username: 'reader', password: '', sslEnabled: false,
     enabled: true, extractMode: 'TABLE', tables: ['equipment', 'fault_records', 'parts'],
@@ -248,7 +379,7 @@ function defaultProjects(): ProjectDetail[] {
     status: 'SUCCESS', lastTestAt: '2025-03-08T10:00:00.000Z', lastError: '',
     createdAt: '2025-02-01T10:00:00.000Z', updatedAt: '2025-03-08T10:00:00.000Z',
   }]
-  first.schemaConfig = {
+  second.schemaConfig = {
     entityTypes: [
       {
         id: 'et-001', name: '传感器', description: '设备上安装的各类传感器',
@@ -312,7 +443,7 @@ function defaultProjects(): ProjectDetail[] {
     ],
     updatedAt: '2025-03-08T14:30:00.000Z',
   }
-  first.runs = [{
+  second.runs = [{
     id: 'run-001', status: 'COMPLETED', progress: 100,
     createdAt: '2025-03-05T10:00:00.000Z', completedAt: '2025-03-05T10:15:00.000Z',
     candidateEntityCount: 48, candidateRelationCount: 32, pendingReviewCount: 1,
@@ -327,14 +458,14 @@ function defaultProjects(): ProjectDetail[] {
       { id: 'ri-007', kind: 'RELATION', title: 'PUMP-B7 → 发生故障 → 叶轮汽蚀', evidence: '诊断指南第3章', confidence: 0.85, status: 'PENDING' },
     ],
   }]
-  first.versions = [
+  second.versions = [
     { id: 'ver-001', version: 'v1.0', label: '初始版本', createdAt: '2025-03-05T10:20:00.000Z', sourceRunId: 'run-001', entityCount: 45, relationCount: 30 },
   ]
-  first.actions = [
+  second.actions = [
     { id: 'act-001', name: 'create_fault_record', displayName: '创建故障记录', description: '设备告警时自动创建故障记录', status: 'ACTIVE', triggerType: 'EVENT', triggerConfigJson: '{"event":"device.alarm"}', exceptionPolicy: 'RETRY', parametersJson: '[{"name":"deviceId","type":"STRING"},{"name":"faultCode","type":"STRING"}]' },
     { id: 'act-002', name: 'notify_maintenance', displayName: '通知维修团队', description: '高优先级故障自动通知维修组长', status: 'DRAFT', triggerType: 'MANUAL' },
   ]
-  first.functions = [
+  second.functions = [
     { id: 'fn-001', name: 'calc_mtbf', description: '计算设备平均故障间隔时间', scriptContent: 'def calc_mtbf(total_hours, fault_count):\n    return total_hours / max(fault_count, 1)', status: 'ACTIVE' },
     { id: 'fn-002', name: 'predict_next_failure', description: '基于历史数据预测下次故障时间', scriptContent: 'def predict(history):\n    intervals = [history[i+1]-history[i] for i in range(len(history)-1)]\n    return history[-1] + sum(intervals)/len(intervals)', status: 'DRAFT' },
   ]
