@@ -1,15 +1,36 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.database import get_db
+from app.database import IS_MOCK_MODE, get_db
 from app.models.user import User
 from app.schemas.auth import LoginRequest, LoginResponse, UserInfo
-from app.security import create_access_token, verify_password, get_current_user
+from app.security import build_mock_user, create_access_token, verify_password, get_current_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=LoginResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)):
+    if IS_MOCK_MODE:
+        expected_username = (os.getenv("AUTH_DEFAULT_USERNAME", "admin") or "admin").strip() or "admin"
+        expected_password = (
+            os.getenv("AUTH_DEFAULT_PASSWORD", "admin123456") or "admin123456"
+        ).strip() or "admin123456"
+        if body.username != expected_username or body.password != expected_password:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="用户名或密码错误",
+            )
+
+        token, expires_in = create_access_token(1, expected_username)
+        return LoginResponse(
+            access_token=token,
+            token_type="bearer",
+            expires_in=expires_in,
+            user=UserInfo.model_validate(build_mock_user(username=expected_username)),
+        )
+
     user = db.query(User).filter(User.username == body.username).first()
     if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(

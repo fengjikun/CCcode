@@ -22,6 +22,26 @@ def _find_by_id(items: list[dict], item_id: int, detail: str):
             return item
     raise HTTPException(status_code=404, detail=detail)
 
+
+def _coerce_count(value) -> int:
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    if isinstance(value, list):
+        return len(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return 0
+        try:
+            return int(float(text))
+        except ValueError:
+            return 0
+    return 0
+
 # ---------------------------------------------------------------------------
 # Overview
 # ---------------------------------------------------------------------------
@@ -30,10 +50,10 @@ def _find_by_id(items: list[dict], item_id: int, detail: str):
 def overview_stats():
     d = ontology_overview_store.data
     ots = d.get("objectTypes", [])
-    total_props = sum(len(o.get("properties", [])) for o in ots)
+    total_props = sum(_coerce_count(o.get("properties", [])) for o in ots)
     lts = d.get("linkTypes", [])
     actions = d.get("actions", [])
-    total_records_raw = sum(o.get("recordCount", 0) for o in ots)
+    total_records_raw = sum(_coerce_count(o.get("recordCount", 0)) for o in ots)
     total_records = f"{total_records_raw / 1000:.1f}K"
     active_actions = sum(1 for a in actions if str(a.get("status", "")).lower() == "active")
     return {

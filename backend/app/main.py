@@ -12,7 +12,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
-from app.database import SessionLocal
+from app.database import IS_MOCK_MODE, SessionLocal
 from app.middleware.request_logging import setup_request_logging_middleware
 from app.models import *  # noqa: F401, F403 - ensure all models are imported
 from app.routers import (
@@ -22,6 +22,7 @@ from app.security import bootstrap_default_user, get_current_user
 from app.services import fault_knowledge_service
 
 logger = logging.getLogger(__name__)
+app_mode = "mock" if IS_MOCK_MODE else "prod"
 
 # Alembic migrations are no longer auto-run on startup.
 # To migrate the database schema, run manually:
@@ -44,7 +45,7 @@ _protected = [Depends(get_current_user)]
 app.include_router(auth.router)
 app.include_router(diagnosis.router, dependencies=_protected)
 app.include_router(mock_store.router, dependencies=_protected)
-ontology_mock_enabled = os.getenv("ONTOLOGY_MOCK_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+ontology_mock_enabled = IS_MOCK_MODE or os.getenv("ONTOLOGY_MOCK_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 if ontology_mock_enabled:
     app.include_router(mock_ontology.router, dependencies=_protected)
 else:
@@ -52,7 +53,7 @@ else:
     app.include_router(ontology_objects.router, dependencies=_protected)
     app.include_router(ontology_actions.router, dependencies=_protected)
     app.include_router(ontology_functions.router, dependencies=_protected)
-project_mock_enabled = os.getenv("PROJECT_MOCK_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+project_mock_enabled = IS_MOCK_MODE or os.getenv("PROJECT_MOCK_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 if project_mock_enabled:
     app.include_router(mock_projects.router, dependencies=_protected)
 else:
@@ -62,26 +63,28 @@ app.include_router(agent.router, dependencies=_protected)
 
 @app.on_event("startup")
 async def on_startup():
-    # Bootstrap an initial admin account when user table is empty.
-    db = SessionLocal()
-    try:
-        bootstrap_default_user(db)
-        from app.services import project_mgmt_service
+    if not IS_MOCK_MODE:
+        # Bootstrap an initial admin account when user table is empty.
+        db = SessionLocal()
+        try:
+            bootstrap_default_user(db)
+            from app.services import project_mgmt_service
 
-        recovered_count = project_mgmt_service.recover_interrupted_ai_insight_runs(db)
-        if recovered_count > 0:
-            logger.warning(
-                "startup recovered %s interrupted ai-insight runs to FAILED",
-                recovered_count,
-            )
-    finally:
-        db.close()
+            recovered_count = project_mgmt_service.recover_interrupted_ai_insight_runs(db)
+            if recovered_count > 0:
+                logger.warning(
+                    "startup recovered %s interrupted ai-insight runs to FAILED",
+                    recovered_count,
+                )
+        finally:
+            db.close()
 
     # Load fault knowledge graph
     fault_knowledge_service.load()
 
     logger.info(
-        "服务启动完成 | model=%s | base_url=%s | ontology_mock=%s | project_mock=%s",
+        "服务启动完成 | app_mode=%s | model=%s | base_url=%s | ontology_mock=%s | project_mock=%s",
+        app_mode,
         os.getenv("LLM_MODEL") or "未配置",
         os.getenv("LLM_BASE_URL") or "未配置",
         "enabled" if ontology_mock_enabled else "disabled",

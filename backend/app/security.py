@@ -5,10 +5,11 @@ import json
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
-from app.database import get_db
+from app.database import IS_MOCK_MODE, get_db
 from app.models.user import User
 
 AUTH_SECRET_KEY = os.getenv("AUTH_SECRET_KEY", "please-change-this-secret-key")
@@ -16,6 +17,11 @@ AUTH_TOKEN_EXPIRE_MINUTES = max(1, int(os.getenv("AUTH_TOKEN_EXPIRE_MINUTES", "4
 AUTH_PASSWORD_HASH_ITERATIONS = max(100000, int(os.getenv("AUTH_PASSWORD_HASH_ITERATIONS", "200000")))
 
 bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def build_mock_user(username: str | None = None, user_id: int = 1):
+    resolved_username = (username or os.getenv("AUTH_DEFAULT_USERNAME", "admin") or "admin").strip() or "admin"
+    return SimpleNamespace(id=user_id, username=resolved_username, is_active=True)
 
 
 def _b64url_encode(data: bytes) -> str:
@@ -123,9 +129,13 @@ def get_current_user(
 
     try:
         payload = decode_access_token(credentials.credentials)
-        user_id = int(payload.get("sub"))
+        user_id = int(payload.get("sub") or 1)
     except Exception:
         _raise_unauthorized("登录状态无效或已过期")
+
+    if IS_MOCK_MODE:
+        username = str(payload.get("username") or os.getenv("AUTH_DEFAULT_USERNAME", "admin"))
+        return build_mock_user(username=username, user_id=user_id)
 
     user = db.get(User, user_id)
     if not user or not user.is_active:
@@ -134,6 +144,9 @@ def get_current_user(
 
 
 def bootstrap_default_user(db: Session) -> None:
+    if IS_MOCK_MODE:
+        return
+
     existing_user = db.query(User).first()
     if existing_user:
         return
