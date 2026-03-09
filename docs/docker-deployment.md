@@ -15,7 +15,10 @@ Dockerfile (多阶段)
 - 前端静态文件：React SPA（`/assets/*` + SPA fallback）
 - API 文档：`/docs`
 
-Docker Compose 部署默认以 `prod` 模式运行，并依赖 `mysql` 服务。
+Docker Compose 部署默认以 `mock` 模式运行。
+
+- 默认不需要真实 MySQL 连接，适合快速演示和联调。
+- 如果要切换到真实业务/数据库模式，请在 `deploy/.env` 中显式设置 `APP_MODE=prod`。此时仍依赖 `mysql` 服务和数据库迁移。
 
 启动时会执行：
 1. 初始化默认管理员账号（仅用户表为空时）
@@ -52,6 +55,7 @@ Docker Compose 部署默认以 `prod` 模式运行，并依赖 `mysql` 服务。
 # 确保 deploy/.env 存在
 cp deploy/.env.example deploy/.env
 # 编辑 deploy/.env，填写 LLM 和认证配置
+# 如需真实数据库模式，额外设置 APP_MODE=prod
 
 docker compose --env-file deploy/.env up -d --build
 ```
@@ -77,6 +81,12 @@ docker compose --env-file deploy/.env run --rm app alembic upgrade head
 ## 环境变量配置
 
 配置文件位于 `deploy/.env`（从 `deploy/.env.example` 复制）。
+
+### 应用模式
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `APP_MODE` | `mock` | Docker 默认以 mock 模式启动；如需真实数据库模式，改为 `prod` |
 
 ### LLM 配置（可选）
 

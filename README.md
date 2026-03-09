@@ -79,6 +79,7 @@ cd frontend && npm run dev
 
 ```bash
 cp deploy/.env.example deploy/.env
+# Docker 默认以 mock 模式启动；如需真实数据库模式，设置 APP_MODE=prod
 ./scripts/start.sh docker up deploy/.env
 ./scripts/start.sh docker ps deploy/.env
 ./scripts/start.sh docker logs deploy/.env
