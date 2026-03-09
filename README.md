@@ -26,7 +26,11 @@
 - Python 3.10+
 - Node.js 18+
 
-### 本地开发
+### 推荐启动方式
+
+推荐新用户优先使用本地开发模式启动项目，不建议把 Docker 作为第一次运行仓库的默认入口。
+
+### 启动前准备
 
 ```bash
 git clone https://github.com/fengjikun/CCcode.git
@@ -36,20 +40,25 @@ cd backend && pip install -r requirements.txt
 cd ../frontend && npm install
 ```
 
-`backend/.env`（可选，未配置时走本地知识图谱诊断模式）：
+本地开发请创建 `backend/.env`。最小可运行配置如下：
+
+```env
+APP_MODE=mock
+AUTH_DEFAULT_USERNAME=admin
+AUTH_DEFAULT_PASSWORD=admin123456
+```
+
+`APP_MODE=mock` 时，本地启动不依赖 MySQL，适合首次运行和前后端联调。
+
+如需接入真实 LLM 或生产数据库模式，可在此基础上继续补充：
 
 ```env
 LLM_API_KEY=your_key
 LLM_BASE_URL=https://your-openai-compatible-endpoint/v1
 LLM_MODEL=your_model
-
-# 认证配置（可选）
 AUTH_SECRET_KEY=replace-with-a-strong-random-secret
 AUTH_TOKEN_EXPIRE_MINUTES=480
-AUTH_DEFAULT_USERNAME=admin
-AUTH_DEFAULT_PASSWORD=admin123456
 
-# MySQL 数据库配置
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_USER=cccode
@@ -59,23 +68,25 @@ DB_NAME=cccode
 
 首次启动时如 `users` 表为空，会自动创建默认管理员账号（可通过上述环境变量覆盖）。
 
-启动：
+### 启动命令
 
 ```bash
-# 推荐：一键启动前后端（9000/9002）
 ./scripts/start.sh
-
-# 或分别启动
-cd backend && uvicorn app.main:app --reload --port 9000
-cd frontend && npm run dev
 ```
 
-访问：
+### 访问地址
+
 - 前端：http://localhost:9002
+- 后端：http://localhost:9000
 - API 文档：http://localhost:9000/docs
 - 默认登录账号：`admin` / `admin123456`（请在生产环境修改）
 
-### Docker 部署
+### 常见问题
+
+- Node 版本异常时，优先执行 `nvm use 22` 后再运行 `./scripts/start.sh`。脚本会尝试切换到 Node 22；如果本机未安装，则继续使用当前版本。
+- 如果未在 `backend/.env` 中设置 `APP_MODE=mock`，后端会按 `prod` 模式启动，并依赖 MySQL 配置。
+
+### 补充部署方式（Docker）
 
 ```bash
 cp deploy/.env.example deploy/.env
@@ -91,12 +102,9 @@ cp deploy/.env.example deploy/.env
 ./scripts/init_remote_data.sh --host <远端IP> --remote-dir <远端项目目录> --yes
 ```
 
-### 重新构建并重启（前后端）
+如需重新构建并重启 Docker 服务：
 
 ```bash
-# 进入项目目录
-cd CCcode
-
 # 方案1：直接重建并重启（推荐）
 ./scripts/start.sh docker up deploy/.env
 
