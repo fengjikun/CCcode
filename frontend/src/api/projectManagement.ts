@@ -25,13 +25,16 @@ import type {
 
 import { delay, rand } from './mockConfig'
 
-const STORAGE_KEY = 'deepexios_projects_v2'
+const STORAGE_KEY = 'deepexios_projects_v3'
+/** 当默认数据结构变化时递增此值，自动清除旧缓存 */
+const DATA_VERSION = 3
 
 /* ========== 持久化存储 ========== */
 
 interface ProjectStore {
   projects: ProjectDetail[]
   idSeq: number
+  _v?: number
 }
 
 /* ========== 108 行业本体定义（来源：滴普科技行业本体清单v3_3.xlsx） ========== */
@@ -342,17 +345,14 @@ function defaultProjects(): ProjectDetail[] {
 function loadStore(): ProjectStore {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) {
-      const s: ProjectStore = { projects: defaultProjects(), idSeq: 5000 }
-      saveStore(s)
-      return s
+    if (raw) {
+      const parsed = JSON.parse(raw) as ProjectStore
+      if (parsed._v === DATA_VERSION) return parsed
     }
-    return JSON.parse(raw)
-  } catch {
-    const s: ProjectStore = { projects: defaultProjects(), idSeq: 5000 }
-    saveStore(s)
-    return s
-  }
+  } catch { /* ignore */ }
+  const s: ProjectStore = { projects: defaultProjects(), idSeq: 5000, _v: DATA_VERSION }
+  saveStore(s)
+  return s
 }
 
 function saveStore(store: ProjectStore) {
