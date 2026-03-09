@@ -1,4 +1,445 @@
 {
-  "namespaces": {},
+  "namespaces": {
+    "dashboard": {
+      "health": [
+        {
+          "key": "1",
+          "component": "L1 数据接入管道",
+          "status": "Healthy",
+          "uptime": "99.97%",
+          "qps": 3420,
+          "latency": "12ms",
+          "lastCheck": "1 分钟前"
+        },
+        {
+          "key": "2",
+          "component": "L2 数据转换引擎",
+          "status": "Healthy",
+          "uptime": "99.92%",
+          "qps": 1850,
+          "latency": "38ms",
+          "lastCheck": "2 分钟前"
+        },
+        {
+          "key": "3",
+          "component": "L3 本体语义服务",
+          "status": "Healthy",
+          "uptime": "99.95%",
+          "qps": 960,
+          "latency": "15ms",
+          "lastCheck": "1 分钟前"
+        },
+        {
+          "key": "4",
+          "component": "L4 Agent Runtime",
+          "status": "Degraded",
+          "uptime": "98.50%",
+          "qps": 520,
+          "latency": "210ms",
+          "lastCheck": "3 分钟前"
+        },
+        {
+          "key": "5",
+          "component": "L5 训练调度器",
+          "status": "Healthy",
+          "uptime": "99.80%",
+          "qps": 45,
+          "latency": "85ms",
+          "lastCheck": "5 分钟前"
+        },
+        {
+          "key": "6",
+          "component": "L6 模型网关",
+          "status": "Healthy",
+          "uptime": "99.98%",
+          "qps": 15600,
+          "latency": "45ms",
+          "lastCheck": "30 秒前"
+        },
+        {
+          "key": "7",
+          "component": "L7 数字员工服务",
+          "status": "Healthy",
+          "uptime": "99.90%",
+          "qps": 280,
+          "latency": "120ms",
+          "lastCheck": "2 分钟前"
+        }
+      ],
+      "activity": [
+        {
+          "key": "1",
+          "time": "14:32:22",
+          "user": "Equipment Agent",
+          "action": "执行故障诊断",
+          "target": "设备 #DV-8921",
+          "level": "info"
+        },
+        {
+          "key": "2",
+          "time": "14:28:45",
+          "user": "Inventory Agent",
+          "action": "自动创建采购订单",
+          "target": "SKU #12345",
+          "level": "success"
+        },
+        {
+          "key": "3",
+          "time": "14:15:22",
+          "user": "张工",
+          "action": "发布本体 Schema v3.2",
+          "target": "采购订单对象",
+          "level": "success"
+        },
+        {
+          "key": "4",
+          "time": "13:58:10",
+          "user": "Customer Agent",
+          "action": "自动回复工单",
+          "target": "TK-3342",
+          "level": "success"
+        },
+        {
+          "key": "5",
+          "time": "13:45:33",
+          "user": "系统",
+          "action": "Agent Runtime 性能降级告警",
+          "target": "L4 服务",
+          "level": "warning"
+        },
+        {
+          "key": "6",
+          "time": "13:30:00",
+          "user": "李工",
+          "action": "部署模型 v2.1.0",
+          "target": "purchase-order-classifier",
+          "level": "info"
+        },
+        {
+          "key": "7",
+          "time": "13:12:18",
+          "user": "系统",
+          "action": "训练任务完成",
+          "target": "equipment-fault-predictor v1.8.2",
+          "level": "success"
+        },
+        {
+          "key": "8",
+          "time": "12:55:42",
+          "user": "王工",
+          "action": "新增数据源连接",
+          "target": "SAP ERP Production",
+          "level": "info"
+        }
+      ],
+      "stats": {
+        "datasources": 24,
+        "transformJobs": 156,
+        "objectTypes": 89,
+        "agents": 12,
+        "skills": 47,
+        "trainingJobs": 8,
+        "deployedModels": 23,
+        "digitalWorkers": 15,
+        "totalRequests": "2.4M",
+        "avgLatency": "45ms",
+        "uptime": "99.9%",
+        "activeUsers": 36
+      }
+    },
+    "digital-humans": {
+      "items": [
+        {
+          "id": "dh-default-device-fault",
+          "name": "设备运维诊断专员",
+          "type": "fault-repair",
+          "description": "基于设备本体与故障知识图谱，智能监控告警与处置建议。",
+          "createdAt": "2024-01-01T00:00:00.000Z",
+          "updatedAt": "2024-01-01T00:00:00.000Z"
+        }
+      ]
+    },
+    "dic-workers": {
+      "workers": [
+        {
+          "key": "1",
+          "id": "dic-001",
+          "name": "本体建模助手",
+          "icon": "🏗️",
+          "description": "智能本体设计与验证：自动推荐属性、检查 Schema 一致性、生成迁移脚本",
+          "category": "ontology",
+          "status": "Online",
+          "tasksCompleted": 1245,
+          "tasksToday": 18,
+          "avgResponseTime": "2.3s",
+          "successRate": "99.2%",
+          "skills": [
+            "Schema 验证",
+            "属性推荐",
+            "迁移脚本生成"
+          ],
+          "lastActive": "2 分钟前"
+        },
+        {
+          "key": "2",
+          "id": "dic-002",
+          "name": "数据质量巡检员",
+          "icon": "📊",
+          "description": "自动化数据质量检查：空值检测、格式校验、异常值识别、数据血缘追踪",
+          "category": "data-quality",
+          "status": "Busy",
+          "tasksCompleted": 3420,
+          "tasksToday": 42,
+          "avgResponseTime": "5.1s",
+          "successRate": "98.7%",
+          "skills": [
+            "空值检测",
+            "格式校验",
+            "异常值识别",
+            "血缘追踪"
+          ],
+          "lastActive": "正在执行"
+        },
+        {
+          "key": "3",
+          "id": "dic-003",
+          "name": "知识图谱维护员",
+          "icon": "🔗",
+          "description": "实体冲突发现、关系缺失检测、图谱一致性验证、自动修复建议",
+          "category": "knowledge-graph",
+          "status": "Online",
+          "tasksCompleted": 892,
+          "tasksToday": 8,
+          "avgResponseTime": "3.8s",
+          "successRate": "97.5%",
+          "skills": [
+            "实体消歧",
+            "关系补全",
+            "一致性校验",
+            "冗余检测"
+          ],
+          "lastActive": "5 分钟前"
+        }
+      ]
+    },
+    "agent-studio": {
+      "agents": [
+        {
+          "id": "ag-001",
+          "name": "设备故障诊断 Agent",
+          "type": "Operational",
+          "status": "Active",
+          "version": "v2.3.1",
+          "description": "基于设备本体与故障知识图谱，自动分析传感器数据并生成维修方案",
+          "systemPrompt": "你是一个设备故障诊断专家。",
+          "model": "DeepSeek-V3",
+          "skillIds": [
+            "sk-001"
+          ],
+          "createdAt": "2024-06-15T08:00:00.000Z",
+          "updatedAt": "2024-11-20T10:00:00.000Z"
+        }
+      ]
+    },
+    "skills-market": {
+      "skills": [
+        {
+          "id": "sk-001",
+          "name": "equipment-fault-diagnosis",
+          "displayName": "设备故障诊断专家",
+          "category": "domain-expert",
+          "status": "Active",
+          "description": "基于设备本体与故障知识图谱，分析传感器数据并输出维修方案。",
+          "instructions": "# 设备故障诊断专家\n\n根据设备告警生成结构化诊断结论。",
+          "reference": "故障代码格式: FC-XXX-001",
+          "templates": [
+            {
+              "name": "diagnosis_report.md",
+              "description": "诊断报告输出模板"
+            }
+          ],
+          "scripts": [
+            {
+              "name": "analyze_vibration.py",
+              "description": "振动频谱分析脚本"
+            }
+          ],
+          "dependencies": "ontology-api, sensor-data-api",
+          "tags": [
+            "设备运维",
+            "故障诊断"
+          ],
+          "installs": 2341,
+          "author": "DeepexiOS",
+          "createdAt": "2024-06-01T08:00:00.000Z",
+          "updatedAt": "2024-11-20T10:00:00.000Z"
+        }
+      ],
+      "importableFunctions": [
+        {
+          "id": "fn-001",
+          "name": "checkMotorHealth",
+          "projectName": "设备运维本体",
+          "projectId": "proj-001",
+          "description": "检查电机健康状态并返回健康评分。",
+          "scriptContent": "def check_motor_health(device_id):\n    return {\"score\": 0.92}",
+          "status": "ACTIVE"
+        }
+      ]
+    },
+    "agent-logs": {
+      "logs": [
+        {
+          "key": "1",
+          "time": "2025-03-08 14:32:22",
+          "agentId": "agt-001",
+          "agentName": "Equipment Agent",
+          "action": "执行动作: CreateMaintenanceTicket",
+          "detail": "设备 #DV-8921 振动超标，自动创建工单",
+          "level": "success",
+          "duration": 3200,
+          "toolsUsed": [
+            "ontology-api"
+          ],
+          "skillUsed": "设备故障诊断专家"
+        },
+        {
+          "key": "2",
+          "time": "2025-03-08 14:28:43",
+          "agentId": "agt-002",
+          "agentName": "Inventory Agent",
+          "action": "检测到库存不足",
+          "detail": "SKU #12345 当前库存 2 件，安全库存 10 件",
+          "level": "warning",
+          "duration": 800,
+          "toolsUsed": [
+            "erp-api"
+          ]
+        },
+        {
+          "key": "3",
+          "time": "2025-03-08 13:58:10",
+          "agentId": "agt-004",
+          "agentName": "Customer Agent",
+          "action": "自动回复工单 #TK-3342",
+          "detail": "基于知识库匹配到解决方案",
+          "level": "success",
+          "duration": 2800,
+          "toolsUsed": [
+            "knowledge-api"
+          ]
+        }
+      ]
+    },
+    "transforms": {
+      "items": [
+        {
+          "id": "tf-001",
+          "name": "transform_orders",
+          "description": "采购订单跨源关联：SAP 订单 + CRM 客户主数据 → 标准化订单",
+          "type": "Join",
+          "inputSources": [
+            "ds-001"
+          ],
+          "inputSourceNames": [
+            "ds_sap_orders"
+          ],
+          "outputDatasets": [
+            "normalized_orders"
+          ],
+          "status": "Success",
+          "records": 125840,
+          "duration": "2m 15s",
+          "lastRun": "5 分钟前",
+          "schedule": "每 15 分钟",
+          "createdAt": "2024-08-01T08:00:00.000Z",
+          "updatedAt": "2024-12-01T10:00:00.000Z"
+        }
+      ]
+    },
+    "data-sources": {
+      "items": [
+        {
+          "id": "ds-001",
+          "name": "ds_sap_orders",
+          "category": "structured",
+          "type": "SAP ERP",
+          "connection": {
+            "host": "sap.company.com",
+            "port": 3300,
+            "database": "PRD",
+            "username": "sap_reader"
+          },
+          "syncFrequency": "15min",
+          "status": "Active",
+          "lastSync": "3 分钟前",
+          "recordCount": 125840,
+          "description": "SAP ERP 订单主数据，包含采购订单、销售订单及物料移动",
+          "createdAt": "2024-06-15T08:00:00.000Z",
+          "updatedAt": "2024-12-01T10:30:00.000Z"
+        },
+        {
+          "id": "ds-002",
+          "name": "ds_iot_sensors",
+          "category": "structured",
+          "type": "MongoDB",
+          "connection": {
+            "host": "mongo-iot.internal",
+            "port": 27017,
+            "database": "sensor_data",
+            "username": "iot_reader"
+          },
+          "syncFrequency": "realtime",
+          "status": "Active",
+          "lastSync": "Live",
+          "recordCount": 2340000,
+          "description": "IoT 传感器实时数据",
+          "createdAt": "2024-07-20T08:00:00.000Z",
+          "updatedAt": "2024-12-01T10:30:00.000Z"
+        }
+      ]
+    },
+    "training-datasets": {
+      "items": [
+        {
+          "key": "1",
+          "name": "purchase_orders_v3",
+          "source": "ontology://PurchaseOrder/output",
+          "trainSplit": 70,
+          "valSplit": 15,
+          "testSplit": 15,
+          "records": 12450,
+          "version": "v3.0",
+          "status": "Ready",
+          "size": "156 MB",
+          "createdAt": "2025-02-15",
+          "updatedAt": "2025-03-08",
+          "linkedModels": [
+            "purchase-order-classifier"
+          ],
+          "format": "JSONL",
+          "promptTemplate": "{\"instruction\": \"分类采购订单\", \"input\": \"{{设备名称}}\", \"output\": \"{{运行状态}}\"}",
+          "schemaFields": [
+            "设备编号",
+            "设备名称",
+            "运行状态",
+            "故障类型"
+          ],
+          "buildProgress": 100,
+          "buildLog": [
+            "[2025-03-08 10:00:01] ✓ 构建完成"
+          ],
+          "sampleData": [
+            {
+              "设备编号": "PO-20250101",
+              "设备名称": "液压泵 A-01",
+              "运行状态": "正常",
+              "故障类型": "—"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "idSeq": 1000
 }
