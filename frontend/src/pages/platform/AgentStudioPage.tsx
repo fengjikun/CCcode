@@ -288,10 +288,11 @@ export default function AgentStudioPage() {
   // 已发布数字员工数（缓存到 state，避免 JSX 中直接调用 localStorage）
   const [digitalHumanCount, setDigitalHumanCount] = useState(0)
 
-  const reload = useCallback(() => {
-    setList(listAgents())
-    setSkills(listSkills())
-    setDigitalHumanCount(listDigitalHumans().length)
+  const reload = useCallback(async () => {
+    const [agents, sk, dh] = await Promise.all([listAgents(), listSkills(), listDigitalHumans()])
+    setList(agents)
+    setSkills(sk)
+    setDigitalHumanCount(dh.length)
   }, [])
 
   useEffect(() => { reload() }, [reload])
@@ -316,7 +317,7 @@ export default function AgentStudioPage() {
     try {
       const values = await form.validateFields()
       setCreating(true)
-      createAgent({
+      await createAgent({
         name: values.name,
         type: values.type,
         description: values.description,
@@ -328,7 +329,7 @@ export default function AgentStudioPage() {
       setCreateOpen(false)
       form.resetFields()
       setSelectedSkillIds([])
-      reload()
+      await reload()
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'errorFields' in err) return
       message.error('创建失败')
@@ -355,7 +356,7 @@ export default function AgentStudioPage() {
     try {
       const values = await editForm.validateFields()
       setEditing(true)
-      updateAgent(editTarget!.id, {
+      await updateAgent(editTarget!.id, {
         name: values.name,
         description: values.description,
         systemPrompt: values.systemPrompt,
@@ -364,7 +365,7 @@ export default function AgentStudioPage() {
       })
       message.success('修改成功')
       setEditOpen(false)
-      reload()
+      await reload()
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'errorFields' in err) return
       message.error('修改失败')
@@ -374,10 +375,10 @@ export default function AgentStudioPage() {
   }
 
   /* 删除 */
-  const handleDelete = (id: string) => {
-    deleteAgent(id)
+  const handleDelete = async (id: string) => {
+    await deleteAgent(id)
     message.success('智能体已删除')
-    reload()
+    await reload()
   }
 
   /* 详情 */
@@ -392,21 +393,21 @@ export default function AgentStudioPage() {
     setPublishOpen(true)
   }
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!publishTarget) return
     setPublishing(true)
     try {
       // 更新 agent 状态为 Active
-      updateAgent(publishTarget.id, { status: 'Active' })
+      await updateAgent(publishTarget.id, { status: 'Active' })
       // 创建数字员工
-      const dh = createDigitalHuman(
+      const dh = await createDigitalHuman(
         publishTarget.name,
         'fault-repair',
         `由智能体「${publishTarget.name}」发布。${publishTarget.description || ''}`,
       )
       message.success('发布成功！已创建数字员工')
       setPublishOpen(false)
-      reload()
+      await reload()
       // 跳转到数字员工页面
       navigate(`/digital-worker/business/${dh.id}`)
     } catch {

@@ -9,14 +9,15 @@ import type {
   OntologyFunction,
 } from '../types/ontology'
 
-const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
-const rand = (min: number, max: number) => min + Math.random() * (max - min)
+import { delay, rand } from './mockConfig'
 
-const STORAGE_KEY = 'deepexios_ontology'
+const STORAGE_KEY = 'deepexios_ontology_v2'
+const DATA_VERSION = 2
 
 /* ---------- 持久化 ---------- */
 
 interface OntologyStore {
+  _v?: number
   objectTypes: ObjectType[]
   properties: Record<number, Property[]>
   linkTypes: LinkType[]
@@ -30,76 +31,105 @@ interface OntologyStore {
 function defaultStore(): OntologyStore {
   return {
     objectTypes: [
-      { id: 1, name: 'Equipment', displayName: '设备', description: '生产设备实体', icon: '🔧', color: '#1890ff' },
-      { id: 2, name: 'Part', displayName: '零部件', description: '设备零部件', icon: '⚙️', color: '#52c41a' },
-      { id: 3, name: 'FaultRecord', displayName: '故障记录', description: '设备故障历史', icon: '⚠️', color: '#ff4d4f' },
-      { id: 4, name: 'MaintenancePlan', displayName: '维保计划', description: '设备维护保养计划', icon: '📋', color: '#722ed1' },
-      { id: 5, name: 'Supplier', displayName: '供应商', description: '零部件供应商', icon: '🏭', color: '#fa8c16' },
+      { id: 1, name: 'Equipment', displayName: '设备', description: '生产设备实体，如激光切割机、数控机床等', icon: '🔧', color: '#1890ff' },
+      { id: 2, name: 'Phenomenon', displayName: '故障现象', description: '设备运行中可观察到的异常现象', icon: '⚠️', color: '#ff4d4f' },
+      { id: 3, name: 'SubPhenomenon', displayName: '子现象', description: '故障现象的细分表现形式', icon: '🔍', color: '#fa541c' },
+      { id: 4, name: 'Checkpoint', displayName: '检查点', description: '故障排查时需要检查的关键项目', icon: '✅', color: '#52c41a' },
+      { id: 5, name: 'Cause', displayName: '故障原因', description: '导致故障现象的根本原因', icon: '🎯', color: '#722ed1' },
+      { id: 6, name: 'Solution', displayName: '解决方案', description: '针对故障原因的修复方案和步骤', icon: '💡', color: '#13c2c2' },
+      { id: 7, name: 'Component', displayName: '部件', description: '设备的组成部件和模块', icon: '⚙️', color: '#2f54eb' },
+      { id: 8, name: 'Parameter', displayName: '参数', description: '设备运行的可监测参数和指标', icon: '📊', color: '#fa8c16' },
     ],
     properties: {
       1: [
         { id: 101, name: 'model', displayName: '型号', dataType: 'STRING', required: true, sortOrder: 1 },
-        { id: 102, name: 'serialNumber', displayName: '序列号', dataType: 'STRING', required: true, sortOrder: 2 },
-        { id: 103, name: 'runningHours', displayName: '运行时长(h)', dataType: 'INTEGER', required: false, sortOrder: 3 },
-        { id: 104, name: 'location', displayName: '安装位置', dataType: 'STRING', required: false, sortOrder: 4 },
+        { id: 102, name: 'manufacturer', displayName: '制造商', dataType: 'STRING', required: false, sortOrder: 2 },
+        { id: 103, name: 'description', displayName: '描述', dataType: 'STRING', required: false, sortOrder: 3 },
       ],
       2: [
-        { id: 201, name: 'partNumber', displayName: '零件号', dataType: 'STRING', required: true, sortOrder: 1 },
-        { id: 202, name: 'lifespan', displayName: '设计寿命(h)', dataType: 'INTEGER', required: false, sortOrder: 2 },
+        { id: 201, name: 'code', displayName: '故障码', dataType: 'STRING', required: true, sortOrder: 1 },
+        { id: 202, name: 'description', displayName: '描述', dataType: 'STRING', required: true, sortOrder: 2 },
       ],
       3: [
-        { id: 301, name: 'faultCode', displayName: '故障码', dataType: 'STRING', required: true, sortOrder: 1 },
-        { id: 302, name: 'severity', displayName: '严重程度', dataType: 'STRING', required: true, sortOrder: 2 },
-        { id: 303, name: 'occurredAt', displayName: '发生时间', dataType: 'DATETIME', required: true, sortOrder: 3 },
+        { id: 301, name: 'description', displayName: '描述', dataType: 'STRING', required: true, sortOrder: 1 },
+      ],
+      4: [
+        { id: 401, name: 'priority', displayName: '优先级', dataType: 'INTEGER', required: true, sortOrder: 1 },
+        { id: 402, name: 'method', displayName: '检查方法', dataType: 'STRING', required: true, sortOrder: 2 },
+        { id: 403, name: 'expectedValue', displayName: '期望值', dataType: 'STRING', required: true, sortOrder: 3 },
+        { id: 404, name: 'description', displayName: '描述', dataType: 'STRING', required: false, sortOrder: 4 },
+      ],
+      5: [
+        { id: 501, name: 'description', displayName: '描述', dataType: 'STRING', required: true, sortOrder: 1 },
+      ],
+      6: [
+        { id: 601, name: 'steps', displayName: '操作步骤', dataType: 'STRING', required: true, sortOrder: 1 },
+        { id: 602, name: 'estimatedTime', displayName: '预计耗时', dataType: 'STRING', required: false, sortOrder: 2 },
+        { id: 603, name: 'effectiveness', displayName: '有效性', dataType: 'STRING', required: false, sortOrder: 3 },
+        { id: 604, name: 'riskLevel', displayName: '风险等级', dataType: 'STRING', required: false, sortOrder: 4 },
+      ],
+      7: [
+        { id: 701, name: 'description', displayName: '描述', dataType: 'STRING', required: true, sortOrder: 1 },
+      ],
+      8: [
+        { id: 801, name: 'dataType', displayName: '数据类型', dataType: 'STRING', required: true, sortOrder: 1 },
+        { id: 802, name: 'source', displayName: '数据来源', dataType: 'STRING', required: true, sortOrder: 2 },
+        { id: 803, name: 'unit', displayName: '单位', dataType: 'STRING', required: false, sortOrder: 3 },
+        { id: 804, name: 'opcUaPath', displayName: 'OPC-UA路径', dataType: 'STRING', required: false, sortOrder: 4 },
       ],
     },
     linkTypes: [
-      { id: 1, name: 'has_part', displayName: '包含零件', sourceObjectTypeId: 1, targetObjectTypeId: 2, cardinality: 'ONE_TO_MANY', description: '设备包含零部件' },
-      { id: 2, name: 'has_fault', displayName: '发生故障', sourceObjectTypeId: 1, targetObjectTypeId: 3, cardinality: 'ONE_TO_MANY', description: '设备发生的故障记录' },
-      { id: 3, name: 'supplied_by', displayName: '供应商供货', sourceObjectTypeId: 2, targetObjectTypeId: 5, cardinality: 'MANY_TO_ONE', description: '零部件供应关系' },
-      { id: 4, name: 'maintenance_for', displayName: '维保对象', sourceObjectTypeId: 4, targetObjectTypeId: 1, cardinality: 'MANY_TO_ONE', description: '维保计划关联设备' },
+      { id: 1, name: 'prone_to', displayName: '易发故障', sourceObjectTypeId: 1, targetObjectTypeId: 2, cardinality: 'ONE_TO_MANY', description: '设备易发生的故障现象' },
+      { id: 2, name: 'contains', displayName: '包含子现象', sourceObjectTypeId: 2, targetObjectTypeId: 3, cardinality: 'ONE_TO_MANY', description: '故障现象包含的细分子现象' },
+      { id: 3, name: 'needs_check', displayName: '需要检查', sourceObjectTypeId: 2, targetObjectTypeId: 4, cardinality: 'ONE_TO_MANY', description: '故障现象/子现象需要的检查项' },
+      { id: 4, name: 'discovers', displayName: '发现异常', sourceObjectTypeId: 4, targetObjectTypeId: 3, cardinality: 'ONE_TO_MANY', description: '检查点可发现的子现象' },
+      { id: 5, name: 'located_at', displayName: '定位部件', sourceObjectTypeId: 3, targetObjectTypeId: 7, cardinality: 'MANY_TO_ONE', description: '子现象/检查点关联的设备部件' },
+      { id: 6, name: 'caused_by', displayName: '原因归因', sourceObjectTypeId: 3, targetObjectTypeId: 5, cardinality: 'MANY_TO_ONE', description: '子现象由该原因导致' },
+      { id: 7, name: 'solved_by', displayName: '推荐方案', sourceObjectTypeId: 5, targetObjectTypeId: 6, cardinality: 'ONE_TO_MANY', description: '故障原因的推荐解决方案' },
+      { id: 8, name: 'supports', displayName: '参数支撑', sourceObjectTypeId: 8, targetObjectTypeId: 4, cardinality: 'MANY_TO_ONE', description: '参数为检查点提供数据支撑' },
     ],
     actionTypes: [
       {
-        id: 1, name: 'create_fault_record', displayName: '创建故障记录',
-        description: '当设备发生故障时自动创建记录', status: 'ACTIVE',
-        targetObjectTypeId: 3, triggerType: 'EVENT', triggerConfigJson: '{"event":"device.alarm"}',
-        exceptionPolicy: 'RETRY', validationRulesJson: '[{"name":"severity_check","condition":"severity in [LOW,MEDIUM,HIGH,CRITICAL]","message":"严重程度必须为有效值"}]',
+        id: 1, name: 'auto_diagnose', displayName: '自动故障诊断',
+        description: '基于设备报警信号自动触发故障诊断流程，匹配知识图谱中的故障模式', status: 'ACTIVE',
+        targetObjectTypeId: 2, triggerType: 'EVENT', triggerConfigJson: '{"event":"device.alarm","source":"opc_ua"}',
+        exceptionPolicy: 'RETRY', validationRulesJson: '[{"name":"alarm_code_check","condition":"alarm_code matches ALM-*","message":"报警码格式必须为 ALM- 前缀"}]',
       },
       {
-        id: 2, name: 'schedule_maintenance', displayName: '计划维保',
-        description: '根据运行时长自动安排维保计划', status: 'ACTIVE',
-        targetObjectTypeId: 4, triggerType: 'SCHEDULE', triggerConfigJson: '{"cron":"0 8 * * 1"}',
-        exceptionPolicy: 'IGNORE',
+        id: 2, name: 'generate_work_order', displayName: '生成维修工单',
+        description: '诊断完成后自动生成维修工单，包含检查清单和修复方案', status: 'ACTIVE',
+        targetObjectTypeId: 6, triggerType: 'EVENT', triggerConfigJson: '{"event":"diagnosis.completed"}',
+        exceptionPolicy: 'RETRY',
       },
       {
-        id: 3, name: 'notify_supplier', displayName: '通知供应商',
-        description: '零件库存不足时通知供应商', status: 'DRAFT',
-        targetObjectTypeId: 5, triggerType: 'MANUAL',
+        id: 3, name: 'check_spare_parts', displayName: '备件库存检查',
+        description: '维修工单生成时自动检查所需备件库存', status: 'DRAFT',
+        targetObjectTypeId: 7, triggerType: 'MANUAL',
       },
     ],
     actionParameters: {
       1: [
-        { id: 11, name: 'equipmentId', displayName: '设备ID', dataType: 'INTEGER', required: true, sortOrder: 1 },
-        { id: 12, name: 'faultCode', displayName: '故障码', dataType: 'STRING', required: true, sortOrder: 2 },
+        { id: 11, name: 'equipmentId', displayName: '设备ID', dataType: 'STRING', required: true, sortOrder: 1 },
+        { id: 12, name: 'alarmCode', displayName: '报警码', dataType: 'STRING', required: true, sortOrder: 2 },
         { id: 13, name: 'severity', displayName: '严重程度', dataType: 'STRING', required: true, defaultValue: 'MEDIUM', sortOrder: 3 },
       ],
       2: [
-        { id: 21, name: 'equipmentId', displayName: '设备ID', dataType: 'INTEGER', required: true, sortOrder: 1 },
-        { id: 22, name: 'maintenanceType', displayName: '维保类型', dataType: 'STRING', required: true, sortOrder: 2 },
+        { id: 21, name: 'diagnosisId', displayName: '诊断记录ID', dataType: 'INTEGER', required: true, sortOrder: 1 },
+        { id: 22, name: 'priority', displayName: '工单优先级', dataType: 'STRING', required: true, sortOrder: 2 },
       ],
     },
     actionRules: {
       1: [
-        { id: 11, ruleType: 'CREATE', targetObjectTypeName: 'FaultRecord', sortOrder: 1, propertyMappingsJson: '{"faultCode":"$faultCode","severity":"$severity"}' },
+        { id: 11, ruleType: 'CREATE', targetObjectTypeName: 'Checkpoint', sortOrder: 1, propertyMappingsJson: '{"alarmCode":"$alarmCode","severity":"$severity"}' },
       ],
     },
     functions: [
-      { id: 1, name: 'calc_mtbf', displayName: '计算 MTBF', description: '计算设备平均故障间隔时间', status: 'ACTIVE', scriptType: 'PYTHON', scriptContent: 'def calc_mtbf(total_hours, fault_count):\n    return total_hours / max(fault_count, 1)' },
-      { id: 2, name: 'predict_failure', displayName: '故障预测', description: '基于历史数据预测下次故障时间', status: 'ACTIVE', scriptType: 'PYTHON', scriptContent: 'def predict_failure(history):\n    # 简单线性预测\n    intervals = [history[i+1] - history[i] for i in range(len(history)-1)]\n    avg = sum(intervals) / len(intervals)\n    return history[-1] + avg' },
-      { id: 3, name: 'check_inventory', displayName: '库存检查', description: '检查零部件库存是否充足', status: 'DRAFT', scriptType: 'SQL', scriptContent: 'SELECT part_number, stock_qty FROM inventory WHERE stock_qty < min_stock_level' },
+      { id: 1, name: 'match_fault_pattern', displayName: '故障模式匹配', description: '在知识图谱中匹配故障现象对应的故障模式和根因', status: 'ACTIVE', scriptType: 'PYTHON', scriptContent: 'def match_fault_pattern(alarm_code, symptoms):\n    \"\"\"匹配故障模式\"\"\"\n    # 基于图谱的故障模式匹配\n    patterns = graph.query(f"MATCH (p:Phenomenon)-[:contains]->(sp:SubPhenomenon) WHERE p.code = \'{alarm_code}\' RETURN sp")\n    return rank_by_similarity(patterns, symptoms)' },
+      { id: 2, name: 'calc_repair_priority', displayName: '维修优先级计算', description: '综合设备重要性、故障严重度、生产影响计算维修优先级', status: 'ACTIVE', scriptType: 'PYTHON', scriptContent: 'def calc_repair_priority(severity, equipment_class, production_impact):\n    weights = {"CRITICAL": 1.0, "HIGH": 0.8, "MEDIUM": 0.5, "LOW": 0.2}\n    score = weights.get(severity, 0.5) * 0.4 + equipment_class * 0.3 + production_impact * 0.3\n    return "P1" if score > 0.8 else "P2" if score > 0.5 else "P3"' },
+      { id: 3, name: 'generate_checkpoint_list', displayName: '生成检查清单', description: '根据故障现象自动生成按优先级排序的检查清单', status: 'ACTIVE', scriptType: 'PYTHON', scriptContent: 'def generate_checkpoint_list(phenomenon_id):\n    checkpoints = graph.query(\n        f"MATCH (p:Phenomenon)-[:needs_check]->(cp:Checkpoint) WHERE p.id = \'{phenomenon_id}\' RETURN cp ORDER BY cp.priority"\n    )\n    return [{"step": i+1, "name": cp.label, "method": cp.method} for i, cp in enumerate(checkpoints)]' },
     ],
     idSeq: 1000,
+    _v: DATA_VERSION,
   }
 }
 
@@ -107,7 +137,9 @@ function load(): OntologyStore {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) { const s = defaultStore(); save(s); return s }
-    return JSON.parse(raw)
+    const parsed = JSON.parse(raw)
+    if (parsed._v !== DATA_VERSION) { const s = defaultStore(); save(s); return s }
+    return parsed
   } catch {
     const s = defaultStore(); save(s); return s
   }

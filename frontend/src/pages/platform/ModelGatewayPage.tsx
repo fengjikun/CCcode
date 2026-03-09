@@ -23,6 +23,7 @@ import {
   getMonitoringStats, getHourlyTraffic, getRecentErrors,
 } from '../../api/modelGateway'
 import type { RegisteredModel, ModelStage, DeployConfig, GatewayRoute } from '../../types/modelGateway'
+import type { GatewayStats, MonitoringStats, HourlyTraffic, RecentError } from '../../api/modelGateway'
 import { MODEL_STAGE_COLORS } from '../../types/modelGateway'
 import ModalHeader from '../../components/shared/ModalHeader'
 
@@ -39,9 +40,9 @@ const GPU_OPTIONS = [
 ]
 
 export default function ModelGatewayPage() {
-  const [stats, setStats] = useState(() => getGatewayStats())
-  const [models, setModels] = useState(() => listModels())
-  const [routes, setRoutes] = useState(() => listRoutes())
+  const [stats, setStats] = useState<GatewayStats>({ deployedModels: 0, totalQps: '0', avgLatency: '—', availability: '—', productionCount: 0, canaryCount: 0, stagingCount: 0 })
+  const [models, setModels] = useState<RegisteredModel[]>([])
+  const [routes, setRoutes] = useState<GatewayRoute[]>([])
 
   // Deploy modal state
   const [deployModalOpen, setDeployModalOpen] = useState(false)
@@ -58,15 +59,18 @@ export default function ModelGatewayPage() {
   const [trafficWeight, setTrafficWeight] = useState(50)
 
   // Monitoring data
-  const monitorStats = getMonitoringStats()
-  const hourlyTraffic = getHourlyTraffic()
-  const recentErrors = getRecentErrors()
-  const maxTraffic = Math.max(...hourlyTraffic.map(h => h.requests))
+  const [monitorStats, setMonitorStats] = useState<MonitoringStats>({ todayRequests: 0, successRate: '—', avgLatency: '—', p99Latency: '—' })
+  const [hourlyTraffic, setHourlyTraffic] = useState<HourlyTraffic[]>([])
+  const [recentErrors, setRecentErrors] = useState<RecentError[]>([])
+  const maxTraffic = Math.max(1, ...hourlyTraffic.map(h => h.requests))
 
   useEffect(() => {
-    setStats(getGatewayStats())
-    setModels(listModels())
-    setRoutes(listRoutes())
+    getGatewayStats().then(d => setStats(d))
+    listModels().then(d => setModels(d))
+    listRoutes().then(d => setRoutes(d))
+    getMonitoringStats().then(d => setMonitorStats(d))
+    getHourlyTraffic().then(d => setHourlyTraffic(d))
+    getRecentErrors().then(d => setRecentErrors(d))
   }, [])
 
   const statItems = [
@@ -87,9 +91,9 @@ export default function ModelGatewayPage() {
   ]
 
   const refreshData = () => {
-    setStats(getGatewayStats())
-    setModels(listModels())
-    setRoutes(listRoutes())
+    getGatewayStats().then(d => setStats(d))
+    listModels().then(d => setModels(d))
+    listRoutes().then(d => setRoutes(d))
   }
 
   /* ============ Handlers ============ */

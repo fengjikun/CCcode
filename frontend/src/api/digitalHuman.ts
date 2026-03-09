@@ -1,4 +1,5 @@
 import type { DigitalHuman, DigitalHumanType } from '../types/digitalHuman'
+import { delay, rand } from './mockConfig'
 
 const STORAGE_KEY = 'digital_humans'
 
@@ -30,15 +31,17 @@ function save(list: DigitalHuman[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
 }
 
-export function listDigitalHumans(): DigitalHuman[] {
+export async function listDigitalHumans(): Promise<DigitalHuman[]> {
+  await delay(rand(300, 600))
   return load()
 }
 
-export function createDigitalHuman(
+export async function createDigitalHuman(
   name: string,
   type: DigitalHumanType,
   description?: string,
-): DigitalHuman {
+): Promise<DigitalHuman> {
+  await delay(rand(400, 700))
   const now = new Date().toISOString()
   const dh: DigitalHuman = {
     id: `dh-${Date.now()}`,
@@ -54,10 +57,11 @@ export function createDigitalHuman(
   return dh
 }
 
-export function updateDigitalHuman(
+export async function updateDigitalHuman(
   id: string,
   patch: Partial<Pick<DigitalHuman, 'name' | 'description' | 'projectId'>>,
-): DigitalHuman | null {
+): Promise<DigitalHuman | null> {
+  await delay(rand(300, 500))
   const list = load()
   const idx = list.findIndex(d => d.id === id)
   if (idx < 0) return null
@@ -66,10 +70,12 @@ export function updateDigitalHuman(
   return list[idx]
 }
 
-export function deleteDigitalHuman(id: string): void {
+export async function deleteDigitalHuman(id: string): Promise<void> {
+  await delay(rand(300, 500))
   save(load().filter(d => d.id !== id))
 }
 
-export function getDigitalHuman(id: string): DigitalHuman | null {
+export async function getDigitalHuman(id: string): Promise<DigitalHuman | null> {
+  await delay(rand(200, 400))
   return load().find(d => d.id === id) ?? null
 }

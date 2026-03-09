@@ -9,25 +9,25 @@ import {
   SearchOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons'
-import { getOntologyStats, getObjectTypes, getLinkTypes, getActions } from '../../api/ontologyOverview'
-import type { ObjectTypeSummary, ActionDefinition } from '../../types/ontologyOverview'
+import { getOntologyStats, getObjectTypes, getLinkTypes, getActions, type OntologyStats } from '../../api/ontologyOverview'
+import type { ObjectTypeSummary, ActionDefinition, LinkTypeSummary } from '../../types/ontologyOverview'
 
 const { Title, Text } = Typography
 
 const STATUS_COLORS: Record<string, string> = { Active: 'green', Draft: 'orange', Deprecated: 'default' }
 
 export default function OntologyOverviewPage() {
-  const [stats, setStats] = useState(() => getOntologyStats())
-  const [objectTypes, setObjectTypes] = useState(() => getObjectTypes())
-  const [linkTypes, setLinkTypes] = useState(() => getLinkTypes())
-  const [actions, setActions] = useState(() => getActions())
+  const [stats, setStats] = useState<OntologyStats>({ objectTypes: 0, totalProperties: 0, linkTypes: 0, actions: 0, totalRecords: '', activeActions: 0 })
+  const [objectTypes, setObjectTypes] = useState<ObjectTypeSummary[]>([])
+  const [linkTypes, setLinkTypes] = useState<LinkTypeSummary[]>([])
+  const [actions, setActions] = useState<ActionDefinition[]>([])
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    setStats(getOntologyStats())
-    setObjectTypes(getObjectTypes())
-    setLinkTypes(getLinkTypes())
-    setActions(getActions())
+    getOntologyStats().then(setStats)
+    getObjectTypes().then(setObjectTypes)
+    getLinkTypes().then(setLinkTypes)
+    getActions().then(setActions)
   }, [])
 
   const searchLower = search.toLowerCase()

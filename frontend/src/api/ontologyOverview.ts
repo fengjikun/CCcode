@@ -1,4 +1,5 @@
 import type { ObjectTypeSummary, LinkTypeSummary, ActionDefinition } from '../types/ontologyOverview'
+import { delay, rand } from './mockConfig'
 
 const OBJECT_TYPES: ObjectTypeSummary[] = [
   { key: '1', name: 'PurchaseOrder', displayName: '采购订单', properties: 12, actions: 5, links: 3, backingDataset: 'transform_orders/output/normalized_orders', status: 'Active', recordCount: 45230, updatedAt: '2025-03-08' },
@@ -40,7 +41,8 @@ export interface OntologyStats {
   activeActions: number
 }
 
-export function getOntologyStats(): OntologyStats {
+export async function getOntologyStats(): Promise<OntologyStats> {
+  await delay(rand(300, 500))
   return {
     objectTypes: OBJECT_TYPES.length,
     totalProperties: OBJECT_TYPES.reduce((s, o) => s + o.properties, 0),
@@ -51,14 +53,17 @@ export function getOntologyStats(): OntologyStats {
   }
 }
 
-export function getObjectTypes(): ObjectTypeSummary[] {
+export async function getObjectTypes(): Promise<ObjectTypeSummary[]> {
+  await delay(rand(300, 500))
   return OBJECT_TYPES
 }
 
-export function getLinkTypes(): LinkTypeSummary[] {
+export async function getLinkTypes(): Promise<LinkTypeSummary[]> {
+  await delay(rand(200, 400))
   return LINK_TYPES
 }
 
-export function getActions(): ActionDefinition[] {
+export async function getActions(): Promise<ActionDefinition[]> {
+  await delay(rand(200, 400))
   return ACTIONS
 }

@@ -49,9 +49,11 @@ import {
   createEvalTask,
   getEvalStats,
 } from '../../api/modelEvaluation'
-import type { ConfusionMatrixData } from '../../api/modelEvaluation'
+import type { ConfusionMatrixData, EvalStats } from '../../api/modelEvaluation'
 import { listTrainingProjects } from '../../api/modelTraining'
 import { listDatasets } from '../../api/trainingDataset'
+import type { TrainingProject } from '../../types/modelTraining'
+import type { TrainingDataset } from '../../types/trainingDataset'
 import type { EvalTask, EvalStatus, EvalTaskType, EvalSample, EvalComparison } from '../../types/modelEvaluation'
 import { EVAL_STATUS_COLORS, EVAL_TASK_TYPE_LABELS } from '../../types/modelEvaluation'
 import ModalHeader from '../../components/shared/ModalHeader'
@@ -79,31 +81,33 @@ export default function ModelEvaluationPage() {
   const [selectedTask, setSelectedTask] = useState<EvalTask | null>(null)
   const [form] = Form.useForm()
 
-  const [stats, setStats] = useState(() => getEvalStats())
-  const [tasks, setTasks] = useState(() => listEvalTasks())
+  const [stats, setStats] = useState<EvalStats>({ totalTasks: 0, completed: 0, running: 0, avgAccuracy: '—', avgF1: '—' })
+  const [tasks, setTasks] = useState<EvalTask[]>([])
   const [samples, setSamples] = useState<EvalSample[]>([])
   const [comparisons, setComparisons] = useState<EvalComparison[]>([])
   const [confusionMatrix, setConfusionMatrix] = useState<ConfusionMatrixData>({ labels: [], data: [] })
-  const [trainingProjects] = useState(() => listTrainingProjects())
-  const [availableDatasets] = useState(() => listDatasets().filter(d => d.status === 'Ready'))
+  const [trainingProjects, setTrainingProjects] = useState<TrainingProject[]>([])
+  const [availableDatasets, setAvailableDatasets] = useState<TrainingDataset[]>([])
 
   useEffect(() => {
-    setStats(getEvalStats())
-    setTasks(listEvalTasks())
+    getEvalStats().then(d => setStats(d))
+    listEvalTasks().then(d => setTasks(d))
+    listTrainingProjects().then(d => setTrainingProjects(d))
+    listDatasets().then(d => setAvailableDatasets(d.filter(ds => ds.status === 'Ready')))
   }, [])
 
   const openDetail = (task: EvalTask) => {
     setSelectedTask(task)
-    setSamples(getEvalSamples(task.key))
-    setComparisons(getEvalComparisons(task.modelName))
-    setConfusionMatrix(getConfusionMatrix(task.key))
+    getEvalSamples(task.key).then(d => setSamples(d))
+    getEvalComparisons(task.modelName).then(d => setComparisons(d))
+    getConfusionMatrix(task.key).then(d => setConfusionMatrix(d))
     setDrawerOpen(true)
   }
 
   const handleCreate = async () => {
     try {
       const values = await form.validateFields()
-      createEvalTask(values)
+      await createEvalTask(values)
       message.success('评估任务创建成功')
       setCreateOpen(false)
       form.resetFields()

@@ -1,4 +1,5 @@
 import type { HealthEntry, ActivityEntry } from '../types/dashboard'
+import { delay, rand } from './mockConfig'
 
 const HEALTH_DATA: HealthEntry[] = [
   { key: '1', component: 'L1 数据接入管道', status: 'Healthy', uptime: '99.97%', qps: 3420, latency: '12ms', lastCheck: '1 分钟前' },
@@ -51,14 +52,17 @@ const PLATFORM_STATS: PlatformStats = {
   activeUsers: 36,
 }
 
-export function getHealthData(): HealthEntry[] {
+export async function getHealthData(): Promise<HealthEntry[]> {
+  await delay(rand(300, 600))
   return HEALTH_DATA
 }
 
-export function getActivityData(): ActivityEntry[] {
+export async function getActivityData(): Promise<ActivityEntry[]> {
+  await delay(rand(300, 600))
   return ACTIVITY_DATA
 }
 
-export function getPlatformStats(): PlatformStats {
+export async function getPlatformStats(): Promise<PlatformStats> {
+  await delay(rand(200, 500))
   return { ...PLATFORM_STATS }
 }

@@ -1,4 +1,5 @@
 import type { EvalTask, EvalSample, EvalComparison, EvalTaskType } from '../types/modelEvaluation'
+import { delay, rand } from './mockConfig'
 
 const MOCK_TASKS: EvalTask[] = [
   {
@@ -65,30 +66,35 @@ const MOCK_COMPARISONS: Record<string, EvalComparison[]> = {
   ],
 }
 
-export function listEvalTasks(): EvalTask[] {
+export async function listEvalTasks(): Promise<EvalTask[]> {
+  await delay(rand(300, 600))
   return MOCK_TASKS
 }
 
-export function getEvalDetail(key: string): EvalTask | undefined {
+export async function getEvalDetail(key: string): Promise<EvalTask | undefined> {
+  await delay(rand(200, 400))
   return MOCK_TASKS.find(t => t.key === key)
 }
 
-export function getEvalSamples(_key: string): EvalSample[] {
+export async function getEvalSamples(_key: string): Promise<EvalSample[]> {
+  await delay(rand(300, 500))
   return MOCK_SAMPLES
 }
 
-export function getEvalComparisons(modelName: string): EvalComparison[] {
+export async function getEvalComparisons(modelName: string): Promise<EvalComparison[]> {
+  await delay(rand(200, 400))
   return MOCK_COMPARISONS[modelName] ?? MOCK_COMPARISONS['equipment-fault-predictor']!
 }
 
-export function createEvalTask(input: {
+export async function createEvalTask(input: {
   name: string
   modelName: string
   modelVersion: string
   datasetName: string
   taskType: EvalTaskType
   evalSamples: number
-}): EvalTask {
+}): Promise<EvalTask> {
+  await delay(rand(400, 700))
   return {
     key: `eval-${Date.now()}`,
     ...input,
@@ -106,7 +112,8 @@ export interface ConfusionMatrixData {
   data: number[][]
 }
 
-export function getConfusionMatrix(key: string): ConfusionMatrixData {
+export async function getConfusionMatrix(key: string): Promise<ConfusionMatrixData> {
+  await delay(rand(300, 500))
   const matrices: Record<string, ConfusionMatrixData> = {
     '1': {
       labels: ['常规采购', '紧急采购', '框架协议', '竞价采购'],
@@ -147,7 +154,8 @@ export interface EvalStats {
   avgF1: string
 }
 
-export function getEvalStats(): EvalStats {
+export async function getEvalStats(): Promise<EvalStats> {
+  await delay(rand(200, 400))
   const completed = MOCK_TASKS.filter(t => t.status === 'Completed')
   const accuracies = completed.map(t => t.accuracy).filter((v): v is number => v !== undefined)
   const f1s = completed.map(t => t.f1).filter((v): v is number => v !== undefined)

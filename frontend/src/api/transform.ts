@@ -1,5 +1,6 @@
 import { listDataSources } from './dataSource'
 import type { TransformProject, TransformType } from '../types/transform'
+import { delay, rand } from './mockConfig'
 
 const STORAGE_KEY = 'deepexios_transforms'
 
@@ -71,20 +72,22 @@ function save(list: TransformProject[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
 }
 
-export function listTransforms(): TransformProject[] {
+export async function listTransforms(): Promise<TransformProject[]> {
+  await delay(rand(300, 600))
   return load()
 }
 
-export function createTransform(input: {
+export async function createTransform(input: {
   name: string
   description: string
   type: TransformType
   inputSources: string[]
   outputDatasets: string[]
   schedule: string
-}): TransformProject {
+}): Promise<TransformProject> {
+  await delay(rand(400, 700))
   const now = new Date().toISOString()
-  const allDS = listDataSources()
+  const allDS = await listDataSources()
   const selectedDS = allDS.filter(d => input.inputSources.includes(d.id))
   const project: TransformProject = {
     id: `tf-${Date.now()}`,
@@ -108,16 +111,17 @@ export function createTransform(input: {
   return project
 }
 
-export function updateTransform(
+export async function updateTransform(
   id: string,
   patch: Partial<Pick<TransformProject, 'name' | 'description' | 'type' | 'inputSources' | 'outputDatasets' | 'schedule'>>,
-): TransformProject | null {
+): Promise<TransformProject | null> {
+  await delay(rand(300, 500))
   const list = load()
   const idx = list.findIndex(p => p.id === id)
   if (idx < 0) return null
 
   if (patch.inputSources) {
-    const allDS = listDataSources()
+    const allDS = await listDataSources()
     const selectedDS = allDS.filter(d => patch.inputSources!.includes(d.id))
     list[idx].inputSourceNames = selectedDS.map(d => d.name)
     list[idx].inputSources = patch.inputSources
@@ -134,12 +138,13 @@ export function updateTransform(
   return list[idx]
 }
 
-export function deleteTransform(id: string): void {
+export async function deleteTransform(id: string): Promise<void> {
+  await delay(rand(300, 500))
   save(load().filter(p => p.id !== id))
 }
 
 /** 模拟运行转换任务 */
-export function runTransform(id: string): Promise<TransformProject | null> {
+export async function runTransform(id: string): Promise<TransformProject | null> {
   const list = load()
   const idx = list.findIndex(p => p.id === id)
   if (idx < 0) return Promise.resolve(null)
@@ -148,24 +153,22 @@ export function runTransform(id: string): Promise<TransformProject | null> {
   list[idx].updatedAt = new Date().toISOString()
   save(list)
 
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const updated = load()
-      const i = updated.findIndex(p => p.id === id)
-      if (i < 0) return resolve(null)
-      updated[i].status = 'Success'
-      updated[i].records = updated[i].records + Math.floor(Math.random() * 5000) + 1000
-      updated[i].duration = `${Math.floor(Math.random() * 4) + 1}m ${Math.floor(Math.random() * 50) + 10}s`
-      updated[i].lastRun = '刚刚'
-      updated[i].updatedAt = new Date().toISOString()
-      save(updated)
-      resolve(updated[i])
-    }, 2500)
-  })
+  await delay(2500)
+  const updated = load()
+  const i = updated.findIndex(p => p.id === id)
+  if (i < 0) return null
+  updated[i].status = 'Success'
+  updated[i].records = updated[i].records + Math.floor(Math.random() * 5000) + 1000
+  updated[i].duration = `${Math.floor(Math.random() * 4) + 1}m ${Math.floor(Math.random() * 50) + 10}s`
+  updated[i].lastRun = '刚刚'
+  updated[i].updatedAt = new Date().toISOString()
+  save(updated)
+  return updated[i]
 }
 
 /** 停止运行中的任务 */
-export function stopTransform(id: string): TransformProject | null {
+export async function stopTransform(id: string): Promise<TransformProject | null> {
+  await delay(rand(300, 500))
   const list = load()
   const idx = list.findIndex(p => p.id === id)
   if (idx < 0) return null

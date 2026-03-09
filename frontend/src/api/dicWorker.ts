@@ -1,4 +1,5 @@
 import type { DICWorker } from '../types/dicWorker'
+import { delay, rand } from './mockConfig'
 
 const MOCK_WORKERS: DICWorker[] = [
   {
@@ -67,7 +68,8 @@ const MOCK_WORKERS: DICWorker[] = [
   },
 ]
 
-export function listDICWorkers(): DICWorker[] {
+export async function listDICWorkers(): Promise<DICWorker[]> {
+  await delay(rand(300, 600))
   return MOCK_WORKERS
 }
 
@@ -79,7 +81,8 @@ export interface DICStats {
   totalTasksCompleted: string
 }
 
-export function getDICStats(): DICStats {
+export async function getDICStats(): Promise<DICStats> {
+  await delay(rand(200, 400))
   return {
     total: MOCK_WORKERS.length,
     online: MOCK_WORKERS.filter(w => w.status === 'Online').length,

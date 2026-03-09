@@ -237,8 +237,8 @@ export default function SkillsMarketPage() {
   const [importFunctions, setImportFunctions] = useState<OntologyFunctionItem[]>([])
   const [selectedImports, setSelectedImports] = useState<string[]>([])
 
-  const reload = useCallback(() => {
-    setList(listSkills())
+  const reload = useCallback(async () => {
+    setList(await listSkills())
   }, [])
 
   useEffect(() => { reload() }, [reload])
@@ -264,7 +264,7 @@ export default function SkillsMarketPage() {
     try {
       const values = await form.validateFields()
       setCreating(true)
-      createSkill({
+      await createSkill({
         name: values.name,
         displayName: values.displayName,
         category: values.category,
@@ -281,7 +281,7 @@ export default function SkillsMarketPage() {
       form.resetFields()
       setTemplates([])
       setScripts([])
-      reload()
+      await reload()
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'errorFields' in err) return
       message.error('创建失败')
@@ -312,7 +312,7 @@ export default function SkillsMarketPage() {
     try {
       const values = await editForm.validateFields()
       setEditing(true)
-      updateSkill(editTarget!.id, {
+      await updateSkill(editTarget!.id, {
         displayName: values.displayName,
         description: values.description,
         instructions: values.instructions,
@@ -325,7 +325,7 @@ export default function SkillsMarketPage() {
       })
       message.success('修改成功')
       setEditOpen(false)
-      reload()
+      await reload()
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'errorFields' in err) return
       message.error('修改失败')
@@ -335,17 +335,17 @@ export default function SkillsMarketPage() {
   }
 
   /* 删除 */
-  const handleDelete = (id: string) => {
-    deleteSkill(id)
+  const handleDelete = async (id: string) => {
+    await deleteSkill(id)
     message.success('Skill 已删除')
-    reload()
+    await reload()
   }
 
   /* 状态切换 */
-  const handleToggle = (id: string) => {
-    toggleSkillStatus(id)
+  const handleToggle = async (id: string) => {
+    await toggleSkillStatus(id)
     message.success('状态已更新')
-    reload()
+    await reload()
   }
 
   /* 详情 */
@@ -355,8 +355,8 @@ export default function SkillsMarketPage() {
   }
 
   /* 从本体导入 */
-  const openImport = () => {
-    const fns = listImportableFunctions()
+  const openImport = async () => {
+    const fns = await listImportableFunctions()
     // 过滤掉已导入的（按 name 匹配）
     const existingNames = list.map(s => s.tags).flat()
     setImportFunctions(fns.filter(f => !existingNames.includes(f.name)))
@@ -364,16 +364,16 @@ export default function SkillsMarketPage() {
     setImportOpen(true)
   }
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (selectedImports.length === 0) {
       message.warning('请选择要导入的 Function')
       return
     }
     const selected = importFunctions.filter(f => selectedImports.includes(f.id))
-    selected.forEach(fn => importFunctionAsSkill(fn))
+    await Promise.all(selected.map(fn => importFunctionAsSkill(fn)))
     message.success(`成功导入 ${selected.length} 个 Function 为 Skill`)
     setImportOpen(false)
-    reload()
+    await reload()
   }
 
   /* Skill 表单 (创建/编辑复用) */

@@ -21,7 +21,7 @@ import {
   ToolOutlined,
   PercentageOutlined,
 } from '@ant-design/icons'
-import { listDICWorkers, getDICStats } from '../../api/dicWorker'
+import { listDICWorkers, getDICStats, type DICStats } from '../../api/dicWorker'
 import type { DICWorker } from '../../types/dicWorker'
 import { DIC_STATUS_COLORS, DIC_CATEGORY_LABELS, DIC_CATEGORY_COLORS } from '../../types/dicWorker'
 
@@ -29,12 +29,12 @@ const { Title, Text, Paragraph } = Typography
 
 export default function DICWorkerPage() {
   const [workers, setWorkers] = useState<DICWorker[]>([])
-  const [stats, setStats] = useState(() => getDICStats())
+  const [stats, setStats] = useState<DICStats>({ total: 0, online: 0, busy: 0, totalTasksToday: 0, totalTasksCompleted: '' })
   const [filterCategory, setFilterCategory] = useState<string | undefined>()
 
   useEffect(() => {
-    setWorkers(listDICWorkers())
-    setStats(getDICStats())
+    listDICWorkers().then(setWorkers)
+    getDICStats().then(setStats)
   }, [])
   const [detailWorker, setDetailWorker] = useState<DICWorker | null>(null)
 

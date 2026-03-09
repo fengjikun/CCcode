@@ -1,6 +1,5 @@
 import type { CurrentUser, LoginPayload, LoginResponse } from '../types/auth'
-
-const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
+import { delay } from './mockConfig'
 
 export async function login(_payload: LoginPayload): Promise<LoginResponse> {
   await delay(600 + Math.random() * 400) // 600-1000ms 模拟登录验证

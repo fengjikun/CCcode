@@ -1,4 +1,5 @@
 import type { TrainingDataset } from '../types/trainingDataset'
+import { delay, rand } from './mockConfig'
 
 const MOCK_DATASETS: TrainingDataset[] = [
   {
@@ -181,15 +182,18 @@ function save(list: TrainingDataset[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
 }
 
-export function listDatasets(): TrainingDataset[] {
+export async function listDatasets(): Promise<TrainingDataset[]> {
+  await delay(rand(300, 600))
   return load()
 }
 
-export function getDatasetDetail(key: string): TrainingDataset | undefined {
+export async function getDatasetDetail(key: string): Promise<TrainingDataset | undefined> {
+  await delay(rand(200, 400))
   return load().find(d => d.key === key)
 }
 
-export function createDataset(input: Partial<TrainingDataset>): TrainingDataset {
+export async function createDataset(input: Partial<TrainingDataset>): Promise<TrainingDataset> {
+  await delay(rand(400, 700))
   const list = load()
   const ds: TrainingDataset = {
     key: `ds-${Date.now()}`,
@@ -219,7 +223,8 @@ export function createDataset(input: Partial<TrainingDataset>): TrainingDataset 
   return ds
 }
 
-export function buildDataset(key: string): TrainingDataset | undefined {
+export async function buildDataset(key: string): Promise<TrainingDataset | undefined> {
+  await delay(rand(500, 800))
   const list = load()
   const ds = list.find(d => d.key === key)
   if (!ds) return undefined
@@ -235,7 +240,8 @@ export function buildDataset(key: string): TrainingDataset | undefined {
   return ds
 }
 
-export function updateBuildProgress(key: string, progress: number): void {
+export async function updateBuildProgress(key: string, progress: number): Promise<void> {
+  await delay(rand(100, 300))
   const list = load()
   const ds = list.find(d => d.key === key)
   if (!ds) return
@@ -247,7 +253,8 @@ export function updateBuildProgress(key: string, progress: number): void {
   save(list)
 }
 
-export function finishBuild(key: string): void {
+export async function finishBuild(key: string): Promise<void> {
+  await delay(rand(200, 400))
   const list = load()
   const ds = list.find(d => d.key === key)
   if (!ds) return
@@ -264,7 +271,8 @@ export function finishBuild(key: string): void {
   save(list)
 }
 
-export function deleteDataset(key: string): void {
+export async function deleteDataset(key: string): Promise<void> {
+  await delay(rand(300, 500))
   save(load().filter(d => d.key !== key))
 }
 
@@ -276,7 +284,8 @@ export interface DatasetStats {
   buildingCount: number
 }
 
-export function getDatasetStats(): DatasetStats {
+export async function getDatasetStats(): Promise<DatasetStats> {
+  await delay(rand(200, 400))
   const list = load()
   const totalRecords = list.reduce((s, d) => s + d.records, 0)
   return {

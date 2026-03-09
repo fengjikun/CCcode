@@ -1,4 +1,5 @@
 import type { AgentLog, LogLevel } from '../types/agentLog'
+import { delay, rand } from './mockConfig'
 
 const MOCK_LOGS: AgentLog[] = [
   { key: '1', time: '2025-03-08 14:32:22', agentId: 'agt-001', agentName: 'Equipment Agent', action: '执行动作: CreateMaintenanceTicket', detail: '设备 #DV-8921 振动超标，自动创建 P2 维修工单 WO-20250308-0042', level: 'success', duration: 3200, toolsUsed: ['ontology-api', 'cmms-api'], skillUsed: '设备故障诊断专家' },
@@ -24,11 +25,12 @@ const AGENT_COLORS: Record<string, string> = {
   'Supplier Agent': 'magenta',
 }
 
-export function getAgentLogs(filters?: {
+export async function getAgentLogs(filters?: {
   agentName?: string
   level?: LogLevel
   keyword?: string
-}): AgentLog[] {
+}): Promise<AgentLog[]> {
+  await delay(rand(300, 600))
   let result = [...MOCK_LOGS]
   if (filters?.agentName) {
     result = result.filter(l => l.agentName === filters.agentName)
@@ -46,7 +48,8 @@ export function getAgentLogs(filters?: {
   return result
 }
 
-export function getAgentNames(): string[] {
+export async function getAgentNames(): Promise<string[]> {
+  await delay(rand(200, 400))
   return [...new Set(MOCK_LOGS.map(l => l.agentName))]
 }
 
@@ -63,7 +66,8 @@ export interface LogStats {
   agentCount: number
 }
 
-export function getLogStats(): LogStats {
+export async function getLogStats(): Promise<LogStats> {
+  await delay(rand(200, 400))
   const durations = MOCK_LOGS.filter(l => l.duration).map(l => l.duration!)
   return {
     total: MOCK_LOGS.length,

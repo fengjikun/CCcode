@@ -18,7 +18,7 @@ import {
   ToolOutlined,
   ArrowUpOutlined,
 } from '@ant-design/icons'
-import { getHealthData, getActivityData, getPlatformStats } from '../../api/dashboard'
+import { getHealthData, getActivityData, getPlatformStats, type PlatformStats } from '../../api/dashboard'
 import type { HealthEntry, ActivityEntry } from '../../types/dashboard'
 import type { ReactNode } from 'react'
 
@@ -68,12 +68,12 @@ const levelColor: Record<ActivityEntry['level'], string> = {
 export default function DashboardPage() {
   const [health, setHealth] = useState<HealthEntry[]>([])
   const [activities, setActivities] = useState<ActivityEntry[]>([])
-  const [stats, setStats] = useState(() => getPlatformStats())
+  const [stats, setStats] = useState<PlatformStats>({ datasources: 0, transformJobs: 0, objectTypes: 0, agents: 0, skills: 0, trainingJobs: 0, deployedModels: 0, digitalWorkers: 0, totalRequests: '', avgLatency: '', uptime: '', activeUsers: 0 })
 
   useEffect(() => {
-    setHealth(getHealthData())
-    setActivities(getActivityData())
-    setStats(getPlatformStats())
+    getHealthData().then(setHealth)
+    getActivityData().then(setActivities)
+    getPlatformStats().then(setStats)
   }, [])
 
   /* 统计卡片 — 带图标背景 */

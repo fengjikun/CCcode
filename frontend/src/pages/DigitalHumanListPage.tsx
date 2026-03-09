@@ -71,7 +71,7 @@ export default function DigitalHumanListPage() {
   const navigate = useNavigate()
 
   const reload = useCallback(() => {
-    setList(listDigitalHumans())
+    listDigitalHumans().then(setList)
   }, [])
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function DigitalHumanListPage() {
     try {
       const values = await form.validateFields()
       setCreating(true)
-      const dh = createDigitalHuman(values.name, values.type, values.description)
+      const dh = await createDigitalHuman(values.name, values.type, values.description)
       message.success('数字员工创建成功')
       setCreateOpen(false)
       form.resetFields()
@@ -96,8 +96,8 @@ export default function DigitalHumanListPage() {
     }
   }
 
-  const handleDelete = (id: string) => {
-    deleteDigitalHuman(id)
+  const handleDelete = async (id: string) => {
+    await deleteDigitalHuman(id)
     message.success('数字员工已删除')
     reload()
   }
@@ -113,7 +113,7 @@ export default function DigitalHumanListPage() {
     try {
       const values = await editForm.validateFields()
       setEditing(true)
-      updateDigitalHuman(editTarget!.id, { name: values.name, description: values.description })
+      await updateDigitalHuman(editTarget!.id, { name: values.name, description: values.description })
       message.success('修改成功')
       setEditOpen(false)
       reload()

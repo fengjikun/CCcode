@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, Input, Select, Space, Table, Tag, Tooltip, Typography } from 'antd'
 import {
   SearchOutlined,
@@ -10,7 +10,7 @@ import {
   RobotOutlined,
   FieldTimeOutlined,
 } from '@ant-design/icons'
-import { getAgentLogs, getAgentNames, getAgentColor, getLogStats } from '../../api/agentLog'
+import { getAgentLogs, getAgentNames, getAgentColor, getLogStats, type LogStats } from '../../api/agentLog'
 import type { AgentLog, LogLevel } from '../../types/agentLog'
 import { LOG_LEVEL_COLORS, LOG_LEVEL_LABELS } from '../../types/agentLog'
 import PageHeader from '../../components/shared/PageHeader'
@@ -30,12 +30,18 @@ export default function AgentLogsPage() {
   const [levelFilter, setLevelFilter] = useState<LogLevel | undefined>()
   const [keyword, setKeyword] = useState('')
 
-  const agentNames = useMemo(() => getAgentNames(), [])
-  const stats = useMemo(() => getLogStats(), [])
-  const logs = useMemo(
-    () => getAgentLogs({ agentName: agentFilter, level: levelFilter, keyword }),
-    [agentFilter, levelFilter, keyword],
-  )
+  const [agentNames, setAgentNames] = useState<string[]>([])
+  const [stats, setStats] = useState<LogStats>({ total: 0, success: 0, warning: 0, error: 0, avgDuration: '', agentCount: 0 })
+  const [logs, setLogs] = useState<AgentLog[]>([])
+
+  useEffect(() => {
+    getAgentNames().then(setAgentNames)
+    getLogStats().then(setStats)
+  }, [])
+
+  useEffect(() => {
+    getAgentLogs({ agentName: agentFilter, level: levelFilter, keyword }).then(setLogs)
+  }, [agentFilter, levelFilter, keyword])
 
   const columns = [
     {

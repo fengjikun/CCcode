@@ -50,8 +50,10 @@ import {
   startTraining,
 } from '../../api/modelTraining'
 import { listDatasets } from '../../api/trainingDataset'
-import type { TrainingJob, TrainingStatus, Framework } from '../../types/modelTraining'
+import type { TrainingJob, TrainingProject, TrainingStatus, Framework } from '../../types/modelTraining'
 import { TRAINING_STATUS_COLORS, FRAMEWORK_COLORS } from '../../types/modelTraining'
+import type { TrainingStats } from '../../api/modelTraining'
+import type { TrainingDataset } from '../../types/trainingDataset'
 import ModalHeader from '../../components/shared/ModalHeader'
 
 const { Title, Text } = Typography
@@ -126,10 +128,10 @@ export default function ModelTrainingPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [form] = Form.useForm()
 
-  const [stats, setStats] = useState(() => getTrainingStats())
-  const [jobs, setJobs] = useState(() => listTrainingJobs())
-  const [projects, setProjects] = useState(() => listTrainingProjects())
-  const [datasets] = useState(() => listDatasets().filter(d => d.status === 'Ready'))
+  const [stats, setStats] = useState<TrainingStats>({ projects: 0, totalJobs: 0, running: 0, completed: 0, gpuUtilization: '—', avgTrainTime: '—' })
+  const [jobs, setJobs] = useState<TrainingJob[]>([])
+  const [projects, setProjects] = useState<TrainingProject[]>([])
+  const [datasets, setDatasets] = useState<TrainingDataset[]>([])
 
   // Detail drawer
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -137,9 +139,10 @@ export default function ModelTrainingPage() {
   const logEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setStats(getTrainingStats())
-    setJobs(listTrainingJobs())
-    setProjects(listTrainingProjects())
+    getTrainingStats().then(d => setStats(d))
+    listTrainingJobs().then(d => setJobs(d))
+    listTrainingProjects().then(d => setProjects(d))
+    listDatasets().then(d => setDatasets(d.filter(ds => ds.status === 'Ready')))
   }, [])
 
   // auto-scroll log viewer
@@ -150,9 +153,9 @@ export default function ModelTrainingPage() {
   }, [selectedJob])
 
   const refreshData = () => {
-    setStats(getTrainingStats())
-    setJobs([...listTrainingJobs()])
-    setProjects([...listTrainingProjects()])
+    getTrainingStats().then(d => setStats(d))
+    listTrainingJobs().then(d => setJobs([...d]))
+    listTrainingProjects().then(d => setProjects([...d]))
   }
 
   const openDetail = (job: TrainingJob) => {
@@ -160,8 +163,8 @@ export default function ModelTrainingPage() {
     setDrawerOpen(true)
   }
 
-  const handleStop = (jobKey: string) => {
-    stopTraining(jobKey)
+  const handleStop = async (jobKey: string) => {
+    await stopTraining(jobKey)
     message.success('训练已停止')
     refreshData()
     if (selectedJob?.key === jobKey) {
@@ -169,10 +172,10 @@ export default function ModelTrainingPage() {
     }
   }
 
-  const handleRestart = (job: TrainingJob) => {
+  const handleRestart = async (job: TrainingJob) => {
     const project = projects.find(p => p.name === job.projectName)
     if (project) {
-      startTraining(project.key)
+      await startTraining(project.key)
       message.success('已创建新的训练任务')
       refreshData()
     }
@@ -192,7 +195,7 @@ export default function ModelTrainingPage() {
   const handleCreate = async () => {
     try {
       const values = await form.validateFields()
-      createTrainingProject({
+      await createTrainingProject({
         name: values.name,
         description: values.description,
         dataSource: values.dataSource ?? '',

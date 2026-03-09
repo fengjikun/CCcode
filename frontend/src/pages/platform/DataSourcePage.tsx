@@ -110,7 +110,7 @@ export default function DataSourcePage() {
   const [detailTarget, setDetailTarget] = useState<DataSource | null>(null)
 
   const reload = useCallback(() => {
-    setList(listDataSources())
+    listDataSources().then(d => setList(d))
   }, [])
 
   useEffect(() => { reload() }, [reload])
@@ -130,7 +130,7 @@ export default function DataSourcePage() {
       const connection: DataSourceConnection = values.category === 'structured'
         ? { host: values.host, port: values.port, database: values.database, username: values.username, password: values.password }
         : { fileName: values.fileName }
-      createDataSource({
+      await createDataSource({
         name: values.name,
         category: values.category,
         type: values.type,
@@ -181,7 +181,7 @@ export default function DataSourcePage() {
     try {
       const values = await editForm.validateFields()
       setEditing(true)
-      updateDataSource(editTarget!.id, values)
+      await updateDataSource(editTarget!.id, values)
       message.success('修改成功')
       setEditOpen(false)
       reload()
@@ -194,8 +194,8 @@ export default function DataSourcePage() {
   }
 
   /* 删除 */
-  const handleDelete = (id: string) => {
-    deleteDataSource(id)
+  const handleDelete = async (id: string) => {
+    await deleteDataSource(id)
     message.success('数据源已删除')
     reload()
   }

@@ -95,10 +95,11 @@ export default function DeviceFaultMonitorPage() {
 
   useEffect(() => {
     if (!id) return
-    const found = getDigitalHuman(id)
-    if (!found) { message.error('数字人不存在'); navigate('/digital-worker/business'); return }
-    setDh(found)
-    if (found.projectId) setSelectedProjectId(found.projectId)
+    getDigitalHuman(id).then(found => {
+      if (!found) { message.error('数字人不存在'); navigate('/digital-worker/business'); return }
+      setDh(found)
+      if (found.projectId) setSelectedProjectId(found.projectId)
+    })
   }, [id, navigate])
 
   useEffect(() => {
@@ -113,7 +114,7 @@ export default function DeviceFaultMonitorPage() {
 
   const handleProjectChange = (pid: string | null) => {
     setSelectedProjectId(pid)
-    if (id) updateDigitalHuman(id, { projectId: pid ?? undefined })
+    if (id) void updateDigitalHuman(id, { projectId: pid ?? undefined })
   }
 
   const handleSelectAlert = (alert: DeviceAlert) => {

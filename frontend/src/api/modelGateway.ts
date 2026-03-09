@@ -1,4 +1,5 @@
 import type { RegisteredModel, GatewayRoute, DeployConfig } from '../types/modelGateway'
+import { delay, rand } from './mockConfig'
 
 const MOCK_MODELS: RegisteredModel[] = [
   {
@@ -68,11 +69,13 @@ const MOCK_ROUTES: GatewayRoute[] = [
   { key: '6', path: '/api/v1/models/supplier-risk', model: 'supplier-risk-scorer', version: 'v1.1.0', weight: 100, rateLimit: 500, status: 'Active' },
 ]
 
-export function listModels(): RegisteredModel[] {
+export async function listModels(): Promise<RegisteredModel[]> {
+  await delay(rand(300, 600))
   return MOCK_MODELS
 }
 
-export function listRoutes(): GatewayRoute[] {
+export async function listRoutes(): Promise<GatewayRoute[]> {
+  await delay(rand(200, 400))
   return MOCK_ROUTES
 }
 
@@ -86,7 +89,8 @@ export interface GatewayStats {
   stagingCount: number
 }
 
-export function getGatewayStats(): GatewayStats {
+export async function getGatewayStats(): Promise<GatewayStats> {
+  await delay(rand(200, 400))
   const active = MOCK_MODELS.filter(m => m.stage !== 'Archived')
   const totalQps = active.reduce((s, m) => s + m.qps, 0)
   return {
@@ -102,25 +106,25 @@ export function getGatewayStats(): GatewayStats {
 
 /** 模拟部署模型 */
 export async function deployModel(_key: string, _config: DeployConfig): Promise<{ success: boolean; message: string }> {
-  await new Promise(r => setTimeout(r, 800))
+  await delay(800)
   return { success: true, message: '模型部署任务已提交，预计 2 分钟内完成。' }
 }
 
 /** 模拟阶段推进 */
 export async function promoteModel(_key: string, _fromStage: string, _toStage: string): Promise<{ success: boolean; message: string }> {
-  await new Promise(r => setTimeout(r, 600))
+  await delay(600)
   return { success: true, message: `模型已从 ${_fromStage} 推进到 ${_toStage}。` }
 }
 
 /** 模拟回滚 */
 export async function rollbackModel(_key: string): Promise<{ success: boolean; message: string }> {
-  await new Promise(r => setTimeout(r, 500))
+  await delay(500)
   return { success: true, message: '模型已回滚到上一版本。' }
 }
 
 /** 模拟更新灰度流量权重 */
 export async function updateTrafficWeight(_routeKey: string, _weight: number): Promise<{ success: boolean; message: string }> {
-  await new Promise(r => setTimeout(r, 400))
+  await delay(400)
   return { success: true, message: `流量权重已更新为 ${_weight}%。` }
 }
 
@@ -145,7 +149,8 @@ export interface RecentError {
   errorMessage: string
 }
 
-export function getMonitoringStats(): MonitoringStats {
+export async function getMonitoringStats(): Promise<MonitoringStats> {
+  await delay(rand(200, 400))
   return {
     todayRequests: 128453,
     successRate: '99.87%',
@@ -154,7 +159,8 @@ export function getMonitoringStats(): MonitoringStats {
   }
 }
 
-export function getHourlyTraffic(): HourlyTraffic[] {
+export async function getHourlyTraffic(): Promise<HourlyTraffic[]> {
+  await delay(rand(200, 400))
   return [
     { hour: '06:00', requests: 3200 },
     { hour: '07:00', requests: 8500 },
@@ -166,7 +172,8 @@ export function getHourlyTraffic(): HourlyTraffic[] {
   ]
 }
 
-export function getRecentErrors(): RecentError[] {
+export async function getRecentErrors(): Promise<RecentError[]> {
+  await delay(rand(200, 400))
   return [
     { key: '1', time: '12:34:21', model: 'demand-forecaster', errorCode: 503, errorMessage: 'Service Unavailable - 模型副本扩容中' },
     { key: '2', time: '12:28:05', model: 'sentiment-analyzer', errorCode: 429, errorMessage: 'Rate Limit Exceeded - QPS 超过阈值 4000' },

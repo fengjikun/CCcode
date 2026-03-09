@@ -1,4 +1,5 @@
 import type { TrainingJob, TrainingProject, Framework, TrainMethod, BaseModel } from '../types/modelTraining'
+import { delay, rand } from './mockConfig'
 
 /** 生成模拟 loss 曲线：从 startVal 开始递减，带噪声 */
 function generateLossCurve(points: number, startVal: number, endVal: number): number[] {
@@ -142,19 +143,23 @@ const MOCK_PROJECTS: TrainingProject[] = [
   { key: '6', name: 'supplier-risk-scorer', description: '供应商风险评估模型', dataSource: 'ontology://Supplier/output', framework: 'scikit-learn', gpu: 'CPU Only', jobs: 4, bestMetric: '87.2%', createdAt: '2025-02-15', trainMethod: 'full', baseModel: 'GLM-4', datasetName: 'supplier_data_v3', hyperParams: { learningRate: 1e-4, batchSize: 64, epochs: 80, warmupSteps: 0, maxSeqLen: 512 } },
 ]
 
-export function listTrainingJobs(): TrainingJob[] {
+export async function listTrainingJobs(): Promise<TrainingJob[]> {
+  await delay(rand(300, 600))
   return MOCK_JOBS
 }
 
-export function listTrainingProjects(): TrainingProject[] {
+export async function listTrainingProjects(): Promise<TrainingProject[]> {
+  await delay(rand(300, 600))
   return MOCK_PROJECTS
 }
 
-export function getJobDetail(key: string): TrainingJob | undefined {
+export async function getJobDetail(key: string): Promise<TrainingJob | undefined> {
+  await delay(rand(200, 400))
   return MOCK_JOBS.find(j => j.key === key)
 }
 
-export function startTraining(projectKey: string): TrainingJob {
+export async function startTraining(projectKey: string): Promise<TrainingJob> {
+  await delay(rand(500, 1000))
   const project = MOCK_PROJECTS.find(p => p.key === projectKey)
   const newJob: TrainingJob = {
     key: `job-${Date.now()}`,
@@ -187,7 +192,8 @@ export function startTraining(projectKey: string): TrainingJob {
   return newJob
 }
 
-export function stopTraining(jobKey: string): TrainingJob | undefined {
+export async function stopTraining(jobKey: string): Promise<TrainingJob | undefined> {
+  await delay(rand(300, 600))
   const job = MOCK_JOBS.find(j => j.key === jobKey)
   if (job) {
     job.status = 'Stopped'
@@ -196,7 +202,7 @@ export function stopTraining(jobKey: string): TrainingJob | undefined {
   return job
 }
 
-export function createTrainingProject(input: {
+export async function createTrainingProject(input: {
   name: string
   description: string
   dataSource: string
@@ -206,7 +212,8 @@ export function createTrainingProject(input: {
   trainMethod?: TrainMethod
   datasetName?: string
   hyperParams?: { learningRate: number; batchSize: number; epochs: number; warmupSteps: number; maxSeqLen: number }
-}): TrainingProject {
+}): Promise<TrainingProject> {
+  await delay(rand(400, 700))
   const project: TrainingProject = {
     key: `tp-${Date.now()}`,
     name: input.name,
@@ -235,7 +242,8 @@ export interface TrainingStats {
   avgTrainTime: string
 }
 
-export function getTrainingStats(): TrainingStats {
+export async function getTrainingStats(): Promise<TrainingStats> {
+  await delay(rand(200, 400))
   return {
     projects: MOCK_PROJECTS.length,
     totalJobs: MOCK_JOBS.length,

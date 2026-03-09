@@ -5,6 +5,7 @@ import type {
   SyncFrequency,
   DataSourceConnection,
 } from '../types/dataSource'
+import { delay, rand } from './mockConfig'
 
 const STORAGE_KEY = 'deepexios_datasources'
 
@@ -84,22 +85,25 @@ function save(list: DataSource[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
 }
 
-export function listDataSources(): DataSource[] {
+export async function listDataSources(): Promise<DataSource[]> {
+  await delay(rand(300, 600))
   return load()
 }
 
-export function getDataSource(id: string): DataSource | null {
+export async function getDataSource(id: string): Promise<DataSource | null> {
+  await delay(rand(200, 400))
   return load().find(d => d.id === id) ?? null
 }
 
-export function createDataSource(input: {
+export async function createDataSource(input: {
   name: string
   category: DataSourceCategory
   type: DataSourceType
   connection: DataSourceConnection
   syncFrequency: SyncFrequency
   description?: string
-}): DataSource {
+}): Promise<DataSource> {
+  await delay(rand(400, 700))
   const now = new Date().toISOString()
   const ds: DataSource = {
     id: `ds-${Date.now()}`,
@@ -121,10 +125,11 @@ export function createDataSource(input: {
   return ds
 }
 
-export function updateDataSource(
+export async function updateDataSource(
   id: string,
   patch: Partial<Pick<DataSource, 'name' | 'description' | 'syncFrequency' | 'connection' | 'status'>>,
-): DataSource | null {
+): Promise<DataSource | null> {
+  await delay(rand(300, 500))
   const list = load()
   const idx = list.findIndex(d => d.id === id)
   if (idx < 0) return null
@@ -133,15 +138,13 @@ export function updateDataSource(
   return list[idx]
 }
 
-export function deleteDataSource(id: string): void {
+export async function deleteDataSource(id: string): Promise<void> {
+  await delay(rand(300, 500))
   save(load().filter(d => d.id !== id))
 }
 
 /** 模拟连接测试 — 始终成功 */
-export function testConnection(_connection: DataSourceConnection): Promise<{ success: boolean; message: string }> {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve({ success: true, message: '连接成功，数据库版本 8.0.35' })
-    }, 800)
-  })
+export async function testConnection(_connection: DataSourceConnection): Promise<{ success: boolean; message: string }> {
+  await delay(800)
+  return { success: true, message: '连接成功，数据库版本 8.0.35' }
 }

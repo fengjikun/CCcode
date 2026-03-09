@@ -1,4 +1,5 @@
 import type { Agent, AgentType } from '../types/agent'
+import { delay, rand } from './mockConfig'
 
 const STORAGE_KEY = 'deepexios_agents'
 
@@ -61,22 +62,25 @@ function save(list: Agent[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
 }
 
-export function listAgents(): Agent[] {
+export async function listAgents(): Promise<Agent[]> {
+  await delay(rand(300, 600))
   return load()
 }
 
-export function getAgent(id: string): Agent | null {
+export async function getAgent(id: string): Promise<Agent | null> {
+  await delay(rand(200, 400))
   return load().find(a => a.id === id) ?? null
 }
 
-export function createAgent(input: {
+export async function createAgent(input: {
   name: string
   type: AgentType
   description?: string
   systemPrompt: string
   model: string
   skillIds: string[]
-}): Agent {
+}): Promise<Agent> {
+  await delay(rand(400, 700))
   const now = new Date().toISOString()
   const agent: Agent = {
     id: `ag-${Date.now()}`,
@@ -97,10 +101,11 @@ export function createAgent(input: {
   return agent
 }
 
-export function updateAgent(
+export async function updateAgent(
   id: string,
   patch: Partial<Pick<Agent, 'name' | 'description' | 'status' | 'systemPrompt' | 'model' | 'skillIds'>>,
-): Agent | null {
+): Promise<Agent | null> {
+  await delay(rand(300, 500))
   const list = load()
   const idx = list.findIndex(a => a.id === id)
   if (idx < 0) return null
@@ -109,12 +114,14 @@ export function updateAgent(
   return list[idx]
 }
 
-export function deleteAgent(id: string): void {
+export async function deleteAgent(id: string): Promise<void> {
+  await delay(rand(300, 500))
   save(load().filter(a => a.id !== id))
 }
 
 /** 发布 Agent 为数字员工 */
-export function publishAsDigitalHuman(agentId: string): { success: boolean; digitalHumanId: string } {
+export async function publishAsDigitalHuman(agentId: string): Promise<{ success: boolean; digitalHumanId: string }> {
+  await delay(rand(500, 800))
   const agent = getAgent(agentId)
   if (!agent) return { success: false, digitalHumanId: '' }
 

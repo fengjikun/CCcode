@@ -138,8 +138,8 @@ export default function TransformPage() {
   const [editForm] = Form.useForm()
 
   const reload = useCallback(() => {
-    setProjects(listTransforms())
-    setDataSources(listDataSources())
+    listTransforms().then(d => setProjects(d))
+    listDataSources().then(d => setDataSources(d))
   }, [])
 
   useEffect(() => { reload() }, [reload])
@@ -163,7 +163,7 @@ export default function TransformPage() {
         message.warning('请至少填写一个输出数据集')
         return
       }
-      createTransform({
+      await createTransform({
         name: values.name,
         description: values.description || '',
         type: values.type,
@@ -199,7 +199,7 @@ export default function TransformPage() {
     if (!current) return
     try {
       const values = await editForm.validateFields()
-      updateTransform(current.id, {
+      await updateTransform(current.id, {
         name: values.name,
         description: values.description,
         type: values.type,
@@ -217,8 +217,8 @@ export default function TransformPage() {
   }
 
   /* ── 删除 ── */
-  const handleDelete = (id: string) => {
-    deleteTransform(id)
+  const handleDelete = async (id: string) => {
+    await deleteTransform(id)
     message.success('已删除')
     reload()
   }
@@ -233,8 +233,8 @@ export default function TransformPage() {
     reload()
   }
 
-  const handleStop = (id: string) => {
-    stopTransform(id)
+  const handleStop = async (id: string) => {
+    await stopTransform(id)
     setRunningIds(prev => { const n = new Set(prev); n.delete(id); return n })
     message.info('任务已停止')
     reload()

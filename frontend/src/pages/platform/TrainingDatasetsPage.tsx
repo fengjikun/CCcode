@@ -52,7 +52,13 @@ export default function TrainingDatasetsPage() {
 
   const buildTimersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map())
 
-  const reload = useCallback(() => { setDatasets(listDatasets()) }, [])
+  const [stats, setStats] = useState({ total: 0, totalRecords: '0' as string, readyCount: 0, buildingCount: 0, totalSize: '0 B' })
+
+  const reload = useCallback(async () => {
+    const [ds, st] = await Promise.all([listDatasets(), getDatasetStats()])
+    setDatasets(ds)
+    setStats(st)
+  }, [])
   useEffect(() => { reload() }, [reload])
 
   // Clean up build timers on unmount
@@ -62,8 +68,6 @@ export default function TrainingDatasetsPage() {
     }
   }, [])
 
-  const stats = getDatasetStats()
-
   const filtered = datasets.filter(d =>
     !search || d.name.toLowerCase().includes(search.toLowerCase()) || d.source.toLowerCase().includes(search.toLowerCase())
   )
@@ -71,54 +75,54 @@ export default function TrainingDatasetsPage() {
   const handleCreate = async () => {
     try {
       const values = await form.validateFields()
-      createDataset(values)
+      await createDataset(values)
       message.success('数据集创建成功')
       setCreateOpen(false)
       form.resetFields()
       setSelectedFormat('JSONL')
-      reload()
+      await reload()
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'errorFields' in err) return
       message.error('创建失败')
     }
   }
 
-  const handleDelete = (key: string) => {
-    deleteDataset(key)
+  const handleDelete = async (key: string) => {
+    await deleteDataset(key)
     message.success('数据集已删除')
-    reload()
+    await reload()
   }
 
-  const handleBuild = (key: string) => {
+  const handleBuild = async (key: string) => {
     // Clear any existing timer for this key
     const existing = buildTimersRef.current.get(key)
     if (existing) clearInterval(existing)
 
-    buildDataset(key)
+    await buildDataset(key)
     message.success('构建任务已启动')
-    reload()
+    await reload()
 
     // Simulate build progress
     let progress = 0
-    const timer = setInterval(() => {
+    const timer = setInterval(async () => {
       progress += Math.floor(Math.random() * 15) + 10
       if (progress >= 100) {
         progress = 100
         clearInterval(timer)
         buildTimersRef.current.delete(key)
-        finishBuild(key)
+        await finishBuild(key)
         message.success('数据集构建完成')
       } else {
-        updateBuildProgress(key, progress)
+        await updateBuildProgress(key, progress)
       }
-      reload()
+      await reload()
     }, 1500)
 
     buildTimersRef.current.set(key, timer)
   }
 
-  const handleRowClick = (record: TrainingDataset) => {
-    const detail = getDatasetDetail(record.key)
+  const handleRowClick = async (record: TrainingDataset) => {
+    const detail = await getDatasetDetail(record.key)
     if (detail) {
       setDetailDataset(detail)
       setDrawerOpen(true)

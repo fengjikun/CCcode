@@ -1,4 +1,5 @@
 import type { Skill, SkillCategory, SkillStatus, SkillTemplateFile, SkillScriptFile } from '../types/skill'
+import { delay, rand } from './mockConfig'
 
 const STORAGE_KEY = 'deepexios_skills_v2'
 
@@ -485,15 +486,17 @@ function save(list: Skill[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
 }
 
-export function listSkills(): Skill[] {
+export async function listSkills(): Promise<Skill[]> {
+  await delay(rand(300, 600))
   return load()
 }
 
-export function getSkill(id: string): Skill | null {
+export async function getSkill(id: string): Promise<Skill | null> {
+  await delay(rand(200, 400))
   return load().find(s => s.id === id) ?? null
 }
 
-export function createSkill(input: {
+export async function createSkill(input: {
   name: string
   displayName: string
   category: SkillCategory
@@ -504,7 +507,8 @@ export function createSkill(input: {
   scripts?: SkillScriptFile[]
   dependencies?: string
   tags?: string[]
-}): Skill {
+}): Promise<Skill> {
+  await delay(rand(400, 700))
   const now = new Date().toISOString()
   const skill: Skill = {
     id: `sk-${Date.now()}`,
@@ -530,10 +534,11 @@ export function createSkill(input: {
   return skill
 }
 
-export function updateSkill(
+export async function updateSkill(
   id: string,
   patch: Partial<Pick<Skill, 'displayName' | 'description' | 'instructions' | 'reference' | 'status' | 'category' | 'dependencies' | 'templates' | 'scripts' | 'tags'>>,
-): Skill | null {
+): Promise<Skill | null> {
+  await delay(rand(300, 500))
   const list = load()
   const idx = list.findIndex(s => s.id === id)
   if (idx < 0) return null
@@ -542,11 +547,13 @@ export function updateSkill(
   return list[idx]
 }
 
-export function deleteSkill(id: string): void {
+export async function deleteSkill(id: string): Promise<void> {
+  await delay(rand(300, 500))
   save(load().filter(s => s.id !== id))
 }
 
-export function toggleSkillStatus(id: string): Skill | null {
+export async function toggleSkillStatus(id: string): Promise<Skill | null> {
+  await delay(rand(300, 500))
   const list = load()
   const idx = list.findIndex(s => s.id === id)
   if (idx < 0) return null
@@ -558,7 +565,8 @@ export function toggleSkillStatus(id: string): Skill | null {
 }
 
 /** 重置为默认数据（开发用） */
-export function resetSkills(): void {
+export async function resetSkills(): Promise<void> {
+  await delay(rand(200, 400))
   save(DEFAULT_SKILLS)
 }
 
@@ -575,7 +583,8 @@ export interface OntologyFunctionItem {
 }
 
 /** Mock: 获取可导入的本体 Function 列表 */
-export function listImportableFunctions(): OntologyFunctionItem[] {
+export async function listImportableFunctions(): Promise<OntologyFunctionItem[]> {
+  await delay(rand(300, 600))
   return [
     {
       id: 'fn-001',
@@ -626,7 +635,8 @@ export function listImportableFunctions(): OntologyFunctionItem[] {
 }
 
 /** 将本体 Function 导入为 Skill */
-export function importFunctionAsSkill(fn: OntologyFunctionItem): Skill {
+export async function importFunctionAsSkill(fn: OntologyFunctionItem): Promise<Skill> {
+  await delay(rand(500, 800))
   return createSkill({
     name: fn.name.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, ''),
     displayName: fn.description.split('，')[0] || fn.name,

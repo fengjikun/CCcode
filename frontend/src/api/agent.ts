@@ -56,8 +56,7 @@ export interface ChatStreamCallbacks {
   onError?: (msg: string) => void
 }
 
-const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
-const rand = (min: number, max: number) => min + Math.random() * (max - min)
+import { delay, rand } from './mockConfig'
 
 /* ---------- Mock Data ---------- */
 
