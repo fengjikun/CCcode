@@ -50,6 +50,7 @@ java/**/target/
 
 # ===== Claude Code =====
 .claude/
+.worktrees/
 
 # ===== OS =====
 .DS_Store
