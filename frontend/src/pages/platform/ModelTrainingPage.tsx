@@ -26,53 +26,72 @@ import {
   message,
 } from 'antd'
 import {
-  ExperimentOutlined,
-  PlusOutlined,
-  PlayCircleOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined,
   ClockCircleOutlined,
   DashboardOutlined,
-  ProjectOutlined,
-  ThunderboltOutlined,
-  EyeOutlined,
-  StopOutlined,
   DeleteOutlined,
+  ExperimentOutlined,
+  EyeOutlined,
   LineChartOutlined,
+  PlayCircleOutlined,
+  PlusOutlined,
+  ProjectOutlined,
   ReloadOutlined,
+  StopOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons'
 import {
-  listTrainingJobs,
-  listTrainingProjects,
   createTrainingProject,
   getTrainingStats,
-  stopTraining,
+  listTrainingJobs,
+  listTrainingProjects,
   startTraining,
+  stopTraining,
 } from '../../api/modelTraining'
 import { listDatasets } from '../../api/trainingDataset'
-import type { TrainingJob, TrainingProject, TrainingStatus, Framework } from '../../types/modelTraining'
-import { TRAINING_STATUS_COLORS, FRAMEWORK_COLORS } from '../../types/modelTraining'
-import type { TrainingStats } from '../../api/modelTraining'
-import type { TrainingDataset } from '../../types/trainingDataset'
 import ModalHeader from '../../components/shared/ModalHeader'
+import {
+  DATASET_TYPE_LABELS,
+  MODEL_CENTER_PAGE_LABELS,
+  MODEL_FAMILY_LABELS,
+  MODEL_MODALITY_LABELS,
+  TRAIN_STAGE_LABELS,
+} from '../../types/modelCenter'
+import type { TrainingJob, TrainingProject, TrainingStatus, Framework } from '../../types/modelTraining'
+import { FRAMEWORK_COLORS, TRAINING_STATUS_COLORS } from '../../types/modelTraining'
+import type { TrainingDataset } from '../../types/trainingDataset'
+import type { TrainingStats } from '../../api/modelTraining'
+import { formatTrainingScale, getTrainingFacetSummary } from './modelTraining.helpers'
 
 const { Title, Text } = Typography
 
 const STATUS_ICONS: Record<TrainingStatus, React.ReactNode> = {
   Running: <PlayCircleOutlined />,
   Completed: <CheckCircleOutlined />,
-  Failed: <CloseCircleOutlined />,
+  Failed: <StopOutlined />,
   Queued: <ClockCircleOutlined />,
-  Stopped: <CloseCircleOutlined />,
+  Stopped: <StopOutlined />,
 }
 
-const TRAIN_METHOD_LABELS: Record<string, string> = {
-  full: 'Full Fine-tuning',
-  lora: 'LoRA',
-  qlora: 'QLoRA',
-}
+const FAMILY_COLORS = {
+  LLM: 'blue',
+  VL: 'magenta',
+} as const
 
-/** 简单 SVG 折线图：双线 (train + val) */
+const MODALITY_COLORS = {
+  text: 'cyan',
+  'image-text': 'gold',
+} as const
+
+const BASE_MODEL_OPTIONS = [
+  'DeepSeek-R1-Distill-32B',
+  'Qwen2.5-72B-Instruct',
+  'Qwen2.5-VL-32B-Instruct',
+  'Qwen2.5-VL-7B-Instruct',
+]
+
+const GPU_OPTIONS = ['2 x A100 80GB', '4 x H100 80GB', '8 x H100 80GB', '8 x A100 80GB']
+
 function LossMiniChart({ trainLoss, valLoss }: { trainLoss: number[]; valLoss: number[] }) {
   if (trainLoss.length === 0) return <Text type="secondary">暂无数据</Text>
 
@@ -89,10 +108,7 @@ function LossMiniChart({ trainLoss, valLoss }: { trainLoss: number[]; valLoss: n
   const toX = (i: number, len: number) => pad.left + (i / Math.max(len - 1, 1)) * iw
   const toY = (v: number) => pad.top + (1 - (v - minV) / (maxV - minV || 1)) * ih
 
-  const polyline = (data: number[]) =>
-    data.map((v, i) => `${toX(i, data.length).toFixed(1)},${toY(v).toFixed(1)}`).join(' ')
-
-  // Y-axis ticks
+  const polyline = (data: number[]) => data.map((v, i) => `${toX(i, data.length).toFixed(1)},${toY(v).toFixed(1)}`).join(' ')
   const yTicks = 5
   const yLabels = Array.from({ length: yTicks }, (_, i) => {
     const v = minV + ((maxV - minV) / (yTicks - 1)) * i
@@ -101,24 +117,19 @@ function LossMiniChart({ trainLoss, valLoss }: { trainLoss: number[]; valLoss: n
 
   return (
     <svg width={width} height={height} style={{ display: 'block' }}>
-      {/* grid lines */}
-      {yLabels.map((t, i) => (
-        <g key={i}>
-          <line x1={pad.left} y1={t.y} x2={width - pad.right} y2={t.y} stroke="#f0f0f0" />
-          <text x={pad.left - 6} y={t.y + 4} textAnchor="end" fontSize={10} fill="#999">{t.v.toFixed(2)}</text>
+      {yLabels.map((tick, index) => (
+        <g key={index}>
+          <line x1={pad.left} y1={tick.y} x2={width - pad.right} y2={tick.y} stroke="#f0f0f0" />
+          <text x={pad.left - 6} y={tick.y + 4} textAnchor="end" fontSize={10} fill="#999">{tick.v.toFixed(2)}</text>
         </g>
       ))}
-      {/* X-axis label */}
-      <text x={width / 2} y={height - 4} textAnchor="middle" fontSize={10} fill="#999">Epoch</text>
-      {/* Train loss */}
+      <text x={width / 2} y={height - 4} textAnchor="middle" fontSize={10} fill="#999">Checkpoint</text>
       <polyline points={polyline(trainLoss)} fill="none" stroke="#1677ff" strokeWidth={1.5} />
-      {/* Val loss */}
       <polyline points={polyline(valLoss)} fill="none" stroke="#ff7a45" strokeWidth={1.5} strokeDasharray="4,3" />
-      {/* legend */}
       <line x1={pad.left} y1={8} x2={pad.left + 20} y2={8} stroke="#1677ff" strokeWidth={2} />
       <text x={pad.left + 24} y={12} fontSize={10} fill="#666">Train Loss</text>
       <line x1={pad.left + 90} y1={8} x2={pad.left + 110} y2={8} stroke="#ff7a45" strokeWidth={2} strokeDasharray="4,3" />
-      <text x={pad.left + 114} y={12} fontSize={10} fill="#666">Val Loss</text>
+      <text x={pad.left + 114} y={12} fontSize={10} fill="#666">Eval Loss</text>
     </svg>
   )
 }
@@ -128,34 +139,36 @@ export default function ModelTrainingPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [form] = Form.useForm()
 
-  const [stats, setStats] = useState<TrainingStats>({ projects: 0, totalJobs: 0, running: 0, completed: 0, gpuUtilization: '—', avgTrainTime: '—' })
+  const [stats, setStats] = useState<TrainingStats>({
+    projects: 0,
+    totalJobs: 0,
+    running: 0,
+    completed: 0,
+    gpuUtilization: '—',
+    avgTrainTime: '—',
+  })
   const [jobs, setJobs] = useState<TrainingJob[]>([])
   const [projects, setProjects] = useState<TrainingProject[]>([])
   const [datasets, setDatasets] = useState<TrainingDataset[]>([])
-
-  // Detail drawer
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedJob, setSelectedJob] = useState<TrainingJob | null>(null)
   const logEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    getTrainingStats().then(d => setStats(d))
-    listTrainingJobs().then(d => setJobs(d))
-    listTrainingProjects().then(d => setProjects(d))
-    listDatasets().then(d => setDatasets(d.filter(ds => ds.status === 'Ready')))
+    getTrainingStats().then(setStats)
+    listTrainingJobs().then(setJobs)
+    listTrainingProjects().then(setProjects)
+    listDatasets().then(list => setDatasets(list.filter(dataset => dataset.status === 'Ready')))
   }, [])
 
-  // auto-scroll log viewer
   useEffect(() => {
-    if (logEndRef.current) {
-      logEndRef.current.scrollIntoView({ behavior: 'smooth' })
-    }
+    if (logEndRef.current) logEndRef.current.scrollIntoView({ behavior: 'smooth' })
   }, [selectedJob])
 
   const refreshData = () => {
-    getTrainingStats().then(d => setStats(d))
-    listTrainingJobs().then(d => setJobs([...d]))
-    listTrainingProjects().then(d => setProjects([...d]))
+    getTrainingStats().then(setStats)
+    listTrainingJobs().then(setJobs)
+    listTrainingProjects().then(setProjects)
   }
 
   const openDetail = (job: TrainingJob) => {
@@ -165,27 +178,22 @@ export default function ModelTrainingPage() {
 
   const handleStop = async (jobKey: string) => {
     await stopTraining(jobKey)
-    message.success('训练已停止')
+    message.success('训练运行已停止')
     refreshData()
-    if (selectedJob?.key === jobKey) {
-      setSelectedJob({ ...selectedJob, status: 'Stopped' })
-    }
+    if (selectedJob?.key === jobKey) setSelectedJob({ ...selectedJob, status: 'Stopped' })
   }
 
   const handleRestart = async (job: TrainingJob) => {
-    const project = projects.find(p => p.name === job.projectName)
-    if (project) {
-      await startTraining(project.key)
-      message.success('已创建新的训练任务')
-      refreshData()
-    }
+    const project = projects.find(item => item.name === job.projectName)
+    if (!project) return
+    await startTraining(project.key)
+    message.success('已创建新的微调运行')
+    refreshData()
   }
 
   const handleDelete = (jobKey: string) => {
-    // Mock delete: just filter
-    const updated = jobs.filter(j => j.key !== jobKey)
-    setJobs(updated)
-    message.success('训练任务已删除')
+    setJobs(current => current.filter(job => job.key !== jobKey))
+    message.success('训练运行已删除')
     if (selectedJob?.key === jobKey) {
       setDrawerOpen(false)
       setSelectedJob(null)
@@ -195,188 +203,237 @@ export default function ModelTrainingPage() {
   const handleCreate = async () => {
     try {
       const values = await form.validateFields()
+      const dataset = datasets.find(item => item.name === values.datasetName)
       await createTrainingProject({
         name: values.name,
         description: values.description,
-        dataSource: values.dataSource ?? '',
-        framework: values.framework ?? 'PyTorch',
-        gpu: values.gpu ?? 'V100 - 16GB',
+        dataSource: dataset?.source ?? values.datasetName,
+        framework: values.framework ?? 'Transformers',
+        gpu: values.gpu ?? '4 x H100 80GB',
         baseModel: values.baseModel,
         trainMethod: values.trainMethod,
         datasetName: values.datasetName,
         hyperParams: {
           learningRate: values.learningRate ?? 2e-5,
           batchSize: values.batchSize ?? 16,
-          epochs: values.epochs ?? 3,
+          epochs: values.epochs ?? 2,
           warmupSteps: values.warmupSteps ?? 100,
-          maxSeqLen: values.maxSeqLen ?? 2048,
+          maxSeqLen: values.maxSeqLen ?? 8192,
         },
       })
       message.success('训练项目创建成功')
       setCreateOpen(false)
       form.resetFields()
       refreshData()
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'errorFields' in err) return
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'errorFields' in error) return
     }
   }
 
+  const llmProjects = projects.filter(project => project.modelFamily === 'LLM').length
+  const vlProjects = projects.filter(project => project.modelFamily === 'VL').length
+
   const statItems = [
     { title: '训练项目', value: stats.projects, icon: <ProjectOutlined />, color: '#4f46e5', bg: '#eef2ff' },
-    { title: '训练任务', value: stats.totalJobs, icon: <ExperimentOutlined />, color: '#0891b2', bg: '#ecfeff' },
     { title: '运行中', value: stats.running, icon: <PlayCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
-    { title: '已完成', value: stats.completed, icon: <CheckCircleOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
-    { title: 'GPU 使用率', value: stats.gpuUtilization, icon: <DashboardOutlined />, color: '#d97706', bg: '#fffbeb' },
-    { title: '平均训练时长', value: stats.avgTrainTime, icon: <ClockCircleOutlined />, color: '#4f46e5', bg: '#eef2ff' },
+    { title: 'LLM 项目', value: llmProjects, icon: <ExperimentOutlined />, color: '#0891b2', bg: '#ecfeff' },
+    { title: 'VL 项目', value: vlProjects, icon: <LineChartOutlined />, color: '#d97706', bg: '#fffbeb' },
+    { title: 'GPU 使用率', value: stats.gpuUtilization, icon: <DashboardOutlined />, color: '#9333ea', bg: '#f5f3ff' },
+    { title: '平均训练时长', value: stats.avgTrainTime, icon: <ClockCircleOutlined />, color: '#7c3aed', bg: '#eef2ff' },
   ]
 
-  /* 训练任务列 */
   const jobColumns = [
-    { title: '运行 ID', dataIndex: 'name', key: 'name', render: (v: string) => <Text code style={{ fontSize: 11 }}>{v}</Text> },
-    { title: '项目', dataIndex: 'projectName', key: 'projectName', render: (v: string) => <Text strong>{v}</Text> },
     {
-      title: '框架', dataIndex: 'framework', key: 'framework', width: 110,
-      render: (v: Framework) => <Tag color={FRAMEWORK_COLORS[v]}>{v}</Tag>,
+      title: '运行 ID',
+      dataIndex: 'name',
+      key: 'name',
+      render: (value: string) => <Text code style={{ fontSize: 11 }}>{value}</Text>,
     },
-    { title: 'GPU', dataIndex: 'gpu', key: 'gpu', width: 110 },
+    {
+      title: '模型与阶段',
+      key: 'summary',
+      render: (_: unknown, record: TrainingJob) => (
+        <Space direction="vertical" size={2}>
+          <Text strong>{record.projectName}</Text>
+          <Space size={4} wrap>
+            <Tag color={FAMILY_COLORS[record.modelFamily]}>{MODEL_FAMILY_LABELS[record.modelFamily]}</Tag>
+            <Tag color={MODALITY_COLORS[record.modality]}>{MODEL_MODALITY_LABELS[record.modality]}</Tag>
+            <Tag>{TRAIN_STAGE_LABELS[record.trainStage]}</Tag>
+          </Space>
+        </Space>
+      ),
+    },
+    {
+      title: '基座模型',
+      key: 'baseModel',
+      render: (_: unknown, record: TrainingJob) => (
+        <Space direction="vertical" size={2}>
+          <Tag color="blue">{record.baseModel}</Tag>
+          <Text type="secondary" style={{ fontSize: 12 }}>{record.capability}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: '语料规模',
+      key: 'dataset',
+      render: (_: unknown, record: TrainingJob) => (
+        <Space direction="vertical" size={2}>
+          <Text code style={{ fontSize: 11 }}>{record.datasetName}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {formatTrainingScale(record)}
+          </Text>
+        </Space>
+      ),
+    },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 100,
-      filters: (['Running', 'Completed', 'Failed', 'Queued', 'Stopped'] as TrainingStatus[]).map(s => ({ text: s, value: s })),
+      width: 110,
+      filters: (['Running', 'Completed', 'Failed', 'Queued', 'Stopped'] as TrainingStatus[]).map(status => ({ text: status, value: status })),
       onFilter: (value: unknown, record: TrainingJob) => record.status === value,
-      render: (v: TrainingStatus) => (
-        <Tag icon={STATUS_ICONS[v]} color={TRAINING_STATUS_COLORS[v]}>{v}</Tag>
-      ),
+      render: (value: TrainingStatus) => <Tag icon={STATUS_ICONS[value]} color={TRAINING_STATUS_COLORS[value]}>{value}</Tag>,
     },
     {
       title: '进度',
-      dataIndex: 'progress',
       key: 'progress',
-      width: 140,
-      render: (v: number, r: TrainingJob) => (
+      width: 150,
+      render: (_: unknown, record: TrainingJob) => (
         <Space size={8}>
-          <Progress
-            percent={v}
-            size="small"
-            style={{ width: 80 }}
-            status={r.status === 'Failed' ? 'exception' : r.status === 'Running' ? 'active' : undefined}
-            showInfo={false}
-          />
-          <Text style={{ fontSize: 11 }}>{r.epoch}</Text>
+          <Progress percent={record.progress} size="small" style={{ width: 86 }} showInfo={false} />
+          <Text style={{ fontSize: 11 }}>{record.epoch}</Text>
         </Space>
+      ),
+    },
+    {
+      title: 'Checkpoint',
+      key: 'checkpoint',
+      render: (_: unknown, record: TrainingJob) => (
+        <Text code style={{ fontSize: 11 }}>{record.checkpoint.split('/').slice(-2).join('/')}</Text>
       ),
     },
     {
       title: '最佳指标',
       key: 'metric',
-      width: 120,
-      render: (_: unknown, r: TrainingJob) => r.bestMetric !== '—' ? (
-        <Tooltip title={r.metricName}>
-          <Tag color="green">{r.metricName}: {r.bestMetric}</Tag>
-        </Tooltip>
-      ) : <Text type="secondary">—</Text>,
+      width: 160,
+      render: (_: unknown, record: TrainingJob) => record.bestMetric !== '—'
+        ? <Tag color="green">{record.metricName}: {record.bestMetric}</Tag>
+        : <Text type="secondary">—</Text>,
     },
-    { title: '耗时', dataIndex: 'duration', key: 'duration', width: 80 },
-    { title: '创建人', dataIndex: 'createdBy', key: 'createdBy', width: 70 },
     {
       title: '操作',
       key: 'actions',
       width: 130,
       render: (_: unknown, record: TrainingJob) => (
         <Space size={4}>
-          <Tooltip title="查看">
+          <Tooltip title="查看详情">
             <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
           </Tooltip>
           {record.status === 'Running' && (
-            <Tooltip title="停止">
+            <Tooltip title="停止运行">
               <Button type="link" size="small" danger icon={<StopOutlined />} onClick={() => handleStop(record.key)} />
             </Tooltip>
           )}
-          <Popconfirm title="确认删除此训练任务？" onConfirm={() => handleDelete(record.key)} okText="删除" cancelText="取消">
-            <Tooltip title="删除">
-              <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-            </Tooltip>
+          <Popconfirm title="确认删除此训练运行？" onConfirm={() => handleDelete(record.key)}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
       ),
     },
   ]
 
-  /* 项目列 */
   const projectColumns = [
-    { title: '项目名称', dataIndex: 'name', key: 'name', render: (v: string) => <Text strong>{v}</Text> },
-    { title: '说明', dataIndex: 'description', key: 'description' },
-    { title: '基座模型', dataIndex: 'baseModel', key: 'baseModel', width: 130, render: (v: string) => <Tag color="blue">{v}</Tag> },
-    { title: '训练方式', dataIndex: 'trainMethod', key: 'trainMethod', width: 120, render: (v: string) => <Tag>{TRAIN_METHOD_LABELS[v] ?? v}</Tag> },
-    { title: '数据集', dataIndex: 'datasetName', key: 'datasetName', width: 160, render: (v: string) => <Text code style={{ fontSize: 11 }}>{v}</Text> },
-    { title: '框架', dataIndex: 'framework', key: 'framework', width: 100, render: (v: Framework) => <Tag color={FRAMEWORK_COLORS[v]}>{v}</Tag> },
-    { title: '训练次数', dataIndex: 'jobs', key: 'jobs', width: 80 },
-    { title: '最佳指标', dataIndex: 'bestMetric', key: 'bestMetric', width: 90, render: (v: string) => v !== '—' ? <Tag color="green">{v}</Tag> : '—' },
+    {
+      title: '项目',
+      key: 'name',
+      render: (_: unknown, record: TrainingProject) => (
+        <Space direction="vertical" size={2}>
+          <Text strong>{record.displayName}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{record.name}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: '能力摘要',
+      key: 'facets',
+      render: (_: unknown, record: TrainingProject) => (
+        <Space direction="vertical" size={2}>
+          <Text>{getTrainingFacetSummary(record)}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{record.alignmentTags.join(' / ')}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: '基座模型',
+      key: 'base',
+      render: (_: unknown, record: TrainingProject) => (
+        <Space direction="vertical" size={2}>
+          <Tag color="blue">{record.baseModel}</Tag>
+          <Text type="secondary" style={{ fontSize: 12 }}>Context {record.contextWindow.toLocaleString()}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: '训练语料',
+      key: 'dataset',
+      render: (_: unknown, record: TrainingProject) => (
+        <Space direction="vertical" size={2}>
+          <Text code style={{ fontSize: 11 }}>{record.datasetName}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {DATASET_TYPE_LABELS[record.datasetType]} / {formatTrainingScale(record)}
+          </Text>
+        </Space>
+      ),
+    },
+    {
+      title: '资源',
+      key: 'infra',
+      render: (_: unknown, record: TrainingProject) => (
+        <Space direction="vertical" size={2}>
+          <Tag color={FRAMEWORK_COLORS[record.framework]}>{record.framework}</Tag>
+          <Text type="secondary" style={{ fontSize: 12 }}>{record.gpu}</Text>
+        </Space>
+      ),
+    },
+    { title: '运行次数', dataIndex: 'jobs', key: 'jobs', width: 90 },
+    { title: '最佳指标', dataIndex: 'bestMetric', key: 'bestMetric', width: 120, render: (value: string) => <Tag color="green">{value}</Tag> },
     { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 100 },
   ]
 
   const tabItems = [
     {
       key: 'jobs',
-      label: <span><ThunderboltOutlined /> 训练任务 ({jobs.length})</span>,
+      label: <span><ThunderboltOutlined /> 训练运行 ({jobs.length})</span>,
       children: <Table dataSource={jobs} columns={jobColumns} rowKey="key" pagination={false} size="small" />,
     },
     {
       key: 'projects',
-      label: <span><ProjectOutlined /> 训练项目 ({projects.length})</span>,
+      label: <span><ProjectOutlined /> 微调项目 ({projects.length})</span>,
       children: <Table dataSource={projects} columns={projectColumns} rowKey="key" pagination={false} size="small" />,
     },
   ]
 
-  /* ---------- Drawer: 训练详情 ---------- */
   const renderMetricsTab = (job: TrainingJob) => {
-    const lastTrainLoss = job.trainLoss.length > 0 ? job.trainLoss[job.trainLoss.length - 1] : null
-    const lastValLoss = job.valLoss.length > 0 ? job.valLoss[job.valLoss.length - 1] : null
-    const minTrainLoss = job.trainLoss.length > 0 ? Math.min(...job.trainLoss) : null
-
+    const lastTrainLoss = job.trainLoss.at(-1)
+    const lastValLoss = job.valLoss.at(-1)
+    const minTrainLoss = job.trainLoss.length > 0 ? Math.min(...job.trainLoss) : undefined
     return (
       <div>
-        <Text strong style={{ fontSize: 14 }}>Loss 曲线</Text>
+        <Text strong style={{ fontSize: 14 }}>Checkpoint 曲线</Text>
         <div style={{ margin: '12px 0', border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, background: '#fafafa' }}>
           <LossMiniChart trainLoss={job.trainLoss} valLoss={job.valLoss} />
         </div>
-
-        <Text strong style={{ fontSize: 14 }}>当前指标</Text>
-        <Row gutter={[12, 12]} style={{ marginTop: 12 }}>
-          <Col span={8}>
-            <Card size="small" style={{ textAlign: 'center' }}>
-              <Statistic title="当前 Train Loss" value={lastTrainLoss ?? '—'} precision={4} valueStyle={{ fontSize: 18, color: '#1677ff' }} />
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card size="small" style={{ textAlign: 'center' }}>
-              <Statistic title="当前 Val Loss" value={lastValLoss ?? '—'} precision={4} valueStyle={{ fontSize: 18, color: '#ff7a45' }} />
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card size="small" style={{ textAlign: 'center' }}>
-              <Statistic title="最佳 Train Loss" value={minTrainLoss ?? '—'} precision={4} valueStyle={{ fontSize: 18, color: '#52c41a' }} />
-            </Card>
-          </Col>
+        <Row gutter={[12, 12]}>
+          <Col span={6}><Card size="small"><Statistic title="Train Loss" value={lastTrainLoss ?? '—'} precision={4} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="Eval Loss" value={lastValLoss ?? '—'} precision={4} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="Best Loss" value={minTrainLoss ?? '—'} precision={4} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title={job.metricName} value={job.bestMetric} /></Card></Col>
         </Row>
         <Row gutter={[12, 12]} style={{ marginTop: 12 }}>
-          <Col span={8}>
-            <Card size="small" style={{ textAlign: 'center' }}>
-              <Statistic title="Learning Rate" value={job.learningRate.toExponential(1)} valueStyle={{ fontSize: 16 }} />
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card size="small" style={{ textAlign: 'center' }}>
-              <Statistic title="GPU 显存" value={job.gpuMemUsage} valueStyle={{ fontSize: 16 }} />
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card size="small" style={{ textAlign: 'center' }}>
-              <Statistic title="GPU 利用率" value={job.gpuUtil} valueStyle={{ fontSize: 16 }} />
-            </Card>
-          </Col>
+          <Col span={6}><Card size="small"><Statistic title="Learning Rate" value={job.learningRate.toExponential(1)} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="GPU 显存" value={job.gpuMemUsage} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="GPU 利用率" value={job.gpuUtil} /></Card></Col>
+          <Col span={6}><Card size="small"><Statistic title="Context Window" value={job.contextWindow.toLocaleString()} /></Card></Col>
         </Row>
       </div>
     )
@@ -396,8 +453,8 @@ export default function ModelTrainingPage() {
         lineHeight: 1.8,
       }}
     >
-      {job.logs.map((line, i) => (
-        <div key={i} style={{ whiteSpace: 'pre-wrap', color: line.includes('ERROR') ? '#f87171' : line.includes('WARN') ? '#fbbf24' : '#4ade80' }}>
+      {job.logs.map((line, index) => (
+        <div key={index} style={{ whiteSpace: 'pre-wrap', color: line.includes('ERROR') ? '#f87171' : line.includes('WARN') ? '#fbbf24' : '#4ade80' }}>
           {line}
         </div>
       ))}
@@ -406,22 +463,26 @@ export default function ModelTrainingPage() {
   )
 
   const renderParamsTab = (job: TrainingJob) => {
-    // Find project for additional info
-    const project = projects.find(p => p.name === job.projectName)
+    const project = projects.find(item => item.name === job.projectName)
     return (
       <Descriptions bordered column={2} size="small">
-        <Descriptions.Item label="基座模型">{project?.baseModel ?? '—'}</Descriptions.Item>
-        <Descriptions.Item label="训练方式">{project?.trainMethod ? TRAIN_METHOD_LABELS[project.trainMethod] : '—'}</Descriptions.Item>
-        <Descriptions.Item label="Learning Rate">{job.learningRate.toExponential(1)}</Descriptions.Item>
-        <Descriptions.Item label="Batch Size">{job.batchSize}</Descriptions.Item>
+        <Descriptions.Item label="模型家族">{MODEL_FAMILY_LABELS[job.modelFamily]}</Descriptions.Item>
+        <Descriptions.Item label="模态">{MODEL_MODALITY_LABELS[job.modality]}</Descriptions.Item>
+        <Descriptions.Item label="训练阶段">{TRAIN_STAGE_LABELS[job.trainStage]}</Descriptions.Item>
+        <Descriptions.Item label="能力">{job.capability}</Descriptions.Item>
+        <Descriptions.Item label="基座模型">{job.baseModel}</Descriptions.Item>
+        <Descriptions.Item label="Checkpoint">{job.checkpoint}</Descriptions.Item>
+        <Descriptions.Item label="训练语料">{job.datasetName}</Descriptions.Item>
+        <Descriptions.Item label="语料类型">{DATASET_TYPE_LABELS[job.datasetType]}</Descriptions.Item>
+        <Descriptions.Item label="语料规模">{formatTrainingScale(job)}</Descriptions.Item>
+        <Descriptions.Item label="Context Window">{job.contextWindow.toLocaleString()}</Descriptions.Item>
+        <Descriptions.Item label="LoRA Rank">{job.loraRank ?? '—'}</Descriptions.Item>
         <Descriptions.Item label="Warmup Steps">{job.warmupSteps}</Descriptions.Item>
+        <Descriptions.Item label="Batch Size">{job.batchSize}</Descriptions.Item>
         <Descriptions.Item label="Total Steps">{job.totalSteps}</Descriptions.Item>
-        <Descriptions.Item label="Current Step">{job.currentStep}</Descriptions.Item>
-        <Descriptions.Item label="Max Seq Length">{project?.hyperParams.maxSeqLen ?? '—'}</Descriptions.Item>
-        <Descriptions.Item label="训练框架">{job.framework}</Descriptions.Item>
+        <Descriptions.Item label="框架">{job.framework}</Descriptions.Item>
         <Descriptions.Item label="GPU 资源">{job.gpu}</Descriptions.Item>
-        <Descriptions.Item label="数据集">{project?.datasetName ?? '—'}</Descriptions.Item>
-        <Descriptions.Item label="数据源">{job.dataSource}</Descriptions.Item>
+        <Descriptions.Item label="对齐标签" span={2}>{project?.alignmentTags.join(' / ') ?? '—'}</Descriptions.Item>
       </Descriptions>
     )
   }
@@ -430,7 +491,7 @@ export default function ModelTrainingPage() {
     ? [
         { key: 'metrics', label: '训练指标', children: renderMetricsTab(selectedJob) },
         { key: 'logs', label: '训练日志', children: renderLogsTab(selectedJob) },
-        { key: 'params', label: '超参数', children: renderParamsTab(selectedJob) },
+        { key: 'params', label: '运行参数', children: renderParamsTab(selectedJob) },
       ]
     : []
 
@@ -438,21 +499,19 @@ export default function ModelTrainingPage() {
     <div className="page-container">
       <Card className="section-card">
         <div className="page-header">
-          <Title level={4}>模型训练</Title>
-          <Text type="secondary">L5 训练平台 — 端到端模型训练、评估与注册，加速 AI 能力落地</Text>
+          <Title level={4}>{MODEL_CENTER_PAGE_LABELS.training}</Title>
+          <Text type="secondary">面向 LLM 与 VL 的 SFT、LoRA、QLoRA、DPO 与继续预训练工作台</Text>
         </div>
 
         <Row gutter={[14, 14]} style={{ margin: '16px 0 20px' }}>
-          {statItems.map(s => (
-            <Col span={4} key={s.title}>
+          {statItems.map(item => (
+            <Col span={4} key={item.title}>
               <Card size="small" className="stat-card card-hover" styles={{ body: { padding: '16px 18px' } }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div className="stat-icon-wrap" style={{ background: s.bg, color: s.color }}>
-                    {s.icon}
-                  </div>
+                  <div className="stat-icon-wrap" style={{ background: item.bg, color: item.color }}>{item.icon}</div>
                   <div>
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{s.title}</Text>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>{s.value}</div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{item.title}</Text>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: item.color, lineHeight: 1.2 }}>{item.value}</div>
                   </div>
                 </div>
               </Card>
@@ -462,69 +521,45 @@ export default function ModelTrainingPage() {
 
         <div style={{ marginBottom: 16, textAlign: 'right' }}>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => { setCreateOpen(true); form.resetFields() }}>
-            新建训练项目
+            新建微调项目
           </Button>
         </div>
 
         <Tabs items={tabItems} />
       </Card>
 
-      {/* 训练详情 Drawer */}
       <Drawer
-        title={
-          selectedJob ? (
-            <Space>
-              <Text strong>{selectedJob.name}</Text>
-              <Tag icon={STATUS_ICONS[selectedJob.status]} color={TRAINING_STATUS_COLORS[selectedJob.status]}>
-                {selectedJob.status}
-              </Tag>
-            </Space>
-          ) : '训练详情'
-        }
+        title={selectedJob ? (
+          <Space>
+            <Text strong>{selectedJob.name}</Text>
+            <Tag icon={STATUS_ICONS[selectedJob.status]} color={TRAINING_STATUS_COLORS[selectedJob.status]}>{selectedJob.status}</Tag>
+          </Space>
+        ) : '训练详情'}
         open={drawerOpen}
         onClose={() => { setDrawerOpen(false); setSelectedJob(null) }}
-        width={720}
-        footer={
-          selectedJob ? (
-            <div style={{ textAlign: 'right' }}>
-              <Space>
-                {selectedJob.status === 'Running' && (
-                  <Button danger icon={<StopOutlined />} onClick={() => handleStop(selectedJob.key)}>
-                    停止训练
-                  </Button>
-                )}
-                {(selectedJob.status === 'Failed' || selectedJob.status === 'Completed' || selectedJob.status === 'Stopped') && (
-                  <Button type="primary" icon={<ReloadOutlined />} onClick={() => handleRestart(selectedJob)}>
-                    重新训练
-                  </Button>
-                )}
-                {selectedJob.status === 'Completed' && (
-                  <Button type="primary" icon={<LineChartOutlined />} onClick={() => {
-                    setDrawerOpen(false)
-                    navigate('/model-lab/evaluation')
-                  }}>
-                    去评估
-                  </Button>
-                )}
-              </Space>
-            </div>
-          ) : null
-        }
+        width={760}
+        footer={selectedJob ? (
+          <div style={{ textAlign: 'right' }}>
+            <Space>
+              {selectedJob.status === 'Running' && (
+                <Button danger icon={<StopOutlined />} onClick={() => handleStop(selectedJob.key)}>停止运行</Button>
+              )}
+              {['Failed', 'Completed', 'Stopped'].includes(selectedJob.status) && (
+                <Button type="primary" icon={<ReloadOutlined />} onClick={() => handleRestart(selectedJob)}>重新训练</Button>
+              )}
+              {selectedJob.status === 'Completed' && (
+                <Button type="primary" icon={<LineChartOutlined />} onClick={() => navigate('/model-lab/evaluation')}>去评测与对齐</Button>
+              )}
+            </Space>
+          </div>
+        ) : null}
       >
         {selectedJob && (
           <>
             <div style={{ marginBottom: 16 }}>
               <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                <Text type="secondary">项目: {selectedJob.projectName}</Text>
-                <Progress
-                  percent={selectedJob.progress}
-                  status={
-                    selectedJob.status === 'Failed' ? 'exception'
-                      : selectedJob.status === 'Running' ? 'active'
-                        : undefined
-                  }
-                  format={pct => `${pct}% (${selectedJob.epoch})`}
-                />
+                <Text type="secondary">{getTrainingFacetSummary(selectedJob)}</Text>
+                <Progress percent={selectedJob.progress} format={percent => `${percent}% (${selectedJob.epoch})`} />
               </Space>
             </div>
             <Tabs items={drawerTabItems} />
@@ -532,15 +567,14 @@ export default function ModelTrainingPage() {
         )}
       </Drawer>
 
-      {/* 创建弹窗 */}
       <Modal
-        title={<ModalHeader icon={<ExperimentOutlined />} title="新建训练项目" />}
+        title={<ModalHeader icon={<ExperimentOutlined />} title="新建微调项目" />}
         open={createOpen}
         onCancel={() => { setCreateOpen(false); form.resetFields() }}
         onOk={() => void handleCreate()}
         okText="创建"
         cancelText="取消"
-        width={640}
+        width={700}
         destroyOnClose
       >
         <Form
@@ -548,115 +582,113 @@ export default function ModelTrainingPage() {
           layout="vertical"
           style={{ marginTop: 16 }}
           initialValues={{
-            trainMethod: 'lora',
-            baseModel: 'DeepSeek-V3',
+            baseModel: 'DeepSeek-R1-Distill-32B',
+            trainMethod: 'sft',
+            framework: 'Transformers',
+            gpu: '4 x H100 80GB',
             learningRate: 2e-5,
             batchSize: 16,
-            epochs: 3,
+            epochs: 2,
             warmupSteps: 100,
-            maxSeqLen: 2048,
+            maxSeqLen: 8192,
+            loraRank: 16,
           }}
         >
-          <Divider titlePlacement="left" plain>基本配置</Divider>
+          <Divider titlePlacement="left" plain>模型配置</Divider>
           <Form.Item label="项目名称" name="name" rules={[{ required: true, message: '请输入项目名称' }]}>
-            <Input placeholder="例如: training_churn_predictor" />
+            <Input placeholder="例如: factory-copilot-sft-v3" />
           </Form.Item>
           <Form.Item label="项目描述" name="description" rules={[{ required: true, message: '请输入项目描述' }]}>
-            <Input placeholder="例如: 客户流失预测模型" />
+            <Input placeholder="例如: 工厂知识助手监督微调版本 3" />
           </Form.Item>
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="基座模型" name="baseModel" rules={[{ required: true }]}>
-                <Select>
-                  <Select.Option value="DeepSeek-V3">DeepSeek-V3</Select.Option>
-                  <Select.Option value="DeepSeek-R1">DeepSeek-R1</Select.Option>
-                  <Select.Option value="Qwen-72B">Qwen-72B</Select.Option>
-                  <Select.Option value="GLM-4">GLM-4</Select.Option>
-                  <Select.Option value="Llama-3.1-70B">Llama-3.1-70B</Select.Option>
-                </Select>
+            <Col span={8}>
+              <Form.Item label="模型家族" name="modelFamily" initialValue="LLM">
+                <Radio.Group>
+                  <Radio.Button value="LLM">LLM</Radio.Button>
+                  <Radio.Button value="VL">VL</Radio.Button>
+                </Radio.Group>
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item label="训练方式" name="trainMethod" rules={[{ required: true }]}>
+            <Col span={8}>
+              <Form.Item label="基座模型" name="baseModel" rules={[{ required: true }]}>
+                <Select options={BASE_MODEL_OPTIONS.map(value => ({ label: value, value }))} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="训练阶段" name="trainMethod" rules={[{ required: true }]}>
                 <Radio.Group>
-                  <Radio.Button value="full">Full Fine-tuning</Radio.Button>
+                  <Radio.Button value="sft">SFT</Radio.Button>
                   <Radio.Button value="lora">LoRA</Radio.Button>
                   <Radio.Button value="qlora">QLoRA</Radio.Button>
+                  <Radio.Button value="dpo">DPO</Radio.Button>
                 </Radio.Group>
               </Form.Item>
             </Col>
           </Row>
 
-          <Divider titlePlacement="left" plain>数据与资源</Divider>
+          <Divider titlePlacement="left" plain>语料与资源</Divider>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="训练数据集" name="datasetName" rules={[{ required: true, message: '请选择数据集' }]}>
-                <Select placeholder="选择数据集">
-                  {datasets.map(d => (
-                    <Select.Option key={d.key} value={d.name}>{d.name} ({d.records.toLocaleString()} 条)</Select.Option>
-                  ))}
-                </Select>
+              <Form.Item label="训练语料" name="datasetName" rules={[{ required: true, message: '请选择训练语料' }]}>
+                <Select
+                  placeholder="选择训练语料"
+                  options={datasets.map(dataset => ({
+                    label: `${dataset.name} (${DATASET_TYPE_LABELS[dataset.datasetType]})`,
+                    value: dataset.name,
+                  }))}
+                />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item label="GPU 资源" name="gpu" rules={[{ required: true, message: '请选择 GPU 资源' }]}>
-                <Select placeholder="选择资源">
-                  <Select.Option value="V100 - 16GB">V100 - 16GB</Select.Option>
-                  <Select.Option value="A100 - 40GB">A100 - 40GB</Select.Option>
-                  <Select.Option value="A100 - 80GB">A100 - 80GB</Select.Option>
-                  <Select.Option value="CPU Only">CPU Only</Select.Option>
-                </Select>
+            <Col span={6}>
+              <Form.Item label="运行框架" name="framework" rules={[{ required: true }]}>
+                <Select options={(['Transformers', 'PyTorch'] as Framework[]).map(value => ({ label: value, value }))} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label="GPU 资源" name="gpu" rules={[{ required: true }]}>
+                <Select options={GPU_OPTIONS.map(value => ({ label: value, value }))} />
               </Form.Item>
             </Col>
           </Row>
 
-          <Divider titlePlacement="left" plain>超参数配置</Divider>
+          <Divider titlePlacement="left" plain>超参数</Divider>
           <Row gutter={16}>
-            <Col span={8}>
+            <Col span={6}>
               <Form.Item label="Learning Rate" name="learningRate" rules={[{ required: true }]}>
                 <InputNumber style={{ width: '100%' }} min={1e-7} max={1e-2} step={1e-6} />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col span={6}>
               <Form.Item label="Batch Size" name="batchSize" rules={[{ required: true }]}>
-                <Select>
-                  <Select.Option value={8}>8</Select.Option>
-                  <Select.Option value={16}>16</Select.Option>
-                  <Select.Option value={32}>32</Select.Option>
-                  <Select.Option value={64}>64</Select.Option>
-                </Select>
+                <InputNumber style={{ width: '100%' }} min={1} max={128} />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col span={6}>
               <Form.Item label="Epochs" name="epochs" rules={[{ required: true }]}>
-                <InputNumber style={{ width: '100%' }} min={1} max={200} />
+                <InputNumber style={{ width: '100%' }} min={1} max={10} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label="Warmup Steps" name="warmupSteps" rules={[{ required: true }]}>
+                <InputNumber style={{ width: '100%' }} min={0} max={5000} />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item label="Warmup Steps" name="warmupSteps" rules={[{ required: true }]}>
-                <InputNumber style={{ width: '100%' }} min={0} max={10000} step={10} />
+              <Form.Item label="Context Length" name="maxSeqLen" rules={[{ required: true }]}>
+                <Select options={[4096, 8192, 16384, 32768].map(value => ({ label: value.toLocaleString(), value }))} />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label="Max Sequence Length" name="maxSeqLen" rules={[{ required: true }]}>
-                <Select>
-                  <Select.Option value={512}>512</Select.Option>
-                  <Select.Option value={1024}>1024</Select.Option>
-                  <Select.Option value={2048}>2048</Select.Option>
-                  <Select.Option value={4096}>4096</Select.Option>
-                </Select>
+              <Form.Item label="LoRA Rank" name="loraRank">
+                <InputNumber style={{ width: '100%' }} min={4} max={128} />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label="框架" name="framework" rules={[{ required: true }]}>
-                <Select placeholder="选择框架">
-                  <Select.Option value="PyTorch">PyTorch</Select.Option>
-                  <Select.Option value="TensorFlow">TensorFlow</Select.Option>
-                  <Select.Option value="scikit-learn">scikit-learn</Select.Option>
-                  <Select.Option value="Transformers">Transformers</Select.Option>
-                </Select>
+              <Form.Item label="说明" tooltip="DPO 或全量 SFT 时可忽略 LoRA Rank">
+                <Input value="支持 LLM / VL 微调配置" disabled />
               </Form.Item>
             </Col>
           </Row>
