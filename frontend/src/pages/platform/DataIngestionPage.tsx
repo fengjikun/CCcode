@@ -199,30 +199,6 @@ export default function DataIngestionPage() {
               />
             </Card>
           </Col>
-
-          <Col xs={24} xl={7}>
-            <Space direction="vertical" size={16} style={{ width: '100%' }}>
-              <Card title="当前对齐原则">
-                <Space direction="vertical" size={10}>
-                  <Text>接入任务不再维护独立 mock 数据，统一来自数据源列表。</Text>
-                  <Text>页面统计口径与数据源页保持一致，避免两边数字不同步。</Text>
-                  <Text>后续如果支持“一源多任务”，再从数据源模型中拆出独立任务实体。</Text>
-                  <Text>当前阶段先保证信息架构和底层数据模型一致。</Text>
-                </Space>
-              </Card>
-
-              <Card title="后续可补字段">
-                <Space size={[6, 6]} wrap>
-                  <Tag color="green">增量水位</Tag>
-                  <Tag color="blue">失败原因</Tag>
-                  <Tag color="purple">重试次数</Tag>
-                  <Tag color="gold">任务日志</Tag>
-                  <Tag color="cyan">SLA</Tag>
-                  <Tag color="red">告警订阅</Tag>
-                </Space>
-              </Card>
-            </Space>
-          </Col>
         </Row>
       </Card>
     </div>

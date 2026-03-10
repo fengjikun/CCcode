@@ -9,7 +9,7 @@ import {
 } from '../../../api/projectManagement'
 import type { ActionDefinition, ActionStatus, EntityTypeConfig, FunctionDefinition } from '../../../types/projectMvp'
 import { getErrorMessage } from '../helpers'
-import { buildTargetEntityOptions, normalizeTargetEntityValue } from './ActionsTab.helpers'
+import { buildTargetEntityOptions, normalizeTargetEntityValues } from './ActionsTab.helpers'
 
 interface ActionsTabProps {
   projectId: string
@@ -130,8 +130,8 @@ const labelStyle: React.CSSProperties = { display: 'block', marginBottom: 4, fon
 function BasicInfoTab({ action, projectId, entityTypes, onRefresh }: { action: ActionDefinition; projectId: string; entityTypes: EntityTypeConfig[]; onRefresh: () => void }) {
   const [displayName, setDisplayName] = useState(action.displayName || '')
   const [description, setDescription] = useState(action.description || '')
-  const [targetObjectTypeId, setTargetObjectTypeId] = useState<string | null>(
-    normalizeTargetEntityValue(action.targetObjectTypeId, entityTypes) ?? null,
+  const [targetObjectTypeIds, setTargetObjectTypeIds] = useState<string[]>(
+    normalizeTargetEntityValues(action.targetObjectTypeId, entityTypes),
   )
   const [saving, setSaving] = useState(false)
   const targetEntityOptions = buildTargetEntityOptions(entityTypes)
@@ -139,13 +139,17 @@ function BasicInfoTab({ action, projectId, entityTypes, onRefresh }: { action: A
   useEffect(() => {
     setDisplayName(action.displayName || '')
     setDescription(action.description || '')
-    setTargetObjectTypeId(normalizeTargetEntityValue(action.targetObjectTypeId, entityTypes) ?? null)
+    setTargetObjectTypeIds(normalizeTargetEntityValues(action.targetObjectTypeId, entityTypes))
   }, [action, entityTypes])
 
   const save = async () => {
     setSaving(true)
     try {
-      await updateProjectAction(projectId, action.id, { displayName, description, targetObjectTypeId })
+      await updateProjectAction(projectId, action.id, {
+        displayName,
+        description,
+        targetObjectTypeId: targetObjectTypeIds.length > 0 ? targetObjectTypeIds : null,
+      })
       message.success('已保存')
       onRefresh()
     } catch (error: unknown) {
@@ -179,12 +183,14 @@ function BasicInfoTab({ action, projectId, entityTypes, onRefresh }: { action: A
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>关联目标实体</label>
         <Select
+          mode="multiple"
           style={{ width: '100%' }}
-          placeholder="请选择目标实体类型"
+          placeholder="请选择一个或多个目标实体类型"
           allowClear
-          value={targetObjectTypeId ?? undefined}
+          maxTagCount="responsive"
+          value={targetObjectTypeIds}
           options={targetEntityOptions}
-          onChange={(val: string | undefined) => setTargetObjectTypeId(val ?? null)}
+          onChange={(vals: string[]) => setTargetObjectTypeIds(vals)}
         />
       </div>
       <div style={{ marginBottom: 16 }}>

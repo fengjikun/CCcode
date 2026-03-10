@@ -193,7 +193,7 @@ export interface ActionDefinition {
   displayName?: string
   description?: string
   status: ActionStatus
-  targetObjectTypeId?: string | number | null
+  targetObjectTypeId?: string | number | Array<string | number> | null
   triggerType?: string
   triggerConfigJson?: string
   exceptionPolicy?: string

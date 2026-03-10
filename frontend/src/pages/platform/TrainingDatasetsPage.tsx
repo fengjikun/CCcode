@@ -41,12 +41,14 @@ import {
   listDatasets,
   updateBuildProgress,
 } from '../../api/trainingDataset'
+import { listProjects } from '../../api/projectManagement'
 import ModalHeader from '../../components/shared/ModalHeader'
 import {
   DATASET_TYPE_LABELS,
   MODEL_CENTER_PAGE_LABELS,
   MODEL_MODALITY_LABELS,
 } from '../../types/modelCenter'
+import type { ProjectSummary } from '../../types/projectMvp'
 import type { DatasetFormat, DatasetStatus, TrainingDataset } from '../../types/trainingDataset'
 import {
   DATASET_STATUS_COLORS,
@@ -55,6 +57,14 @@ import {
 import { formatDatasetScale, summarizeDatasetSample } from './trainingDatasets.helpers'
 
 const { Title, Text } = Typography
+
+interface CreateDatasetFormValues extends Partial<TrainingDataset> {
+  sourceProjectId: string
+}
+
+function buildOntologyDatasetSource(project: Pick<ProjectSummary, 'name'>) {
+  return `ontology://${project.name}`
+}
 
 function renderSamplePreview(sample: Record<string, unknown>) {
   if (Array.isArray(sample.messages)) {
@@ -79,6 +89,8 @@ function renderSamplePreview(sample: Record<string, unknown>) {
 
 export default function TrainingDatasetsPage() {
   const [datasets, setDatasets] = useState<TrainingDataset[]>([])
+  const [ontologyProjects, setOntologyProjects] = useState<ProjectSummary[]>([])
+  const [ontologyLoading, setOntologyLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [form] = Form.useForm()
@@ -93,12 +105,28 @@ export default function TrainingDatasetsPage() {
     setStats(datasetStats)
   }, [])
 
+  const loadOntologyProjects = useCallback(async () => {
+    setOntologyLoading(true)
+    try {
+      const projectList = await listProjects()
+      setOntologyProjects(projectList)
+    } catch (error: unknown) {
+      message.error((error as Error)?.message || '加载本体列表失败')
+    } finally {
+      setOntologyLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     void reload()
+    void loadOntologyProjects()
     return () => {
       buildTimersRef.current.forEach(timer => clearInterval(timer))
     }
-  }, [reload])
+  }, [loadOntologyProjects, reload])
+
+  const selectedSourceProjectId = Form.useWatch('sourceProjectId', form)
+  const selectedSourceProject = ontologyProjects.find(project => project.id === selectedSourceProjectId)
 
   const filtered = datasets.filter(dataset => {
     const query = search.toLowerCase()
@@ -110,8 +138,19 @@ export default function TrainingDatasetsPage() {
 
   const handleCreate = async () => {
     try {
-      const values = await form.validateFields()
-      await createDataset(values)
+      const values = await form.validateFields() as CreateDatasetFormValues
+      const sourceProject = ontologyProjects.find(project => project.id === values.sourceProjectId)
+
+      if (!sourceProject) {
+        message.error('请选择来源本体')
+        return
+      }
+
+      const { sourceProjectId: _sourceProjectId, ...datasetValues } = values
+      await createDataset({
+        ...datasetValues,
+        source: buildOntologyDatasetSource(sourceProject),
+      })
       message.success('训练语料已创建')
       setCreateOpen(false)
       form.resetFields()
@@ -291,7 +330,12 @@ export default function TrainingDatasetsPage() {
             prefix={<SearchOutlined />}
             style={{ width: 320 }}
           />
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setCreateOpen(true)}
+            disabled={!ontologyLoading && ontologyProjects.length === 0}
+          >
             新建语料包
           </Button>
         </div>
@@ -372,6 +416,7 @@ export default function TrainingDatasetsPage() {
         cancelText="取消"
         width={720}
         destroyOnClose
+        okButtonProps={{ disabled: !ontologyLoading && ontologyProjects.length === 0 }}
       >
         <Form
           form={form}
@@ -391,8 +436,26 @@ export default function TrainingDatasetsPage() {
           <Form.Item label="语料包名称" name="name" rules={[{ required: true, message: '请输入名称' }]}>
             <Input placeholder="例如: factory_instruction_corpus_v3" />
           </Form.Item>
-          <Form.Item label="语料来源" name="source" rules={[{ required: true, message: '请输入来源' }]}>
-            <Input placeholder="例如: corpus://factory-copilot-dialog-sft-v3" />
+          <Form.Item
+            label="语料来源"
+            name="sourceProjectId"
+            rules={[{ required: true, message: '请选择来源本体' }]}
+            extra={selectedSourceProject
+              ? `将生成来源标识：${buildOntologyDatasetSource(selectedSourceProject)}`
+              : '语料来源从 L3 本体列表获取，创建后自动生成 ontology:// 来源标识'}
+          >
+            <Select
+              showSearch
+              loading={ontologyLoading}
+              placeholder={ontologyLoading ? '正在加载本体列表...' : '请选择来源本体'}
+              disabled={!ontologyLoading && ontologyProjects.length === 0}
+              optionFilterProp="label"
+              notFoundContent={ontologyLoading ? '正在加载...' : '暂无可用本体，请先到本体列表创建'}
+              options={ontologyProjects.map(project => ({
+                value: project.id,
+                label: project.name,
+              }))}
+            />
           </Form.Item>
           <Row gutter={16}>
             <Col span={8}>

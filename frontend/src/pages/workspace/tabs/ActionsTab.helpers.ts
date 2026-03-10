@@ -7,16 +7,21 @@ export function buildTargetEntityOptions(entityTypes: EntityTypeConfig[]) {
   }))
 }
 
-export function normalizeTargetEntityValue(
+export function normalizeTargetEntityValues(
   targetObjectTypeId: ActionDefinition['targetObjectTypeId'],
   entityTypes: EntityTypeConfig[],
-): string | undefined {
+): string[] {
   if (targetObjectTypeId === null || targetObjectTypeId === undefined) {
-    return undefined
+    return []
   }
 
-  const normalizedValue = String(targetObjectTypeId)
-  return entityTypes.some(entityType => entityType.id === normalizedValue)
-    ? normalizedValue
-    : undefined
+  const validEntityTypeIds = new Set(entityTypes.map(entityType => entityType.id))
+  const rawValues = Array.isArray(targetObjectTypeId) ? targetObjectTypeId : [targetObjectTypeId]
+
+  return [...new Set(
+    rawValues
+      .filter(value => value !== null && value !== undefined)
+      .map(value => String(value))
+      .filter(value => validEntityTypeIds.has(value)),
+  )]
 }
