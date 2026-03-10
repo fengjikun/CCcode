@@ -25,7 +25,9 @@ import GraphPage from './pages/GraphPage'
 import TransformPage from './pages/platform/TransformPage'
 
 // L5+L6 大模型 Lab
-import ModelGatewayPage from './pages/platform/ModelGatewayPage'
+import GatewayModelsPage from './pages/platform/GatewayModelsPage'
+import GatewayApiKeysPage from './pages/platform/GatewayApiKeysPage'
+import GatewayUsagePage from './pages/platform/GatewayUsagePage'
 import ModelTrainingPage from './pages/platform/ModelTrainingPage'
 import TrainingDatasetsPage from './pages/platform/TrainingDatasetsPage'
 import ModelEvaluationPage from './pages/platform/ModelEvaluationPage'
@@ -83,7 +85,10 @@ export default function App() {
         <Route path="/transform" element={<TransformPage />} />
 
         {/* L5+L6 大模型 Lab */}
-        <Route path="/model-lab/gateway" element={<ModelGatewayPage />} />
+        <Route path="/model-lab/gateway" element={<Navigate to="/model-lab/gateway/models" replace />} />
+        <Route path="/model-lab/gateway/models" element={<GatewayModelsPage />} />
+        <Route path="/model-lab/gateway/api-keys" element={<GatewayApiKeysPage />} />
+        <Route path="/model-lab/gateway/usage" element={<GatewayUsagePage />} />
         <Route path="/model-lab/training" element={<ModelTrainingPage />} />
         <Route path="/model-lab/evaluation" element={<ModelEvaluationPage />} />
         <Route path="/model-lab/datasets" element={<TrainingDatasetsPage />} />

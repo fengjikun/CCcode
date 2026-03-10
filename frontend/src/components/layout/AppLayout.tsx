@@ -21,13 +21,15 @@ import {
   DesktopOutlined,
   ProjectOutlined,
   LineChartOutlined,
+  CloudServerOutlined,
+  SafetyCertificateOutlined,
   BellOutlined,
   SettingOutlined,
   QuestionCircleOutlined,
   RightOutlined,
 } from '@ant-design/icons'
 import { clearAuthSession, getAuthUser } from '../../auth/session'
-import { MODEL_CENTER_PAGE_LABELS } from '../../types/modelCenter'
+import { MODEL_CENTER_PAGE_LABELS, MODEL_GATEWAY_PAGE_LABELS } from '../../types/modelCenter'
 
 const { Sider, Content, Header } = Layout
 
@@ -53,8 +55,8 @@ const menuItems: MenuItem[] = [
     icon: <RobotOutlined />,
     label: 'workspace 工作台',
     children: [
-      { key: '/studio/skills', icon: <AppstoreOutlined />, label: 'Skills Hub' },
       { key: '/studio/agents', icon: <RobotOutlined />, label: '智能体编排' },
+      { key: '/studio/skills', icon: <AppstoreOutlined />, label: 'Skills Hub' },
       { key: '/studio/agents/logs', icon: <FileSearchOutlined />, label: '智能体日志' },
     ],
   },
@@ -72,7 +74,16 @@ const menuItems: MenuItem[] = [
     icon: <ExperimentOutlined />,
     label: '模型中心',
     children: [
-      { key: '/model-lab/gateway', icon: <ApiOutlined />, label: MODEL_CENTER_PAGE_LABELS.gateway },
+      {
+        key: 'model-lab-gateway',
+        icon: <ApiOutlined />,
+        label: MODEL_CENTER_PAGE_LABELS.gateway,
+        children: [
+          { key: '/model-lab/gateway/models', icon: <CloudServerOutlined />, label: MODEL_GATEWAY_PAGE_LABELS.models },
+          { key: '/model-lab/gateway/api-keys', icon: <SafetyCertificateOutlined />, label: MODEL_GATEWAY_PAGE_LABELS.apiKeys },
+          { key: '/model-lab/gateway/usage', icon: <LineChartOutlined />, label: MODEL_GATEWAY_PAGE_LABELS.usage },
+        ],
+      },
       { key: '/model-lab/training', icon: <ExperimentOutlined />, label: MODEL_CENTER_PAGE_LABELS.training },
       { key: '/model-lab/evaluation', icon: <LineChartOutlined />, label: MODEL_CENTER_PAGE_LABELS.evaluation },
       { key: '/model-lab/datasets', icon: <FolderOpenOutlined />, label: MODEL_CENTER_PAGE_LABELS.datasets },
@@ -102,6 +113,9 @@ const PAGE_TITLES: Record<string, [string, string]> = {
   '/ontology/graph': ['Deepology', '图谱检索'],
   '/transform': ['', '数据转换'],
   '/model-lab/gateway': ['大模型Lab', MODEL_CENTER_PAGE_LABELS.gateway],
+  '/model-lab/gateway/models': [MODEL_CENTER_PAGE_LABELS.gateway, MODEL_GATEWAY_PAGE_LABELS.models],
+  '/model-lab/gateway/api-keys': [MODEL_CENTER_PAGE_LABELS.gateway, MODEL_GATEWAY_PAGE_LABELS.apiKeys],
+  '/model-lab/gateway/usage': [MODEL_CENTER_PAGE_LABELS.gateway, MODEL_GATEWAY_PAGE_LABELS.usage],
   '/model-lab/training': ['大模型Lab', MODEL_CENTER_PAGE_LABELS.training],
   '/model-lab/evaluation': ['大模型Lab', MODEL_CENTER_PAGE_LABELS.evaluation],
   '/model-lab/datasets': ['大模型Lab', MODEL_CENTER_PAGE_LABELS.datasets],
@@ -140,19 +154,22 @@ function findPageInfo(pathname: string): [string, string] {
   return PAGE_TITLES[pathname] || ['', '']
 }
 
-function findOpenKeys(pathname: string): string[] {
-  const selected = findSelectedKey(pathname)
-  const keys: string[] = []
-  for (const item of menuItems) {
-    if (item && 'children' in item && item.children) {
-      for (const child of item.children as MenuItem[]) {
-        if (child && 'key' in child && child.key === selected) {
-          keys.push(item.key as string)
-        }
-      }
+function findParentTrail(items: MenuItem[], target: string, parents: string[] = []): string[] {
+  for (const item of items) {
+    if (!item || !('key' in item)) continue
+    const key = item.key as string
+    if (key === target) return parents
+    if ('children' in item && item.children) {
+      const trail = findParentTrail(item.children as MenuItem[], target, [...parents, key])
+      if (trail.length > 0) return trail
     }
   }
-  return keys
+  return []
+}
+
+function findOpenKeys(pathname: string): string[] {
+  const selected = findSelectedKey(pathname)
+  return findParentTrail(menuItems, selected)
 }
 
 export default function AppLayout() {

@@ -8,6 +8,7 @@ import {
   DATASET_TYPE_LABELS,
   MODEL_CENTER_PAGE_LABELS,
   MODEL_FAMILY_LABELS,
+  MODEL_GATEWAY_PAGE_LABELS,
   MODEL_MODALITY_LABELS,
   TRAIN_STAGE_LABELS,
 } from './modelCenter'
@@ -102,6 +103,14 @@ describe('modelCenter shared domain vocabulary', () => {
       training: '训练与微调',
       evaluation: '评测与对齐',
       datasets: '训练语料',
+    })
+  })
+
+  it('exposes the gateway secondary navigation labels', () => {
+    expect(MODEL_GATEWAY_PAGE_LABELS).toEqual({
+      models: '模型中心',
+      apiKeys: 'API Key',
+      usage: '使用统计',
     })
   })
 })

@@ -49,3 +49,9 @@ export const MODEL_CENTER_PAGE_LABELS = {
   evaluation: '评测与对齐',
   datasets: '训练语料',
 } as const
+
+export const MODEL_GATEWAY_PAGE_LABELS = {
+  models: '模型中心',
+  apiKeys: 'API Key',
+  usage: '使用统计',
+} as const

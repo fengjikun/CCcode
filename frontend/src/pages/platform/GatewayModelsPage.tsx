@@ -27,14 +27,12 @@ import {
   RollbackOutlined,
   SafetyCertificateOutlined,
   ThunderboltOutlined,
-  WarningOutlined,
 } from '@ant-design/icons'
+
 import {
   deployModel,
   getGatewayStats,
-  getHourlyTraffic,
   getMonitoringStats,
-  getRecentErrors,
   listModels,
   listRoutes,
   promoteModel,
@@ -42,20 +40,29 @@ import {
   updateTrafficWeight,
 } from '../../api/modelGateway'
 import ModalHeader from '../../components/shared/ModalHeader'
-import { MODEL_CENTER_PAGE_LABELS } from '../../types/modelCenter'
+import PageHeader from '../../components/shared/PageHeader'
+import type { GatewayStats, MonitoringStats } from '../../api/modelGateway'
 import type { DeployConfig, GatewayRoute, ModelStage, RegisteredModel } from '../../types/modelGateway'
 import { MODEL_STAGE_COLORS } from '../../types/modelGateway'
-import type { GatewayStats, HourlyTraffic, MonitoringStats, RecentError } from '../../api/modelGateway'
+import { MODEL_CENTER_PAGE_LABELS, MODEL_GATEWAY_PAGE_LABELS } from '../../types/modelCenter'
 import { formatGatewayQuota, summarizeGatewayCapability } from './modelGateway.helpers'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 const GPU_OPTIONS = [
   { label: 'A100-80GB', value: 'A100-80GB' },
   { label: 'H100-80GB', value: 'H100-80GB' },
 ]
 
-export default function ModelGatewayPage() {
+const DEFAULT_DEPLOY_CONFIG: DeployConfig = {
+  replicas: 2,
+  gpuType: 'A100-80GB',
+  maxQps: 1000,
+  canaryWeight: 10,
+  targetStage: 'Staging',
+}
+
+export default function GatewayModelsPage() {
   const [stats, setStats] = useState<GatewayStats>({
     deployedModels: 0,
     totalQps: '0',
@@ -65,48 +72,35 @@ export default function ModelGatewayPage() {
     canaryCount: 0,
     stagingCount: 0,
   })
-  const [models, setModels] = useState<RegisteredModel[]>([])
-  const [routes, setRoutes] = useState<GatewayRoute[]>([])
-  const [deployModalOpen, setDeployModalOpen] = useState(false)
-  const [deployTarget, setDeployTarget] = useState<RegisteredModel | null>(null)
-  const [deployConfig, setDeployConfig] = useState<DeployConfig>({
-    replicas: 2,
-    gpuType: 'A100-40GB',
-    maxQps: 1000,
-    canaryWeight: 10,
-  })
-  const [deployTargetStage, setDeployTargetStage] = useState<'Staging' | 'Canary' | 'Production'>('Staging')
-  const [trafficModalOpen, setTrafficModalOpen] = useState(false)
-  const [trafficRoute, setTrafficRoute] = useState<GatewayRoute | null>(null)
-  const [trafficWeight, setTrafficWeight] = useState(50)
   const [monitorStats, setMonitorStats] = useState<MonitoringStats>({
     todayRequests: 0,
     successRate: '—',
     avgLatency: '—',
     p99Latency: '—',
   })
-  const [hourlyTraffic, setHourlyTraffic] = useState<HourlyTraffic[]>([])
-  const [recentErrors, setRecentErrors] = useState<RecentError[]>([])
-  const maxTraffic = Math.max(1, ...hourlyTraffic.map(item => item.requests))
+  const [models, setModels] = useState<RegisteredModel[]>([])
+  const [routes, setRoutes] = useState<GatewayRoute[]>([])
+  const [deployModalOpen, setDeployModalOpen] = useState(false)
+  const [deployTarget, setDeployTarget] = useState<RegisteredModel | null>(null)
+  const [deployConfig, setDeployConfig] = useState<DeployConfig>(DEFAULT_DEPLOY_CONFIG)
+  const [trafficModalOpen, setTrafficModalOpen] = useState(false)
+  const [trafficRoute, setTrafficRoute] = useState<GatewayRoute | null>(null)
+  const [trafficWeight, setTrafficWeight] = useState(50)
+
+  const loadData = () => {
+    void getGatewayStats().then(setStats)
+    void getMonitoringStats().then(setMonitorStats)
+    void listModels().then(setModels)
+    void listRoutes().then(setRoutes)
+  }
 
   useEffect(() => {
-    getGatewayStats().then(setStats)
-    listModels().then(setModels)
-    listRoutes().then(setRoutes)
-    getMonitoringStats().then(setMonitorStats)
-    getHourlyTraffic().then(setHourlyTraffic)
-    getRecentErrors().then(setRecentErrors)
+    loadData()
   }, [])
-
-  const refreshData = () => {
-    getGatewayStats().then(setStats)
-    listModels().then(setModels)
-    listRoutes().then(setRoutes)
-  }
 
   const statItems = [
     { title: '已部署服务', value: stats.deployedModels, icon: <CloudServerOutlined />, color: '#4f46e5', bg: '#eef2ff' },
-    { title: '日请求量', value: stats.totalQps, icon: <ThunderboltOutlined />, color: '#0891b2', bg: '#ecfeff' },
+    { title: '网关总 QPS', value: stats.totalQps, icon: <ThunderboltOutlined />, color: '#0891b2', bg: '#ecfeff' },
     { title: '平均延迟', value: stats.avgLatency, icon: <DashboardOutlined />, color: '#16a34a', bg: '#f0fdf4' },
     { title: '可用率', value: stats.availability, icon: <SafetyCertificateOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
     { title: 'Production', value: stats.productionCount, icon: <CheckCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
@@ -119,36 +113,33 @@ export default function ModelGatewayPage() {
       replicas: record.replicas || 2,
       gpuType: record.gpuType || 'A100-80GB',
       maxQps: record.rpm,
-      canaryWeight: 10,
+      canaryWeight: record.stage === 'Canary' ? 20 : 10,
+      targetStage: record.stage === 'Staging' ? 'Canary' : 'Staging',
     })
-    setDeployTargetStage(record.stage === 'Staging' ? 'Canary' : 'Staging')
     setDeployModalOpen(true)
   }
 
   const handleDeploy = async () => {
     if (!deployTarget) return
     const result = await deployModel(deployTarget.key, deployConfig)
-    if (result.success) {
-      message.success(result.message)
-      setDeployModalOpen(false)
-      refreshData()
-    }
+    if (!result.success) return
+    message.success(result.message)
+    setDeployModalOpen(false)
+    loadData()
   }
 
-  const handlePromote = async (record: RegisteredModel, toStage: string) => {
+  const handlePromote = async (record: RegisteredModel, toStage: 'Canary' | 'Production') => {
     const result = await promoteModel(record.key, record.stage, toStage)
-    if (result.success) {
-      message.success(result.message)
-      refreshData()
-    }
+    if (!result.success) return
+    message.success(result.message)
+    loadData()
   }
 
   const handleRollback = async (record: RegisteredModel) => {
     const result = await rollbackModel(record.key)
-    if (result.success) {
-      message.success(result.message)
-      refreshData()
-    }
+    if (!result.success) return
+    message.success(result.message)
+    loadData()
   }
 
   const handleOpenTraffic = (route: GatewayRoute) => {
@@ -160,11 +151,10 @@ export default function ModelGatewayPage() {
   const handleUpdateTraffic = async () => {
     if (!trafficRoute) return
     const result = await updateTrafficWeight(trafficRoute.key, trafficWeight)
-    if (result.success) {
-      message.success(result.message)
-      setTrafficModalOpen(false)
-      refreshData()
-    }
+    if (!result.success) return
+    message.success(result.message)
+    setTrafficModalOpen(false)
+    loadData()
   }
 
   const modelColumns = [
@@ -185,7 +175,9 @@ export default function ModelGatewayPage() {
       render: (_: unknown, record: RegisteredModel) => (
         <Space direction="vertical" size={2}>
           <Text>{summarizeGatewayCapability(record)}</Text>
-          <Text type="secondary" style={{ fontSize: 12 }}>Context {record.contextWindow.toLocaleString()} / Max Output {record.maxOutputTokens.toLocaleString()}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            Context {record.contextWindow.toLocaleString()} / Max Output {record.maxOutputTokens.toLocaleString()}
+          </Text>
         </Space>
       ),
     },
@@ -204,8 +196,6 @@ export default function ModelGatewayPage() {
       dataIndex: 'stage',
       key: 'stage',
       width: 110,
-      filters: ['Production', 'Staging', 'Canary', 'Archived'].map(stage => ({ text: stage, value: stage })),
-      onFilter: (value: unknown, record: RegisteredModel) => record.stage === value,
       render: (value: ModelStage) => <Tag color={MODEL_STAGE_COLORS[value]}>{value}</Tag>,
     },
     {
@@ -231,25 +221,30 @@ export default function ModelGatewayPage() {
                 <Button type="link" size="small" icon={<RocketOutlined />} onClick={() => handleOpenDeploy(record)}>
                   发布
                 </Button>
-                <Popconfirm title="确认推进到灰度？" onConfirm={() => handlePromote(record, 'Canary')}>
+                <Popconfirm title="确认推进到灰度？" onConfirm={() => void handlePromote(record, 'Canary')}>
                   <Button type="link" size="small" icon={<ExperimentOutlined />}>灰度</Button>
                 </Popconfirm>
               </>
             )}
             {record.stage === 'Canary' && (
               <>
-                <Popconfirm title="确认全量上线？" onConfirm={() => handlePromote(record, 'Production')}>
+                <Popconfirm title="确认全量上线？" onConfirm={() => void handlePromote(record, 'Production')}>
                   <Button type="link" size="small" icon={<CheckCircleOutlined />} style={{ color: '#52c41a' }}>上线</Button>
                 </Popconfirm>
-                <Popconfirm title="确认回滚？" onConfirm={() => handleRollback(record)}>
+                <Popconfirm title="确认回滚？" onConfirm={() => void handleRollback(record)}>
                   <Button type="link" size="small" icon={<RollbackOutlined />} danger>回滚</Button>
                 </Popconfirm>
               </>
             )}
             {record.stage === 'Production' && (
-              <Popconfirm title="确认回滚？" onConfirm={() => handleRollback(record)}>
-                <Button type="link" size="small" icon={<RollbackOutlined />} danger>回滚</Button>
-              </Popconfirm>
+              <>
+                <Button type="link" size="small" icon={<RocketOutlined />} onClick={() => handleOpenDeploy(record)}>
+                  调整
+                </Button>
+                <Popconfirm title="确认回滚？" onConfirm={() => void handleRollback(record)}>
+                  <Button type="link" size="small" icon={<RollbackOutlined />} danger>回滚</Button>
+                </Popconfirm>
+              </>
             )}
           </Space>
         )
@@ -264,10 +259,11 @@ export default function ModelGatewayPage() {
     { title: '版本', dataIndex: 'version', key: 'version', width: 110 },
     { title: '流量权重', dataIndex: 'weight', key: 'weight', width: 100, render: (value: number) => `${value}%` },
     { title: '限流', dataIndex: 'rateLimit', key: 'rateLimit', width: 100, render: (value: number) => `${value} RPM` },
+    { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (value: GatewayRoute['status']) => <Tag color={value === 'Active' ? 'green' : 'default'}>{value}</Tag> },
     {
       title: '操作',
       key: 'action',
-      width: 90,
+      width: 96,
       render: (_: unknown, route: GatewayRoute) => (
         <Button type="link" size="small" onClick={() => handleOpenTraffic(route)}>
           调整流量
@@ -278,13 +274,13 @@ export default function ModelGatewayPage() {
 
   return (
     <div className="page-container">
-      <Card className="section-card">
-        <div className="page-header">
-          <Title level={4}>{MODEL_CENTER_PAGE_LABELS.gateway}</Title>
-          <Text type="secondary">统一发布 LLM / VL 推理服务，管理能力入口、流量权重、灰度推进和延迟 SLA</Text>
-        </div>
+      <PageHeader
+        title={MODEL_GATEWAY_PAGE_LABELS.models}
+        subtitle={`${MODEL_CENTER_PAGE_LABELS.gateway}下的模型服务、发布节奏与能力路由管理。`}
+      />
 
-        <Row gutter={[14, 14]} style={{ margin: '16px 0 20px' }}>
+      <Space direction="vertical" size={16} style={{ width: '100%' }}>
+        <Row gutter={[14, 14]}>
           {statItems.map(item => (
             <Col span={4} key={item.title}>
               <Card size="small" className="stat-card card-hover" styles={{ body: { padding: '16px 18px' } }}>
@@ -307,7 +303,7 @@ export default function ModelGatewayPage() {
             </Card>
           </Col>
           <Col span={8}>
-            <Card size="small" title="运行概览" style={{ marginBottom: 16 }}>
+            <Card size="small" title="运行基线" style={{ marginBottom: 16 }}>
               <Descriptions bordered size="small" column={1}>
                 <Descriptions.Item label="今日请求">{monitorStats.todayRequests.toLocaleString()}</Descriptions.Item>
                 <Descriptions.Item label="成功率">{monitorStats.successRate}</Descriptions.Item>
@@ -315,51 +311,29 @@ export default function ModelGatewayPage() {
                 <Descriptions.Item label="P99 延迟">{monitorStats.p99Latency}</Descriptions.Item>
               </Descriptions>
             </Card>
-            <Card size="small" title="小时流量">
-              <Space direction="vertical" size={10} style={{ width: '100%' }}>
-                {hourlyTraffic.map(item => (
-                  <div key={item.hour}>
-                    <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                      <Text>{item.hour}</Text>
-                      <Text type="secondary">{item.requests.toLocaleString()}</Text>
-                    </Space>
-                    <div style={{ height: 8, borderRadius: 999, background: '#f3f4f6', overflow: 'hidden' }}>
-                      <div style={{ width: `${(item.requests / maxTraffic) * 100}%`, height: '100%', background: 'linear-gradient(90deg, #1677ff 0%, #52c41a 100%)' }} />
-                    </div>
-                  </div>
-                ))}
+            <Card size="small" title="发布策略">
+              <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                <div>
+                  <Text strong>1. Staging</Text>
+                  <div><Text type="secondary">验证新模型参数、资源规格与路由映射。</Text></div>
+                </div>
+                <div>
+                  <Text strong>2. Canary</Text>
+                  <div><Text type="secondary">逐步放量，默认从 10% 流量开始。</Text></div>
+                </div>
+                <div>
+                  <Text strong>3. Production</Text>
+                  <div><Text type="secondary">全量生效并纳入网关 SLA 监控。</Text></div>
+                </div>
               </Space>
             </Card>
           </Col>
         </Row>
 
-        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-          <Col span={16}>
-            <Card size="small" title="能力路由">
-              <Table dataSource={routes} columns={routeColumns} rowKey="key" pagination={false} size="small" />
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card size="small" title="最近错误">
-              <Space direction="vertical" size={10} style={{ width: '100%' }}>
-                {recentErrors.map(error => (
-                  <Card key={error.key} size="small" styles={{ body: { padding: 12 } }}>
-                    <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                      <Space size={8}>
-                        <WarningOutlined style={{ color: '#f59e0b' }} />
-                        <Text strong>{error.model}</Text>
-                        <Tag>{error.errorCode}</Tag>
-                      </Space>
-                      <Text type="secondary" style={{ fontSize: 12 }}>{error.time}</Text>
-                      <Text style={{ fontSize: 12 }}>{error.errorMessage}</Text>
-                    </Space>
-                  </Card>
-                ))}
-              </Space>
-            </Card>
-          </Col>
-        </Row>
-      </Card>
+        <Card size="small" title="能力路由">
+          <Table dataSource={routes} columns={routeColumns} rowKey="key" pagination={false} size="small" />
+        </Card>
+      </Space>
 
       <Modal
         title={<ModalHeader icon={<GatewayOutlined />} title="发布推理服务" />}
@@ -397,14 +371,36 @@ export default function ModelGatewayPage() {
             <Col span={8}>
               <Text type="secondary">目标阶段</Text>
               <Radio.Group
-                value={deployTargetStage}
-                onChange={event => setDeployTargetStage(event.target.value)}
+                value={deployConfig.targetStage}
+                onChange={event => setDeployConfig(current => ({ ...current, targetStage: event.target.value }))}
                 style={{ marginTop: 8 }}
               >
                 <Radio.Button value="Staging">Staging</Radio.Button>
                 <Radio.Button value="Canary">Canary</Radio.Button>
                 <Radio.Button value="Production">Production</Radio.Button>
               </Radio.Group>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Text type="secondary">目标吞吐（RPM）</Text>
+              <InputNumber
+                min={100}
+                step={100}
+                style={{ width: '100%', marginTop: 8 }}
+                value={deployConfig.maxQps}
+                onChange={value => setDeployConfig(current => ({ ...current, maxQps: value ?? 100 }))}
+              />
+            </Col>
+            <Col span={12}>
+              <Text type="secondary">灰度权重（%）</Text>
+              <InputNumber
+                min={0}
+                max={100}
+                style={{ width: '100%', marginTop: 8 }}
+                value={deployConfig.canaryWeight}
+                onChange={value => setDeployConfig(current => ({ ...current, canaryWeight: value ?? 0 }))}
+              />
             </Col>
           </Row>
         </Space>

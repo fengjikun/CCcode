@@ -26,6 +26,13 @@ describe('AppLayout workspace route refresh', () => {
     expect(appLayoutSource).toContain("'/studio/skills': ['workspace 工作台', 'Skills Hub']")
   })
 
+  it('defines gateway secondary menu entries under model center', () => {
+    expect(appLayoutSource).toContain("key: 'model-lab-gateway'")
+    expect(appLayoutSource).toContain("'/model-lab/gateway/models'")
+    expect(appLayoutSource).toContain("'/model-lab/gateway/api-keys'")
+    expect(appLayoutSource).toContain("'/model-lab/gateway/usage'")
+  })
+
   it('does not keep legacy /coworker keys in the running L4 navigation', () => {
     expect(appLayoutSource).not.toContain("key: 'coworker'")
     expect(appLayoutSource).not.toContain("'/coworker/agents'")

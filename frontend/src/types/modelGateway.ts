@@ -54,6 +54,7 @@ export interface DeployConfig {
   gpuType: string
   maxQps: number
   canaryWeight: number // 0-100
+  targetStage: Exclude<ModelStage, 'Archived'>
 }
 
 export const MODEL_STAGE_COLORS: Record<ModelStage, string> = {
@@ -61,4 +62,76 @@ export const MODEL_STAGE_COLORS: Record<ModelStage, string> = {
   Staging: 'orange',
   Archived: 'default',
   Canary: 'blue',
+}
+
+export type ApiKeyScope =
+  | 'chat:completions'
+  | 'responses:create'
+  | 'vision:understand'
+  | 'documents:parse'
+  | 'metrics:read'
+
+export type GatewayApiKeyStatus = 'Active' | 'Disabled' | 'ExpiringSoon'
+
+export interface GatewayApiKey {
+  key: string
+  name: string
+  prefix: string
+  owner: string
+  linkedModels: string[]
+  scopes: ApiKeyScope[]
+  rateLimitRpm: number
+  monthlyQuota: number
+  status: GatewayApiKeyStatus
+  ipWhitelist: string[]
+  lastUsedAt: string
+  createdAt: string
+  expiresAt?: string
+  lastRotatedAt: string
+}
+
+export interface CreateGatewayApiKeyInput {
+  name: string
+  owner: string
+  linkedModels: string[]
+  scopes: ApiKeyScope[]
+  rateLimitRpm: number
+  monthlyQuota: number
+  ipWhitelist: string[]
+  expiresAt?: string
+}
+
+export interface GatewayIssuedSecret {
+  key: string
+  name: string
+  secret: string
+  prefix: string
+}
+
+export type GatewayLogStatus = 'Success' | 'ClientError' | 'RateLimited' | 'ServerError'
+
+export interface GatewayUsageLog {
+  key: string
+  timestamp: string
+  requestId: string
+  apiKeyName: string
+  model: string
+  routePath: string
+  requester: string
+  status: GatewayLogStatus
+  httpStatus: number
+  latencyMs: number
+  inputTokens: number
+  outputTokens: number
+  region: string
+  errorMessage?: string
+}
+
+export interface GatewayUsageSummary {
+  totalRequests: number
+  successRate: string
+  avgLatency: string
+  p95Latency: string
+  totalTokens: number
+  activeApiKeys: number
 }

@@ -18,4 +18,11 @@ describe('App route table workspace refresh', () => {
     expect(appSource).not.toContain('<Route path="/coworker/agents/logs"')
     expect(appSource).not.toContain('<Route path="/coworker/skills"')
   })
+
+  it('defines nested routes for the gateway secondary menu', () => {
+    expect(appSource).toContain('<Route path="/model-lab/gateway" element={<Navigate to="/model-lab/gateway/models" replace />} />')
+    expect(appSource).toContain('<Route path="/model-lab/gateway/models" element={<GatewayModelsPage />} />')
+    expect(appSource).toContain('<Route path="/model-lab/gateway/api-keys" element={<GatewayApiKeysPage />} />')
+    expect(appSource).toContain('<Route path="/model-lab/gateway/usage" element={<GatewayUsagePage />} />')
+  })
 })
