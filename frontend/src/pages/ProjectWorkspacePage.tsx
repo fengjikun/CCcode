@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { Button, Card, Descriptions, Empty, Space, Tag, Tabs, Typography } from 'antd'
 import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons'
 import { useProjectWorkspace } from './workspace/useProjectWorkspace'
@@ -8,11 +8,13 @@ import ExtractionTab from './workspace/tabs/ExtractionTab'
 import ActionsTab from './workspace/tabs/ActionsTab'
 import FunctionsTab from './workspace/tabs/FunctionsTab'
 import type { TabKey } from './workspace/types'
+import { resolveWorkspaceTab } from './workspace/navigation'
 
 const { Title } = Typography
 
 export default function ProjectWorkspacePage() {
   const { projectId } = useParams<{ projectId: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const {
     project,
@@ -33,6 +35,17 @@ export default function ProjectWorkspacePage() {
     projectVersions,
     skillList,
   } = useProjectWorkspace(projectId)
+
+  const currentTab = searchParams.has('tab') ? resolveWorkspaceTab(searchParams) : activeTab
+
+  const handleTabChange = (key: string) => {
+    const nextTab = key as TabKey
+    setActiveTab(nextTab)
+
+    const nextSearchParams = new URLSearchParams(searchParams)
+    nextSearchParams.set('tab', nextTab)
+    setSearchParams(nextSearchParams, { replace: true })
+  }
 
   if (loading && !project) {
     return <Card loading style={{ minHeight: 320 }} />
@@ -78,8 +91,8 @@ export default function ProjectWorkspacePage() {
       </Card>
 
       <Tabs
-        activeKey={activeTab}
-        onChange={key => setActiveTab(key as TabKey)}
+        activeKey={currentTab}
+        onChange={handleTabChange}
         items={[
           {
             key: 'documents',

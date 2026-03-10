@@ -33,6 +33,7 @@ import type { GraphStats } from '../components/graph/GraphSidebar'
 import NodeDetail from '../components/graph/NodeDetail'
 import { batchUpdateRunReviewItems, getProjectDetail, getVersionItems, updateRunReviewItem } from '../api/projectManagement'
 import type { ProjectDetail, ReviewItem, ReviewStatus, VersionItem } from '../types/projectMvp'
+import { buildProjectWorkspacePath } from './workspace/navigation'
 
 const { Title, Text } = Typography
 
@@ -510,7 +511,7 @@ export default function ProjectGraphPage() {
         <Space direction="vertical" style={{ width: '100%' }} size={10}>
           <Space style={{ justifyContent: 'space-between', width: '100%' }} wrap>
             <Space>
-              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(`/ontology/projects/${project.id}`)}>
+              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(buildProjectWorkspacePath(project.id, 'extraction'))}>
                 返回本体工作台
               </Button>
               <Button icon={<ReloadOutlined />} onClick={() => void loadProject()} loading={loading}>
