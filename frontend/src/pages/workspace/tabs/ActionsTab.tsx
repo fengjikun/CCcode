@@ -9,6 +9,7 @@ import {
 } from '../../../api/projectManagement'
 import type { ActionDefinition, ActionStatus, EntityTypeConfig, FunctionDefinition } from '../../../types/projectMvp'
 import { getErrorMessage } from '../helpers'
+import { buildTargetEntityOptions, normalizeTargetEntityValue } from './ActionsTab.helpers'
 
 interface ActionsTabProps {
   projectId: string
@@ -129,14 +130,17 @@ const labelStyle: React.CSSProperties = { display: 'block', marginBottom: 4, fon
 function BasicInfoTab({ action, projectId, entityTypes, onRefresh }: { action: ActionDefinition; projectId: string; entityTypes: EntityTypeConfig[]; onRefresh: () => void }) {
   const [displayName, setDisplayName] = useState(action.displayName || '')
   const [description, setDescription] = useState(action.description || '')
-  const [targetObjectTypeId, setTargetObjectTypeId] = useState<number | null>(action.targetObjectTypeId ?? null)
+  const [targetObjectTypeId, setTargetObjectTypeId] = useState<string | null>(
+    normalizeTargetEntityValue(action.targetObjectTypeId, entityTypes) ?? null,
+  )
   const [saving, setSaving] = useState(false)
+  const targetEntityOptions = buildTargetEntityOptions(entityTypes)
 
   useEffect(() => {
     setDisplayName(action.displayName || '')
     setDescription(action.description || '')
-    setTargetObjectTypeId(action.targetObjectTypeId ?? null)
-  }, [action])
+    setTargetObjectTypeId(normalizeTargetEntityValue(action.targetObjectTypeId, entityTypes) ?? null)
+  }, [action, entityTypes])
 
   const save = async () => {
     setSaving(true)
@@ -179,12 +183,9 @@ function BasicInfoTab({ action, projectId, entityTypes, onRefresh }: { action: A
           placeholder="请选择目标实体类型"
           allowClear
           value={targetObjectTypeId ?? undefined}
-          onChange={(val: number | undefined) => setTargetObjectTypeId(val ?? null)}
-        >
-          {entityTypes.map(et => (
-            <Select.Option key={et.id} value={Number(et.id)}>{et.name}</Select.Option>
-          ))}
-        </Select>
+          options={targetEntityOptions}
+          onChange={(val: string | undefined) => setTargetObjectTypeId(val ?? null)}
+        />
       </div>
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>显示名称</label>
@@ -828,7 +829,7 @@ export default function ActionsTab({ projectId, actions, functions, entityTypes,
       const updated = actions.find(a => a.id === selected.id)
       if (updated) setSelected(updated)
     }
-  }, [actions])
+  }, [actions, selected])
 
   return (
     <div style={{ display: 'flex', gap: 16, height: '100%', minHeight: 500 }}>
