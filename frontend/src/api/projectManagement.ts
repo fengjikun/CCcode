@@ -25,7 +25,7 @@ import type {
 
 const STORAGE_KEY = 'deepexios_projects_v3'
 /** 当默认数据结构变化时递增此值，触发本地缓存迁移 */
-const DATA_VERSION = 8
+const DATA_VERSION = 9
 
 interface ProjectStore {
   projects: ProjectDetail[]
@@ -48,7 +48,295 @@ const PROJECT_ENTITY_NAME_POOLS: Record<string, Record<string, string[]>> = {
     Solution: ['更换主轴轴承并跑合验证', '清洗润滑回路并更换滤芯', '调整丝杠预紧并重标定', '更换液压阀组并复位参数', '更换刀柄夹紧组件', '重新执行热误差标定'],
     Component: ['主轴前轴承组', '主轴润滑回路', 'Z轴滚珠丝杠', '液压比例阀', '刀柄夹紧弹簧组', '换刀机械手'],
     Parameter: ['主轴振动RMS', '主轴温升', '液压回路压力', 'Z轴定位误差', '刀柄夹持力', '主轴端面跳动'],
+    EightDReport: ['8D报告#2025-11-23-EL402', '8D报告#2025-11-03-SLIDE12', '8D报告#2025-09-22-07EL360', '8D报告#2025-08-07-EL1570'],
+    ProductionLine: ['最终线入口', '内饰二线尾', '后悬分装', '夹具线入口', 'PVC下线工位', '调整线10'],
+    CorrectiveAction: ['恢复改动前PLC程序并强制接车记忆信号', '更换升降机抱闸继电器', '更换变频器控制模块', '更换联轴器链条及损坏横移链'],
+    PreventiveAction: ['新增吊具进出信号显示与清除功能', '重点工位控制单元专项更换', '编制变频器抱闸点位修改指导书', '横向排查其余升降机联轴器开口销'],
   },
+}
+
+const FAULT_DIAGNOSIS_PROJECT_ID = 'proj-001'
+const FAULT_DIAGNOSIS_PROJECT_NAME = '故障诊断本体'
+
+const FAULT_DIAGNOSIS_8D_DOCUMENTS: ProjectDocument[] = [
+  {
+    id: 'doc-fd-006',
+    name: '最终线入口EL402升降机带车在高位不下降，最终线欠量停线-附件-2025.11.23 8D设备故障分析报告_最终线升降机接车异常 - 副本.docx',
+    fileType: 'docx',
+    size: 23265,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-11-23T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-007',
+    name: '12号滑板在内饰二线尾升降机处无上升动作，升降机无法接车，导致内饰二满位停线-附件-2025.11.03 8D设备故障分析报告_内饰二线尾12号滑板故障(1) - 副本.docx',
+    fileType: 'docx',
+    size: 25011,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-11-03T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-008',
+    name: '07EL360升降机失速故障导致配重导向轴轮损坏-附件-2025-09-22 报交出口07EL360升降机故障分析 - 副本.docx',
+    fileType: 'docx',
+    size: 21528,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-09-22T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-009',
+    name: '涂装P1Y1C4EL395升降机不下降-附件-20250910六工厂涂装P1Y1C4EL395升降机不下降 - 副本.docx',
+    fileType: 'docx',
+    size: 20095,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-09-10T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-010',
+    name: 'EL1570升降机掉落-附件-8.7后悬分装EL1570升降机故障-8D报告(1).docx',
+    fileType: 'docx',
+    size: 12591,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-08-07T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-011',
+    name: '升降机不上升接车和接车后不下降，HMI报升降机变频器故障和无位置故障-附件-7.10内饰一线升降台变频器故障-8D报告.docx',
+    fileType: 'docx',
+    size: 13373,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-07-10T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-012',
+    name: '夹具线入口升降机EL010联轴器双排链脱落，导致升降机失重从高位落到低位-附件-机运5区EL010升降机坠落8D报告(1).docx',
+    fileType: 'docx',
+    size: 16754,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-06-18T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-013',
+    name: '升降机上升越位-附件-8D分析报告案例&调整线10升降机 - 副本.docx',
+    fileType: 'docx',
+    size: 21062,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-05-16T09:00:00.000Z',
+  },
+]
+
+const FAULT_DIAGNOSIS_8D_ENTITY_TYPES: EntityTypeConfig[] = [
+  {
+    id: 'et-fd-009',
+    name: 'EightDReport',
+    description: '沉淀故障现象、5Why、临时措施和长期措施的 8D 设备故障分析报告。',
+    properties: [
+      { id: 'ep-fd-081', name: 'reportCode', displayName: '报告编号', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-fd-082', name: 'reportDate', displayName: '报告日期', dataType: 'DATE', required: true, sortOrder: 2 },
+      { id: 'ep-fd-083', name: 'ownerTeam', displayName: '责任班组', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-fd-084', name: 'downtimeImpact', displayName: '停线影响', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-fd-010',
+    name: 'ProductionLine',
+    description: '8D 案例发生的产线、工位或区域定位实体。',
+    properties: [
+      { id: 'ep-fd-091', name: 'lineCode', displayName: '产线编码', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-fd-092', name: 'workshop', displayName: '车间', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-fd-093', name: 'station', displayName: '工位', dataType: 'STRING', required: false, sortOrder: 3 },
+    ],
+  },
+  {
+    id: 'et-fd-011',
+    name: 'CorrectiveAction',
+    description: '8D 报告中的临时纠正措施或现场止血动作。',
+    properties: [
+      { id: 'ep-fd-101', name: 'actionType', displayName: '措施类型', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-fd-102', name: 'ownerRole', displayName: '责任角色', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-fd-103', name: 'expectedCompleteAt', displayName: '预计完成时间', dataType: 'DATETIME', required: false, sortOrder: 3 },
+    ],
+  },
+  {
+    id: 'et-fd-012',
+    name: 'PreventiveAction',
+    description: '8D 报告中的长期预防措施、横向排查和标准化改进动作。',
+    properties: [
+      { id: 'ep-fd-111', name: 'controlType', displayName: '控制类型', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-fd-112', name: 'scope', displayName: '覆盖范围', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-fd-113', name: 'verificationMethod', displayName: '验证方式', dataType: 'TEXT', required: false, sortOrder: 3 },
+    ],
+  },
+]
+
+const FAULT_DIAGNOSIS_8D_RELATION_TYPES: RelationTypeConfig[] = [
+  { id: 'rt-fd-009', name: 'records_equipment', domain: 'EightDReport', range: 'Equipment', description: '8D 报告记录涉及的关键设备', properties: [] },
+  { id: 'rt-fd-010', name: 'records_failure', domain: 'EightDReport', range: 'Phenomenon', description: '8D 报告记录的故障现象', properties: [] },
+  { id: 'rt-fd-011', name: 'occurs_on_line', domain: 'Phenomenon', range: 'ProductionLine', description: '故障现象发生的产线/工位位置', properties: [] },
+  { id: 'rt-fd-012', name: 'documents_subphenomenon', domain: 'EightDReport', range: 'SubPhenomenon', description: '8D 报告沉淀出的关键诊断线索', properties: [] },
+  { id: 'rt-fd-013', name: 'implements_correction', domain: 'EightDReport', range: 'CorrectiveAction', description: '8D 报告中的临时纠正措施', properties: [] },
+  { id: 'rt-fd-014', name: 'implements_prevention', domain: 'EightDReport', range: 'PreventiveAction', description: '8D 报告中的长期预防措施', properties: [] },
+]
+
+const FAULT_DIAGNOSIS_AI_INSIGHT_RUN: AiInsightRun = {
+  id: 'ai-fd-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2025-11-24T10:00:00.000Z',
+  completedAt: '2025-11-24T10:06:00.000Z',
+  scannedDocumentCount: 8,
+  addedEntityCount: 4,
+  addedRelationCount: 6,
+  addedEntityNames: ['EightDReport', 'ProductionLine', 'CorrectiveAction', 'PreventiveAction'],
+  addedRelationNames: ['records_equipment', 'records_failure', 'occurs_on_line', 'documents_subphenomenon', 'implements_correction', 'implements_prevention'],
+  warnings: [],
+  stage: '完成',
+  currentDocument: '最终线入口EL402升降机带车在高位不下降，最终线欠量停线-附件-2025.11.23 8D设备故障分析报告_最终线升降机接车异常 - 副本.docx',
+  logs: [
+    '扫描 8 份升降机 8D 故障报告',
+    '补充实体类型 4 个：EightDReport、ProductionLine、CorrectiveAction、PreventiveAction',
+    '补充关系类型 6 条，用于表达案例、产线位置及整改闭环',
+  ],
+}
+
+const FAULT_DIAGNOSIS_8D_RUN: ExtractionRun = {
+  id: 'run-fd-002',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2025-11-24T10:30:00.000Z',
+  completedAt: '2025-11-24T10:38:00.000Z',
+  candidateEntityCount: 24,
+  candidateRelationCount: 18,
+  pendingReviewCount: 0,
+  stage: '完成',
+  currentDocument: '最终线入口EL402升降机带车在高位不下降，最终线欠量停线-附件-2025.11.23 8D设备故障分析报告_最终线升降机接车异常 - 副本.docx',
+  logs: [
+    '扫描 8 份 8D 报告文档',
+    '识别升降机类案例设备 8 台、产线位置 6 处、闭环措施 12 条',
+    '生成 8D 案例候选实体 24 个、关系 18 条',
+  ],
+  warnings: [],
+  reviewItems: [
+    { id: 'ri-fd-101', kind: 'ENTITY', title: '8D报告#2025-11-23-EL402 (EightDReport)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.99, status: 'APPROVED' },
+    { id: 'ri-fd-102', kind: 'ENTITY', title: '最终线入口EL402升降机 (Equipment)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-fd-103', kind: 'ENTITY', title: '最终线入口EL402升降机带车在高位不下降，最终线欠量停线 (Phenomenon)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-fd-104', kind: 'ENTITY', title: '吊具在位信号未正常清除 (SubPhenomenon)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-fd-105', kind: 'ENTITY', title: '供应商下载硬件组态后升降机接车时序错乱 (Cause)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.95, status: 'APPROVED' },
+    { id: 'ri-fd-106', kind: 'ENTITY', title: '最终线入口 (ProductionLine)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.94, status: 'APPROVED' },
+    { id: 'ri-fd-107', kind: 'ENTITY', title: '恢复改动前PLC程序并强制接车记忆信号 (CorrectiveAction)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.93, status: 'APPROVED' },
+    { id: 'ri-fd-108', kind: 'ENTITY', title: '新增吊具进入离开信号显示及清除功能 (PreventiveAction)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.92, status: 'APPROVED' },
+    { id: 'ri-fd-109', kind: 'ENTITY', title: '8D报告#2025-09-22-07EL360 (EightDReport)', evidence: '07EL360 升降机故障分析报告', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-fd-110', kind: 'ENTITY', title: '07EL360升降机 (Equipment)', evidence: '07EL360 升降机故障分析报告', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-fd-111', kind: 'ENTITY', title: '升降机抱闸继电器卡滞 (Cause)', evidence: '07EL360 升降机故障分析报告', confidence: 0.94, status: 'APPROVED' },
+    { id: 'ri-fd-112', kind: 'ENTITY', title: '更换升降机抱闸继电器 (CorrectiveAction)', evidence: '07EL360 升降机故障分析报告', confidence: 0.93, status: 'APPROVED' },
+    { id: 'ri-fd-113', kind: 'RELATION', title: '8D报告#2025-11-23-EL402 (EightDReport) → records_equipment → 最终线入口EL402升降机 (Equipment)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-fd-114', kind: 'RELATION', title: '8D报告#2025-11-23-EL402 (EightDReport) → records_failure → 最终线入口EL402升降机带车在高位不下降，最终线欠量停线 (Phenomenon)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-fd-115', kind: 'RELATION', title: '8D报告#2025-11-23-EL402 (EightDReport) → documents_subphenomenon → 吊具在位信号未正常清除 (SubPhenomenon)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-fd-116', kind: 'RELATION', title: '吊具在位信号未正常清除 (SubPhenomenon) → caused_by → 供应商下载硬件组态后升降机接车时序错乱 (Cause)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.95, status: 'APPROVED' },
+    { id: 'ri-fd-117', kind: 'RELATION', title: '最终线入口EL402升降机带车在高位不下降，最终线欠量停线 (Phenomenon) → occurs_on_line → 最终线入口 (ProductionLine)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.94, status: 'APPROVED' },
+    { id: 'ri-fd-118', kind: 'RELATION', title: '8D报告#2025-11-23-EL402 (EightDReport) → implements_correction → 恢复改动前PLC程序并强制接车记忆信号 (CorrectiveAction)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.93, status: 'APPROVED' },
+    { id: 'ri-fd-119', kind: 'RELATION', title: '8D报告#2025-11-23-EL402 (EightDReport) → implements_prevention → 新增吊具进入离开信号显示及清除功能 (PreventiveAction)', evidence: '最终线升降机接车异常 8D 报告', confidence: 0.92, status: 'APPROVED' },
+    { id: 'ri-fd-120', kind: 'RELATION', title: '8D报告#2025-09-22-07EL360 (EightDReport) → records_equipment → 07EL360升降机 (Equipment)', evidence: '07EL360 升降机故障分析报告', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-fd-121', kind: 'RELATION', title: '8D报告#2025-09-22-07EL360 (EightDReport) → implements_correction → 更换升降机抱闸继电器 (CorrectiveAction)', evidence: '07EL360 升降机故障分析报告', confidence: 0.94, status: 'APPROVED' },
+  ],
+}
+
+const FAULT_DIAGNOSIS_8D_VERSION: OntologyVersion = {
+  id: 'ver-fd-002',
+  version: 'v1.3',
+  label: '升降机 8D 案例诊断图谱',
+  createdAt: '2025-11-24T10:40:00.000Z',
+  sourceRunId: 'run-fd-002',
+  entityCount: 24,
+  relationCount: 18,
+}
+
+function isFaultDiagnosisProject(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
+  return project.id === FAULT_DIAGNOSIS_PROJECT_ID || project.name === FAULT_DIAGNOSIS_PROJECT_NAME
+}
+
+function mergeUniqueById<T extends { id: string }>(current: T[], seeded: T[]): { items: T[]; changed: boolean } {
+  const existingIds = new Set(current.map(item => item.id))
+  const additions = seeded.filter(item => !existingIds.has(item.id))
+  if (additions.length === 0) {
+    return { items: current, changed: false }
+  }
+  return { items: [...current, ...additions], changed: true }
+}
+
+function byIsoDesc(a: { createdAt?: string; uploadedAt?: string }, b: { createdAt?: string; uploadedAt?: string }): number {
+  const aTime = Date.parse(a.createdAt ?? a.uploadedAt ?? '') || 0
+  const bTime = Date.parse(b.createdAt ?? b.uploadedAt ?? '') || 0
+  return bTime - aTime
+}
+
+function ensureFaultDiagnosisSeed(project: ProjectDetail): boolean {
+  if (!isFaultDiagnosisProject(project)) {
+    return false
+  }
+
+  let changed = false
+
+  const mergedDocuments = mergeUniqueById(project.documents, cloneProjectData(FAULT_DIAGNOSIS_8D_DOCUMENTS))
+  if (mergedDocuments.changed) {
+    project.documents = mergedDocuments.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedEntityTypes = mergeUniqueById(project.schemaConfig.entityTypes, cloneProjectData(FAULT_DIAGNOSIS_8D_ENTITY_TYPES))
+  if (mergedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = mergedEntityTypes.items
+    changed = true
+  }
+
+  const mergedRelationTypes = mergeUniqueById(project.schemaConfig.relationTypes, cloneProjectData(FAULT_DIAGNOSIS_8D_RELATION_TYPES))
+  if (mergedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = mergedRelationTypes.items
+    changed = true
+  }
+
+  if (!project.schemaConfig.entityScope.includes('8D')) {
+    project.schemaConfig.entityScope = `${project.schemaConfig.entityScope}，并补充 EightDReport、ProductionLine、CorrectiveAction、PreventiveAction 等 8D 闭环改进实体`
+    changed = true
+  }
+
+  if (!project.schemaConfig.relationScope.includes('8D')) {
+    project.schemaConfig.relationScope = `${project.schemaConfig.relationScope}，并覆盖 8D 报告记录设备/故障、产线定位以及纠正/预防措施闭环关系`
+    changed = true
+  }
+
+  if (!project.aiInsightRun) {
+    project.aiInsightRun = cloneProjectData(FAULT_DIAGNOSIS_AI_INSIGHT_RUN)
+    changed = true
+  }
+
+  const mergedRuns = mergeUniqueById(project.runs, cloneProjectData([FAULT_DIAGNOSIS_8D_RUN]))
+  if (mergedRuns.changed) {
+    project.runs = mergedRuns.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedVersions = mergeUniqueById(project.versions, cloneProjectData([FAULT_DIAGNOSIS_8D_VERSION]))
+  if (mergedVersions.changed) {
+    project.versions = mergedVersions.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const versionExists = project.versions.some(version => version.id === project.currentVersionId)
+  if (!versionExists) {
+    project.currentVersionId = FAULT_DIAGNOSIS_8D_VERSION.id
+    changed = true
+  }
+
+  return changed
 }
 
 function deterministicConfidence(base: number, index: number, floor: number): number {
@@ -222,6 +510,9 @@ function normalizeStore(store: ProjectStore): boolean {
   }
 
   for (const project of store.projects) {
+    if (ensureFaultDiagnosisSeed(project)) {
+      changed = true
+    }
     for (const run of project.runs) {
       if (normalizeRun(project, run, () => `ri-${++store.idSeq}`)) {
         changed = true
@@ -673,6 +964,7 @@ function defaultProjects(): ProjectDetail[] {
       status: 'DRAFT',
     },
   ]
+  ensureFaultDiagnosisSeed(first)
   const store: ProjectStore = { projects, idSeq: 9000, _v: DATA_VERSION }
   normalizeStore(store)
   return projects

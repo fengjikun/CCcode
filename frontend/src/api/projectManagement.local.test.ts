@@ -52,6 +52,19 @@ describe('projectManagement local mock store', () => {
     expect(projects[0]?.name).toBe('故障诊断本体')
   })
 
+  it('seeds 8D fault diagnosis documents and ontology mock data into the pinned project', async () => {
+    const detail = await getProjectDetail('proj-001')
+
+    expect(detail.documents.some((item) => item.name.includes('最终线入口EL402升降机带车在高位不下降'))).toBe(true)
+    expect(detail.documents.some((item) => item.name.includes('07EL360升降机失速故障导致配重导向轴轮损坏'))).toBe(true)
+    expect(detail.documents).toHaveLength(13)
+    expect(detail.aiInsightRun?.id).toBe('ai-fd-001')
+    expect(detail.runs.some((run) => run.id === 'run-fd-002')).toBe(true)
+    expect(detail.currentVersionId).toBe('ver-fd-002')
+    expect(detail.schemaConfig.entityTypes.some((item) => item.name === 'EightDReport')).toBe(true)
+    expect(detail.schemaConfig.relationTypes.some((item) => item.name === 'implements_prevention')).toBe(true)
+  })
+
   it('keeps 故障诊断本体 pinned ahead of newer projects', async () => {
     const created = await createProject('最新测试本体', '用于验证置顶排序', 'general')
     await updateProject(created.id, '最新测试本体', '再次更新时间', 'general')

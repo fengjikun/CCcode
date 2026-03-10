@@ -126,7 +126,7 @@ export default function ProjectGraphPage() {
       if (sourceFromQuery) {
         setSelectedSource(sourceFromQuery)
       } else if (detail.runs.length > 0) {
-        setSelectedSource(`run:${detail.runs[detail.runs.length - 1].id}`)
+        setSelectedSource(`run:${detail.runs[0].id}`)
       } else if (detail.currentVersionId) {
         setSelectedSource(`version:${detail.currentVersionId}`)
       } else {
