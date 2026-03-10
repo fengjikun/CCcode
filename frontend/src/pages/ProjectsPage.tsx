@@ -97,14 +97,19 @@ interface ProjectForm {
 }
 
 const TAB_ALL = '__all__'
-const PINNED_PROJECT_NAME = '故障诊断本体'
+const PINNED_PROJECT_ORDER = ['故障诊断本体', '商品补货本体'] as const
+
+function getPinnedProjectRank(project: Pick<ProjectSummary, 'name'>): number {
+  const index = PINNED_PROJECT_ORDER.indexOf(project.name as (typeof PINNED_PROJECT_ORDER)[number])
+  return index >= 0 ? index : Number.POSITIVE_INFINITY
+}
 
 function sortProjectsForDisplay(list: ProjectSummary[]): ProjectSummary[] {
   return [...list].sort((a, b) => {
-    const aPinned = a.name === PINNED_PROJECT_NAME
-    const bPinned = b.name === PINNED_PROJECT_NAME
-    if (aPinned === bPinned) return 0
-    return aPinned ? -1 : 1
+    const aRank = getPinnedProjectRank(a)
+    const bRank = getPinnedProjectRank(b)
+    if (aRank !== bRank) return aRank - bRank
+    return 0
   })
 }
 

@@ -49,7 +49,9 @@ describe('projectManagement local mock store', () => {
 
     expect(projects.length).toBeGreaterThan(100)
     expect(projects.some(project => project.name === '故障诊断本体')).toBe(true)
+    expect(projects.some(project => project.name === '商品补货本体')).toBe(true)
     expect(projects[0]?.name).toBe('故障诊断本体')
+    expect(projects[1]?.name).toBe('商品补货本体')
   })
 
   it('seeds 8D fault diagnosis documents and ontology mock data into the pinned project', async () => {
@@ -65,13 +67,29 @@ describe('projectManagement local mock store', () => {
     expect(detail.schemaConfig.relationTypes.some((item) => item.name === 'implements_prevention')).toBe(true)
   })
 
-  it('keeps 故障诊断本体 pinned ahead of newer projects', async () => {
+  it('seeds product replenishment demo data into the second pinned project', async () => {
+    const detail = await getProjectDetail('proj-2418')
+
+    expect(detail.name).toBe('商品补货本体')
+    expect(detail.documents.some((item) => item.name.includes('百丽城市单品补货业务本体模型数据说明示例'))).toBe(true)
+    expect(detail.dataSources).toHaveLength(3)
+    expect(detail.aiInsightRun?.id).toBe('ai-rp-001')
+    expect(detail.schemaConfig.entityTypes.some((item) => item.name === 'ReplenishmentPlan')).toBe(true)
+    expect(detail.schemaConfig.entityTypes.some((item) => item.name === 'PurchaseOrder')).toBe(true)
+    expect(detail.schemaConfig.relationTypes.some((item) => item.name === 'generated_purchase_order')).toBe(true)
+    expect(detail.actions.some((item) => item.id === 'act-rp-003')).toBe(true)
+    expect(detail.functions.some((item) => item.id === 'fn-rp-004')).toBe(true)
+    expect(detail.currentVersionId).toBe('ver-rp-001')
+  })
+
+  it('keeps pinned projects ahead of newer projects in the configured order', async () => {
     const created = await createProject('最新测试本体', '用于验证置顶排序', 'general')
     await updateProject(created.id, '最新测试本体', '再次更新时间', 'general')
 
     const projects = await listProjects()
 
     expect(projects[0]?.name).toBe('故障诊断本体')
+    expect(projects[1]?.name).toBe('商品补货本体')
     expect(projects.some(project => project.id === created.id)).toBe(true)
   })
 

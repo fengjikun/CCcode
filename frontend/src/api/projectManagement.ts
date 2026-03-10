@@ -25,7 +25,7 @@ import type {
 
 const STORAGE_KEY = 'deepexios_projects_v3'
 /** 当默认数据结构变化时递增此值，触发本地缓存迁移 */
-const DATA_VERSION = 9
+const DATA_VERSION = 10
 
 interface ProjectStore {
   projects: ProjectDetail[]
@@ -52,6 +52,16 @@ const PROJECT_ENTITY_NAME_POOLS: Record<string, Record<string, string[]>> = {
     ProductionLine: ['最终线入口', '内饰二线尾', '后悬分装', '夹具线入口', 'PVC下线工位', '调整线10'],
     CorrectiveAction: ['恢复改动前PLC程序并强制接车记忆信号', '更换升降机抱闸继电器', '更换变频器控制模块', '更换联轴器链条及损坏横移链'],
     PreventiveAction: ['新增吊具进出信号显示与清除功能', '重点工位控制单元专项更换', '编制变频器抱闸点位修改指导书', '横向排查其余升降机联轴器开口销'],
+  },
+  'proj-2418': {
+    Product: ['Nike Air Max 270', 'Nike Pegasus 41', 'Belle云感通勤鞋', 'Adidas Samba OG', 'On Cloudmonster'],
+    Store: ['上海南京东路旗舰店', '上海五角场万达店', '上海静安大悦城店', '上海徐家汇港汇店', '上海环球港店'],
+    Warehouse: ['华东上海闵行中心仓', '华东昆山鞋服周转仓', '上海青浦门店中转仓'],
+    SalesOrder: ['SO-SH-20260301-10021', 'SO-SH-20260302-10318', 'SO-SH-20260303-10902', 'SO-SH-20260304-11087'],
+    Inventory: ['INV-SH-MH-20260309', 'INV-SH-KS-20260309', 'INV-SH-QP-20260309'],
+    SizeProfile: ['女鞋标准尺码曲线', '男鞋标准尺码曲线', '旗舰店黄金尺码曲线'],
+    ReplenishmentPlan: ['上海城市单品补货计划#001', '上海区域Nike Air Max 270补货计划', '门店14天覆盖补货计划'],
+    PurchaseOrder: ['PO-SH-20260310-001', 'PO-SH-20260310-002', 'PO-SH-20260310-003'],
   },
 }
 
@@ -259,6 +269,426 @@ const FAULT_DIAGNOSIS_8D_VERSION: OntologyVersion = {
   relationCount: 18,
 }
 
+const PRODUCT_REPLENISHMENT_PROJECT_ID = 'proj-2418'
+const PRODUCT_REPLENISHMENT_LEGACY_NAME = '补货策略本体'
+const PRODUCT_REPLENISHMENT_PROJECT_NAME = '商品补货本体'
+const PRODUCT_REPLENISHMENT_UPDATED_AT = '2026-03-10T09:30:00.000Z'
+const PRODUCT_REPLENISHMENT_DESCRIPTION =
+  '零售业 · 城市单品补货执行本体，覆盖商品、门店、仓库、销售订单、库存、尺码模型、补货计划与采购调拨单；支持依据近2周日均销量、目标满足天数和仓库可用库存自动生成专业配货方案。'
+
+const PRODUCT_REPLENISHMENT_DOCUMENTS: ProjectDocument[] = [
+  {
+    id: 'doc-rp-001',
+    name: '百丽城市单品补货业务本体模型数据说明示例.docx',
+    fileType: 'docx',
+    size: 128640,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-01T09:00:00.000Z',
+  },
+  {
+    id: 'doc-rp-002',
+    name: '上海区域门店近14日销售流速与库存水位对账.xlsx',
+    fileType: 'xlsx',
+    size: 286720,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-02T10:20:00.000Z',
+  },
+  {
+    id: 'doc-rp-003',
+    name: '城市补货尺码模型与优先分配规则.md',
+    fileType: 'md',
+    size: 92480,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-03T11:15:00.000Z',
+  },
+  {
+    id: 'doc-rp-004',
+    name: 'Nike Air Max 270 上海区域自动补货演示样例.jsonl',
+    fileType: 'jsonl',
+    size: 68420,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-04T14:30:00.000Z',
+  },
+  {
+    id: 'doc-rp-005',
+    name: 'ERP-WMS 调拨单接口字段映射说明.xlsx',
+    fileType: 'xlsx',
+    size: 173056,
+    status: 'READY',
+    enabled: false,
+    uploadedAt: '2026-03-05T09:40:00.000Z',
+  },
+]
+
+const PRODUCT_REPLENISHMENT_DATA_SOURCES: StructuredDataSource[] = [
+  {
+    id: 'ds-rp-001',
+    name: '零售ERP销售订单事实库',
+    type: 'POSTGRESQL',
+    host: '10.21.8.14',
+    port: 5432,
+    database: 'retail_erp',
+    schema: 'sales',
+    username: 'erp_reader',
+    password: '',
+    sslEnabled: true,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['sales_order_fact', 'store_dim', 'product_dim'],
+    rowLimit: 180000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'order_date',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-09T20:10:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-01T10:00:00.000Z',
+    updatedAt: '2026-03-09T20:10:00.000Z',
+  },
+  {
+    id: 'ds-rp-002',
+    name: 'WMS仓库库存与在途快照库',
+    type: 'CLICKHOUSE',
+    host: '10.21.8.32',
+    port: 8123,
+    database: 'wms_snapshot',
+    username: 'wms_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['inventory_snapshot', 'in_transit_stock', 'warehouse_dim'],
+    rowLimit: 220000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'snapshot_time',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-09T20:20:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-01T10:10:00.000Z',
+    updatedAt: '2026-03-09T20:20:00.000Z',
+  },
+  {
+    id: 'ds-rp-003',
+    name: '商品主数据与尺码曲线中心',
+    type: 'MYSQL',
+    host: '10.21.8.18',
+    port: 3306,
+    database: 'retail_master',
+    username: 'master_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['product_master', 'size_curve_model', 'store_priority_profile'],
+    rowLimit: 80000,
+    syncMode: 'FULL',
+    incrementalColumn: '',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-09T20:30:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-01T10:20:00.000Z',
+    updatedAt: '2026-03-09T20:30:00.000Z',
+  },
+]
+
+const PRODUCT_REPLENISHMENT_ENTITY_TYPES: EntityTypeConfig[] = [
+  {
+    id: 'et-rp-001',
+    name: 'Product',
+    description: '补货主体商品，按 SKU 维度管理品牌、品类、生命周期与目标补货策略。',
+    dataSourceId: 'ds-rp-003',
+    mappedTable: 'product_master',
+    properties: [
+      { id: 'ep-rp-001', name: 'skuCode', displayName: 'SKU编码', dataType: 'STRING', required: true, mappedColumn: 'sku_code', searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-rp-002', name: 'productName', displayName: '商品名称', dataType: 'STRING', required: true, mappedColumn: 'product_name', searchable: true, sortable: true, sortOrder: 2 },
+      { id: 'ep-rp-003', name: 'brand', displayName: '品牌', dataType: 'STRING', required: true, mappedColumn: 'brand_name', searchable: true, sortable: true, sortOrder: 3 },
+      { id: 'ep-rp-004', name: 'category', displayName: '品类', dataType: 'STRING', required: true, mappedColumn: 'category_lv3', searchable: true, sortable: true, sortOrder: 4 },
+      { id: 'ep-rp-005', name: 'seasonTag', displayName: '季节标签', dataType: 'STRING', required: false, mappedColumn: 'season_tag', searchable: true, sortable: true, sortOrder: 5 },
+      { id: 'ep-rp-006', name: 'replenishmentMode', displayName: '补货模式', dataType: 'STRING', required: true, defaultValue: 'days_of_supply', mappedColumn: 'replenishment_mode', searchable: true, sortable: true, sortOrder: 6 },
+    ],
+  },
+  {
+    id: 'et-rp-002',
+    name: 'Store',
+    description: '接收补货的门店实体，包含城市、店级、客群和补货优先级。',
+    dataSourceId: 'ds-rp-001',
+    mappedTable: 'store_dim',
+    properties: [
+      { id: 'ep-rp-011', name: 'storeCode', displayName: '门店编码', dataType: 'STRING', required: true, mappedColumn: 'store_code', searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-rp-012', name: 'storeName', displayName: '门店名称', dataType: 'STRING', required: true, mappedColumn: 'store_name', searchable: true, sortable: true, sortOrder: 2 },
+      { id: 'ep-rp-013', name: 'city', displayName: '城市', dataType: 'STRING', required: true, mappedColumn: 'city_name', searchable: true, sortable: true, sortOrder: 3 },
+      { id: 'ep-rp-014', name: 'storeTier', displayName: '门店等级', dataType: 'STRING', required: true, mappedColumn: 'store_tier', searchable: true, sortable: true, sortOrder: 4 },
+      { id: 'ep-rp-015', name: 'priorityLevel', displayName: '补货优先级', dataType: 'STRING', required: true, defaultValue: 'A', mappedColumn: 'priority_level', searchable: true, sortable: true, sortOrder: 5 },
+      { id: 'ep-rp-016', name: 'channelType', displayName: '渠道类型', dataType: 'STRING', required: false, mappedColumn: 'channel_type', searchable: true, sortable: true, sortOrder: 6 },
+    ],
+  },
+  {
+    id: 'et-rp-003',
+    name: 'Warehouse',
+    description: '发货仓库实体，包含可用库存、覆盖范围和发运时效。',
+    dataSourceId: 'ds-rp-002',
+    mappedTable: 'warehouse_dim',
+    properties: [
+      { id: 'ep-rp-021', name: 'warehouseCode', displayName: '仓库编码', dataType: 'STRING', required: true, mappedColumn: 'warehouse_code', searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-rp-022', name: 'warehouseName', displayName: '仓库名称', dataType: 'STRING', required: true, mappedColumn: 'warehouse_name', searchable: true, sortable: true, sortOrder: 2 },
+      { id: 'ep-rp-023', name: 'city', displayName: '仓库城市', dataType: 'STRING', required: true, mappedColumn: 'city_name', searchable: true, sortable: true, sortOrder: 3 },
+      { id: 'ep-rp-024', name: 'coverageRegion', displayName: '覆盖区域', dataType: 'STRING', required: true, mappedColumn: 'coverage_region', searchable: true, sortable: true, sortOrder: 4 },
+      { id: 'ep-rp-025', name: 'dispatchCutoffTime', displayName: '截单时间', dataType: 'STRING', required: false, mappedColumn: 'dispatch_cutoff_time', searchable: true, sortable: true, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-rp-004',
+    name: 'SalesOrder',
+    description: '门店历史销售事实，用于计算近2周日均销量和高销等级。',
+    dataSourceId: 'ds-rp-001',
+    mappedTable: 'sales_order_fact',
+    isBigTable: true,
+    properties: [
+      { id: 'ep-rp-031', name: 'orderNo', displayName: '订单号', dataType: 'STRING', required: true, mappedColumn: 'order_no', searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-rp-032', name: 'orderDate', displayName: '订单日期', dataType: 'DATE', required: true, mappedColumn: 'order_date', searchable: true, sortable: true, sortOrder: 2 },
+      { id: 'ep-rp-033', name: 'salesQty', displayName: '销售数量', dataType: 'INTEGER', required: true, mappedColumn: 'sales_qty', searchable: false, sortable: true, sortOrder: 3 },
+      { id: 'ep-rp-034', name: 'salesAmount', displayName: '销售金额', dataType: 'FLOAT', required: false, mappedColumn: 'sales_amount', searchable: false, sortable: true, sortOrder: 4 },
+      { id: 'ep-rp-035', name: 'soldSize', displayName: '销售尺码', dataType: 'STRING', required: false, mappedColumn: 'sold_size', searchable: true, sortable: true, sortOrder: 5 },
+      { id: 'ep-rp-036', name: 'salesChannel', displayName: '销售渠道', dataType: 'STRING', required: false, mappedColumn: 'sales_channel', searchable: true, sortable: true, sortOrder: 6 },
+    ],
+  },
+  {
+    id: 'et-rp-005',
+    name: 'Inventory',
+    description: '仓库与门店库存快照，支撑供给能力判断与在途占用计算。',
+    dataSourceId: 'ds-rp-002',
+    mappedTable: 'inventory_snapshot',
+    isBigTable: true,
+    properties: [
+      { id: 'ep-rp-041', name: 'snapshotTime', displayName: '快照时间', dataType: 'DATETIME', required: true, mappedColumn: 'snapshot_time', searchable: false, sortable: true, sortOrder: 1 },
+      { id: 'ep-rp-042', name: 'onHandQty', displayName: '现存数量', dataType: 'INTEGER', required: true, mappedColumn: 'on_hand_qty', searchable: false, sortable: true, sortOrder: 2 },
+      { id: 'ep-rp-043', name: 'reservedQty', displayName: '预留数量', dataType: 'INTEGER', required: true, mappedColumn: 'reserved_qty', searchable: false, sortable: true, sortOrder: 3 },
+      { id: 'ep-rp-044', name: 'inTransitQty', displayName: '在途数量', dataType: 'INTEGER', required: false, mappedColumn: 'in_transit_qty', searchable: false, sortable: true, sortOrder: 4 },
+      { id: 'ep-rp-045', name: 'availableQty', displayName: '可分配数量', dataType: 'INTEGER', required: true, mappedColumn: 'available_qty', searchable: false, sortable: true, sortOrder: 5 },
+      { id: 'ep-rp-046', name: 'stockOwner', displayName: '库存归属', dataType: 'STRING', required: false, mappedColumn: 'stock_owner', searchable: true, sortable: true, sortOrder: 6 },
+    ],
+  },
+  {
+    id: 'et-rp-006',
+    name: 'SizeProfile',
+    description: '商品对应的标准尺码分布模型，用于将总补货量拆分至具体尺码。',
+    dataSourceId: 'ds-rp-003',
+    mappedTable: 'size_curve_model',
+    properties: [
+      { id: 'ep-rp-051', name: 'profileCode', displayName: '模型编码', dataType: 'STRING', required: true, mappedColumn: 'profile_code', searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-rp-052', name: 'applicableGender', displayName: '适用性别', dataType: 'STRING', required: true, mappedColumn: 'applicable_gender', searchable: true, sortable: true, sortOrder: 2 },
+      { id: 'ep-rp-053', name: 'sizeCurveJson', displayName: '尺码曲线', dataType: 'JSON', required: true, mappedColumn: 'size_curve_json', searchable: false, sortable: false, sortOrder: 3 },
+      { id: 'ep-rp-054', name: 'goldenSizes', displayName: '黄金尺码', dataType: 'STRING', required: false, mappedColumn: 'golden_sizes', searchable: true, sortable: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-rp-007',
+    name: 'PurchaseOrder',
+    description: '从仓库到门店的调拨单据，记录状态、数量与预计到货时间。',
+    properties: [
+      { id: 'ep-rp-061', name: 'poNo', displayName: '调拨单号', dataType: 'STRING', required: true, searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-rp-062', name: 'orderStatus', displayName: '单据状态', dataType: 'STRING', required: true, defaultValue: 'PENDING_SHIP', searchable: true, sortable: true, sortOrder: 2 },
+      { id: 'ep-rp-063', name: 'totalQty', displayName: '总调拨量', dataType: 'INTEGER', required: true, searchable: false, sortable: true, sortOrder: 3 },
+      { id: 'ep-rp-064', name: 'plannedShipDate', displayName: '计划发货日', dataType: 'DATE', required: true, searchable: false, sortable: true, sortOrder: 4 },
+      { id: 'ep-rp-065', name: 'targetArrivalDate', displayName: '预计到货日', dataType: 'DATE', required: true, searchable: false, sortable: true, sortOrder: 5 },
+      { id: 'ep-rp-066', name: 'sizeBreakdownJson', displayName: '尺码拆分', dataType: 'JSON', required: true, searchable: false, sortable: false, sortOrder: 6 },
+    ],
+  },
+  {
+    id: 'et-rp-008',
+    name: 'ReplenishmentPlan',
+    description: '补货计划结果实体，沉淀目标满足天数、理论缺口、实际分配与解释原因。',
+    properties: [
+      { id: 'ep-rp-071', name: 'planNo', displayName: '计划编号', dataType: 'STRING', required: true, searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-rp-072', name: 'coverageDays', displayName: '目标满足天数', dataType: 'INTEGER', required: true, defaultValue: '14', searchable: false, sortable: true, sortOrder: 2 },
+      { id: 'ep-rp-073', name: 'dailySalesVelocity', displayName: '日均销量', dataType: 'FLOAT', required: true, searchable: false, sortable: true, sortOrder: 3 },
+      { id: 'ep-rp-074', name: 'theoreticalDemandQty', displayName: '理论需求量', dataType: 'INTEGER', required: true, searchable: false, sortable: true, sortOrder: 4 },
+      { id: 'ep-rp-075', name: 'allocatedQty', displayName: '实际分配量', dataType: 'INTEGER', required: true, searchable: false, sortable: true, sortOrder: 5 },
+      { id: 'ep-rp-076', name: 'decisionReason', displayName: '分配解释', dataType: 'TEXT', required: false, searchable: true, sortable: false, sortOrder: 6 },
+    ],
+  },
+]
+
+const PRODUCT_REPLENISHMENT_RELATION_TYPES: RelationTypeConfig[] = [
+  { id: 'rt-rp-001', name: 'records_sales', domain: 'Store', range: 'SalesOrder', description: '门店沉淀的销售订单事实', properties: [] },
+  { id: 'rt-rp-002', name: 'orders_product', domain: 'SalesOrder', range: 'Product', description: '销售订单对应的商品 SKU', properties: [] },
+  { id: 'rt-rp-003', name: 'holds_inventory', domain: 'Warehouse', range: 'Inventory', description: '仓库持有的库存快照', properties: [] },
+  { id: 'rt-rp-004', name: 'inventory_of_product', domain: 'Inventory', range: 'Product', description: '库存快照关联的商品 SKU', properties: [] },
+  { id: 'rt-rp-005', name: 'uses_size_profile', domain: 'Product', range: 'SizeProfile', description: '商品适用的标准尺码模型', properties: [] },
+  { id: 'rt-rp-006', name: 'plans_for_product', domain: 'ReplenishmentPlan', range: 'Product', description: '补货计划针对的目标商品', properties: [] },
+  { id: 'rt-rp-007', name: 'targets_store', domain: 'ReplenishmentPlan', range: 'Store', description: '补货计划面向的门店', properties: [] },
+  { id: 'rt-rp-008', name: 'allocated_from', domain: 'ReplenishmentPlan', range: 'Warehouse', description: '补货计划的发货仓来源', properties: [] },
+  { id: 'rt-rp-009', name: 'generated_purchase_order', domain: 'ReplenishmentPlan', range: 'PurchaseOrder', description: '补货计划生成调拨单据', properties: [] },
+  { id: 'rt-rp-010', name: 'ships_to_store', domain: 'PurchaseOrder', range: 'Store', description: '调拨单的目标门店', properties: [] },
+  { id: 'rt-rp-011', name: 'fulfilled_by_warehouse', domain: 'PurchaseOrder', range: 'Warehouse', description: '调拨单的履约仓库', properties: [] },
+]
+
+const PRODUCT_REPLENISHMENT_AI_INSIGHT_RUN: AiInsightRun = {
+  id: 'ai-rp-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-06T09:10:00.000Z',
+  completedAt: '2026-03-06T09:18:00.000Z',
+  scannedDocumentCount: 5,
+  addedEntityCount: 3,
+  addedRelationCount: 4,
+  addedEntityNames: ['SizeProfile', 'ReplenishmentPlan', 'PurchaseOrder'],
+  addedRelationNames: ['uses_size_profile', 'plans_for_product', 'targets_store', 'generated_purchase_order'],
+  warnings: [],
+  stage: '完成',
+  currentDocument: '百丽城市单品补货业务本体模型数据说明示例.docx',
+  logs: [
+    '解析城市单品补货业务说明文档和接口映射资料',
+    '新增 SizeProfile、ReplenishmentPlan、PurchaseOrder 三类专业补货实体',
+    '补充尺码模型、门店目标配货和调拨单生成链路关系',
+  ],
+}
+
+const PRODUCT_REPLENISHMENT_RUN: ExtractionRun = {
+  id: 'run-rp-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-06T10:00:00.000Z',
+  completedAt: '2026-03-06T10:12:00.000Z',
+  candidateEntityCount: 18,
+  candidateRelationCount: 14,
+  pendingReviewCount: 0,
+  stage: '完成',
+  currentDocument: 'Nike Air Max 270 上海区域自动补货演示样例.jsonl',
+  logs: [
+    '抽取上海区域 80 家门店近14日销售与库存样例',
+    '识别高销店、基础店、无销店分层标签与尺码曲线模型',
+    '生成补货计划候选 18 个、关系 14 条，并自动产出调拨单示例',
+  ],
+  warnings: [],
+  reviewItems: [
+    { id: 'ri-rp-001', kind: 'ENTITY', title: 'Nike Air Max 270 (Product)', evidence: '城市单品补货说明文档', confidence: 0.99, status: 'APPROVED' },
+    { id: 'ri-rp-002', kind: 'ENTITY', title: '上海南京东路旗舰店 (Store)', evidence: '上海区域门店近14日销售流速与库存水位对账.xlsx', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-rp-003', kind: 'ENTITY', title: '华东上海闵行中心仓 (Warehouse)', evidence: 'ERP-WMS 调拨单接口字段映射说明.xlsx', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-rp-004', kind: 'ENTITY', title: '女鞋标准尺码曲线 (SizeProfile)', evidence: '城市补货尺码模型与优先分配规则.md', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-rp-005', kind: 'ENTITY', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan)', evidence: 'Nike Air Max 270 上海区域自动补货演示样例.jsonl', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-rp-006', kind: 'ENTITY', title: 'PO-SH-20260310-001 (PurchaseOrder)', evidence: 'Nike Air Max 270 上海区域自动补货演示样例.jsonl', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-rp-007', kind: 'RELATION', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan) → plans_for_product → Nike Air Max 270 (Product)', evidence: '演示样例关系', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-rp-008', kind: 'RELATION', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan) → targets_store → 上海南京东路旗舰店 (Store)', evidence: '演示样例关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-rp-009', kind: 'RELATION', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan) → allocated_from → 华东上海闵行中心仓 (Warehouse)', evidence: '演示样例关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-rp-010', kind: 'RELATION', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan) → generated_purchase_order → PO-SH-20260310-001 (PurchaseOrder)', evidence: '演示样例关系', confidence: 0.96, status: 'APPROVED' },
+  ],
+}
+
+const PRODUCT_REPLENISHMENT_VERSION: OntologyVersion = {
+  id: 'ver-rp-001',
+  version: 'v1.1',
+  label: '城市单品补货执行图谱',
+  createdAt: '2026-03-06T10:15:00.000Z',
+  sourceRunId: 'run-rp-001',
+  entityCount: 18,
+  relationCount: 14,
+}
+
+const PRODUCT_REPLENISHMENT_ACTIONS: ActionDefinition[] = [
+  {
+    id: 'act-rp-001',
+    name: 'calculate_store_replenishment_demand',
+    displayName: '计算门店补货需求',
+    description: '基于近2周日均销量、当前门店库存和目标满足天数，计算门店理论补货缺口。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-rp-008',
+    triggerType: 'MANUAL',
+    triggerConfigJson: '[{"functionId":"fn-rp-001","order":1,"triggerType":"MANUAL","triggerConfig":"{\\"entry\\":\\"workspace.button\\",\\"scenario\\":\\"city_sku_replenishment\\"}"},{"functionId":"fn-rp-002","order":2,"triggerType":"MANUAL","triggerConfig":"{\\"coverageDays\\":14,\\"historyWindowDays\\":14,\\"fallbackVelocity\\":0.6}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_replenishment_review","notifyRole":"商品运营经理"}',
+    parametersJson: '[{"name":"skuCode","displayName":"SKU编码","dataType":"STRING","required":true},{"name":"city","displayName":"目标城市","dataType":"STRING","required":true},{"name":"coverageDays","displayName":"目标满足天数","dataType":"INTEGER","required":true,"defaultValue":"14"},{"name":"historyWindowDays","displayName":"历史窗口天数","dataType":"INTEGER","required":false,"defaultValue":"14"}]',
+    rulesJson: '[{"ruleType":"CREATE_OBJECT","target":"ReplenishmentPlan","conditionJson":"{\\"when\\":\\"skuCode_present and city_present\\"}","propertyMappingsJson":"{\\"planNo\\":\\"AUTO-$skuCode-$city\\",\\"coverageDays\\":\\"$coverageDays\\",\\"decisionReason\\":\\"velocity_based_gap\\"}","sortOrder":1},{"ruleType":"UPDATE_OBJECT","target":"Store","conditionJson":"{\\"when\\":\\"coverageDays >= 14\\"}","propertyMappingsJson":"{\\"priorityLevel\\":\\"A\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"sku_required","condition":"skuCode != \\"\\"","message":"SKU编码不能为空"},{"name":"city_required","condition":"city != \\"\\"","message":"目标城市不能为空"},{"name":"coverage_days_range","condition":"coverageDays >= 3 and coverageDays <= 30","message":"目标满足天数需在 3 到 30 天之间"}]',
+  },
+  {
+    id: 'act-rp-002',
+    name: 'allocate_warehouse_inventory',
+    displayName: '执行仓库库存分配',
+    description: '当仓库库存不足时，按门店优先级、售速和黄金尺码保障策略进行分配。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-rp-008',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-rp-003","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"plan.demand_calculated\\",\\"applySizeCurve\\":true}"},{"functionId":"fn-rp-004","order":2,"triggerType":"EVENT","triggerConfig":"{\\"priorityRule\\":\\"high_sales_first\\",\\"protectGoldenSizes\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":2,"fallback":"reserve_core_sizes_only","notifyRole":"区域配货主管"}',
+    parametersJson: '[{"name":"planNo","displayName":"计划编号","dataType":"STRING","required":true},{"name":"warehouseCode","displayName":"仓库编码","dataType":"STRING","required":true},{"name":"allocatableQty","displayName":"可分配数量","dataType":"INTEGER","required":true},{"name":"protectGoldenSizes","displayName":"保障黄金尺码","dataType":"BOOLEAN","required":false,"defaultValue":"true"}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"ReplenishmentPlan","conditionJson":"{\\"when\\":\\"allocatableQty > 0\\"}","propertyMappingsJson":"{\\"allocatedQty\\":\\"$allocatableQty\\",\\"decisionReason\\":\\"warehouse_limited_allocation\\"}","sortOrder":1},{"ruleType":"CREATE_LINK","target":"Warehouse","conditionJson":"{\\"when\\":\\"warehouseCode_present\\"}","propertyMappingsJson":"{\\"from\\":\\"$planNo\\",\\"relation\\":\\"allocated_from\\",\\"to\\":\\"$warehouseCode\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"plan_required","condition":"planNo != \\"\\"","message":"计划编号不能为空"},{"name":"warehouse_required","condition":"warehouseCode != \\"\\"","message":"仓库编码不能为空"},{"name":"allocatable_qty_positive","condition":"allocatableQty >= 0","message":"可分配数量不能为负数"}]',
+  },
+  {
+    id: 'act-rp-003',
+    name: 'generate_transfer_purchase_orders',
+    displayName: '生成门店调拨单',
+    description: '将补货计划结果转为从仓库发往门店的调拨采购单，并锁定可分配库存。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-rp-007',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-rp-005","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"plan.inventory_allocated\\",\\"splitByStore\\":true}"}]',
+    exceptionPolicy: 'SKIP',
+    exceptionConfigJson: '{"retainDraft":true,"fallback":"manual_po_creation","notifyRole":"物流履约专员"}',
+    parametersJson: '[{"name":"planNo","displayName":"计划编号","dataType":"STRING","required":true},{"name":"sourceWarehouse","displayName":"发货仓库","dataType":"STRING","required":true},{"name":"expectedArrivalDate","displayName":"预计到货日","dataType":"STRING","required":true},{"name":"lockInventory","displayName":"锁定库存","dataType":"BOOLEAN","required":false,"defaultValue":"true"}]',
+    rulesJson: '[{"ruleType":"CREATE_OBJECT","target":"PurchaseOrder","conditionJson":"{\\"when\\":\\"planNo_present and sourceWarehouse_present\\"}","propertyMappingsJson":"{\\"poNo\\":\\"PO-$planNo\\",\\"plannedShipDate\\":\\"today\\",\\"targetArrivalDate\\":\\"$expectedArrivalDate\\",\\"orderStatus\\":\\"PENDING_SHIP\\"}","sortOrder":1},{"ruleType":"UPDATE_OBJECT","target":"Inventory","conditionJson":"{\\"when\\":\\"lockInventory == true\\"}","propertyMappingsJson":"{\\"reservedQty\\":\\"allocated_qty\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"plan_required","condition":"planNo != \\"\\"","message":"计划编号不能为空"},{"name":"warehouse_required","condition":"sourceWarehouse != \\"\\"","message":"发货仓库不能为空"},{"name":"arrival_required","condition":"expectedArrivalDate != \\"\\"","message":"预计到货日不能为空"}]',
+  },
+  {
+    id: 'act-rp-004',
+    name: 'review_size_breakdown_exception',
+    displayName: '尺码断码异常复核',
+    description: '针对高销门店或黄金尺码分配不足的情况输出人工复核建议。',
+    status: 'DRAFT',
+    targetObjectTypeId: 'et-rp-008',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-rp-004","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"plan.po_generated\\",\\"threshold\\":0.85}"}]',
+    exceptionPolicy: 'IGNORE',
+    exceptionConfigJson: '{"fallback":"notify_category_planner","notifyRole":"商品企划"}',
+    parametersJson: '[{"name":"planNo","displayName":"计划编号","dataType":"STRING","required":true},{"name":"storeCode","displayName":"门店编码","dataType":"STRING","required":true},{"name":"goldenSizeFillRate","displayName":"黄金尺码满足率","dataType":"FLOAT","required":true}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"ReplenishmentPlan","conditionJson":"{\\"when\\":\\"goldenSizeFillRate < 0.85\\"}","propertyMappingsJson":"{\\"decisionReason\\":\\"manual_review_for_size_gap\\"}","sortOrder":1}]',
+    validationRulesJson: '[{"name":"plan_required","condition":"planNo != \\"\\"","message":"计划编号不能为空"},{"name":"store_required","condition":"storeCode != \\"\\"","message":"门店编码不能为空"},{"name":"fill_rate_range","condition":"goldenSizeFillRate >= 0 and goldenSizeFillRate <= 1","message":"黄金尺码满足率需在 0 到 1 之间"}]',
+  },
+]
+
+const PRODUCT_REPLENISHMENT_FUNCTIONS: FunctionDefinition[] = [
+  {
+    id: 'fn-rp-001',
+    name: '近14日日均销量计算',
+    description: '按门店和SKU聚合近14日销售订单，输出日均销量和门店分层标签。',
+    scriptContent: 'def calc_daily_sales_velocity(order_rows: list[dict], history_window_days: int = 14):\n    """计算门店SKU在窗口期内的日均销量。"""\n    total_qty = sum(row.get("sales_qty", 0) for row in order_rows)\n    velocity = round(total_qty / max(history_window_days, 1), 2)\n    level = "high" if velocity >= 4 else "base" if velocity >= 1 else "pause"\n    return {"dailySalesVelocity": velocity, "storeLevel": level, "historyWindowDays": history_window_days}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-rp-002',
+    name: '目标库存缺口计算',
+    description: '依据目标满足天数、当前库存和在途库存计算理论补货需求量。',
+    scriptContent: 'def calc_target_stock_gap(daily_sales_velocity: float, coverage_days: int, on_hand_qty: int, in_transit_qty: int = 0):\n    """计算理论补货缺口。"""\n    target_stock = round(daily_sales_velocity * coverage_days)\n    current_stock = max(on_hand_qty, 0) + max(in_transit_qty, 0)\n    gap = max(target_stock - current_stock, 0)\n    return {"targetStock": target_stock, "currentStock": current_stock, "gapQty": gap}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-rp-003',
+    name: '尺码模型拆分',
+    description: '将门店总补货量按标准尺码曲线拆分至具体尺码并执行向下取整。',
+    scriptContent: 'def split_qty_by_size_curve(total_qty: int, size_curve: dict[str, float]):\n    """按照尺码曲线拆分总量。"""\n    result = {}\n    allocated = 0\n    for size, ratio in size_curve.items():\n        qty = int(total_qty * ratio)\n        result[size] = qty\n        allocated += qty\n    result["_allocated"] = allocated\n    result["_remain"] = max(total_qty - allocated, 0)\n    return result',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-rp-004',
+    name: '库存优先级分配',
+    description: '在供给不足时优先满足高销店和黄金尺码，并输出满足率说明。',
+    scriptContent: 'def allocate_limited_inventory(store_demands: list[dict], allocatable_qty: int):\n    """优先按高销店、A级门店、黄金尺码执行分配。"""\n    ordered = sorted(store_demands, key=lambda item: (item.get("priorityScore", 0), item.get("dailySalesVelocity", 0)), reverse=True)\n    remain = allocatable_qty\n    results = []\n    for item in ordered:\n        demand = item.get("gapQty", 0)\n        allocated = min(max(demand, 0), max(remain, 0))\n        remain -= allocated\n        fill_rate = round(allocated / demand, 2) if demand else 1.0\n        results.append({**item, "allocatedQty": allocated, "fillRate": fill_rate})\n    return {"allocations": results, "remainQty": max(remain, 0)}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-rp-005',
+    name: '调拨单负载生成',
+    description: '按门店粒度生成调拨单 payload，并拼装仓库、门店和尺码拆分信息。',
+    scriptContent: 'def build_transfer_order_payload(plan_no: str, source_warehouse: str, allocations: list[dict], arrival_date: str):\n    """生成调拨单负载。"""\n    payload = []\n    for index, item in enumerate(allocations, start=1):\n        payload.append({\n            "poNo": f"PO-{plan_no}-{index:03d}",\n            "planNo": plan_no,\n            "sourceWarehouse": source_warehouse,\n            "targetStore": item.get("storeCode"),\n            "allocatedQty": item.get("allocatedQty", 0),\n            "sizeBreakdown": item.get("sizeBreakdown", {}),\n            "expectedArrivalDate": arrival_date,\n        })\n    return payload',
+    status: 'ACTIVE',
+  },
+]
+
 function isFaultDiagnosisProject(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
   return project.id === FAULT_DIAGNOSIS_PROJECT_ID || project.name === FAULT_DIAGNOSIS_PROJECT_NAME
 }
@@ -270,6 +700,12 @@ function mergeUniqueById<T extends { id: string }>(current: T[], seeded: T[]): {
     return { items: current, changed: false }
   }
   return { items: [...current, ...additions], changed: true }
+}
+
+function removeItemsById<T extends { id: string }>(current: T[], ids: string[]): { items: T[]; changed: boolean } {
+  const removedIds = new Set(ids)
+  const items = current.filter(item => !removedIds.has(item.id))
+  return { items, changed: items.length !== current.length }
 }
 
 function byIsoDesc(a: { createdAt?: string; uploadedAt?: string }, b: { createdAt?: string; uploadedAt?: string }): number {
@@ -333,6 +769,146 @@ function ensureFaultDiagnosisSeed(project: ProjectDetail): boolean {
   const versionExists = project.versions.some(version => version.id === project.currentVersionId)
   if (!versionExists) {
     project.currentVersionId = FAULT_DIAGNOSIS_8D_VERSION.id
+    changed = true
+  }
+
+  return changed
+}
+
+function isProductReplenishmentProject(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
+  return (
+    project.id === PRODUCT_REPLENISHMENT_PROJECT_ID
+    || project.name === PRODUCT_REPLENISHMENT_PROJECT_NAME
+    || project.name === PRODUCT_REPLENISHMENT_LEGACY_NAME
+  )
+}
+
+function ensureProductReplenishmentSeed(project: ProjectDetail): boolean {
+  if (!isProductReplenishmentProject(project)) {
+    return false
+  }
+
+  let changed = false
+
+  if (project.name !== PRODUCT_REPLENISHMENT_PROJECT_NAME) {
+    project.name = PRODUCT_REPLENISHMENT_PROJECT_NAME
+    changed = true
+  }
+
+  if (project.category !== 'retail') {
+    project.category = 'retail'
+    changed = true
+  }
+
+  if (project.description !== PRODUCT_REPLENISHMENT_DESCRIPTION) {
+    project.description = PRODUCT_REPLENISHMENT_DESCRIPTION
+    changed = true
+  }
+
+  if ((Date.parse(project.updatedAt || '') || 0) < Date.parse(PRODUCT_REPLENISHMENT_UPDATED_AT)) {
+    project.updatedAt = PRODUCT_REPLENISHMENT_UPDATED_AT
+    changed = true
+  }
+
+  const cleanedDocuments = removeItemsById(project.documents, ['doc-2.4.18-1', 'doc-2.4.18-2'])
+  if (cleanedDocuments.changed) {
+    project.documents = cleanedDocuments.items
+    changed = true
+  }
+
+  const mergedDocuments = mergeUniqueById(project.documents, cloneProjectData(PRODUCT_REPLENISHMENT_DOCUMENTS))
+  if (mergedDocuments.changed) {
+    project.documents = mergedDocuments.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedDataSources = mergeUniqueById(project.dataSources, cloneProjectData(PRODUCT_REPLENISHMENT_DATA_SOURCES))
+  if (mergedDataSources.changed) {
+    project.dataSources = mergedDataSources.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const cleanedEntityTypes = removeItemsById(project.schemaConfig.entityTypes, ['et-2.4.18-s', 'et-2.4.18-o'])
+  if (cleanedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = cleanedEntityTypes.items
+    changed = true
+  }
+
+  const mergedEntityTypes = mergeUniqueById(project.schemaConfig.entityTypes, cloneProjectData(PRODUCT_REPLENISHMENT_ENTITY_TYPES))
+  if (mergedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = mergedEntityTypes.items
+    changed = true
+  }
+
+  const cleanedRelationTypes = removeItemsById(project.schemaConfig.relationTypes, ['rt-2.4.18-1'])
+  if (cleanedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = cleanedRelationTypes.items
+    changed = true
+  }
+
+  const mergedRelationTypes = mergeUniqueById(project.schemaConfig.relationTypes, cloneProjectData(PRODUCT_REPLENISHMENT_RELATION_TYPES))
+  if (mergedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = mergedRelationTypes.items
+    changed = true
+  }
+
+  const mergedSkills = mergeUniqueById(project.schemaConfig.skills, cloneProjectData([
+    { id: 'sk-rp-001', code: 'data_processing', name: '城市补货数据整编', enabled: true, prompt: '将 ERP 销售订单、WMS 库存和商品主数据清洗为城市单品补货可用语义视图', source: 'built_in', tags: ['replenishment', 'etl', 'sales'] },
+    { id: 'sk-rp-002', code: 'graph_synthesis', name: '补货图谱融合', enabled: true, prompt: '融合商品、门店、仓库、库存与尺码模型实体，生成补货决策链路', source: 'built_in', tags: ['graph', 'replenishment'] },
+    { id: 'sk-rp-003', code: 'custom', name: '尺码分配规则编排', enabled: true, prompt: '根据门店层级、黄金尺码与断码约束执行尺码拆分和库存分配规则', source: 'built_in', tags: ['size-curve', 'allocation'] },
+  ]))
+  if (mergedSkills.changed) {
+    project.schemaConfig.skills = mergedSkills.items
+    changed = true
+  }
+
+  if (project.schemaConfig.entityScope !== '零售门店与运营场景中的商品、门店、仓库、销售订单、库存、尺码模型、补货计划与采购调拨单等核心业务实体') {
+    project.schemaConfig.entityScope = '零售门店与运营场景中的商品、门店、仓库、销售订单、库存、尺码模型、补货计划与采购调拨单等核心业务实体'
+    changed = true
+  }
+
+  if (project.schemaConfig.relationScope !== '覆盖销量聚合、库存供给、尺码模型应用、补货计划生成与仓配履约的完整补货执行关系链路') {
+    project.schemaConfig.relationScope = '覆盖销量聚合、库存供给、尺码模型应用、补货计划生成与仓配履约的完整补货执行关系链路'
+    changed = true
+  }
+
+  if (project.schemaConfig.updatedAt !== PRODUCT_REPLENISHMENT_UPDATED_AT) {
+    project.schemaConfig.updatedAt = PRODUCT_REPLENISHMENT_UPDATED_AT
+    changed = true
+  }
+
+  if (!project.aiInsightRun) {
+    project.aiInsightRun = cloneProjectData(PRODUCT_REPLENISHMENT_AI_INSIGHT_RUN)
+    changed = true
+  }
+
+  const mergedRuns = mergeUniqueById(project.runs, cloneProjectData([PRODUCT_REPLENISHMENT_RUN]))
+  if (mergedRuns.changed) {
+    project.runs = mergedRuns.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedVersions = mergeUniqueById(project.versions, cloneProjectData([PRODUCT_REPLENISHMENT_VERSION]))
+  if (mergedVersions.changed) {
+    project.versions = mergedVersions.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedActions = mergeUniqueById(project.actions, cloneProjectData(PRODUCT_REPLENISHMENT_ACTIONS))
+  if (mergedActions.changed) {
+    project.actions = mergedActions.items
+    changed = true
+  }
+
+  const mergedFunctions = mergeUniqueById(project.functions, cloneProjectData(PRODUCT_REPLENISHMENT_FUNCTIONS))
+  if (mergedFunctions.changed) {
+    project.functions = mergedFunctions.items
+    changed = true
+  }
+
+  const versionExists = project.versions.some(version => version.id === project.currentVersionId)
+  if (!versionExists) {
+    project.currentVersionId = PRODUCT_REPLENISHMENT_VERSION.id
     changed = true
   }
 
@@ -513,6 +1089,9 @@ function normalizeStore(store: ProjectStore): boolean {
     if (ensureFaultDiagnosisSeed(project)) {
       changed = true
     }
+    if (ensureProductReplenishmentSeed(project)) {
+      changed = true
+    }
     for (const run of project.runs) {
       if (normalizeRun(project, run, () => `ri-${++store.idSeq}`)) {
         changed = true
@@ -583,7 +1162,7 @@ export const ONTOLOGY_DEFS: OntologyDef[] = [
   ['2.3.15', '末端运力本体', 'retail', '仓储与物流', '(骑手A) -[当前负载]-> (5单)', '即时配送调度Agent：在高峰期平衡配送时长与骑手收益，优化路线', '执行类', 7500],
   ['2.4.16', '货架图谱本体', 'retail', '门店与运营', '(货架A层) -[关联商品]-> (薯片+可乐)', '货架优化Agent：利用关联购买数据，建议能够提升连带率的陈列布局', '决策类', 7000],
   ['2.4.17', '客流行为本体', 'retail', '门店与运营', '(消费者甲) -[停留时长]-> (美妆区/15分钟)', '门店热力Agent：识别高流量死角，调整动线引导', '分析类', 7600],
-  ['2.4.18', '补货策略本体', 'retail', '门店与运营', '(SKU分类:某鞋) -[补货逻辑]-> (定量补货/Min-Max)', '自动订单Agent：根据不同SKU的周期属性，自动计算本次应补货数量', '执行类', 7200],
+  ['2.4.18', '商品补货本体', 'retail', '门店与运营', '(商品SKU:Nike Air Max 270) -[生成补货计划]-> (门店调拨单/14天满足)', '城市单品补货Agent：结合销量流速、库存水位与尺码模型自动生成门店调拨方案', '执行类', 12600],
   ['2.4.19', '设备能耗本体', 'retail', '门店与运营', '(门店空调) -[运行策略]-> (节能模式/26℃)', '绿色门店Agent：根据进店人数实时调节灯光与温控系统', '执行类', 5000],
   ['2.4.20', '店员排班本体', 'retail', '门店与运营', '(店员A) -[擅长领域]-> (导购/美妆)', '弹性排班Agent：预测客流波峰，自动生成跨店调拨的人力计划', '执行类', 4800],
   ['2.4.21', '全渠道库存本体', 'retail', '门店与运营', '(线上订单) -[支持自提]-> (门店B)', 'O2O履约Agent：根据库存距离和成本，决定从仓库发货还是门店自提', '决策类', 5300],
@@ -965,6 +1544,11 @@ function defaultProjects(): ProjectDetail[] {
     },
   ]
   ensureFaultDiagnosisSeed(first)
+
+  const productReplenishment = projects.find(project => project.id === PRODUCT_REPLENISHMENT_PROJECT_ID)
+  if (productReplenishment) {
+    ensureProductReplenishmentSeed(productReplenishment)
+  }
   const store: ProjectStore = { projects, idSeq: 9000, _v: DATA_VERSION }
   normalizeStore(store)
   return projects
@@ -1013,18 +1597,19 @@ function cloneProjectData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
-const PINNED_PROJECT_NAME = '故障诊断本体'
+const PINNED_PROJECT_ORDER = ['故障诊断本体', '商品补货本体'] as const
 
-function isPinnedProject(project: Pick<ProjectDetail, 'name'>): boolean {
-  return project.name === PINNED_PROJECT_NAME
+function getPinnedProjectRank(project: Pick<ProjectDetail, 'name'>): number {
+  const index = PINNED_PROJECT_ORDER.indexOf(project.name as (typeof PINNED_PROJECT_ORDER)[number])
+  return index >= 0 ? index : Number.POSITIVE_INFINITY
 }
 
 function sortProjectsByUpdatedAt(projects: ProjectDetail[]): ProjectDetail[] {
   return [...projects].sort((a, b) => {
-    const aPinned = isPinnedProject(a)
-    const bPinned = isPinnedProject(b)
-    if (aPinned !== bPinned) {
-      return aPinned ? -1 : 1
+    const aRank = getPinnedProjectRank(a)
+    const bRank = getPinnedProjectRank(b)
+    if (aRank !== bRank) {
+      return aRank - bRank
     }
 
     const aTime = Date.parse(a.updatedAt || a.createdAt || '') || 0
