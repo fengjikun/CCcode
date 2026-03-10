@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Badge,
+  Button,
   Card,
   Col,
-  Modal,
   Row,
   Select,
-  Space,
-  Statistic,
   Tag,
   Typography,
 } from 'antd'
@@ -18,7 +17,7 @@ import {
   DashboardOutlined,
   ThunderboltOutlined,
   ClockCircleOutlined,
-  ToolOutlined,
+  EditOutlined,
   PercentageOutlined,
 } from '@ant-design/icons'
 import { listDICWorkers, getDICStats, type DICStats } from '../../api/dicWorker'
@@ -31,12 +30,12 @@ export default function DICWorkerPage() {
   const [workers, setWorkers] = useState<DICWorker[]>([])
   const [stats, setStats] = useState<DICStats>({ total: 0, online: 0, busy: 0, totalTasksToday: 0, totalTasksCompleted: '' })
   const [filterCategory, setFilterCategory] = useState<string | undefined>()
+  const navigate = useNavigate()
 
   useEffect(() => {
     listDICWorkers().then(setWorkers)
     getDICStats().then(setStats)
   }, [])
-  const [detailWorker, setDetailWorker] = useState<DICWorker | null>(null)
 
   const filtered = workers.filter(w =>
     !filterCategory || w.category === filterCategory
@@ -102,7 +101,7 @@ export default function DICWorkerPage() {
                   hoverable
                   size="small"
                   style={{ height: '100%' }}
-                  onClick={() => setDetailWorker(w)}
+                  onClick={() => navigate(`/digital-worker/dic/${w.id}`)}
                 >
                   <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                     <span style={{ fontSize: 32 }}>{w.icon}</span>
@@ -124,6 +123,18 @@ export default function DICWorkerPage() {
                         <span><ClockCircleOutlined /> {w.avgResponseTime}</span>
                         <span><PercentageOutlined /> {w.successRate}</span>
                       </div>
+                      <Button
+                        type="link"
+                        size="small"
+                        icon={<EditOutlined />}
+                        style={{ paddingInline: 0, marginTop: 10 }}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          navigate(`/digital-worker/dic/${w.id}`)
+                        }}
+                      >
+                        进入编辑页
+                      </Button>
                     </div>
                   </div>
                 </Card>
@@ -132,64 +143,6 @@ export default function DICWorkerPage() {
           ))}
         </Row>
       </Card>
-
-      {/* 详情弹窗 */}
-      <Modal
-        title={detailWorker ? <span>{detailWorker.icon} {detailWorker.name}</span> : ''}
-        open={!!detailWorker}
-        onCancel={() => setDetailWorker(null)}
-        footer={null}
-        width={560}
-        destroyOnClose
-      >
-        {detailWorker && (
-          <>
-            <div style={{ textAlign: 'center', padding: '16px 0' }}>
-              <span style={{ fontSize: 48 }}>{detailWorker.icon}</span>
-              <Title level={4} style={{ margin: '8px 0 4px' }}>{detailWorker.name}</Title>
-              <Space>
-                <Tag color={DIC_CATEGORY_COLORS[detailWorker.category]}>{DIC_CATEGORY_LABELS[detailWorker.category]}</Tag>
-                <Tag color={DIC_STATUS_COLORS[detailWorker.status]}>{detailWorker.status}</Tag>
-              </Space>
-              <Paragraph type="secondary" style={{ margin: '12px auto 0', maxWidth: 400 }}>
-                {detailWorker.description}
-              </Paragraph>
-            </div>
-
-            <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-              <Col span={8}>
-                <Card size="small" style={{ textAlign: 'center' }}>
-                  <Statistic title="累计任务" value={detailWorker.tasksCompleted.toLocaleString()} />
-                </Card>
-              </Col>
-              <Col span={8}>
-                <Card size="small" style={{ textAlign: 'center' }}>
-                  <Statistic title="今日任务" value={detailWorker.tasksToday} />
-                </Card>
-              </Col>
-              <Col span={8}>
-                <Card size="small" style={{ textAlign: 'center' }}>
-                  <Statistic title="成功率" value={detailWorker.successRate} />
-                </Card>
-              </Col>
-            </Row>
-
-            <Card size="small" title={<span><ToolOutlined /> 技能列表</span>} style={{ marginBottom: 16 }}>
-              <Space wrap>
-                {detailWorker.skills.map(s => <Tag key={s} color="blue">{s}</Tag>)}
-              </Space>
-            </Card>
-
-            <div style={{ fontSize: 12, color: '#8c8c8c' }}>
-              <Space split={<span>·</span>}>
-                <span>平均响应 {detailWorker.avgResponseTime}</span>
-                <span>最近活跃 {detailWorker.lastActive}</span>
-                <span>ID: {detailWorker.id}</span>
-              </Space>
-            </div>
-          </>
-        )}
-      </Modal>
     </div>
   )
 }

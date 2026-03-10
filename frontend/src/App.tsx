@@ -8,6 +8,7 @@ import NotFoundPage from './pages/NotFoundPage'
 // L7 数字员工应用
 import DigitalHumanListPage from './pages/DigitalHumanListPage'
 import DigitalWorkerConfigPage from './pages/DigitalWorkerConfigPage'
+import DICWorkerConfigPage from './pages/DICWorkerConfigPage'
 import DICWorkerPage from './pages/platform/DICWorkerPage'
 
 // L4 workspace 工作台
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="/digital-worker/business" element={<DigitalHumanListPage />} />
         <Route path="/digital-worker/business/:id" element={<DigitalWorkerConfigPage />} />
         <Route path="/digital-worker/dic" element={<DICWorkerPage />} />
+        <Route path="/digital-worker/dic/:id" element={<DICWorkerConfigPage />} />
 
         {/* L4 workspace 工作台 */}
         <Route path="/studio/agents" element={<AgentStudioPage />} />

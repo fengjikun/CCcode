@@ -104,7 +104,7 @@ const menuItems: MenuItem[] = [
 const PAGE_TITLES: Record<string, [string, string]> = {
   '/dashboard': ['', '总览'],
   '/digital-worker/business': ['数字员工应用', '业务数字员工空间'],
-  '/digital-worker/dic': ['业务AI员工', '技术AI员工空间'],
+  '/digital-worker/dic': ['数字员工应用', '技术AI员工空间'],
   '/studio/agents': ['workspace 工作台', '智能体编排'],
   '/studio/agents/logs': ['workspace 工作台', '智能体日志'],
   '/studio/skills': ['workspace 工作台', 'Skills Hub'],
@@ -151,6 +151,7 @@ function findPageInfo(pathname: string): [string, string] {
   if (pathname.match(/^\/ontology\/projects\/.+\/graph$/)) return ['Deepology', '本体图谱展示']
   if (pathname.match(/^\/ontology\/projects\/.+$/)) return ['Deepology', '本体工作台']
   if (pathname.match(/^\/digital-worker\/business\/.+$/)) return ['数字员工应用', 'AI员工配置']
+  if (pathname.match(/^\/digital-worker\/dic\/.+$/)) return ['数字员工应用', '技术AI员工配置']
   return PAGE_TITLES[pathname] || ['', '']
 }
 
