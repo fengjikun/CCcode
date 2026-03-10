@@ -212,13 +212,7 @@ export default function DigitalHumanListPage() {
   const reload = useCallback(() => {
     listDigitalHumans()
       .then(items => {
-        setList(
-          [...items].sort((a, b) => {
-            const aTime = new Date(a.updatedAt).getTime()
-            const bTime = new Date(b.updatedAt).getTime()
-            return bTime - aTime
-          }),
-        )
+        setList(items)
       })
       .catch(() => message.error('数字员工加载失败'))
   }, [])

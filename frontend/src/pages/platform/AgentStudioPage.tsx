@@ -47,6 +47,7 @@ import {
   createDigitalHuman,
   listDigitalHumans,
 } from '../../api/digitalHuman'
+import type { DigitalHumanType } from '../../types/digitalHuman'
 import type { Agent } from '../../types/agent'
 import {
   AGENT_TYPES,
@@ -59,6 +60,7 @@ import {
 import type { AgentType } from '../../types/agent'
 import type { Skill } from '../../types/skill'
 import { SKILL_CATEGORY_COLORS, SKILL_CATEGORY_ICONS } from '../../types/skill'
+import { SERVICE_MODEL_OPTIONS, SERVICE_MODEL_SELECT_OPTIONS } from '../../types/modelCatalog'
 import PageHeader from '../../components/shared/PageHeader'
 import StatCards from '../../components/shared/StatCards'
 import ModalHeader from '../../components/shared/ModalHeader'
@@ -67,14 +69,6 @@ import ActionColumn from '../../components/shared/ActionColumn'
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
 
-/* ──────────── 模型选项 ──────────── */
-const MODEL_OPTIONS = [
-  { value: 'Deepexi-Platform-70B', label: 'Deepexi-Platform-70B' },
-  { value: 'Deepexi-R1-Reasoner', label: 'Deepexi-R1-Reasoner' },
-  { value: 'Deepexi-Industry-60B-Instruct', label: 'Deepexi-Industry-60B-Instruct' },
-  { value: 'Deepexi-General-Agent', label: 'Deepexi-General-Agent' },
-]
-
 /* ──────────── 表单类型 ──────────── */
 interface CreateForm {
   name: string
@@ -82,6 +76,17 @@ interface CreateForm {
   description?: string
   systemPrompt: string
   model: string
+}
+
+function inferDigitalHumanType(agent: Agent): DigitalHumanType {
+  const text = `${agent.name} ${agent.ontologyName ?? ''} ${agent.description ?? ''}`
+  if (text.includes('故障')) return 'fault-repair'
+  if (text.includes('补货')) {
+    return agent.ontologyIndustry === 'retail' ? 'store-matching' : 'bom-analysis'
+  }
+  if (agent.ontologyIndustry === 'retail') return 'store-matching'
+  if (agent.type === 'Operational') return 'process-optimization'
+  return 'operation-decision'
 }
 
 /* ──────────── 编排可视化 ──────────── */
@@ -400,11 +405,21 @@ export default function AgentStudioPage() {
       // 更新 agent 状态为 Active
       await updateAgent(publishTarget.id, { status: 'Active' })
       // 创建数字员工
-      const dh = await createDigitalHuman(
-        publishTarget.name,
-        'fault-repair',
-        `由智能体「${publishTarget.name}」发布。${publishTarget.description || ''}`,
-      )
+      const dh = await createDigitalHuman({
+        name: publishTarget.name,
+        type: inferDigitalHumanType(publishTarget),
+        description: `由智能体「${publishTarget.name}」发布。${publishTarget.description || ''}`,
+        projectId: publishTarget.projectId,
+        ontologyCode: publishTarget.ontologyCode,
+        ontologyName: publishTarget.ontologyName,
+        ontologyIndustry: publishTarget.ontologyIndustry,
+        ontologyPhase: publishTarget.ontologyPhase,
+        agentScene: publishTarget.agentScene,
+        linkedAgentIds: [publishTarget.id],
+        linkedSkillIds: publishTarget.skillIds,
+        preferredModel: publishTarget.model,
+        systemPrompt: publishTarget.systemPrompt,
+      })
       message.success('发布成功！已创建数字员工')
       setPublishOpen(false)
       await reload()
@@ -660,7 +675,7 @@ export default function AgentStudioPage() {
         <Form<CreateForm>
           form={form}
           layout="vertical"
-          initialValues={{ type: 'Operational', model: 'Deepexi-Platform-70B' }}
+          initialValues={{ type: 'Operational', model: SERVICE_MODEL_OPTIONS[0] }}
           style={{ marginTop: 16 }}
         >
           <Row gutter={16}>
@@ -683,7 +698,7 @@ export default function AgentStudioPage() {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="model" label="推理模型" rules={[{ required: true }]}>
-                <Select options={MODEL_OPTIONS} />
+                <Select options={SERVICE_MODEL_SELECT_OPTIONS} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -729,7 +744,7 @@ export default function AgentStudioPage() {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="model" label="推理模型" rules={[{ required: true }]}>
-                <Select options={MODEL_OPTIONS} />
+                <Select options={SERVICE_MODEL_SELECT_OPTIONS} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -783,6 +798,40 @@ export default function AgentStudioPage() {
 
             <Divider titlePlacement="left" plain style={{ fontSize: 13 }}>System Prompt</Divider>
             <pre className="code-block" style={{ whiteSpace: 'pre-wrap' }}>{detailTarget.systemPrompt}</pre>
+
+            {(detailTarget.ontologyName || detailTarget.contextSummary) && (
+              <>
+                <Divider titlePlacement="left" plain style={{ fontSize: 13 }}>本体上下文</Divider>
+                <Descriptions column={1} size="small" bordered>
+                  {detailTarget.ontologyName && (
+                    <Descriptions.Item label="绑定本体">
+                      {detailTarget.ontologyName}
+                      {detailTarget.ontologyCode ? ` (${detailTarget.ontologyCode})` : ''}
+                    </Descriptions.Item>
+                  )}
+                  {detailTarget.projectId && (
+                    <Descriptions.Item label="项目ID">
+                      {detailTarget.projectId}
+                    </Descriptions.Item>
+                  )}
+                  {(detailTarget.ontologyIndustry || detailTarget.ontologyPhase) && (
+                    <Descriptions.Item label="业务域">
+                      {[detailTarget.ontologyIndustry, detailTarget.ontologyPhase].filter(Boolean).join(' / ')}
+                    </Descriptions.Item>
+                  )}
+                  {detailTarget.agentScene && (
+                    <Descriptions.Item label="目标场景">
+                      {detailTarget.agentScene}
+                    </Descriptions.Item>
+                  )}
+                  {detailTarget.contextSummary && (
+                    <Descriptions.Item label="上下文摘要">
+                      {detailTarget.contextSummary}
+                    </Descriptions.Item>
+                  )}
+                </Descriptions>
+              </>
+            )}
 
             <Divider titlePlacement="left" plain style={{ fontSize: 13 }}>绑定 Skills ({detailTarget.skillIds.length})</Divider>
             {detailTarget.skillIds.length > 0 ? (
@@ -858,6 +907,12 @@ export default function AgentStudioPage() {
               <Descriptions.Item label="推理模型">
                 <Tag color="geekblue">{publishTarget.model}</Tag>
               </Descriptions.Item>
+              {publishTarget.ontologyName && (
+                <Descriptions.Item label="绑定本体">
+                  {publishTarget.ontologyName}
+                  {publishTarget.ontologyCode ? ` (${publishTarget.ontologyCode})` : ''}
+                </Descriptions.Item>
+              )}
               <Descriptions.Item label="绑定 Skills">
                 {publishTarget.skillIds.length} 个
               </Descriptions.Item>

@@ -153,9 +153,9 @@
       "items": [
         {
           "id": "dh-default-device-fault",
-          "name": "设备运维诊断专员",
+          "name": "设备故障诊断智能体",
           "type": "fault-repair",
-          "description": "基于设备本体与故障知识图谱，智能监控告警与处置建议。",
+          "description": "基于故障诊断本体与设备故障诊断智能体，提供告警解读、根因分析、维修建议与工单协同。",
           "createdAt": "2024-01-01T00:00:00.000Z",
           "updatedAt": "2024-01-01T00:00:00.000Z",
           "owner": "制造运营负责人",
@@ -163,14 +163,66 @@
             "AI平台运营",
             "业务域负责人"
           ],
-          "linkedAgentIds": [],
-          "linkedSkillIds": [],
-          "preferredModel": "Deepexi-Platform-70B",
-          "systemPrompt": "你是设备运维诊断专员，负责基于设备本体与故障知识库，精准定位根因，输出结构化维修方案。请严格依据业务本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "linkedAgentIds": [
+            "ag-001"
+          ],
+          "linkedSkillIds": [
+            "skill-biz-0-0-1",
+            "g-root-cause",
+            "g-knowledge-retrieval",
+            "g-work-order"
+          ],
+          "preferredModel": "Deepexi 2.0 推理增强",
+          "systemPrompt": "你是设备故障诊断智能体。\n你基于「故障诊断本体」提供专业能力，服务场景为：故障诊断Agent：根据状态监测与报警现象自动定位根因并生成排查路径。\n请优先结合本体中的核心三元组「(故障现象:主轴温升异常) -[caused_by]-> (主轴轴承早期剥落)」理解上下游实体、约束关系与动作链路。\n输出必须结构化，至少包含：当前判断、关键依据、风险/缺口、执行建议、需补充的数据。\n如果信息不足，明确指出缺失的本体节点、业务属性或外部数据，不要直接臆断。",
           "targetUsers": "设备工程师、现场维修班组、产线班长",
-          "serviceBoundary": "围绕当前业务本体，负责告警解读、根因分析与 SOP 建议，不直接控制设备执行动作。",
+          "serviceBoundary": "围绕 故障诊断本体，负责告警解读、根因分析与 SOP 建议，不直接控制设备执行动作。",
           "handoffTarget": "统一门户 Chat 端（待接入）",
           "publishStatus": "published",
+          "publishChannels": [
+            "管理平台"
+          ],
+          "projectId": "proj-001",
+          "ontologyCode": "0.0.1",
+          "ontologyName": "故障诊断本体",
+          "ontologyIndustry": "manufacturing",
+          "ontologyPhase": "生产",
+          "agentScene": "故障诊断Agent：根据状态监测与报警现象自动定位根因并生成排查路径",
+          "trainingType": "分析类"
+        },
+        {
+          "id": "dh-default-replenishment",
+          "name": "商品补货智能体",
+          "type": "store-matching",
+          "description": "基于商品补货本体与商品补货智能体，生成门店补货、调拨建议与执行协同。",
+          "projectId": "proj-2418",
+          "ontologyCode": "2.4.18",
+          "ontologyName": "商品补货本体",
+          "ontologyIndustry": "retail",
+          "ontologyPhase": "门店与运营",
+          "agentScene": "城市单品补货Agent：结合销量流速、库存水位与尺码模型自动生成门店调拨方案",
+          "trainingType": "执行类",
+          "createdAt": "2025-01-01T00:00:00.000Z",
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "供应链计划负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [
+            "ag-002"
+          ],
+          "linkedSkillIds": [
+            "skill-biz-2-4-18",
+            "g-workflow-orchestration",
+            "g-decision-support",
+            "g-work-order"
+          ],
+          "preferredModel": "Deepexi 2.0 推理增强",
+          "systemPrompt": "你是商品补货智能体。\n你基于「商品补货本体」提供专业能力，服务场景为：城市单品补货Agent：结合销量流速、库存水位与尺码模型自动生成门店调拨方案。\n请优先结合本体中的核心三元组「(商品SKU:Nike Air Max 270) -[生成补货计划]-> (门店调拨单/14天满足)」理解上下游实体、约束关系与动作链路。\n输出必须结构化，至少包含：当前判断、关键依据、风险/缺口、执行建议、需补充的数据。\n如果信息不足，明确指出缺失的本体节点、业务属性或外部数据，不要直接臆断。",
+          "targetUsers": "门店督导、商品运营、履约调度",
+          "serviceBoundary": "围绕 商品补货本体，承接 城市单品补货Agent：结合销量流速、库存水位与尺码模型自动生成门店调拨方案 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
           "publishChannels": [
             "管理平台"
           ]
@@ -196,7 +248,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-Industry-60B-Instruct",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是工程合规审查专员，负责融合工程规范本体，辅助图纸审查、参数校验与设计优化决策。请严格依据标准合规本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "工程师、设计审核员、研发经理",
           "serviceBoundary": "围绕 标准合规本体，负责规则审查、标准比对与风险提示，不直接替代 CAD/PLM 设计提交。",
@@ -227,7 +279,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是制造资源匹配专员，负责结合工艺知识图谱，分析瓶颈工序，提升良率与节拍效率。请严格依据制造资源能力本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "工艺工程师、计划调度员、产线主管",
           "serviceBoundary": "围绕 制造资源能力本体，负责调度建议与流程优化，不直接下发生产控制指令。",
@@ -258,41 +310,10 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是生产排产调度专员，负责结合工艺知识图谱，分析瓶颈工序，提升良率与节拍效率。请严格依据任务调度本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "工艺工程师、计划调度员、产线主管",
           "serviceBoundary": "围绕 任务调度本体，负责调度建议与流程优化，不直接下发生产控制指令。",
-          "handoffTarget": "统一门户 Chat 端（待接入）",
-          "publishStatus": "testing",
-          "publishChannels": [
-            "管理平台"
-          ]
-        },
-        {
-          "id": "dh-default-replenishment",
-          "name": "供应链补货协同专员",
-          "type": "bom-analysis",
-          "description": "围绕库存阈值、补货时点和供应商协同生成执行建议。",
-          "projectId": "proj-1418",
-          "ontologyCode": "1.4.18",
-          "ontologyName": "库存风险本体",
-          "ontologyIndustry": "manufacturing",
-          "ontologyPhase": "供应链",
-          "agentScene": "自动补货Agent：跌破阈值时自动生成订单并分发给多个供应商",
-          "trainingType": "执行类",
-          "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z",
-          "owner": "供应链计划负责人",
-          "maintainers": [
-            "AI平台运营",
-            "业务域负责人"
-          ],
-          "linkedAgentIds": [],
-          "linkedSkillIds": [],
-          "preferredModel": "Deepexi-Platform-70B",
-          "systemPrompt": "你是供应链补货协同专员，负责解析物料清单结构，识别替代料与成本优化空间，支持供应链决策。请严格依据库存风险本体输出结构化结论，先给风险和依据，再给下一步动作。",
-          "targetUsers": "采购计划员、供应链经理、成本分析师",
-          "serviceBoundary": "围绕 库存风险本体，承接 自动补货Agent：跌破阈值时自动生成订单并分发给多个供应商 场景的建议生成与流程协同，不直接发起最终业务审批。",
           "handoffTarget": "统一门户 Chat 端（待接入）",
           "publishStatus": "testing",
           "publishChannels": [
@@ -320,7 +341,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是合同法务风控专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据合同约束本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "销售负责人、业务分析师",
           "serviceBoundary": "围绕 合同约束本体，承接 法务风险Agent：自动扫描合同草案中的不平等或高风险三元组 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -351,7 +372,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-Platform-70B",
+          "preferredModel": "Deepexi 2.0 通用对话",
           "systemPrompt": "你是维修作业指引专员，负责基于设备本体与故障知识库，精准定位根因，输出结构化维修方案。请严格依据维护SOP本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "设备工程师、现场维修班组、产线班长",
           "serviceBoundary": "围绕 维护SOP本体，负责告警解读、根因分析与 SOP 建议，不直接控制设备执行动作。",
@@ -382,7 +403,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-General-Agent",
+          "preferredModel": "Deepexi 2.0 通用对话",
           "systemPrompt": "你是选品规划分析专员，负责基于门店与商品本体，智能匹配货品结构，提升动销率。请严格依据品类架构本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "门店督导、商品运营、履约调度",
           "serviceBoundary": "围绕 品类架构本体，承接 自动上新Agent：根据类目缺失度自动建议补充特定价格带的SKU 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -413,7 +434,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是供应链溯源专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据原料溯源本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "采购与供应负责人、业务分析师",
           "serviceBoundary": "围绕 原料溯源本体，承接 透明供应链Agent：为消费者提供可扫码查看的链路溯源证据 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -444,7 +465,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-General-Agent",
+          "preferredModel": "Deepexi 2.0 通用对话",
           "systemPrompt": "你是临期库存处置专员，负责基于门店与商品本体，智能匹配货品结构，提升动销率。请严格依据库存状态本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "门店督导、商品运营、履约调度",
           "serviceBoundary": "围绕 库存状态本体，承接 临期清货Agent：自动下发折扣指令至POS端，加速陈旧库存周转 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -475,7 +496,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-General-Agent",
+          "preferredModel": "Deepexi 2.0 通用对话",
           "systemPrompt": "你是即时配送调度专员，负责基于门店与商品本体，智能匹配货品结构，提升动销率。请严格依据末端运力本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "门店督导、商品运营、履约调度",
           "serviceBoundary": "围绕 末端运力本体，承接 即时配送调度Agent：在高峰期平衡配送时长与骑手收益，优化路线 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -506,7 +527,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-General-Agent",
+          "preferredModel": "Deepexi 2.0 通用对话",
           "systemPrompt": "你是门店货架优化专员，负责基于门店与商品本体，智能匹配货品结构，提升动销率。请严格依据货架图谱本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "门店督导、商品运营、履约调度",
           "serviceBoundary": "围绕 货架图谱本体，承接 货架优化Agent：利用关联购买数据，建议能够提升连带率的陈列布局 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -537,7 +558,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-General-Agent",
+          "preferredModel": "Deepexi 2.0 通用对话",
           "systemPrompt": "你是门店排班协同专员，负责基于门店与商品本体，智能匹配货品结构，提升动销率。请严格依据店员排班本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "门店督导、商品运营、履约调度",
           "serviceBoundary": "围绕 店员排班本体，承接 弹性排班Agent：预测客流波峰，自动生成跨店调拨的人力计划 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -568,7 +589,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是会员运营增长专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据会员画像本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "营销与CRM负责人、业务分析师",
           "serviceBoundary": "围绕 会员画像本体，承接 精准推送Agent：仅针对感兴趣的用户推送特定优惠 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -599,7 +620,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-General-Agent",
+          "preferredModel": "Deepexi 2.0 通用对话",
           "systemPrompt": "你是智慧导购服务专员，负责基于门店与商品本体，智能匹配货品结构，提升动销率。请严格依据服务业务本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "门店督导、商品运营、履约调度",
           "serviceBoundary": "围绕 服务业务本体，承接 智慧导购Agent：在直播间或聊天框24小时解答产品参数疑问 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -630,7 +651,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是预诊分诊专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据疾病诊断本体(ICD-11)输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "临床诊疗负责人、业务分析师",
           "serviceBoundary": "围绕 疾病诊断本体(ICD-11)，承接 预诊分诊Agent：根据患者主诉，自动推荐挂号科室与紧急程度优先级 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -661,7 +682,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是用药安全审查专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据药物交互(DDI)本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "临床诊疗负责人、业务分析师",
           "serviceBoundary": "围绕 药物交互(DDI)本体，承接 用药安全检查Agent：在医生开方时，自动扫描处方内药物的冲突三元组 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -692,7 +713,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是手术排程协同专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据医疗资源效能本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "医院运营负责人、业务分析师",
           "serviceBoundary": "围绕 医疗资源效能本体，承接 手术排程Agent：根据手术难度与洁净等级，自动生成最优手术计划表 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -723,7 +744,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-Platform-70B",
+          "preferredModel": "Deepexi 2.0 通用对话",
           "systemPrompt": "你是医疗设备主动维保专员，负责基于设备本体与故障知识库，精准定位根因，输出结构化维修方案。请严格依据医疗设备孪生本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "设备工程师、现场维修班组、产线班长",
           "serviceBoundary": "围绕 医疗设备孪生本体，负责告警解读、根因分析与 SOP 建议，不直接控制设备执行动作。",
@@ -754,7 +775,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是患者随访服务专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据随访随办本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "患者服务负责人、业务分析师",
           "serviceBoundary": "围绕 随访随办本体，承接 自动随访Agent：通过AI语音或短信自动回访患者康复情况 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -785,7 +806,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-Platform-70B",
+          "preferredModel": "Deepexi 2.0 通用对话",
           "systemPrompt": "你是病历质控专员，负责监控数据链路健康度，自动诊断质量问题，保障数据资产稳定运行。请严格依据电子病历质控本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "数据治理专员、平台运维、质量负责人",
           "serviceBoundary": "围绕 电子病历质控本体，承接 病历质控Agent：实时检查病历书写质量，确保满足法律文书合规要求 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -816,7 +837,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是路网路径规划专员，负责结合工艺知识图谱，分析瓶颈工序，提升良率与节拍效率。请严格依据路网拓扑本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "工艺工程师、计划调度员、产线主管",
           "serviceBoundary": "围绕 路网拓扑本体，负责调度建议与流程优化，不直接下发生产控制指令。",
@@ -847,7 +868,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是交通安全避碰专员，负责结合工艺知识图谱，分析瓶颈工序，提升良率与节拍效率。请严格依据冲突消解本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "工艺工程师、计划调度员、产线主管",
           "serviceBoundary": "围绕 冲突消解本体，负责调度建议与流程优化，不直接下发生产控制指令。",
@@ -878,7 +899,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是运输履约督办专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据订单履约本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "货物与运输负责人、业务分析师",
           "serviceBoundary": "围绕 订单履约本体，承接 时效督办Agent：预测延误风险，自动触发加急运输或多式联运切换 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -909,7 +930,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是动态定价决策专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据动态定价本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "出行服务负责人、业务分析师",
           "serviceBoundary": "围绕 动态定价本体，承接 收益管理Agent：实时调节票价或运费，利用价格杠杆调节客流分布 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -940,7 +961,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是现金流预警专员，负责依托财税知识本体，合规筹划税务结构，降低涉税风险。请严格依据资金风险本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "财务BP、税务经理、风控专员",
           "serviceBoundary": "围绕 资金风险本体，承接 现金流预警Agent：预测未来3个月收支缺口，自动提出融资建议 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -971,7 +992,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是技能组队调度专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据技能图谱本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "人力资源负责人、业务分析师",
           "serviceBoundary": "围绕 技能图谱本体，承接 动态组队Agent：根据任务属性，在人才池中自动拼凑最优项目组 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -1002,7 +1023,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-Platform-70B",
+          "preferredModel": "Deepexi 2.0 通用对话",
           "systemPrompt": "你是经营归因洞察专员，负责监控数据链路健康度，自动诊断质量问题，保障数据资产稳定运行。请严格依据因果推断本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "数据治理专员、平台运维、质量负责人",
           "serviceBoundary": "围绕 因果推断本体，承接 根因洞察Agent：当KPI异常波动时，自动下钻数据并生成归因报告 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -1033,7 +1054,7 @@
           ],
           "linkedAgentIds": [],
           "linkedSkillIds": [],
-          "preferredModel": "Deepexi-R1-Reasoner",
+          "preferredModel": "Deepexi 2.0 推理增强",
           "systemPrompt": "你是法规审查专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据法律法规库本体输出结构化结论，先给风险和依据，再给下一步动作。",
           "targetUsers": "风险与合规负责人、业务分析师",
           "serviceBoundary": "围绕 法律法规库本体，承接 法务审查Agent：自动扫描业务合同，识别潜在的法律违规条款 场景的建议生成与流程协同，不直接发起最终业务审批。",
@@ -1044,7 +1065,7 @@
           ]
         }
       ],
-      "seedVersion": 2
+      "seedVersion": 3
     },
     "dic-workers": {
       "workers": [
@@ -1065,7 +1086,24 @@
             "属性推荐",
             "迁移脚本生成"
           ],
-          "lastActive": "2 分钟前"
+          "lastActive": "2 分钟前",
+          "owner": "本体平台主管",
+          "maintainers": [
+            "AI平台运营",
+            "技术域负责人"
+          ],
+          "preferredModel": "Deepexi 2.0 推理增强",
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "systemPrompt": "你是本体建模助手，负责本体建模方向的技术AI员工配置与执行协同。请优先输出可落地的诊断依据、风险判断和下一步操作建议。",
+          "operationBoundary": "负责 Schema 推荐、一致性校验与迁移建议，不直接替代正式本体发布审批。",
+          "publishChannels": [
+            "管理平台",
+            "运维控制台"
+          ],
+          "workspacePath": "/ontology/projects",
+          "createdAt": "2025-01-01T00:00:00.000Z",
+          "updatedAt": "2025-03-01T00:00:00.000Z"
         },
         {
           "key": "2",
@@ -1085,7 +1123,24 @@
             "异常值识别",
             "血缘追踪"
           ],
-          "lastActive": "正在执行"
+          "lastActive": "正在执行",
+          "owner": "数据治理负责人",
+          "maintainers": [
+            "AI平台运营",
+            "技术域负责人"
+          ],
+          "preferredModel": "Deepexi 2.0 通用对话",
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "systemPrompt": "你是数据质量巡检员，负责数据质量方向的技术AI员工配置与执行协同。请优先输出可落地的诊断依据、风险判断和下一步操作建议。",
+          "operationBoundary": "负责质量巡检、异常定位与修复建议，不直接改写生产库数据。",
+          "publishChannels": [
+            "管理平台",
+            "运维控制台"
+          ],
+          "workspacePath": "/datasource",
+          "createdAt": "2025-01-01T00:00:00.000Z",
+          "updatedAt": "2025-03-01T00:00:00.000Z"
         },
         {
           "key": "3",
@@ -1105,28 +1160,82 @@
             "一致性校验",
             "冗余检测"
           ],
-          "lastActive": "5 分钟前"
+          "lastActive": "5 分钟前",
+          "owner": "知识工程负责人",
+          "maintainers": [
+            "AI平台运营",
+            "技术域负责人"
+          ],
+          "preferredModel": "Deepexi 2.0 推理增强",
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "systemPrompt": "你是知识图谱维护员，负责知识图谱方向的技术AI员工配置与执行协同。请优先输出可落地的诊断依据、风险判断和下一步操作建议。",
+          "operationBoundary": "负责图谱巡检、关系补全建议与一致性分析，不直接覆盖线上知识图谱。",
+          "publishChannels": [
+            "管理平台",
+            "运维控制台"
+          ],
+          "workspacePath": "/ontology/graph",
+          "createdAt": "2025-01-01T00:00:00.000Z",
+          "updatedAt": "2025-03-01T00:00:00.000Z"
         }
-      ]
+      ],
+      "seedVersion": 2
     },
     "agent-studio": {
       "agents": [
         {
           "id": "ag-001",
-          "name": "设备故障诊断 Agent",
+          "name": "设备故障诊断智能体",
           "type": "Operational",
           "status": "Active",
           "version": "v2.3.1",
-          "description": "基于设备本体与故障知识图谱，自动分析传感器数据并生成维修方案",
-          "systemPrompt": "你是一个设备故障诊断专家。",
-          "model": "Deepexi-Platform-70B",
+          "description": "基于故障诊断本体与图谱知识，定位设备根因并给出处置、工单与排查建议。",
+          "systemPrompt": "你是设备故障诊断智能体。\n你基于「故障诊断本体」提供专业能力，服务场景为：故障诊断Agent：根据状态监测与报警现象自动定位根因并生成排查路径。\n请优先结合本体中的核心三元组「(故障现象:主轴温升异常) -[caused_by]-> (主轴轴承早期剥落)」理解上下游实体、约束关系与动作链路。\n输出必须结构化，至少包含：当前判断、关键依据、风险/缺口、执行建议、需补充的数据。\n如果信息不足，明确指出缺失的本体节点、业务属性或外部数据，不要直接臆断。",
+          "model": "Deepexi 2.0 通用对话",
           "skillIds": [
-            "sk-001"
+            "skill-biz-0-0-1",
+            "g-root-cause",
+            "g-knowledge-retrieval",
+            "g-work-order"
           ],
           "createdAt": "2024-06-15T08:00:00.000Z",
-          "updatedAt": "2024-11-20T10:00:00.000Z"
+          "updatedAt": "2024-11-20T10:00:00.000Z",
+          "projectId": "proj-001",
+          "ontologyCode": "0.0.1",
+          "ontologyName": "故障诊断本体",
+          "ontologyIndustry": "manufacturing",
+          "ontologyPhase": "生产",
+          "agentScene": "故障诊断Agent：根据状态监测与报警现象自动定位根因并生成排查路径",
+          "contextSummary": "生产场景 | 本体：故障诊断本体 | 典型三元组：(故障现象:主轴温升异常) -[caused_by]-> (主轴轴承早期剥落) | 目标任务：故障诊断Agent：根据状态监测与报警现象自动定位根因并生成排查路径 | 训练方向：分析类"
+        },
+        {
+          "id": "ag-002",
+          "name": "商品补货智能体",
+          "type": "Operational",
+          "status": "Active",
+          "version": "v1.0.0",
+          "description": "基于商品补货本体，结合销量流速、库存水位与尺码分布生成门店补货与调拨方案。",
+          "systemPrompt": "你是商品补货智能体。\n你基于「商品补货本体」提供专业能力，服务场景为：城市单品补货Agent：结合销量流速、库存水位与尺码模型自动生成门店调拨方案。\n请优先结合本体中的核心三元组「(商品SKU:Nike Air Max 270) -[生成补货计划]-> (门店调拨单/14天满足)」理解上下游实体、约束关系与动作链路。\n输出必须结构化，至少包含：当前判断、关键依据、风险/缺口、执行建议、需补充的数据。\n如果信息不足，明确指出缺失的本体节点、业务属性或外部数据，不要直接臆断。",
+          "model": "Deepexi 2.0 推理增强",
+          "skillIds": [
+            "skill-biz-2-4-18",
+            "g-workflow-orchestration",
+            "g-decision-support",
+            "g-work-order"
+          ],
+          "projectId": "proj-2418",
+          "ontologyCode": "2.4.18",
+          "ontologyName": "商品补货本体",
+          "ontologyIndustry": "retail",
+          "ontologyPhase": "门店与运营",
+          "agentScene": "城市单品补货Agent：结合销量流速、库存水位与尺码模型自动生成门店调拨方案",
+          "contextSummary": "门店与运营场景 | 本体：商品补货本体 | 典型三元组：(商品SKU:Nike Air Max 270) -[生成补货计划]-> (门店调拨单/14天满足) | 目标任务：城市单品补货Agent：结合销量流速、库存水位与尺码模型自动生成门店调拨方案 | 训练方向：执行类",
+          "createdAt": "2026-03-10T09:00:00.000Z",
+          "updatedAt": "2026-03-10T09:00:00.000Z"
         }
-      ]
+      ],
+      "seedVersion": 3
     },
     "skills-market": {
       "skills": [

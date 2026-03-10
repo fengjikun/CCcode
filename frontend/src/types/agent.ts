@@ -1,5 +1,7 @@
 /** L4 智能体类型定义 */
 
+import type { SkillIndustry } from './skill'
+
 export type AgentType = 'Operational' | 'Support' | 'Analytical'
 
 export type AgentStatus = 'Active' | 'Testing' | 'Offline'
@@ -46,6 +48,13 @@ export interface Agent {
   systemPrompt: string
   model: string
   skillIds: string[]
+  projectId?: string
+  ontologyCode?: string
+  ontologyName?: string
+  ontologyIndustry?: SkillIndustry
+  ontologyPhase?: string
+  agentScene?: string
+  contextSummary?: string
   createdAt: string
   updatedAt: string
 }

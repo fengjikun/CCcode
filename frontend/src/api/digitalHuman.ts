@@ -1,10 +1,13 @@
+import { DEFAULT_AGENTS } from './agentStudio'
 import { ONTOLOGY_CATALOG } from '../mocks/skills/ontologyCatalog'
+import { normalizeServiceModelName } from '../types/modelCatalog'
 import type { DigitalHuman, DigitalHumanPublishStatus, DigitalHumanType } from '../types/digitalHuman'
 import { DIGITAL_HUMAN_TYPE_DESCRIPTIONS } from '../types/digitalHuman'
 import { ensureMockStore, setMockStore } from './mockStoreClient'
 
 const STORE_KEY = 'digital-humans'
-const SEED_VERSION = 2
+const SEED_VERSION = 3
+const PINNED_DIGITAL_HUMAN_IDS = ['dh-default-device-fault', 'dh-default-replenishment'] as const
 
 interface DHStore {
   items: DigitalHuman[]
@@ -43,14 +46,29 @@ interface SeedSpec {
   name: string
   type: DigitalHumanType
   description: string
+  linkedAgentId?: string
 }
 
 const SEED_SPECS: SeedSpec[] = [
-  { id: 'dh-default-device-fault', code: '0.0.1', name: '设备运维诊断专员', type: 'fault-repair', description: '面向设备告警、故障根因定位与维修建议输出的数字员工入口。' },
+  {
+    id: 'dh-default-device-fault',
+    code: '0.0.1',
+    name: '设备故障诊断智能体',
+    type: 'fault-repair',
+    description: '基于故障诊断本体与设备故障诊断智能体，提供告警解读、根因分析、维修建议与工单协同。',
+    linkedAgentId: 'ag-001',
+  },
+  {
+    id: 'dh-default-replenishment',
+    code: '2.4.18',
+    name: '商品补货智能体',
+    type: 'store-matching',
+    description: '基于商品补货本体与商品补货智能体，生成门店补货、调拨建议与执行协同。',
+    linkedAgentId: 'ag-002',
+  },
   { id: 'dh-default-design-compliance', code: '1.1.4', name: '工程合规审查专员', type: 'engineering-design', description: '结合设计标准与法规约束，辅助图纸、规范和方案审查。' },
   { id: 'dh-default-resource-matching', code: '1.2.7', name: '制造资源匹配专员', type: 'process-optimization', description: '根据工艺能力、设备精度和产线条件完成资源筛选与匹配。' },
   { id: 'dh-default-production-scheduling', code: '1.3.12', name: '生产排产调度专员', type: 'process-optimization', description: '处理插单、重排产、节拍优化与生产资源协同。' },
-  { id: 'dh-default-replenishment', code: '1.4.18', name: '供应链补货协同专员', type: 'bom-analysis', description: '围绕库存阈值、补货时点和供应商协同生成执行建议。' },
   { id: 'dh-default-contract-risk', code: '1.5.24', name: '合同法务风控专员', type: 'operation-decision', description: '扫描销售合同与条款约束，识别高风险点和合规问题。' },
   { id: 'dh-default-repair-guide', code: '1.6.27', name: '维修作业指引专员', type: 'fault-repair', description: '根据故障类型自动输出 SOP、工具清单与维修步骤。' },
   { id: 'dh-default-product-planning', code: '2.1.1', name: '选品规划分析专员', type: 'store-matching', description: '根据品类架构与缺口分析，生成商品规划与上新建议。' },
@@ -84,14 +102,14 @@ function toProjectId(code: string) {
 const DEFAULT_CHANNELS = ['管理平台']
 
 const MODEL_BY_TYPE: Record<DigitalHumanType, string> = {
-  'fault-repair': 'Deepexi-Platform-70B',
-  'engineering-design': 'Deepexi-Industry-60B-Instruct',
-  'process-optimization': 'Deepexi-R1-Reasoner',
-  'bom-analysis': 'Deepexi-Platform-70B',
-  'operation-decision': 'Deepexi-R1-Reasoner',
-  'store-matching': 'Deepexi-General-Agent',
-  'data-ops': 'Deepexi-Platform-70B',
-  'tax-planning': 'Deepexi-R1-Reasoner',
+  'fault-repair': 'Deepexi 2.0 通用对话',
+  'engineering-design': 'Deepexi 2.0 推理增强',
+  'process-optimization': 'Deepexi 2.0 推理增强',
+  'bom-analysis': 'Deepexi 2.0 通用对话',
+  'operation-decision': 'Deepexi 2.0 推理增强',
+  'store-matching': 'Deepexi 2.0 通用对话',
+  'data-ops': 'Deepexi 2.0 通用对话',
+  'tax-planning': 'Deepexi 2.0 推理增强',
 }
 
 const OWNER_BY_TYPE: Record<DigitalHumanType, string> = {
@@ -152,7 +170,7 @@ function withDigitalHumanDefaults(input: DigitalHuman): DigitalHuman {
     maintainers: input.maintainers ?? ['AI平台运营', '业务域负责人'],
     linkedAgentIds: input.linkedAgentIds ?? [],
     linkedSkillIds: input.linkedSkillIds ?? [],
-    preferredModel: input.preferredModel ?? MODEL_BY_TYPE[input.type],
+    preferredModel: normalizeServiceModelName(input.preferredModel ?? MODEL_BY_TYPE[input.type]),
     systemPrompt: input.systemPrompt ?? defaultSystemPrompt(input),
     targetUsers: input.targetUsers ?? defaultTargetUsers(input),
     serviceBoundary: input.serviceBoundary ?? defaultServiceBoundary(input),
@@ -162,8 +180,26 @@ function withDigitalHumanDefaults(input: DigitalHuman): DigitalHuman {
   }
 }
 
+function compareDigitalHumans(a: DigitalHuman, b: DigitalHuman): number {
+  const aPinned = PINNED_DIGITAL_HUMAN_IDS.indexOf(a.id as (typeof PINNED_DIGITAL_HUMAN_IDS)[number])
+  const bPinned = PINNED_DIGITAL_HUMAN_IDS.indexOf(b.id as (typeof PINNED_DIGITAL_HUMAN_IDS)[number])
+  if (aPinned >= 0 || bPinned >= 0) {
+    if (aPinned < 0) return 1
+    if (bPinned < 0) return -1
+    return aPinned - bPinned
+  }
+  const aTime = new Date(a.updatedAt).getTime()
+  const bTime = new Date(b.updatedAt).getTime()
+  return bTime - aTime
+}
+
+function sortDigitalHumans(items: DigitalHuman[]): DigitalHuman[] {
+  return [...items].sort(compareDigitalHumans)
+}
+
 function buildSeedItem(spec: SeedSpec): DigitalHuman {
   const entry = ONTOLOGY_CATALOG.find(item => item.code === spec.code)
+  const linkedAgent = DEFAULT_AGENTS.find(agent => agent.id === spec.linkedAgentId)
   if (!entry) {
     const now = new Date().toISOString()
     return withDigitalHumanDefaults({
@@ -171,6 +207,10 @@ function buildSeedItem(spec: SeedSpec): DigitalHuman {
       name: spec.name,
       type: spec.type,
       description: spec.description,
+      linkedAgentIds: linkedAgent ? [linkedAgent.id] : [],
+      linkedSkillIds: linkedAgent?.skillIds ?? [],
+      preferredModel: linkedAgent?.model,
+      systemPrompt: linkedAgent?.systemPrompt,
       createdAt: now,
       updatedAt: now,
     })
@@ -188,49 +228,111 @@ function buildSeedItem(spec: SeedSpec): DigitalHuman {
     ontologyPhase: entry.phase,
     agentScene: entry.agentScene,
     trainingType: entry.trainingType,
+    linkedAgentIds: linkedAgent ? [linkedAgent.id] : [],
+    linkedSkillIds: linkedAgent?.skillIds ?? [],
+    preferredModel: linkedAgent?.model,
+    systemPrompt: linkedAgent?.systemPrompt,
     createdAt: '2025-01-01T00:00:00.000Z',
     updatedAt: '2025-03-01T00:00:00.000Z',
   })
 }
 
-const DEFAULT_ITEMS = SEED_SPECS.map(buildSeedItem)
+const DEFAULT_ITEMS = sortDigitalHumans(SEED_SPECS.map(buildSeedItem))
 
 const DEFAULT_STORE: DHStore = {
   items: DEFAULT_ITEMS,
   seedVersion: SEED_VERSION,
 }
 
+function upgradeSeededItem(existing: DigitalHuman, seeded: DigitalHuman): DigitalHuman {
+  const upgraded = withDigitalHumanDefaults({
+    ...existing,
+    projectId: existing.projectId || seeded.projectId,
+    ontologyCode: existing.ontologyCode || seeded.ontologyCode,
+    ontologyName: existing.ontologyName || seeded.ontologyName,
+    ontologyIndustry: existing.ontologyIndustry || seeded.ontologyIndustry,
+    ontologyPhase: existing.ontologyPhase || seeded.ontologyPhase,
+    agentScene: existing.agentScene || seeded.agentScene,
+    trainingType: existing.trainingType || seeded.trainingType,
+  })
+
+  if (PINNED_DIGITAL_HUMAN_IDS.includes(existing.id as (typeof PINNED_DIGITAL_HUMAN_IDS)[number])) {
+    return withDigitalHumanDefaults({
+      ...upgraded,
+      name: seeded.name,
+      description: seeded.description,
+      type: seeded.type,
+      projectId: seeded.projectId,
+      ontologyCode: seeded.ontologyCode,
+      ontologyName: seeded.ontologyName,
+      ontologyIndustry: seeded.ontologyIndustry,
+      ontologyPhase: seeded.ontologyPhase,
+      agentScene: seeded.agentScene,
+      trainingType: seeded.trainingType,
+      linkedAgentIds: seeded.linkedAgentIds,
+      linkedSkillIds: seeded.linkedSkillIds,
+      preferredModel: seeded.preferredModel,
+      systemPrompt: seeded.systemPrompt,
+      targetUsers: seeded.targetUsers,
+      serviceBoundary: seeded.serviceBoundary,
+      publishStatus: seeded.publishStatus,
+      publishChannels: seeded.publishChannels,
+    })
+  }
+
+  return upgraded
+}
+
 async function loadStore(): Promise<DHStore> {
   const store = await ensureMockStore<DHStore>(STORE_KEY, DEFAULT_STORE)
   let changed = false
-  const normalizedItems = store.items.map((item) => {
+
+  const normalizedItems = sortDigitalHumans(store.items.map((item) => {
     const normalized = withDigitalHumanDefaults(item)
     if (JSON.stringify(normalized) !== JSON.stringify(item)) changed = true
     return normalized
-  })
+  }))
 
   if ((store.seedVersion ?? 0) >= SEED_VERSION) {
-    if (changed) {
-      const normalizedStore = { ...store, items: normalizedItems }
+    if (changed || JSON.stringify(store.items) !== JSON.stringify(normalizedItems)) {
+      const normalizedStore = { ...store, items: normalizedItems, seedVersion: SEED_VERSION }
       await setMockStore(STORE_KEY, normalizedStore)
       return normalizedStore
     }
     return { ...store, items: normalizedItems }
   }
 
-  const existingIds = new Set(normalizedItems.map(item => item.id))
-  const seeded = [...normalizedItems]
+  const seededById = new Map(DEFAULT_ITEMS.map(item => [item.id, item]))
+  const upgradedItems = normalizedItems.map((item) => {
+    const seeded = seededById.get(item.id)
+    if (!seeded) return item
+    const upgraded = upgradeSeededItem(item, seeded)
+    if (JSON.stringify(upgraded) !== JSON.stringify(item)) changed = true
+    return upgraded
+  })
+
+  const existingIds = new Set(upgradedItems.map(item => item.id))
   for (const item of DEFAULT_ITEMS) {
-    if (!existingIds.has(item.id)) seeded.push(item)
+    if (!existingIds.has(item.id)) {
+      upgradedItems.push(item)
+      changed = true
+    }
   }
 
-  const nextStore: DHStore = { items: seeded, seedVersion: SEED_VERSION }
+  const nextStore: DHStore = {
+    items: sortDigitalHumans(upgradedItems),
+    seedVersion: SEED_VERSION,
+  }
   await setMockStore(STORE_KEY, nextStore)
   return nextStore
 }
 
 async function saveStore(store: DHStore): Promise<void> {
-  await setMockStore(STORE_KEY, { ...store, seedVersion: SEED_VERSION })
+  await setMockStore(STORE_KEY, {
+    ...store,
+    items: sortDigitalHumans(store.items.map((item) => withDigitalHumanDefaults(item))),
+    seedVersion: SEED_VERSION,
+  })
 }
 
 export async function listDigitalHumans(): Promise<DigitalHuman[]> {
