@@ -93,9 +93,9 @@ const menuItems: MenuItem[] = [
     icon: <DatabaseOutlined />,
     label: '数据中心',
     children: [
-      { key: '/datasource', icon: <DatabaseOutlined />, label: '数据源' },
-      { key: '/data-platform/ingestion-jobs', icon: <SyncOutlined />, label: '数据接入任务' },
       { key: '/transform', icon: <FileSearchOutlined />, label: '数据集准备' },
+      { key: '/data-platform/ingestion-jobs', icon: <SyncOutlined />, label: '数据接入任务' },
+      { key: '/datasource', icon: <DatabaseOutlined />, label: '数据源' },
     ],
   },
 ]
