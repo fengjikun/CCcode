@@ -44,16 +44,16 @@ const menuItems: MenuItem[] = [
   {
     key: 'digital-worker',
     icon: <TeamOutlined />,
-    label: 'AI员工',
+    label: 'AI员工管理',
     children: [
-      { key: '/digital-worker/business', icon: <SolutionOutlined />, label: '业务数字员工' },
-      { key: '/digital-worker/dic', icon: <DesktopOutlined />, label: 'FDE 数字员工' },
+      { key: '/digital-worker/business', icon: <SolutionOutlined />, label: '业务AI员工' },
+      { key: '/digital-worker/dic', icon: <DesktopOutlined />, label: '技术AI员工' },
     ],
   },
   {
     key: 'studio',
     icon: <RobotOutlined />,
-    label: 'workspace 工作台',
+    label: 'Workspace 工作台',
     children: [
       { key: '/studio/agents', icon: <RobotOutlined />, label: '智能体编排' },
       { key: '/studio/skills', icon: <AppstoreOutlined />, label: 'Skills Hub' },
