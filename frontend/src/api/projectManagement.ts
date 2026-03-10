@@ -61,7 +61,7 @@ const FAULT_DIAGNOSIS_PROJECT_NAME = '故障诊断本体'
 const FAULT_DIAGNOSIS_8D_DOCUMENTS: ProjectDocument[] = [
   {
     id: 'doc-fd-006',
-    name: '最终线入口EL402升降机带车在高位不下降，最终线欠量停线-附件-2025.11.23 8D设备故障分析报告_最终线升降机接车异常 - 副本.docx',
+    name: '最终线入口EL402升降机带车在高位不下降，最终线欠量停线-附件-2025.11.23 8D设备故障分析报告_最终线升降机接车异常.docx',
     fileType: 'docx',
     size: 23265,
     status: 'READY',
@@ -70,7 +70,7 @@ const FAULT_DIAGNOSIS_8D_DOCUMENTS: ProjectDocument[] = [
   },
   {
     id: 'doc-fd-007',
-    name: '12号滑板在内饰二线尾升降机处无上升动作，升降机无法接车，导致内饰二满位停线-附件-2025.11.03 8D设备故障分析报告_内饰二线尾12号滑板故障(1) - 副本.docx',
+    name: '12号滑板在内饰二线尾升降机处无上升动作，升降机无法接车，导致内饰二满位停线-附件-2025.11.03 8D设备故障分析报告_内饰二线尾12号滑板故障(1).docx',
     fileType: 'docx',
     size: 25011,
     status: 'READY',
@@ -79,7 +79,7 @@ const FAULT_DIAGNOSIS_8D_DOCUMENTS: ProjectDocument[] = [
   },
   {
     id: 'doc-fd-008',
-    name: '07EL360升降机失速故障导致配重导向轴轮损坏-附件-2025-09-22 报交出口07EL360升降机故障分析 - 副本.docx',
+    name: '07EL360升降机失速故障导致配重导向轴轮损坏-附件-2025-09-22 报交出口07EL360升降机故障分析.docx',
     fileType: 'docx',
     size: 21528,
     status: 'READY',
@@ -88,7 +88,7 @@ const FAULT_DIAGNOSIS_8D_DOCUMENTS: ProjectDocument[] = [
   },
   {
     id: 'doc-fd-009',
-    name: '涂装P1Y1C4EL395升降机不下降-附件-20250910六工厂涂装P1Y1C4EL395升降机不下降 - 副本.docx',
+    name: '涂装P1Y1C4EL395升降机不下降-附件-20250910六工厂涂装P1Y1C4EL395升降机不下降.docx',
     fileType: 'docx',
     size: 20095,
     status: 'READY',
@@ -124,7 +124,7 @@ const FAULT_DIAGNOSIS_8D_DOCUMENTS: ProjectDocument[] = [
   },
   {
     id: 'doc-fd-013',
-    name: '升降机上升越位-附件-8D分析报告案例&调整线10升降机 - 副本.docx',
+    name: '升降机上升越位-附件-8D分析报告案例&调整线10升降机.docx',
     fileType: 'docx',
     size: 21062,
     status: 'READY',
@@ -199,7 +199,7 @@ const FAULT_DIAGNOSIS_AI_INSIGHT_RUN: AiInsightRun = {
   addedRelationNames: ['records_equipment', 'records_failure', 'occurs_on_line', 'documents_subphenomenon', 'implements_correction', 'implements_prevention'],
   warnings: [],
   stage: '完成',
-  currentDocument: '最终线入口EL402升降机带车在高位不下降，最终线欠量停线-附件-2025.11.23 8D设备故障分析报告_最终线升降机接车异常 - 副本.docx',
+  currentDocument: '最终线入口EL402升降机带车在高位不下降，最终线欠量停线-附件-2025.11.23 8D设备故障分析报告_最终线升降机接车异常.docx',
   logs: [
     '扫描 8 份升降机 8D 故障报告',
     '补充实体类型 4 个：EightDReport、ProductionLine、CorrectiveAction、PreventiveAction',
@@ -217,7 +217,7 @@ const FAULT_DIAGNOSIS_8D_RUN: ExtractionRun = {
   candidateRelationCount: 18,
   pendingReviewCount: 0,
   stage: '完成',
-  currentDocument: '最终线入口EL402升降机带车在高位不下降，最终线欠量停线-附件-2025.11.23 8D设备故障分析报告_最终线升降机接车异常 - 副本.docx',
+  currentDocument: '最终线入口EL402升降机带车在高位不下降，最终线欠量停线-附件-2025.11.23 8D设备故障分析报告_最终线升降机接车异常.docx',
   logs: [
     '扫描 8 份 8D 报告文档',
     '识别升降机类案例设备 8 台、产线位置 6 处、闭环措施 12 条',
