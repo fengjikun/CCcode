@@ -77,7 +77,7 @@
 - `modality`: `text | image-text`
 - `trainStage`: `pretrain | sft | lora | qlora | dpo`
 - `capability`: 如 `chat`、`reasoning`、`vision-language-understanding`、`document-parsing`
-- `baseModel`: 如 `Deepexi-R1-Industry-32B`、`Deepexi-Industry-72B-Instruct`、`Deepexi-VL-Industry-32B`
+- `baseModel`: 如 `Deepexi-R1-Industry-32B`、`Deepexi-Industry-60B-Instruct`、`Deepexi-VL-Industry-32B`
 - `alignmentTags`: 如 `安全对齐`、`工业知识增强`、`OCR增强`、`长上下文`
 
 ### 训练对象
