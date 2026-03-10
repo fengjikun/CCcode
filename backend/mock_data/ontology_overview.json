@@ -20,13 +20,13 @@
     { "key": "8", "name": "supports", "sourceType": "Parameter", "targetType": "Checkpoint", "cardinality": "N:1", "description": "参数数据支撑检查点判断" }
   ],
   "actions": [
-    { "key": "1", "name": "AutoFaultTriage", "objectType": "Phenomenon", "parameters": 4, "preconditions": 1, "effects": 3, "status": "Active", "callCount": 2864 },
-    { "key": "2", "name": "GenerateInspectionWorkOrder", "objectType": "Solution", "parameters": 3, "preconditions": 1, "effects": 2, "status": "Active", "callCount": 1246 },
-    { "key": "3", "name": "MatchFaultPattern", "objectType": "Phenomenon", "parameters": 2, "preconditions": 1, "effects": 1, "status": "Active", "callCount": 3510 },
-    { "key": "4", "name": "GenerateCheckpointList", "objectType": "Checkpoint", "parameters": 1, "preconditions": 1, "effects": 1, "status": "Active", "callCount": 2388 },
-    { "key": "5", "name": "CalcMaintenancePriority", "objectType": "Cause", "parameters": 3, "preconditions": 1, "effects": 1, "status": "Active", "callCount": 1682 },
-    { "key": "6", "name": "VerifySpareReadiness", "objectType": "Component", "parameters": 2, "preconditions": 1, "effects": 1, "status": "Draft", "callCount": 0 },
-    { "key": "7", "name": "CollectConditionParameter", "objectType": "Parameter", "parameters": 2, "preconditions": 1, "effects": 1, "status": "Active", "callCount": 4280 },
-    { "key": "8", "name": "TraceRootCause", "objectType": "SubPhenomenon", "parameters": 2, "preconditions": 1, "effects": 2, "status": "Active", "callCount": 1906 }
+    { "key": "1", "name": "自动告警分诊", "objectType": "Phenomenon", "parameters": 5, "preconditions": 3, "effects": 2, "status": "Active", "callCount": 2864 },
+    { "key": "2", "name": "生成标准排查工单", "objectType": "Checkpoint", "parameters": 5, "preconditions": 2, "effects": 2, "status": "Active", "callCount": 1246 },
+    { "key": "3", "name": "故障现象检索", "objectType": "Phenomenon", "parameters": 3, "preconditions": 1, "effects": 1, "status": "Active", "callCount": 3510 },
+    { "key": "4", "name": "排查清单生成", "objectType": "Checkpoint", "parameters": 1, "preconditions": 1, "effects": 1, "status": "Active", "callCount": 2388 },
+    { "key": "5", "name": "维修优先级评估", "objectType": "Cause", "parameters": 4, "preconditions": 1, "effects": 1, "status": "Active", "callCount": 1682 },
+    { "key": "6", "name": "升级停机处置", "objectType": "Solution", "parameters": 4, "preconditions": 2, "effects": 2, "status": "Active", "callCount": 912 },
+    { "key": "7", "name": "复机验证闭环", "objectType": "Solution", "parameters": 4, "preconditions": 2, "effects": 1, "status": "Draft", "callCount": 0 },
+    { "key": "8", "name": "根因链路追溯", "objectType": "SubPhenomenon", "parameters": 1, "preconditions": 1, "effects": 2, "status": "Active", "callCount": 1906 }
   ]
 }
