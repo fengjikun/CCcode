@@ -62,10 +62,10 @@ interface DomainDef {
 }
 
 const DOMAINS: DomainDef[] = [
-  { key: 'manufacturing', label: '制造行业', shortLabel: '制造', icon: <ToolOutlined />, color: '#4f46e5', gradient: 'linear-gradient(135deg, #4f46e5, #6366f1)', description: '设备本体、工艺流程、BOM结构、产线知识图谱，驱动智能制造决策' },
-  { key: 'retail', label: '零售行业', shortLabel: '零售', icon: <ShoppingCartOutlined />, color: '#d97706', gradient: 'linear-gradient(135deg, #d97706, #f59e0b)', description: '商品本体、门店模型、会员画像、供应链关系，提升全渠道运营效率' },
-  { key: 'medical', label: '医疗行业', shortLabel: '医疗', icon: <ExperimentOutlined />, color: '#16a34a', gradient: 'linear-gradient(135deg, #16a34a, #22c55e)', description: '疾病本体、药物知识、诊疗规范、患者关系，辅助精准医疗决策' },
-  { key: 'transport', label: '交通行业', shortLabel: '交通', icon: <RocketOutlined />, color: '#0891b2', gradient: 'linear-gradient(135deg, #0891b2, #06b6d4)', description: '车辆本体、路网模型、调度规则、运维知识，支撑智慧交通运营' },
+  { key: 'manufacturing', label: '制造领域', shortLabel: '制造', icon: <ToolOutlined />, color: '#4f46e5', gradient: 'linear-gradient(135deg, #4f46e5, #6366f1)', description: '设备本体、工艺流程、BOM结构、产线知识图谱，驱动智能制造决策' },
+  { key: 'retail', label: '零售领域', shortLabel: '零售', icon: <ShoppingCartOutlined />, color: '#d97706', gradient: 'linear-gradient(135deg, #d97706, #f59e0b)', description: '商品本体、门店模型、会员画像、供应链关系，提升全渠道运营效率' },
+  { key: 'medical', label: '医疗领域', shortLabel: '医疗', icon: <ExperimentOutlined />, color: '#16a34a', gradient: 'linear-gradient(135deg, #16a34a, #22c55e)', description: '疾病本体、药物知识、诊疗规范、患者关系，辅助精准医疗决策' },
+  { key: 'transport', label: '交通领域', shortLabel: '交通', icon: <RocketOutlined />, color: '#0891b2', gradient: 'linear-gradient(135deg, #0891b2, #06b6d4)', description: '车辆本体、路网模型、调度规则、运维知识，支撑智慧交通运营' },
   { key: 'general', label: '通用业务', shortLabel: '通用', icon: <SettingOutlined />, color: '#7c3aed', gradient: 'linear-gradient(135deg, #7c3aed, #8b5cf6)', description: '组织架构、业务流程、规章制度、跨域知识，构建企业通用语义底座' },
 ]
 
@@ -360,11 +360,11 @@ export default function ProjectsPage() {
               <Text style={{ color: '#818cf8', fontSize: 13, letterSpacing: 2, fontWeight: 500 }}>Deepology 本体语义层</Text>
             </div>
             <Title level={3} style={{ color: '#fff', margin: '0 0 12px', fontWeight: 700 }}>
-              覆盖 <span style={{ color: '#faad14' }}>{coveredDomains} 大行业</span> 的企业知识本体
+              覆盖 <span style={{ color: '#faad14' }}>{coveredDomains} 大领域</span> 的企业知识本体
             </Title>
             <Paragraph style={{ color: '#94a8d0', marginBottom: 18, lineHeight: 1.8, fontSize: 14, maxWidth: 520 }}>
               基于 <span style={{ color: '#a5b4fc' }}>Object / Property / Link / Action / Function</span> 五元语义模型，
-              为每个行业构建专属知识图谱，驱动 AI 数字员工的精准理解与决策。
+              为每个领域构建专属知识图谱，驱动 AI 数字员工的精准理解与决策。
             </Paragraph>
             <Space size={12}>
               <Button
@@ -435,8 +435,8 @@ export default function ProjectsPage() {
             }}>
               <BulbOutlined />
             </div>
-            <span style={{ fontWeight: 600, fontSize: 15 }}>行业本体矩阵</span>
-            <Text type="secondary" style={{ fontSize: 12, fontWeight: 400, marginLeft: 4 }}>—— 每个行业均具备完整的语义模型与专属知识图谱</Text>
+            <span style={{ fontWeight: 600, fontSize: 15 }}>领域本体矩阵</span>
+            <Text type="secondary" style={{ fontSize: 12, fontWeight: 400, marginLeft: 4 }}>—— 每个领域均具备完整的语义模型与专属知识图谱</Text>
           </div>
           <Space>
             <Input
@@ -487,7 +487,7 @@ export default function ProjectsPage() {
                   <Text strong style={{ fontSize: 14, color: activeTab === TAB_ALL ? '#4f46e5' : '#1a1f36' }}>全部</Text>
                   <Badge count={totalProjects} size="small" style={{ backgroundColor: activeTab === TAB_ALL ? '#4f46e5' : '#d9d9d9' }} />
                 </div>
-                <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 1 }}>所有行业本体</Text>
+                <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 1 }}>所有领域本体</Text>
               </div>
             </div>
           </div>
@@ -579,7 +579,7 @@ export default function ProjectsPage() {
       <Card className="section-card" loading={loading} styles={{ body: { padding: 16 } }}>
         {filteredProjects.length === 0 ? (
           <Empty
-            description={searchText ? '未找到匹配的本体项目' : '该分类暂无本体项目'}
+            description={searchText ? '未找到匹配的本体项目' : '该领域暂无本体项目'}
             style={{ padding: 48 }}
           >
             {!searchText && (
@@ -628,8 +628,8 @@ export default function ProjectsPage() {
         destroyOnClose
       >
         <Form<ProjectForm> form={form} layout="vertical">
-          <Form.Item name="category" label="行业分类" rules={[{ required: true, message: '请选择行业分类' }]}>
-            <Select placeholder="选择所属行业分类" options={categoryOptions} />
+          <Form.Item name="category" label="领域分类" rules={[{ required: true, message: '请选择领域分类' }]}>
+            <Select placeholder="选择所属领域分类" options={categoryOptions} />
           </Form.Item>
           <Form.Item name="name" label="本体名称" rules={[{ required: true, message: '请输入本体名称' }]}>
             <Input placeholder="例如：设备维修本体、CPQ配置逻辑本体" maxLength={64} />
@@ -652,8 +652,8 @@ export default function ProjectsPage() {
         destroyOnClose
       >
         <Form<ProjectForm> form={editForm} layout="vertical">
-          <Form.Item name="category" label="行业分类" rules={[{ required: true, message: '请选择行业分类' }]}>
-            <Select placeholder="选择所属行业分类" options={categoryOptions} />
+          <Form.Item name="category" label="领域分类" rules={[{ required: true, message: '请选择领域分类' }]}>
+            <Select placeholder="选择所属领域分类" options={categoryOptions} />
           </Form.Item>
           <Form.Item name="name" label="本体名称" rules={[{ required: true, message: '请输入本体名称' }]}>
             <Input placeholder="例如：供应商画像本体" maxLength={64} />
