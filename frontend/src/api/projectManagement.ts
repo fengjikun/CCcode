@@ -23,18 +23,218 @@ import type {
   DataSourceSyncMode,
 } from '../types/projectMvp'
 
-import { delay, rand } from './mockConfig'
-
 const STORAGE_KEY = 'deepexios_projects_v3'
-/** 当默认数据结构变化时递增此值，自动清除旧缓存 */
-const DATA_VERSION = 7
-
-/* ========== 持久化存储 ========== */
+/** 当默认数据结构变化时递增此值，触发本地缓存迁移 */
+const DATA_VERSION = 8
 
 interface ProjectStore {
   projects: ProjectDetail[]
   idSeq: number
   _v?: number
+}
+
+interface MockEntityDescriptor {
+  type: string
+  name: string
+}
+
+const PROJECT_ENTITY_NAME_POOLS: Record<string, Record<string, string[]>> = {
+  'proj-001': {
+    Equipment: ['VM-850 立式加工中心', 'HMC-630 卧式加工中心', '五轴联动加工单元', '高速钻攻中心', '龙门铣削工作站', '液压动力站', '刀库换刀机构'],
+    Phenomenon: ['主轴温升异常', '主轴振动超限', '进给轴定位偏差', '液压压力波动', '刀具寿命异常衰减', '换刀超时报警', '表面粗糙度劣化'],
+    SubPhenomenon: ['振动频谱出现BPFO峰值', '主轴箱外壳温升超18℃', 'Z轴重复定位偏差增大', '液压回路压力脉动增强', '主轴端面跳动超差', '刀柄夹持力下降'],
+    Checkpoint: ['检查主轴润滑回路', '测量轴承预紧力', '校验Z轴丝杠背隙', '检查液压滤芯堵塞度', '复测主轴端跳', '核查换刀机械手原点'],
+    Cause: ['主轴轴承早期剥落', '润滑油路局部堵塞', '丝杠螺母副磨损', '液压阀芯卡滞', '刀柄夹紧机构磨损', '热漂移补偿失准'],
+    Solution: ['更换主轴轴承并跑合验证', '清洗润滑回路并更换滤芯', '调整丝杠预紧并重标定', '更换液压阀组并复位参数', '更换刀柄夹紧组件', '重新执行热误差标定'],
+    Component: ['主轴前轴承组', '主轴润滑回路', 'Z轴滚珠丝杠', '液压比例阀', '刀柄夹紧弹簧组', '换刀机械手'],
+    Parameter: ['主轴振动RMS', '主轴温升', '液压回路压力', 'Z轴定位误差', '刀柄夹持力', '主轴端面跳动'],
+  },
+}
+
+function deterministicConfidence(base: number, index: number, floor: number): number {
+  return Number(Math.max(floor, base - (index % 12) * 0.01).toFixed(2))
+}
+
+function parseReviewEntityTitle(title: string): MockEntityDescriptor | null {
+  const legacyMatch = title.match(/^(.+?)::(.+)$/)
+  if (legacyMatch) {
+    const type = legacyMatch[1].trim()
+    const name = legacyMatch[2].trim()
+    return type && name ? { type, name } : null
+  }
+
+  const suffixMatch = title.match(/^(.*?)\s*[（(]\s*([A-Za-z][\w-]*)\s*[）)]$/)
+  if (suffixMatch) {
+    const name = suffixMatch[1].trim()
+    const type = suffixMatch[2].trim()
+    return type && name ? { type, name } : null
+  }
+
+  const fallbackName = title.trim()
+  return fallbackName ? { type: 'Entity', name: fallbackName } : null
+}
+
+function formatReviewEntityTitle(entity: MockEntityDescriptor): string {
+  return `${entity.name} (${entity.type})`
+}
+
+function entityNamePool(project: ProjectDetail, type: string): string[] {
+  return PROJECT_ENTITY_NAME_POOLS[project.id]?.[type] ?? [
+    `${type}样本`,
+    `${type}实例`,
+    `${type}对象`,
+    `${type}节点`,
+    `${type}条目`,
+  ]
+}
+
+function collectEntityDescriptors(items: ReviewItem[]): MockEntityDescriptor[] {
+  const descriptors: MockEntityDescriptor[] = []
+  const seen = new Set<string>()
+  for (const item of items) {
+    if (item.kind !== 'ENTITY') continue
+    const parsed = parseReviewEntityTitle(item.title)
+    if (!parsed) continue
+    const key = `${parsed.type}::${parsed.name}`
+    if (seen.has(key)) continue
+    descriptors.push(parsed)
+    seen.add(key)
+  }
+  return descriptors
+}
+
+function completeEntityDescriptors(project: ProjectDetail, desiredCount: number, existing: MockEntityDescriptor[]): MockEntityDescriptor[] {
+  const descriptors = [...existing]
+  const seen = new Set(descriptors.map(entity => `${entity.type}::${entity.name}`))
+  const entityTypes = project.schemaConfig.entityTypes.map(type => type.name)
+  const types = entityTypes.length > 0 ? entityTypes : ['Entity']
+  let cursor = 0
+
+  while (descriptors.length < desiredCount) {
+    const type = types[cursor % types.length]
+    const pool = entityNamePool(project, type)
+    const occurrence = Math.floor(cursor / types.length)
+    const baseName = pool[occurrence % pool.length] ?? `${type}样本`
+    const cycle = Math.floor(occurrence / Math.max(pool.length, 1))
+    const name = cycle === 0 ? baseName : `${baseName} ${cycle + 1}`
+    const key = `${type}::${name}`
+    if (!seen.has(key)) {
+      descriptors.push({ type, name })
+      seen.add(key)
+    }
+    cursor++
+    if (cursor > desiredCount * 20) break
+  }
+
+  return descriptors
+}
+
+export function buildReviewItemsForRun(
+  project: ProjectDetail,
+  run: Pick<ExtractionRun, 'candidateEntityCount' | 'candidateRelationCount' | 'pendingReviewCount' | 'reviewItems'>,
+  createId: () => string,
+): ReviewItem[] {
+  const existingItems = run.reviewItems ?? []
+  const items = [...existingItems]
+  const entities = completeEntityDescriptors(project, run.candidateEntityCount, collectEntityDescriptors(existingItems))
+  const existingEntityCount = existingItems.filter(item => item.kind === 'ENTITY').length
+  const existingPendingCount = existingItems.filter(item => item.status === 'PENDING').length
+  let pendingLeft = Math.max(0, run.pendingReviewCount - existingPendingCount)
+
+  const nextStatus = (): ReviewStatus => {
+    if (pendingLeft > 0) {
+      pendingLeft--
+      return 'PENDING'
+    }
+    return 'APPROVED'
+  }
+
+  for (let i = existingEntityCount; i < run.candidateEntityCount; i++) {
+    const entity = entities[i]
+    if (!entity) break
+    items.push({
+      id: createId(),
+      kind: 'ENTITY',
+      title: formatReviewEntityTitle(entity),
+      evidence: `抽取实体候选 ${i + 1}`,
+      confidence: deterministicConfidence(0.97, i, 0.75),
+      status: nextStatus(),
+    })
+  }
+
+  const relationTypes = project.schemaConfig.relationTypes.length > 0
+    ? project.schemaConfig.relationTypes
+    : [{ id: 'rt-auto', name: 'related_to', domain: entities[0]?.type ?? 'Entity', range: entities[1]?.type ?? entities[0]?.type ?? 'Entity', properties: [] }]
+  const existingRelationCount = existingItems.filter(item => item.kind === 'RELATION').length
+
+  for (let i = existingRelationCount; i < run.candidateRelationCount; i++) {
+    if (entities.length === 0) break
+    const relation = relationTypes[i % relationTypes.length]
+    const sourcePool = entities.filter(entity => entity.type === relation.domain)
+    const targetPool = entities.filter(entity => entity.type === relation.range)
+    const sources = sourcePool.length > 0 ? sourcePool : entities
+    const targets = targetPool.length > 0 ? targetPool : entities
+    const source = sources[i % sources.length]
+    let target = targets[(i + Math.floor(i / Math.max(1, sources.length)) + 1) % targets.length]
+
+    if (source && target && source.type === target.type && source.name === target.name && targets.length > 1) {
+      target = targets[(i + 1) % targets.length]
+    }
+    if (!source || !target) break
+
+    items.push({
+      id: createId(),
+      kind: 'RELATION',
+      title: `${formatReviewEntityTitle(source)} → ${relation.name} → ${formatReviewEntityTitle(target)}`,
+      evidence: `抽取关系候选 ${i + 1}`,
+      confidence: deterministicConfidence(0.95, i, 0.7),
+      status: nextStatus(),
+    })
+  }
+
+  return items
+}
+
+function normalizeRun(project: ProjectDetail, run: ExtractionRun, createId: () => string): boolean {
+  const expectedCount = run.candidateEntityCount + run.candidateRelationCount
+  let changed = false
+
+  if (run.reviewItems.length < expectedCount) {
+    run.reviewItems = buildReviewItemsForRun(project, run, createId)
+    changed = true
+  }
+
+  const pendingCount = run.reviewItems.filter(item => item.status === 'PENDING').length
+  if (run.pendingReviewCount !== pendingCount) {
+    run.pendingReviewCount = pendingCount
+    changed = true
+  }
+
+  return changed
+}
+
+function normalizeStore(store: ProjectStore): boolean {
+  let changed = false
+
+  if (!Number.isFinite(store.idSeq)) {
+    store.idSeq = 5000
+    changed = true
+  }
+
+  for (const project of store.projects) {
+    for (const run of project.runs) {
+      if (normalizeRun(project, run, () => `ri-${++store.idSeq}`)) {
+        changed = true
+      }
+    }
+  }
+
+  if (store._v !== DATA_VERSION) {
+    store._v = DATA_VERSION
+    changed = true
+  }
+
+  return changed
 }
 
 /* ========== 108 行业本体定义（来源：滴普科技行业本体清单v3_3.xlsx） ========== */
@@ -473,7 +673,8 @@ function defaultProjects(): ProjectDetail[] {
       status: 'DRAFT',
     },
   ]
-
+  const store: ProjectStore = { projects, idSeq: 9000, _v: DATA_VERSION }
+  normalizeStore(store)
   return projects
 }
 
@@ -482,7 +683,10 @@ function loadStore(): ProjectStore {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as ProjectStore
-      if (parsed._v === DATA_VERSION) return parsed
+      if (normalizeStore(parsed)) {
+        saveStore(parsed)
+      }
+      return parsed
     }
   } catch { /* ignore */ }
   const s: ProjectStore = { projects: defaultProjects(), idSeq: 5000, _v: DATA_VERSION }
@@ -508,125 +712,141 @@ function findProject(projectId: string): { store: ProjectStore; project: Project
   return { store, project: store.projects[index], index }
 }
 
-/* ========== Projects ========== */
+export const __PROJECT_STORE_LEGACY_HELPERS = { nextId, findProject }
 
-export async function listProjects(): Promise<ProjectSummary[]> {
-  await delay(rand(300, 600))
-  return loadStore().projects.map(p => ({
-    id: p.id,
-    name: p.name,
-    category: p.category,
-    description: p.description,
-    createdAt: p.createdAt,
-    updatedAt: p.updatedAt,
-    documentCount: p.documents.length,
-    versionCount: p.versions.length,
-    latestRunStatus: p.runs.length > 0 ? p.runs[p.runs.length - 1].status : undefined,
-  }))
+function cloneProjectData<T>(value: T): T {
+  if (typeof structuredClone === 'function') {
+    return structuredClone(value)
+  }
+  return JSON.parse(JSON.stringify(value)) as T
 }
 
-export async function createProject(name: string, description?: string, category?: string): Promise<ProjectSummary> {
-  await delay(rand(400, 700))
-  const store = loadStore()
+const PINNED_PROJECT_NAME = '故障诊断本体'
+
+function isPinnedProject(project: Pick<ProjectDetail, 'name'>): boolean {
+  return project.name === PINNED_PROJECT_NAME
+}
+
+function sortProjectsByUpdatedAt(projects: ProjectDetail[]): ProjectDetail[] {
+  return [...projects].sort((a, b) => {
+    const aPinned = isPinnedProject(a)
+    const bPinned = isPinnedProject(b)
+    if (aPinned !== bPinned) {
+      return aPinned ? -1 : 1
+    }
+
+    const aTime = Date.parse(a.updatedAt || a.createdAt || '') || 0
+    const bTime = Date.parse(b.updatedAt || b.createdAt || '') || 0
+    return bTime - aTime
+  })
+}
+
+function latestRunStatus(project: ProjectDetail): ProjectSummary['latestRunStatus'] {
+  if (project.runs.length === 0) return undefined
+  const latestRun = [...project.runs].sort((a, b) => {
+    const aTime = Date.parse(a.createdAt || '') || 0
+    const bTime = Date.parse(b.createdAt || '') || 0
+    return bTime - aTime
+  })[0]
+  return latestRun?.status
+}
+
+function toProjectSummary(project: ProjectDetail): ProjectSummary {
+  return {
+    id: project.id,
+    name: project.name,
+    category: project.category,
+    description: project.description,
+    createdAt: project.createdAt,
+    updatedAt: project.updatedAt,
+    documentCount: project.documents.length,
+    versionCount: project.versions.length,
+    latestRunStatus: latestRunStatus(project),
+  }
+}
+
+function createLocalId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function touchProject(project: ProjectDetail): string {
   const now = new Date().toISOString()
-  const project: ProjectDetail = {
-    id: `proj-${nextId()}`,
-    name,
-    category: category || '',
-    description: description || '',
-    createdAt: now,
-    updatedAt: now,
-    documents: [],
-    dataSources: [],
-    schemaConfig: { entityTypes: [], relationTypes: [], entityScope: '', relationScope: '', skills: [], updatedAt: now },
-    runs: [],
-    versions: [],
-    actions: [],
-    functions: [],
-  }
-  store.projects.unshift(project)
-  saveStore(store)
-  return {
-    id: project.id, name: project.name, category: project.category,
-    description: project.description, createdAt: project.createdAt, updatedAt: project.updatedAt,
-    documentCount: 0, versionCount: 0,
-  }
+  project.updatedAt = now
+  return now
 }
 
-export async function deleteProject(projectId: string): Promise<void> {
-  await delay(rand(300, 500))
-  const store = loadStore()
-  store.projects = store.projects.filter(p => p.id !== projectId)
-  saveStore(store)
+function touchProjectSchema(project: ProjectDetail): string {
+  const now = touchProject(project)
+  project.schemaConfig.updatedAt = now
+  return now
 }
 
-export async function updateProject(projectId: string, name: string, description?: string, category?: string): Promise<ProjectSummary> {
-  await delay(rand(300, 600))
+function mutateProject<T>(projectId: string, mutate: (project: ProjectDetail, store: ProjectStore) => T): T {
   const { store, project, index } = findProject(projectId)
-  project.name = name
-  project.description = description || ''
-  project.category = category || ''
-  project.updatedAt = new Date().toISOString()
-  store.projects[index] = project
+  const draft = cloneProjectData(project)
+  const result = mutate(draft, store)
+  store.projects[index] = draft
   saveStore(store)
-  return {
-    id: project.id, name: project.name, category: project.category,
-    description: project.description, createdAt: project.createdAt, updatedAt: project.updatedAt,
-    documentCount: project.documents.length, versionCount: project.versions.length,
+  return result
+}
+
+function inferDocumentType(fileName: string): ProjectDocument['fileType'] {
+  const lower = fileName.toLowerCase()
+  if (lower.endsWith('.docx')) return 'docx'
+  if (lower.endsWith('.xlsx')) return 'xlsx'
+  if (lower.endsWith('.jsonl')) return 'jsonl'
+  return 'md'
+}
+
+function normalizeEntityProperties(
+  properties?: Array<{
+    id?: string
+    name: string
+    displayName?: string
+    dataType?: EntityPropertyConfig['dataType']
+    required?: boolean
+    defaultValue?: string
+    description?: string
+    mappedColumn?: string
+    searchable?: boolean
+    sortable?: boolean
+    sortOrder?: number
+  }>,
+): EntityPropertyConfig[] {
+  return (properties ?? [])
+    .filter(item => item.name?.trim())
+    .map((item, index) => ({
+      id: item.id || createLocalId('prop'),
+      name: item.name.trim(),
+      displayName: item.displayName?.trim() || item.name.trim(),
+      dataType: item.dataType || 'STRING',
+      required: Boolean(item.required),
+      defaultValue: item.defaultValue,
+      description: item.description,
+      mappedColumn: item.mappedColumn,
+      searchable: Boolean(item.searchable),
+      sortable: Boolean(item.sortable),
+      sortOrder: item.sortOrder ?? index,
+    }))
+}
+
+function findRun(project: ProjectDetail, runId: string): ExtractionRun {
+  const run = project.runs.find(item => item.id === runId)
+  if (!run) {
+    throw new Error(`抽取任务不存在：${runId}`)
   }
+  return run
 }
 
-export async function getProjectDetail(projectId: string): Promise<ProjectDetail> {
-  await delay(rand(400, 700))
-  const { project } = findProject(projectId)
-  return project
-}
-
-/* ========== Documents ========== */
-
-export async function uploadProjectDocument(projectId: string, file: File): Promise<ProjectDocument> {
-  // 模拟文件上传延迟，根据文件大小调整
-  await delay(rand(800, 1500))
-  const { store, project, index } = findProject(projectId)
-  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'md'
-  const doc: ProjectDocument = {
-    id: `doc-${nextId()}`,
-    name: file.name,
-    fileType: ext === 'docx' || ext === 'xlsx' ? ext : 'md',
-    size: file.size,
-    status: 'READY',
-    enabled: true,
-    uploadedAt: new Date().toISOString(),
+function findVersion(project: ProjectDetail, versionId: string): OntologyVersion {
+  const version = project.versions.find(item => item.id === versionId)
+  if (!version) {
+    throw new Error(`版本不存在：${versionId}`)
   }
-  project.documents.push(doc)
-  project.updatedAt = new Date().toISOString()
-  store.projects[index] = project
-  saveStore(store)
-  return doc
+  return version
 }
 
-export async function deleteProjectDocument(projectId: string, documentId: string): Promise<void> {
-  await delay(rand(200, 400))
-  const { store, project, index } = findProject(projectId)
-  project.documents = project.documents.filter(d => d.id !== documentId)
-  project.updatedAt = new Date().toISOString()
-  store.projects[index] = project
-  saveStore(store)
-}
-
-export async function setProjectDocumentEnabled(
-  projectId: string, documentId: string, enabled: boolean,
-): Promise<ProjectDocument> {
-  await delay(rand(200, 400))
-  const { store, project, index } = findProject(projectId)
-  const doc = project.documents.find(d => d.id === documentId)
-  if (doc) doc.enabled = enabled
-  store.projects[index] = project
-  saveStore(store)
-  return doc!
-}
-
-/* ========== Data Sources ========== */
+/* ========== Projects ========== */
 
 interface DataSourcePayload {
   name: string
@@ -647,94 +867,192 @@ interface DataSourcePayload {
   incrementalColumn?: string
 }
 
+function normalizeDataSource(dataSource: StructuredDataSource & { passwordMasked?: string | null }): StructuredDataSource {
+  return {
+    ...dataSource,
+    password: dataSource.password ?? dataSource.passwordMasked ?? '',
+  }
+}
+
+function normalizeProjectDetail(detail: ProjectDetail): ProjectDetail {
+  return {
+    ...detail,
+    dataSources: detail.dataSources.map(item => normalizeDataSource(item as StructuredDataSource & { passwordMasked?: string | null })),
+  }
+}
+
+export async function listProjects(): Promise<ProjectSummary[]> {
+  const store = loadStore()
+  return sortProjectsByUpdatedAt(store.projects).map(project => toProjectSummary(project))
+}
+
+export async function createProject(name: string, description?: string, category?: string): Promise<ProjectSummary> {
+  const store = loadStore()
+  store.idSeq += 1
+  const now = new Date().toISOString()
+  const project: ProjectDetail = {
+    id: `proj-${store.idSeq}`,
+    name,
+    description,
+    category,
+    createdAt: now,
+    updatedAt: now,
+    documents: [],
+    dataSources: [],
+    schemaConfig: {
+      entityTypes: [],
+      relationTypes: [],
+      entityScope: '',
+      relationScope: '',
+      skills: [],
+      updatedAt: now,
+    },
+    runs: [],
+    versions: [],
+    actions: [],
+    functions: [],
+  }
+  store.projects.unshift(project)
+  saveStore(store)
+  return toProjectSummary(project)
+}
+
+export async function deleteProject(projectId: string): Promise<void> {
+  const store = loadStore()
+  store.projects = store.projects.filter(project => project.id !== projectId)
+  saveStore(store)
+}
+
+export async function updateProject(projectId: string, name: string, description?: string, category?: string): Promise<ProjectSummary> {
+  const { store, project, index } = findProject(projectId)
+  const updated: ProjectDetail = {
+    ...project,
+    name,
+    description,
+    category,
+    updatedAt: new Date().toISOString(),
+  }
+  store.projects[index] = updated
+  saveStore(store)
+  return toProjectSummary(updated)
+}
+
+export async function getProjectDetail(projectId: string): Promise<ProjectDetail> {
+  const { project } = findProject(projectId)
+  return normalizeProjectDetail(cloneProjectData(project))
+}
+
+export async function uploadProjectDocument(projectId: string, file: File): Promise<ProjectDocument> {
+  return mutateProject(projectId, (project) => {
+    const now = touchProject(project)
+    const document: ProjectDocument = {
+      id: createLocalId('doc'),
+      name: file.name,
+      fileType: inferDocumentType(file.name),
+      size: file.size,
+      status: 'READY',
+      enabled: true,
+      uploadedAt: now,
+    }
+    project.documents.unshift(document)
+    return cloneProjectData(document)
+  })
+}
+
+export async function deleteProjectDocument(projectId: string, documentId: string): Promise<void> {
+  mutateProject(projectId, (project) => {
+    project.documents = project.documents.filter(item => item.id !== documentId)
+    touchProject(project)
+  })
+}
+
+export async function setProjectDocumentEnabled(
+  projectId: string, documentId: string, enabled: boolean,
+): Promise<ProjectDocument> {
+  return mutateProject(projectId, (project) => {
+    const document = project.documents.find(item => item.id === documentId)
+    if (!document) throw new Error(`文档不存在：${documentId}`)
+    document.enabled = enabled
+    touchProject(project)
+    return cloneProjectData(document)
+  })
+}
+
 export async function createProjectDataSource(
   projectId: string, payload: DataSourcePayload,
 ): Promise<StructuredDataSource> {
-  await delay(rand(400, 700))
-  const { store, project, index } = findProject(projectId)
-  const now = new Date().toISOString()
-  const ds: StructuredDataSource = {
-    id: `ds-${nextId()}`,
-    ...payload,
-    password: '',
-    tables: payload.tables ?? [],
-    customSql: payload.customSql ?? '',
-    incrementalColumn: payload.incrementalColumn ?? '',
-    status: 'UNKNOWN',
-    lastError: '',
-    createdAt: now,
-    updatedAt: now,
-  }
-  project.dataSources.push(ds)
-  store.projects[index] = project
-  saveStore(store)
-  return ds
+  return mutateProject(projectId, (project) => {
+    const now = touchProject(project)
+    const dataSource: StructuredDataSource = {
+      id: createLocalId('ds'),
+      ...payload,
+      password: payload.password ?? '',
+      tables: payload.tables ?? [],
+      status: 'UNKNOWN',
+      lastError: '',
+      createdAt: now,
+      updatedAt: now,
+    }
+    project.dataSources.unshift(dataSource)
+    return cloneProjectData(dataSource)
+  })
 }
 
 export async function updateProjectDataSource(
   projectId: string, dataSourceId: string, payload: DataSourcePayload,
 ): Promise<StructuredDataSource> {
-  await delay(rand(300, 600))
-  const { store, project, index } = findProject(projectId)
-  const dsIdx = project.dataSources.findIndex(d => d.id === dataSourceId)
-  if (dsIdx >= 0) {
-    project.dataSources[dsIdx] = {
-      ...project.dataSources[dsIdx],
-      ...payload,
-      password: '',
+  return mutateProject(projectId, (project) => {
+    const dataSource = project.dataSources.find(item => item.id === dataSourceId)
+    if (!dataSource) throw new Error(`数据源不存在：${dataSourceId}`)
+    const now = touchProject(project)
+    Object.assign(dataSource, payload, {
       tables: payload.tables ?? [],
-      updatedAt: new Date().toISOString(),
-    }
-  }
-  store.projects[index] = project
-  saveStore(store)
-  return project.dataSources[dsIdx]
+      updatedAt: now,
+    })
+    return cloneProjectData(dataSource)
+  })
 }
 
 export async function deleteProjectDataSource(projectId: string, dataSourceId: string): Promise<void> {
-  await delay(rand(200, 400))
-  const { store, project, index } = findProject(projectId)
-  project.dataSources = project.dataSources.filter(d => d.id !== dataSourceId)
-  store.projects[index] = project
-  saveStore(store)
+  mutateProject(projectId, (project) => {
+    project.dataSources = project.dataSources.filter(item => item.id !== dataSourceId)
+    touchProject(project)
+  })
 }
 
 export async function setProjectDataSourceEnabled(
   projectId: string, dataSourceId: string, enabled: boolean,
 ): Promise<StructuredDataSource> {
-  await delay(rand(200, 400))
-  const { store, project, index } = findProject(projectId)
-  const ds = project.dataSources.find(d => d.id === dataSourceId)
-  if (ds) ds.enabled = enabled
-  store.projects[index] = project
-  saveStore(store)
-  return ds!
+  return mutateProject(projectId, (project) => {
+    const dataSource = project.dataSources.find(item => item.id === dataSourceId)
+    if (!dataSource) throw new Error(`数据源不存在：${dataSourceId}`)
+    const now = touchProject(project)
+    dataSource.enabled = enabled
+    dataSource.updatedAt = now
+    return cloneProjectData(dataSource)
+  })
 }
 
 export async function testProjectDataSourceConnection(
   projectId: string, dataSourceId: string,
 ): Promise<{ status: 'SUCCESS' | 'FAILED'; testedAt: string; message: string }> {
-  // 模拟数据库连接测试 (1-2s)
-  await delay(rand(1000, 2000))
-  const { store, project, index } = findProject(projectId)
-  const ds = project.dataSources.find(d => d.id === dataSourceId)
-  const now = new Date().toISOString()
-  const success = Math.random() > 0.15 // 85% 成功率
-  if (ds) {
-    ds.status = success ? 'SUCCESS' : 'FAILED'
-    ds.lastTestAt = now
-    ds.lastError = success ? '' : '连接超时：无法连接到数据库服务器'
-    store.projects[index] = project
-    saveStore(store)
-  }
-  return {
-    status: success ? 'SUCCESS' : 'FAILED',
-    testedAt: now,
-    message: success ? '连接成功' : '连接超时：无法连接到数据库服务器',
-  }
+  return mutateProject(projectId, (project) => {
+    const dataSource = project.dataSources.find(item => item.id === dataSourceId)
+    if (!dataSource) throw new Error(`数据源不存在：${dataSourceId}`)
+    const testedAt = new Date().toISOString()
+    const status = dataSource.host && dataSource.database ? 'SUCCESS' as const : 'FAILED' as const
+    dataSource.status = status
+    dataSource.lastTestAt = testedAt
+    dataSource.lastError = status === 'SUCCESS' ? '' : '连接信息不完整'
+    dataSource.updatedAt = testedAt
+    touchProject(project)
+    return {
+      status,
+      testedAt,
+      message: status === 'SUCCESS' ? '已连接到本地 mock 数据源' : '连接信息不完整',
+    }
+  })
 }
-
-/* ========== Schema - Entity Types ========== */
 
 export async function createEntityType(
   projectId: string,
@@ -746,81 +1064,51 @@ export async function createEntityType(
     defaultValue?: string; description?: string; sortOrder?: number;
   }>,
 ): Promise<EntityTypeConfig> {
-  await delay(rand(300, 600))
-  const { store, project, index } = findProject(projectId)
-  const et: EntityTypeConfig = {
-    id: `et-${nextId()}`,
-    name,
-    description: description || '',
-    properties: (properties ?? []).map((p, i) => ({
-      id: p.id || `ep-${nextId()}`,
-      name: p.name,
-      displayName: p.displayName || p.name,
-      dataType: p.dataType || 'STRING',
-      required: p.required ?? false,
-      defaultValue: p.defaultValue,
-      description: p.description,
-      sortOrder: p.sortOrder ?? i,
-    })),
-  }
-  project.schemaConfig.entityTypes.push(et)
-  project.schemaConfig.updatedAt = new Date().toISOString()
-  store.projects[index] = project
-  saveStore(store)
-  return et
+  return mutateProject(projectId, (project) => {
+    const entityType: EntityTypeConfig = {
+      id: createLocalId('entity'),
+      name,
+      description,
+      properties: normalizeEntityProperties(properties),
+    }
+    project.schemaConfig.entityTypes.push(entityType)
+    touchProjectSchema(project)
+    return cloneProjectData(entityType)
+  })
 }
 
 export async function updateEntityType(
   projectId: string,
   entityTypeId: string,
   payload: {
-    name: string; description?: string;
+    name: string; description?: string; dataSourceId?: string; mappedTable?: string; isBigTable?: boolean;
     properties?: Array<{
       id?: string; name: string; displayName?: string;
       dataType?: EntityPropertyConfig['dataType']; required?: boolean;
-      defaultValue?: string; description?: string; sortOrder?: number;
+      defaultValue?: string; description?: string; mappedColumn?: string; searchable?: boolean; sortable?: boolean; sortOrder?: number;
     }>;
   },
 ): Promise<EntityTypeConfig> {
-  await delay(rand(300, 600))
-  const { store, project, index } = findProject(projectId)
-  const etIdx = project.schemaConfig.entityTypes.findIndex(e => e.id === entityTypeId)
-  if (etIdx >= 0) {
-    const existing = project.schemaConfig.entityTypes[etIdx]
-    project.schemaConfig.entityTypes[etIdx] = {
-      ...existing,
-      name: payload.name,
-      description: payload.description || '',
-      properties: payload.properties
-        ? payload.properties.map((p, i) => ({
-            id: p.id || `ep-${nextId()}`,
-            name: p.name,
-            displayName: p.displayName || p.name,
-            dataType: p.dataType || 'STRING',
-            required: p.required ?? false,
-            defaultValue: p.defaultValue,
-            description: p.description,
-            sortOrder: p.sortOrder ?? i,
-          }))
-        : existing.properties,
-    }
-    project.schemaConfig.updatedAt = new Date().toISOString()
-    store.projects[index] = project
-    saveStore(store)
-  }
-  return project.schemaConfig.entityTypes[etIdx]
+  return mutateProject(projectId, (project) => {
+    const entityType = project.schemaConfig.entityTypes.find(item => item.id === entityTypeId)
+    if (!entityType) throw new Error(`实体类型不存在：${entityTypeId}`)
+    entityType.name = payload.name
+    entityType.description = payload.description
+    entityType.dataSourceId = payload.dataSourceId
+    entityType.mappedTable = payload.mappedTable
+    entityType.isBigTable = payload.isBigTable
+    entityType.properties = normalizeEntityProperties(payload.properties)
+    touchProjectSchema(project)
+    return cloneProjectData(entityType)
+  })
 }
 
 export async function removeEntityType(projectId: string, entityTypeId: string): Promise<void> {
-  await delay(rand(200, 400))
-  const { store, project, index } = findProject(projectId)
-  project.schemaConfig.entityTypes = project.schemaConfig.entityTypes.filter(e => e.id !== entityTypeId)
-  project.schemaConfig.updatedAt = new Date().toISOString()
-  store.projects[index] = project
-  saveStore(store)
+  mutateProject(projectId, (project) => {
+    project.schemaConfig.entityTypes = project.schemaConfig.entityTypes.filter(item => item.id !== entityTypeId)
+    touchProjectSchema(project)
+  })
 }
-
-/* ========== Schema - Relation Types ========== */
 
 export async function createRelationType(
   projectId: string,
@@ -833,30 +1121,19 @@ export async function createRelationType(
     }>;
   },
 ): Promise<RelationTypeConfig> {
-  await delay(rand(300, 600))
-  const { store, project, index } = findProject(projectId)
-  const rt: RelationTypeConfig = {
-    id: `rt-${nextId()}`,
-    name: relation.name,
-    domain: relation.domain,
-    range: relation.range,
-    description: relation.description || '',
-    properties: (relation.properties ?? []).map((p, i) => ({
-      id: p.id || `ep-${nextId()}`,
-      name: p.name,
-      displayName: p.displayName || p.name,
-      dataType: p.dataType || 'STRING',
-      required: p.required ?? false,
-      defaultValue: p.defaultValue,
-      description: p.description,
-      sortOrder: p.sortOrder ?? i,
-    })),
-  }
-  project.schemaConfig.relationTypes.push(rt)
-  project.schemaConfig.updatedAt = new Date().toISOString()
-  store.projects[index] = project
-  saveStore(store)
-  return rt
+  return mutateProject(projectId, (project) => {
+    const relationType: RelationTypeConfig = {
+      id: createLocalId('relation'),
+      name: relation.name,
+      domain: relation.domain,
+      range: relation.range,
+      description: relation.description,
+      properties: normalizeEntityProperties(relation.properties),
+    }
+    project.schemaConfig.relationTypes.push(relationType)
+    touchProjectSchema(project)
+    return cloneProjectData(relationType)
+  })
 }
 
 export async function updateRelationType(
@@ -871,420 +1148,361 @@ export async function updateRelationType(
     }>;
   },
 ): Promise<RelationTypeConfig> {
-  await delay(rand(300, 600))
-  const { store, project, index } = findProject(projectId)
-  const rtIdx = project.schemaConfig.relationTypes.findIndex(r => r.id === relationTypeId)
-  if (rtIdx >= 0) {
-    const existing = project.schemaConfig.relationTypes[rtIdx]
-    project.schemaConfig.relationTypes[rtIdx] = {
-      ...existing,
-      name: payload.name,
-      domain: payload.domain,
-      range: payload.range,
-      description: payload.description || '',
-      properties: payload.properties
-        ? payload.properties.map((p, i) => ({
-            id: p.id || `ep-${nextId()}`,
-            name: p.name,
-            displayName: p.displayName || p.name,
-            dataType: p.dataType || 'STRING',
-            required: p.required ?? false,
-            defaultValue: p.defaultValue,
-            description: p.description,
-            sortOrder: p.sortOrder ?? i,
-          }))
-        : existing.properties,
-    }
-    project.schemaConfig.updatedAt = new Date().toISOString()
-    store.projects[index] = project
-    saveStore(store)
-  }
-  return project.schemaConfig.relationTypes[rtIdx]
+  return mutateProject(projectId, (project) => {
+    const relationType = project.schemaConfig.relationTypes.find(item => item.id === relationTypeId)
+    if (!relationType) throw new Error(`关系类型不存在：${relationTypeId}`)
+    relationType.name = payload.name
+    relationType.domain = payload.domain
+    relationType.range = payload.range
+    relationType.description = payload.description
+    relationType.properties = normalizeEntityProperties(payload.properties)
+    touchProjectSchema(project)
+    return cloneProjectData(relationType)
+  })
 }
 
 export async function removeRelationType(projectId: string, relationTypeId: string): Promise<void> {
-  await delay(rand(200, 400))
-  const { store, project, index } = findProject(projectId)
-  project.schemaConfig.relationTypes = project.schemaConfig.relationTypes.filter(r => r.id !== relationTypeId)
-  project.schemaConfig.updatedAt = new Date().toISOString()
-  store.projects[index] = project
-  saveStore(store)
+  mutateProject(projectId, (project) => {
+    project.schemaConfig.relationTypes = project.schemaConfig.relationTypes.filter(item => item.id !== relationTypeId)
+    touchProjectSchema(project)
+  })
 }
 
 export async function clearProjectSchema(projectId: string): Promise<void> {
-  await delay(rand(300, 500))
-  const { store, project, index } = findProject(projectId)
-  project.schemaConfig.entityTypes = []
-  project.schemaConfig.relationTypes = []
-  project.schemaConfig.updatedAt = new Date().toISOString()
-  store.projects[index] = project
-  saveStore(store)
+  mutateProject(projectId, (project) => {
+    project.schemaConfig.entityTypes = []
+    project.schemaConfig.relationTypes = []
+    touchProjectSchema(project)
+  })
 }
 
 export async function updateSchemaPrompts(
   projectId: string,
   payload: { entityScope: string; relationScope: string; skills: SkillConfig[] },
 ): Promise<SchemaConfig> {
-  await delay(rand(300, 600))
-  const { store, project, index } = findProject(projectId)
-  project.schemaConfig.entityScope = payload.entityScope
-  project.schemaConfig.relationScope = payload.relationScope
-  project.schemaConfig.skills = payload.skills
-  project.schemaConfig.updatedAt = new Date().toISOString()
-  store.projects[index] = project
-  saveStore(store)
-  return project.schemaConfig
+  return mutateProject(projectId, (project) => {
+    project.schemaConfig.entityScope = payload.entityScope
+    project.schemaConfig.relationScope = payload.relationScope
+    project.schemaConfig.skills = cloneProjectData(payload.skills)
+    touchProjectSchema(project)
+    return cloneProjectData(project.schemaConfig)
+  })
 }
 
-/* ========== Skills ========== */
-
-export async function uploadCustomSkill(projectId: string, _file: File): Promise<SkillConfig> {
-  await delay(rand(1000, 2000)) // 模拟技能包上传解析
-  const { store, project, index } = findProject(projectId)
-  const skill: SkillConfig = {
-    id: `sk-${nextId()}`,
-    code: 'custom',
-    name: `自定义技能_${Date.now()}`,
-    description: '用户上传的自定义技能包',
-    enabled: true,
-    prompt: '',
-    source: 'uploaded',
-    tags: ['custom'],
-    fileName: _file.name,
-    metadata: {
-      packageFormat: 'zip',
-      packageSize: _file.size,
-      packageEntries: Math.floor(rand(3, 8)),
-      hasSkillMd: true,
-    },
-    createdAt: new Date().toISOString(),
-  }
-  project.schemaConfig.skills.push(skill)
-  store.projects[index] = project
-  saveStore(store)
-  return skill
+export async function uploadCustomSkill(projectId: string, file: File): Promise<SkillConfig> {
+  return mutateProject(projectId, (project) => {
+    const skill: SkillConfig = {
+      id: createLocalId('skill'),
+      code: 'custom',
+      name: file.name.replace(/\.zip$/i, ''),
+      description: `从 ${file.name} 导入的自定义 Skill`,
+      enabled: true,
+      prompt: `加载自定义 Skill 包 ${file.name}`,
+      source: 'uploaded',
+      fileName: file.name,
+      tags: ['uploaded'],
+      createdAt: new Date().toISOString(),
+      metadata: {
+        packageFormat: 'zip',
+        packageSize: file.size,
+        hasSkillMd: true,
+      },
+    }
+    project.schemaConfig.skills.unshift(skill)
+    touchProjectSchema(project)
+    return cloneProjectData(skill)
+  })
 }
 
 export async function removeCustomSkill(projectId: string, skillId: string): Promise<void> {
-  await delay(rand(200, 400))
-  const { store, project, index } = findProject(projectId)
-  project.schemaConfig.skills = project.schemaConfig.skills.filter(s => s.id !== skillId)
-  store.projects[index] = project
-  saveStore(store)
+  mutateProject(projectId, (project) => {
+    project.schemaConfig.skills = project.schemaConfig.skills.filter(item => item.id !== skillId)
+    touchProjectSchema(project)
+  })
 }
-
-/* ========== AI Schema Insight (模拟AI大模型分析) ========== */
 
 export async function runAiSchemaInsight(projectId: string): Promise<AiInsightRun> {
-  // 模拟 AI 模型调用 (3-5 秒)
-  await delay(rand(3000, 5000))
-  const { store, project, index } = findProject(projectId)
-  const now = new Date().toISOString()
-
-  const newEntityNames = ['检测指标', '维修工具', '安全规程'].filter(() => Math.random() > 0.3)
-  const newRelationNames = ['使用工具', '遵循规程'].filter(() => Math.random() > 0.3)
-
-  // 把 AI 洞察到的实体类型加入 schema
-  for (const name of newEntityNames) {
-    if (!project.schemaConfig.entityTypes.find(e => e.name === name)) {
-      project.schemaConfig.entityTypes.push({
-        id: `et-${nextId()}`,
-        name,
-        description: `AI 自动发现的实体类型：${name}`,
-        properties: [
-          { id: `ep-${nextId()}`, name: 'name', displayName: '名称', dataType: 'STRING', required: true, sortOrder: 1 },
-        ],
-      })
+  return mutateProject(projectId, (project) => {
+    const enabledDocuments = project.documents.filter(item => item.enabled)
+    if (enabledDocuments.length === 0) {
+      throw new Error('没有启用中的文档，请先启用文档后再执行 AI 洞察')
     }
-  }
+    const existingEntityNames = new Set(project.schemaConfig.entityTypes.map(item => item.name))
+    const existingRelationKeys = new Set(project.schemaConfig.relationTypes.map(item => `${item.domain}|${item.name}|${item.range}`))
+    const addedEntityNames: string[] = []
+    const addedRelationNames: string[] = []
+    const anchorEntityName = project.schemaConfig.entityTypes[0]?.name
 
-  const aiRun: AiInsightRun = {
-    id: `ai-${nextId()}`,
-    status: 'COMPLETED',
-    progress: 100,
-    createdAt: now,
-    completedAt: now,
-    scannedDocumentCount: project.documents.filter(d => d.enabled).length,
-    addedEntityCount: newEntityNames.length,
-    addedRelationCount: newRelationNames.length,
-    addedEntityNames: newEntityNames,
-    addedRelationNames: newRelationNames,
-    warnings: [],
-    logs: [
-      '开始扫描项目文档...',
-      `已加载 ${project.documents.filter(d => d.enabled).length} 个文档`,
-      '正在使用 AI 模型分析文档结构...',
-      `发现 ${newEntityNames.length} 个新实体类型`,
-      `发现 ${newRelationNames.length} 个新关系类型`,
-      '分析完成',
-    ],
-  }
+    enabledDocuments.slice(0, 3).forEach((document, index) => {
+      const baseName = document.name.replace(/\.[^.]+$/, '').trim() || `文档${index + 1}`
+      const entityName = existingEntityNames.has(baseName) ? `${baseName}主题` : baseName
+      if (!existingEntityNames.has(entityName)) {
+        project.schemaConfig.entityTypes.push({
+          id: createLocalId('entity'),
+          name: entityName,
+          description: `AI 从文档《${document.name}》补充的主题实体`,
+          properties: [
+            {
+              id: createLocalId('prop'),
+              name: 'name',
+              displayName: '名称',
+              dataType: 'STRING',
+              required: true,
+              sortOrder: 0,
+            },
+          ],
+        })
+        existingEntityNames.add(entityName)
+        addedEntityNames.push(entityName)
+      }
 
-  project.aiInsightRun = aiRun
-  project.schemaConfig.updatedAt = now
-  store.projects[index] = project
-  saveStore(store)
-  return aiRun
+      if (anchorEntityName) {
+        const relationName = `derived_from_doc_${index + 1}`
+        const relationKey = `${anchorEntityName}|${relationName}|${entityName}`
+        if (!existingRelationKeys.has(relationKey)) {
+          project.schemaConfig.relationTypes.push({
+            id: createLocalId('relation'),
+            name: relationName,
+            domain: anchorEntityName,
+            range: entityName,
+            description: `AI 从文档《${document.name}》补充的关联`,
+            properties: [],
+          })
+          existingRelationKeys.add(relationKey)
+          addedRelationNames.push(relationName)
+        }
+      }
+    })
+
+    const completedAt = touchProjectSchema(project)
+    const run: AiInsightRun = {
+      id: createLocalId('ai'),
+      status: 'COMPLETED',
+      progress: 100,
+      createdAt: completedAt,
+      completedAt,
+      scannedDocumentCount: enabledDocuments.length,
+      addedEntityCount: addedEntityNames.length,
+      addedRelationCount: addedRelationNames.length,
+      addedEntityNames,
+      addedRelationNames,
+      warnings: [],
+      stage: '完成',
+      logs: [`扫描 ${enabledDocuments.length} 个文档`, `新增实体 ${addedEntityNames.length} 个`, `新增关系 ${addedRelationNames.length} 条`],
+    }
+    project.aiInsightRun = run
+    return cloneProjectData(run)
+  })
 }
-
-/* ========== Extraction Run (模拟AI抽取) ========== */
 
 export async function runProjectExtraction(projectId: string): Promise<ExtractionRun> {
-  // 模拟 AI 抽取过程 (3-6 秒)
-  await delay(rand(3000, 6000))
-  const { store, project, index } = findProject(projectId)
-  const now = new Date().toISOString()
-
-  const entityCount = Math.floor(rand(15, 60))
-  const relationCount = Math.floor(rand(8, 35))
-
-  const reviewItems: ReviewItem[] = []
-  const entityNames = ['VM-850 立式加工中心', '主轴振动监测点', '主轴组件', '液压站', '轴承早期剥落', '维修策略模板', '标准二级检修工单', '主轴轴承 7014C/P5', '刀库组件', '润滑回路']
-  const relationNames = ['安装监测点', '异常映射', '推荐策略', '触发工单', '消耗备件']
-
-  for (let i = 0; i < Math.min(entityCount, 10); i++) {
-    reviewItems.push({
-      id: `ri-${nextId()}`,
-      kind: 'ENTITY',
-      title: entityNames[i % entityNames.length] + (i >= entityNames.length ? ` #${i}` : ''),
-      evidence: `文档第${Math.floor(rand(1, 20))}页`,
-      confidence: parseFloat(rand(0.75, 0.98).toFixed(2)),
-      status: Math.random() > 0.3 ? 'PENDING' : 'APPROVED',
-    })
-  }
-  for (let i = 0; i < Math.min(relationCount, 5); i++) {
-    reviewItems.push({
-      id: `ri-${nextId()}`,
-      kind: 'RELATION',
-      title: `${entityNames[i]} → ${relationNames[i % relationNames.length]} → ${entityNames[(i + 1) % entityNames.length]}`,
-      evidence: `文档第${Math.floor(rand(1, 20))}页`,
-      confidence: parseFloat(rand(0.70, 0.95).toFixed(2)),
-      status: 'PENDING',
-    })
-  }
-
-  const run: ExtractionRun = {
-    id: `run-${nextId()}`,
-    status: 'COMPLETED',
-    progress: 100,
-    createdAt: now,
-    completedAt: now,
-    candidateEntityCount: entityCount,
-    candidateRelationCount: relationCount,
-    pendingReviewCount: reviewItems.filter(r => r.status === 'PENDING').length,
-    stage: '完成',
-    logs: [
-      '开始抽取任务...',
-      `加载 Schema 定义：${project.schemaConfig.entityTypes.length} 个实体类型，${project.schemaConfig.relationTypes.length} 个关系类型`,
-      `处理文档 1/${project.documents.filter(d => d.enabled).length}...`,
-      '使用 AI 模型进行实体识别...',
-      '使用 AI 模型进行关系抽取...',
-      `抽取完成：${entityCount} 个实体，${relationCount} 个关系`,
-      `待审核项 ${reviewItems.filter(r => r.status === 'PENDING').length} 个`,
-    ],
-    warnings: [],
-    reviewItems,
-  }
-
-  project.runs.push(run)
-  project.updatedAt = now
-  store.projects[index] = project
-  saveStore(store)
-  return run
+  return mutateProject(projectId, (project, store) => {
+    const enabledDocuments = project.documents.filter(item => item.enabled)
+    const enabledDataSources = project.dataSources.filter(item => item.enabled)
+    const candidateEntityCount = Math.max(
+      project.schemaConfig.entityTypes.length * 2 + enabledDocuments.length * 3 + enabledDataSources.length * 2,
+      6,
+    )
+    const candidateRelationCount = Math.max(
+      project.schemaConfig.relationTypes.length * 2 + enabledDocuments.length + enabledDataSources.length,
+      4,
+    )
+    const pendingReviewCount = Math.max(1, Math.min(8, Math.round((candidateEntityCount + candidateRelationCount) * 0.35)))
+    const createdAt = new Date().toISOString()
+    const run: ExtractionRun = {
+      id: createLocalId('run'),
+      status: 'COMPLETED',
+      progress: 100,
+      createdAt,
+      completedAt: createdAt,
+      candidateEntityCount,
+      candidateRelationCount,
+      pendingReviewCount,
+      stage: '完成',
+      currentDocument: enabledDocuments[0]?.name,
+      logs: [
+        `扫描文档 ${enabledDocuments.length} 个`,
+        `扫描数据源 ${enabledDataSources.length} 个`,
+        `生成候选实体 ${candidateEntityCount} 个，关系 ${candidateRelationCount} 条`,
+      ],
+      warnings: [],
+      reviewItems: [],
+    }
+    run.reviewItems = buildReviewItemsForRun(project, run, () => `ri-${++store.idSeq}`)
+    run.pendingReviewCount = run.reviewItems.filter(item => item.status === 'PENDING').length
+    project.runs.unshift(run)
+    touchProject(project)
+    return cloneProjectData(run)
+  })
 }
-
-/* ========== Review Items ========== */
 
 export async function updateRunReviewItem(
   projectId: string, runId: string, itemId: string, status: ReviewStatus,
 ): Promise<ReviewItem> {
-  await delay(rand(200, 400))
-  const { store, project, index } = findProject(projectId)
-  const run = project.runs.find(r => r.id === runId)
-  if (run) {
-    const item = run.reviewItems.find(r => r.id === itemId)
-    if (item) {
-      item.status = status
-      run.pendingReviewCount = run.reviewItems.filter(r => r.status === 'PENDING').length
-      store.projects[index] = project
-      saveStore(store)
-      return item
-    }
-  }
-  throw new Error('审核项不存在')
+  return mutateProject(projectId, (project) => {
+    const run = findRun(project, runId)
+    const item = run.reviewItems.find(entry => entry.id === itemId)
+    if (!item) throw new Error(`审核项不存在：${itemId}`)
+    item.status = status
+    run.pendingReviewCount = run.reviewItems.filter(entry => entry.status === 'PENDING').length
+    touchProject(project)
+    return cloneProjectData(item)
+  })
 }
 
 export async function batchUpdateRunReviewItems(
   projectId: string, runId: string, itemIds: string[], status: ReviewStatus,
 ): Promise<{ updatedCount: number; pendingReviewCount: number }> {
-  await delay(rand(400, 800))
-  const { store, project, index } = findProject(projectId)
-  const run = project.runs.find(r => r.id === runId)
-  let updatedCount = 0
-  if (run) {
-    for (const item of run.reviewItems) {
-      if (itemIds.includes(item.id)) {
-        item.status = status
-        updatedCount++
-      }
+  return mutateProject(projectId, (project) => {
+    const run = findRun(project, runId)
+    let updatedCount = 0
+    const itemIdSet = new Set(itemIds)
+    run.reviewItems.forEach((item) => {
+      if (!itemIdSet.has(item.id)) return
+      item.status = status
+      updatedCount += 1
+    })
+    run.pendingReviewCount = run.reviewItems.filter(entry => entry.status === 'PENDING').length
+    touchProject(project)
+    return {
+      updatedCount,
+      pendingReviewCount: run.pendingReviewCount,
     }
-    run.pendingReviewCount = run.reviewItems.filter(r => r.status === 'PENDING').length
-    store.projects[index] = project
-    saveStore(store)
-    return { updatedCount, pendingReviewCount: run.pendingReviewCount }
-  }
-  return { updatedCount: 0, pendingReviewCount: 0 }
+  })
 }
-
-/* ========== Versions ========== */
 
 export async function publishRunVersion(
   projectId: string, runId: string, label: string,
 ): Promise<OntologyVersion> {
-  await delay(rand(500, 1000))
-  const { store, project, index } = findProject(projectId)
-  const versionNum = project.versions.length + 1
-  const version: OntologyVersion = {
-    id: `ver-${nextId()}`,
-    version: `v${versionNum}.0`,
-    label,
-    createdAt: new Date().toISOString(),
-    sourceRunId: runId,
-    entityCount: project.runs.find(r => r.id === runId)?.candidateEntityCount ?? 0,
-    relationCount: project.runs.find(r => r.id === runId)?.candidateRelationCount ?? 0,
-  }
-  project.versions.push(version)
-  project.currentVersionId = version.id
-  store.projects[index] = project
-  saveStore(store)
-  return version
+  return mutateProject(projectId, (project) => {
+    const run = findRun(project, runId)
+    const versionNumber = project.versions.length + 1
+    const version: OntologyVersion = {
+      id: createLocalId('version'),
+      version: `v${versionNumber}`,
+      label,
+      createdAt: new Date().toISOString(),
+      sourceRunId: run.id,
+      entityCount: run.reviewItems.filter(item => item.kind === 'ENTITY' && item.status !== 'REJECTED').length,
+      relationCount: run.reviewItems.filter(item => item.kind === 'RELATION' && item.status !== 'REJECTED').length,
+    }
+    project.versions.unshift(version)
+    project.currentVersionId = version.id
+    touchProject(project)
+    return cloneProjectData(version)
+  })
 }
 
 export async function getVersionItems(projectId: string, versionId: string): Promise<VersionItem[]> {
-  await delay(rand(300, 600))
   const { project } = findProject(projectId)
-  const version = project.versions.find(v => v.id === versionId)
-  if (!version) return []
-
-  // 从对应 run 获取 approved 的 review items
-  const run = project.runs.find(r => r.id === version.sourceRunId)
-  if (!run) return []
-
+  const version = findVersion(project, versionId)
+  const run = findRun(project, version.sourceRunId)
   return run.reviewItems
-    .filter(r => r.status === 'APPROVED')
-    .map(r => ({
-      id: r.id,
-      kind: r.kind,
-      title: r.title,
-      evidence: r.evidence,
-      confidence: r.confidence,
+    .filter(item => item.status !== 'REJECTED')
+    .map(item => ({
+      id: item.id,
+      kind: item.kind,
+      title: item.title,
+      evidence: item.evidence,
+      confidence: item.confidence,
     }))
 }
 
-/* ========== Actions ========== */
-
 export async function createProjectAction(
   projectId: string,
-  payload: { name: string; description?: string; status?: ActionStatus },
+  payload: { name: string; description?: string; status?: ActionStatus; displayName?: string },
 ): Promise<ActionDefinition> {
-  await delay(rand(300, 600))
-  const { store, project, index } = findProject(projectId)
-  const action: ActionDefinition = {
-    id: `act-${nextId()}`,
-    name: payload.name,
-    description: payload.description || '',
-    status: payload.status || 'DRAFT',
-  }
-  project.actions.push(action)
-  store.projects[index] = project
-  saveStore(store)
-  return action
+  return mutateProject(projectId, (project) => {
+    const action: ActionDefinition = {
+      id: createLocalId('action'),
+      name: payload.name,
+      displayName: payload.displayName,
+      description: payload.description,
+      status: payload.status ?? 'DRAFT',
+    }
+    project.actions.unshift(action)
+    touchProject(project)
+    return cloneProjectData(action)
+  })
 }
 
 export async function setActionStatus(
   projectId: string, actionId: string, status: ActionStatus,
 ): Promise<void> {
-  await delay(rand(200, 400))
-  const { store, project, index } = findProject(projectId)
-  const action = project.actions.find(a => a.id === actionId)
-  if (action) action.status = status
-  store.projects[index] = project
-  saveStore(store)
+  mutateProject(projectId, (project) => {
+    const action = project.actions.find(item => item.id === actionId)
+    if (!action) throw new Error(`动作不存在：${actionId}`)
+    action.status = status
+    touchProject(project)
+  })
 }
 
 export async function deleteProjectAction(projectId: string, actionId: string): Promise<void> {
-  await delay(rand(200, 400))
-  const { store, project, index } = findProject(projectId)
-  project.actions = project.actions.filter(a => a.id !== actionId)
-  store.projects[index] = project
-  saveStore(store)
+  mutateProject(projectId, (project) => {
+    project.actions = project.actions.filter(item => item.id !== actionId)
+    touchProject(project)
+  })
 }
 
 export async function updateProjectAction(
   projectId: string, actionId: string, payload: Partial<ActionDefinition>,
 ): Promise<ActionDefinition> {
-  await delay(rand(300, 600))
-  const { store, project, index } = findProject(projectId)
-  const actIdx = project.actions.findIndex(a => a.id === actionId)
-  if (actIdx >= 0) {
-    project.actions[actIdx] = { ...project.actions[actIdx], ...payload }
-    store.projects[index] = project
-    saveStore(store)
-  }
-  return project.actions[actIdx]
+  return mutateProject(projectId, (project) => {
+    const action = project.actions.find(item => item.id === actionId)
+    if (!action) throw new Error(`动作不存在：${actionId}`)
+    Object.assign(action, payload)
+    touchProject(project)
+    return cloneProjectData(action)
+  })
 }
-
-/* ========== Functions ========== */
 
 export async function createProjectFunction(
   projectId: string,
   payload: { name: string; description?: string; scriptContent: string; status?: FunctionStatus },
 ): Promise<FunctionDefinition> {
-  await delay(rand(300, 600))
-  const { store, project, index } = findProject(projectId)
-  const fn: FunctionDefinition = {
-    id: `fn-${nextId()}`,
-    name: payload.name,
-    description: payload.description || '',
-    scriptContent: payload.scriptContent,
-    status: payload.status || 'DRAFT',
-  }
-  project.functions.push(fn)
-  store.projects[index] = project
-  saveStore(store)
-  return fn
+  return mutateProject(projectId, (project) => {
+    const fn: FunctionDefinition = {
+      id: createLocalId('fn'),
+      name: payload.name,
+      description: payload.description,
+      scriptContent: payload.scriptContent,
+      status: payload.status ?? 'DRAFT',
+    }
+    project.functions.unshift(fn)
+    touchProject(project)
+    return cloneProjectData(fn)
+  })
 }
 
 export async function setFunctionStatus(
   projectId: string, functionId: string, status: FunctionStatus,
 ): Promise<void> {
-  await delay(rand(200, 400))
-  const { store, project, index } = findProject(projectId)
-  const fn = project.functions.find(f => f.id === functionId)
-  if (fn) fn.status = status
-  store.projects[index] = project
-  saveStore(store)
+  mutateProject(projectId, (project) => {
+    const fn = project.functions.find(item => item.id === functionId)
+    if (!fn) throw new Error(`函数不存在：${functionId}`)
+    fn.status = status
+    touchProject(project)
+  })
 }
 
 export async function updateProjectFunction(
   projectId: string, functionId: string,
   payload: { name: string; description?: string; scriptContent: string },
 ): Promise<FunctionDefinition> {
-  await delay(rand(300, 600))
-  const { store, project, index } = findProject(projectId)
-  const fnIdx = project.functions.findIndex(f => f.id === functionId)
-  if (fnIdx >= 0) {
-    project.functions[fnIdx] = { ...project.functions[fnIdx], ...payload }
-    store.projects[index] = project
-    saveStore(store)
-  }
-  return project.functions[fnIdx]
+  return mutateProject(projectId, (project) => {
+    const fn = project.functions.find(item => item.id === functionId)
+    if (!fn) throw new Error(`函数不存在：${functionId}`)
+    fn.name = payload.name
+    fn.description = payload.description
+    fn.scriptContent = payload.scriptContent
+    touchProject(project)
+    return cloneProjectData(fn)
+  })
 }
 
 export async function deleteProjectFunction(projectId: string, functionId: string): Promise<void> {
-  await delay(rand(200, 400))
-  const { store, project, index } = findProject(projectId)
-  project.functions = project.functions.filter(f => f.id !== functionId)
-  store.projects[index] = project
-  saveStore(store)
+  mutateProject(projectId, (project) => {
+    project.functions = project.functions.filter(item => item.id !== functionId)
+    touchProject(project)
+  })
 }

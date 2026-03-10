@@ -13,7 +13,6 @@ import {
   Row,
   Select,
   Space,
-  Statistic,
   Tag,
   Typography,
   message,
@@ -49,7 +48,7 @@ import {
 import type { SkillIndustry } from '../types/skill'
 import { SKILL_INDUSTRY_LABELS } from '../types/skill'
 
-const { Title, Text, Paragraph } = Typography
+const { Text, Paragraph } = Typography
 
 const PAGE_SIZE = 12
 const ALL_INDUSTRIES = 'all'
@@ -130,10 +129,6 @@ interface FilterState {
   phase: string
   trainingType: string
   query: string
-}
-
-function formatCount(value: number) {
-  return value.toLocaleString('zh-CN')
 }
 
 function toProjectId(code: string) {
@@ -314,8 +309,6 @@ export default function DigitalHumanListPage() {
     }
   }
 
-  const totalDataCount = ONTOLOGY_CATALOG.reduce((sum, item) => sum + item.dataCount, 0)
-  const totalPhaseCount = new Set(ONTOLOGY_CATALOG.map(item => item.phase)).size
   const phaseOptions = useMemo(() => Array.from(
     new Set(
       ONTOLOGY_CATALOG
@@ -378,57 +371,10 @@ export default function DigitalHumanListPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <Card
-        style={{
-          background: 'linear-gradient(135deg, #fff7e6 0%, #f0f5ff 48%, #f6ffed 100%)',
-          border: '1px solid #ffd591',
-          borderRadius: 20,
-        }}
-        bodyStyle={{ padding: '28px 28px 24px' }}
-      >
-        <Row gutter={32} align="middle">
-          <Col span={24}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <TeamOutlined style={{ color: '#1677ff', fontSize: 22 }} />
-              <Text style={{ color: '#1677ff', fontSize: 13, letterSpacing: 1.2 }}>数字员工统一入口</Text>
-            </div>
-            <Title level={2} style={{ margin: '0 0 8px', color: '#1f1f1f' }}>
-              当前上架 {list.length} 位业务数字员工
-            </Title>
-            <Paragraph style={{ color: '#595959', marginBottom: 20, lineHeight: 1.75 }}>
-              这个页面作为业务数字员工入口页，按平台已有的行业分类与知识规划做组织设计。
-              当前已上架一批高频入口员工，覆盖制造、零售、医疗、交通和通用业务场景。
-            </Paragraph>
-            <Row gutter={[12, 12]}>
-              <Col xs={12} md={6}>
-                <div style={{ background: 'rgba(255,255,255,0.72)', borderRadius: 14, padding: 14 }}>
-                  <Statistic title="上架员工" value={list.length} suffix="位" />
-                </div>
-              </Col>
-              <Col xs={12} md={6}>
-                <div style={{ background: 'rgba(255,255,255,0.72)', borderRadius: 14, padding: 14 }}>
-                  <Statistic title="覆盖行业" value={INDUSTRY_ORDER.length} suffix="类" />
-                </div>
-              </Col>
-              <Col xs={12} md={6}>
-                <div style={{ background: 'rgba(255,255,255,0.72)', borderRadius: 14, padding: 14 }}>
-                  <Statistic title="业务阶段" value={totalPhaseCount} suffix="个" />
-                </div>
-              </Col>
-              <Col xs={12} md={6}>
-                <div style={{ background: 'rgba(255,255,255,0.72)', borderRadius: 14, padding: 14 }}>
-                  <Statistic title="样本规模" value={formatCount(totalDataCount)} />
-                </div>
-              </Col>
-            </Row>
-          </Col>
-        </Row>
-      </Card>
-
-      <Card
         title={(
           <Space>
             <FilterOutlined style={{ color: '#1677ff' }} />
-            <span>行业入口导航</span>
+            <span>业务员工导航</span>
             <Text type="secondary" style={{ fontSize: 12 }}>按行业与业务场景切换数字员工入口</Text>
           </Space>
         )}
@@ -464,9 +410,6 @@ export default function DigitalHumanListPage() {
                     </Tag>
                   </div>
                   <Text strong style={{ display: 'block', marginBottom: 6 }}>{card.label}</Text>
-                  <Text type="secondary" style={{ fontSize: 12, lineHeight: 1.7, display: 'block' }}>
-                    覆盖 {card.planningCount} 个场景主题 · 当前上架 {card.launchedCount} 位
-                  </Text>
                 </button>
               </Col>
             )
