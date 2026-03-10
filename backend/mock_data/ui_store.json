@@ -10096,44 +10096,3191 @@
     "data-sources": {
       "items": [
         {
-          "id": "ds-001",
-          "name": "ds_sap_orders",
+          "id": "ds-0-0-1-primary",
+          "name": "制造业_故障诊断本体_主库",
           "category": "structured",
           "type": "SAP ERP",
           "connection": {
-            "host": "sap.company.com",
+            "host": "manufacturing-0-0-1-primary.db.demo.local",
             "port": 3300,
-            "database": "PRD",
-            "username": "sap_reader"
+            "database": "onto_0_0_1",
+            "username": "ro_manufacturing",
+            "password": "demo_0-0-1"
           },
-          "syncFrequency": "15min",
-          "status": "Active",
-          "lastSync": "3 分钟前",
-          "recordCount": 125840,
-          "description": "SAP ERP 订单主数据，包含采购订单、销售订单及物料移动",
-          "createdAt": "2024-06-15T08:00:00.000Z",
-          "updatedAt": "2024-12-01T10:30:00.000Z"
+          "syncFrequency": "realtime",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 102000,
+          "description": "生产阶段本体数据库，服务于故障诊断本体；用于结构化抽取与实体主数据归集。场景：故障诊断Agent：根据设备报警现象自动定位根因并推荐解决方案",
+          "createdAt": "2025-01-01T08:00:00.000Z",
+          "updatedAt": "2025-01-13T08:00:00.000Z"
         },
         {
-          "id": "ds-002",
-          "name": "ds_iot_sensors",
+          "id": "ds-0-0-1-business",
+          "name": "制造业_故障诊断本体_业务库",
           "category": "structured",
-          "type": "MongoDB",
+          "type": "MySQL",
           "connection": {
-            "host": "mongo-iot.internal",
-            "port": 27017,
-            "database": "sensor_data",
-            "username": "iot_reader"
+            "host": "manufacturing-0-0-1-business.db.demo.local",
+            "port": 3306,
+            "database": "onto_0_0_1_business",
+            "username": "ro_manufacturing",
+            "password": "demo_0-0-1"
           },
           "syncFrequency": "realtime",
           "status": "Active",
           "lastSync": "Live",
-          "recordCount": 2340000,
-          "description": "IoT 传感器实时数据",
-          "createdAt": "2024-07-20T08:00:00.000Z",
-          "updatedAt": "2024-12-01T10:30:00.000Z"
+          "recordCount": 59500,
+          "description": "生产阶段本体数据库，服务于故障诊断本体；用于结构化抽取与实体主数据归集。场景：故障诊断Agent：根据设备报警现象自动定位根因并推荐解决方案",
+          "createdAt": "2025-01-02T08:00:00.000Z",
+          "updatedAt": "2025-01-14T08:00:00.000Z"
+        },
+        {
+          "id": "ds-0-0-1-docs",
+          "name": "制造业_故障诊断本体_文档仓",
+          "category": "unstructured",
+          "type": "MinIO",
+          "connection": {
+            "endpoint": "https://minio.manufacturing.demo.local",
+            "bucket": "ontology-manufacturing-0-0-1-docs",
+            "region": "cn-north-1",
+            "pathPrefix": "故障诊断本体/v1/",
+            "accessKey": "ak_0-0-1",
+            "secretKey": "sk_0-0-1"
+          },
+          "syncFrequency": "realtime",
+          "status": "Active",
+          "lastSync": "Live",
+          "recordCount": 34000,
+          "description": "生产阶段本体对象存储，用于沉淀故障诊断本体相关文档、半结构化抽取结果与图谱附件。场景：故障诊断Agent：根据设备报警现象自动定位根因并推荐解决方案",
+          "createdAt": "2025-01-02T08:00:00.000Z",
+          "updatedAt": "2025-01-16T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-3-11-business",
+          "name": "制造业_设备维修本体_业务库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-3-11-business.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_3_11",
+            "username": "ro_manufacturing",
+            "password": "demo_1-3-11"
+          },
+          "syncFrequency": "realtime",
+          "status": "Active",
+          "lastSync": "Live",
+          "recordCount": 85237,
+          "description": "生产阶段本体数据库，服务于设备维修本体；用于结构化抽取与实体主数据归集。场景：预测性维护Agent：监测设备状态三元组，在故障发生前触发工单",
+          "createdAt": "2025-01-02T08:00:00.000Z",
+          "updatedAt": "2025-01-14T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-1-1-analytics",
+          "name": "制造业_需求规范本体_分析库",
+          "category": "structured",
+          "type": "MongoDB",
+          "connection": {
+            "host": "manufacturing-1-1-1-analytics.db.demo.local",
+            "port": 27017,
+            "database": "onto_1_1_1",
+            "username": "ro_manufacturing",
+            "password": "demo_1-1-1"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "3 分钟前",
+          "recordCount": 74474,
+          "description": "研发阶段本体数据库，服务于需求规范本体；用于结构化抽取与实体主数据归集。场景：需求冲突检测Agent：自动发现设计指标间的物理矛盾",
+          "createdAt": "2025-01-03T08:00:00.000Z",
+          "updatedAt": "2025-01-15T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-1-2-ledger",
+          "name": "制造业_FBS功能结构本体_台账库",
+          "category": "structured",
+          "type": "SAP ERP",
+          "connection": {
+            "host": "manufacturing-1-1-2-ledger.db.demo.local",
+            "port": 3300,
+            "database": "onto_1_1_2",
+            "username": "ro_manufacturing",
+            "password": "demo_1-1-2"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "4 分钟前",
+          "recordCount": 74511,
+          "description": "研发阶段本体数据库，服务于FBS功能结构本体；用于结构化抽取与实体主数据归集。场景：方案生成Agent：根据功能描述自动检索历史拓扑结构",
+          "createdAt": "2025-01-04T08:00:00.000Z",
+          "updatedAt": "2025-01-16T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-1-2-archive",
+          "name": "制造业_FBS功能结构本体_归档库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-1-2-archive.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_1_2_archive",
+            "username": "ro_manufacturing",
+            "password": "demo_1-1-2"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "5 分钟前",
+          "recordCount": 43469,
+          "description": "研发阶段本体数据库，服务于FBS功能结构本体；用于结构化抽取与实体主数据归集。场景：方案生成Agent：根据功能描述自动检索历史拓扑结构",
+          "createdAt": "2025-01-05T08:00:00.000Z",
+          "updatedAt": "2025-01-17T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-1-3-archive",
+          "name": "制造业_材料物性本体_归档库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-1-3-archive.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_1_3",
+            "username": "ro_manufacturing",
+            "password": "demo_1-1-3"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "5 分钟前",
+          "recordCount": 76948,
+          "description": "研发阶段本体数据库，服务于材料物性本体；用于结构化抽取与实体主数据归集。场景：轻量化优化Agent：在保证强度下自动寻找最优替代材料",
+          "createdAt": "2025-01-05T08:00:00.000Z",
+          "updatedAt": "2025-01-17T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-1-4-primary",
+          "name": "制造业_标准合规本体_主库",
+          "category": "structured",
+          "type": "MongoDB",
+          "connection": {
+            "host": "manufacturing-1-1-4-primary.db.demo.local",
+            "port": 27017,
+            "database": "onto_1_1_4",
+            "username": "ro_manufacturing",
+            "password": "demo_1-1-4"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "6 分钟前",
+          "recordCount": 98585,
+          "description": "研发阶段本体数据库，服务于标准合规本体；用于结构化抽取与实体主数据归集。场景：合规性自动化审计Agent：实时监控设计文档是否违反法规",
+          "createdAt": "2025-01-06T08:00:00.000Z",
+          "updatedAt": "2025-01-18T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-1-5-business",
+          "name": "制造业_仿真验证本体_业务库",
+          "category": "structured",
+          "type": "SAP ERP",
+          "connection": {
+            "host": "manufacturing-1-1-5-business.db.demo.local",
+            "port": 3300,
+            "database": "onto_1_1_5",
+            "username": "ro_manufacturing",
+            "password": "demo_1-1-5"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "7 分钟前",
+          "recordCount": 75822,
+          "description": "研发阶段本体数据库，服务于仿真验证本体；用于结构化抽取与实体主数据归集。场景：虚拟测试Agent：自动调用仿真软件并根据结果修正参数",
+          "createdAt": "2025-01-07T08:00:00.000Z",
+          "updatedAt": "2025-01-19T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-1-5-analytics",
+          "name": "制造业_仿真验证本体_分析库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-1-5-analytics.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_1_5_analytics",
+            "username": "ro_manufacturing",
+            "password": "demo_1-1-5"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "8 分钟前",
+          "recordCount": 44238,
+          "description": "研发阶段本体数据库，服务于仿真验证本体；用于结构化抽取与实体主数据归集。场景：虚拟测试Agent：自动调用仿真软件并根据结果修正参数",
+          "createdAt": "2025-01-08T08:00:00.000Z",
+          "updatedAt": "2025-01-20T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-2-6-analytics",
+          "name": "制造业_工艺路线(BOP)本体_分析库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-2-6-analytics.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_2_6",
+            "username": "ro_manufacturing",
+            "password": "demo_1-2-6"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "8 分钟前",
+          "recordCount": 38659,
+          "description": "工艺阶段本体数据库，服务于工艺路线(BOP)本体；用于结构化抽取与实体主数据归集。场景：CAPP路径规划Agent：根据零件几何形状自动排布工序流",
+          "createdAt": "2025-01-08T08:00:00.000Z",
+          "updatedAt": "2025-01-20T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-2-6-attachments",
+          "name": "制造业_工艺路线(BOP)本体_附件仓",
+          "category": "unstructured",
+          "type": "S3",
+          "connection": {
+            "endpoint": "https://s3.manufacturing.demo.local",
+            "bucket": "ontology-manufacturing-1-2-6-attachments",
+            "region": "ap-southeast-1",
+            "pathPrefix": "工艺路线(BOP)本体/v2/",
+            "accessKey": "ak_1-2-6",
+            "secretKey": "sk_1-2-6"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "11 分钟前",
+          "recordCount": 12933,
+          "description": "工艺阶段本体对象存储，用于沉淀工艺路线(BOP)本体相关文档、半结构化抽取结果与图谱附件。场景：CAPP路径规划Agent：根据零件几何形状自动排布工序流",
+          "createdAt": "2025-01-09T08:00:00.000Z",
+          "updatedAt": "2025-01-23T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-2-7-ledger",
+          "name": "制造业_制造资源能力本体_台账库",
+          "category": "structured",
+          "type": "MongoDB",
+          "connection": {
+            "host": "manufacturing-1-2-7-ledger.db.demo.local",
+            "port": 27017,
+            "database": "onto_1_2_7",
+            "username": "ro_manufacturing",
+            "password": "demo_1-2-7"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "9 分钟前",
+          "recordCount": 89096,
+          "description": "工艺阶段本体数据库，服务于制造资源能力本体；用于结构化抽取与实体主数据归集。场景：资源匹配Agent：根据设计公差自动筛选满足条件的生产线",
+          "createdAt": "2025-01-09T08:00:00.000Z",
+          "updatedAt": "2025-01-21T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-2-8-archive",
+          "name": "制造业_工装夹具本体_归档库",
+          "category": "structured",
+          "type": "SAP ERP",
+          "connection": {
+            "host": "manufacturing-1-2-8-archive.db.demo.local",
+            "port": 3300,
+            "database": "onto_1_2_8",
+            "username": "ro_manufacturing",
+            "password": "demo_1-2-8"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "10 分钟前",
+          "recordCount": 72333,
+          "description": "工艺阶段本体数据库，服务于工装夹具本体；用于结构化抽取与实体主数据归集。场景：自动化换模Agent：计算最优夹具组合，减少停机切换时间",
+          "createdAt": "2025-01-10T08:00:00.000Z",
+          "updatedAt": "2025-01-22T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-2-8-primary",
+          "name": "制造业_工装夹具本体_主库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-2-8-primary.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_2_8_primary",
+            "username": "ro_manufacturing",
+            "password": "demo_1-2-8"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "11 分钟前",
+          "recordCount": 42207,
+          "description": "工艺阶段本体数据库，服务于工装夹具本体；用于结构化抽取与实体主数据归集。场景：自动化换模Agent：计算最优夹具组合，减少停机切换时间",
+          "createdAt": "2025-01-11T08:00:00.000Z",
+          "updatedAt": "2025-01-23T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-2-9-primary",
+          "name": "制造业_加工参数本体_主库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-2-9-primary.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_2_9",
+            "username": "ro_manufacturing",
+            "password": "demo_1-2-9"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "11 分钟前",
+          "recordCount": 73570,
+          "description": "工艺阶段本体数据库，服务于加工参数本体；用于结构化抽取与实体主数据归集。场景：切削优化Agent：基于材料硬度实时调整加工步长与转速",
+          "createdAt": "2025-01-11T08:00:00.000Z",
+          "updatedAt": "2025-01-23T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-2-10-business",
+          "name": "制造业_公差传递本体_业务库",
+          "category": "structured",
+          "type": "MongoDB",
+          "connection": {
+            "host": "manufacturing-1-2-10-business.db.demo.local",
+            "port": 27017,
+            "database": "onto_1_2_10",
+            "username": "ro_manufacturing",
+            "password": "demo_1-2-10"
+          },
+          "syncFrequency": "hourly",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 83207,
+          "description": "工艺阶段本体数据库，服务于公差传递本体；用于结构化抽取与实体主数据归集。场景：装配仿真Agent：预测各零件公差对最终成品合格率的影响",
+          "createdAt": "2025-01-12T08:00:00.000Z",
+          "updatedAt": "2025-01-24T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-3-12-analytics",
+          "name": "制造业_任务调度本体_分析库",
+          "category": "structured",
+          "type": "SAP ERP",
+          "connection": {
+            "host": "manufacturing-1-3-12-analytics.db.demo.local",
+            "port": 3300,
+            "database": "onto_1_3_12",
+            "username": "ro_manufacturing",
+            "password": "demo_1-3-12"
+          },
+          "syncFrequency": "realtime",
+          "status": "Active",
+          "lastSync": "Live",
+          "recordCount": 112044,
+          "description": "生产阶段本体数据库，服务于任务调度本体；用于结构化抽取与实体主数据归集。场景：动态排产Agent：遇插单时自动重算全局最优开工时间",
+          "createdAt": "2025-01-13T08:00:00.000Z",
+          "updatedAt": "2025-01-25T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-3-12-ledger",
+          "name": "制造业_任务调度本体_台账库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-3-12-ledger.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_3_12_ledger",
+            "username": "ro_manufacturing",
+            "password": "demo_1-3-12"
+          },
+          "syncFrequency": "realtime",
+          "status": "Inactive",
+          "lastSync": null,
+          "recordCount": 65376,
+          "description": "生产阶段本体数据库，服务于任务调度本体；用于结构化抽取与实体主数据归集。场景：动态排产Agent：遇插单时自动重算全局最优开工时间",
+          "createdAt": "2025-01-14T08:00:00.000Z",
+          "updatedAt": "2025-01-26T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-3-13-ledger",
+          "name": "制造业_质量根因本体_台账库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-3-13-ledger.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_3_13",
+            "username": "ro_manufacturing",
+            "password": "demo_1-3-13"
+          },
+          "syncFrequency": "realtime",
+          "status": "Inactive",
+          "lastSync": null,
+          "recordCount": 97681,
+          "description": "生产阶段本体数据库，服务于质量根因本体；用于结构化抽取与实体主数据归集。场景：质量溯源Agent：利用知识图谱反向追踪次品产生的具体环节",
+          "createdAt": "2025-01-14T08:00:00.000Z",
+          "updatedAt": "2025-01-26T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-3-14-archive",
+          "name": "制造业_能源消耗本体_归档库",
+          "category": "structured",
+          "type": "MongoDB",
+          "connection": {
+            "host": "manufacturing-1-3-14-archive.db.demo.local",
+            "port": 27017,
+            "database": "onto_1_3_14",
+            "username": "ro_manufacturing",
+            "password": "demo_1-3-14"
+          },
+          "syncFrequency": "realtime",
+          "status": "Active",
+          "lastSync": "Live",
+          "recordCount": 83318,
+          "description": "生产阶段本体数据库，服务于能源消耗本体；用于结构化抽取与实体主数据归集。场景：节能降耗Agent：建议在电价低谷或能效高点执行高能耗任务",
+          "createdAt": "2025-01-15T08:00:00.000Z",
+          "updatedAt": "2025-01-27T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-3-14-archive",
+          "name": "制造业_能源消耗本体_归档桶",
+          "category": "unstructured",
+          "type": "MinIO",
+          "connection": {
+            "endpoint": "https://minio.manufacturing.demo.local",
+            "bucket": "ontology-manufacturing-1-3-14-archive",
+            "region": "cn-south-1",
+            "pathPrefix": "能源消耗本体/v3/",
+            "accessKey": "ak_1-3-14",
+            "secretKey": "sk_1-3-14"
+          },
+          "syncFrequency": "realtime",
+          "status": "Error",
+          "lastSync": "6 小时前",
+          "recordCount": 27866,
+          "description": "生产阶段本体对象存储，用于沉淀能源消耗本体相关文档、半结构化抽取结果与图谱附件。场景：节能降耗Agent：建议在电价低谷或能效高点执行高能耗任务",
+          "createdAt": "2025-01-16T08:00:00.000Z",
+          "updatedAt": "2025-01-30T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-3-15-primary",
+          "name": "制造业_人员技能本体_主库",
+          "category": "structured",
+          "type": "SAP ERP",
+          "connection": {
+            "host": "manufacturing-1-3-15-primary.db.demo.local",
+            "port": 3300,
+            "database": "onto_1_3_15",
+            "username": "ro_manufacturing",
+            "password": "demo_1-3-15"
+          },
+          "syncFrequency": "realtime",
+          "status": "Active",
+          "lastSync": "Live",
+          "recordCount": 59355,
+          "description": "生产阶段本体数据库，服务于人员技能本体；用于结构化抽取与实体主数据归集。场景：人力调度Agent：确保高精尖工单被分配给资质符合的员工",
+          "createdAt": "2025-01-16T08:00:00.000Z",
+          "updatedAt": "2025-01-28T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-3-15-business",
+          "name": "制造业_人员技能本体_业务库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-3-15-business.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_3_15_business",
+            "username": "ro_manufacturing",
+            "password": "demo_1-3-15"
+          },
+          "syncFrequency": "realtime",
+          "status": "Active",
+          "lastSync": "Live",
+          "recordCount": 34645,
+          "description": "生产阶段本体数据库，服务于人员技能本体；用于结构化抽取与实体主数据归集。场景：人力调度Agent：确保高精尖工单被分配给资质符合的员工",
+          "createdAt": "2025-01-17T08:00:00.000Z",
+          "updatedAt": "2025-01-29T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-4-16-business",
+          "name": "制造业_供应商画像本体_业务库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-4-16-business.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_4_16",
+            "username": "ro_manufacturing",
+            "password": "demo_1-4-16"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "2 分钟前",
+          "recordCount": 52192,
+          "description": "供应链阶段本体数据库，服务于供应商画像本体；用于结构化抽取与实体主数据归集。场景：供应商评级Agent：自动根据交付记录和财务风险调整采购权重",
+          "createdAt": "2025-01-17T08:00:00.000Z",
+          "updatedAt": "2025-01-29T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-4-17-analytics",
+          "name": "制造业_物流拓扑本体_分析库",
+          "category": "structured",
+          "type": "MongoDB",
+          "connection": {
+            "host": "manufacturing-1-4-17-analytics.db.demo.local",
+            "port": 27017,
+            "database": "onto_1_4_17",
+            "username": "ro_manufacturing",
+            "password": "demo_1-4-17"
+          },
+          "syncFrequency": "hourly",
+          "status": "Error",
+          "lastSync": "6 小时前",
+          "recordCount": 87029,
+          "description": "供应链阶段本体数据库，服务于物流拓扑本体；用于结构化抽取与实体主数据归集。场景：物流路径优化Agent：在多中心网络中寻找成本最低的补货路径",
+          "createdAt": "2025-01-18T08:00:00.000Z",
+          "updatedAt": "2025-01-30T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-4-18-ledger",
+          "name": "制造业_库存风险本体_台账库",
+          "category": "structured",
+          "type": "SAP ERP",
+          "connection": {
+            "host": "manufacturing-1-4-18-ledger.db.demo.local",
+            "port": 3300,
+            "database": "onto_1_4_18",
+            "username": "ro_manufacturing",
+            "password": "demo_1-4-18"
+          },
+          "syncFrequency": "15min",
+          "status": "Active",
+          "lastSync": "4 分钟前",
+          "recordCount": 115866,
+          "description": "供应链阶段本体数据库，服务于库存风险本体；用于结构化抽取与实体主数据归集。场景：自动补货Agent：跌破阈值时自动生成订单并分发给多个供应商",
+          "createdAt": "2025-01-19T08:00:00.000Z",
+          "updatedAt": "2025-01-31T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-4-18-archive",
+          "name": "制造业_库存风险本体_归档库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-4-18-archive.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_4_18_archive",
+            "username": "ro_manufacturing",
+            "password": "demo_1-4-18"
+          },
+          "syncFrequency": "15min",
+          "status": "Active",
+          "lastSync": "5 分钟前",
+          "recordCount": 67614,
+          "description": "供应链阶段本体数据库，服务于库存风险本体；用于结构化抽取与实体主数据归集。场景：自动补货Agent：跌破阈值时自动生成订单并分发给多个供应商",
+          "createdAt": "2025-01-20T08:00:00.000Z",
+          "updatedAt": "2025-02-01T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-4-19-archive",
+          "name": "制造业_碳足迹本体_归档库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-4-19-archive.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_4_19",
+            "username": "ro_manufacturing",
+            "password": "demo_1-4-19"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "5 分钟前",
+          "recordCount": 81103,
+          "description": "供应链阶段本体数据库，服务于碳足迹本体；用于结构化抽取与实体主数据归集。场景：绿色供应链Agent：为追求ESG目标的企业计算产品全绿价值",
+          "createdAt": "2025-01-20T08:00:00.000Z",
+          "updatedAt": "2025-02-01T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-4-20-primary",
+          "name": "制造业_事件风险本体_主库",
+          "category": "structured",
+          "type": "MongoDB",
+          "connection": {
+            "host": "manufacturing-1-4-20-primary.db.demo.local",
+            "port": 27017,
+            "database": "onto_1_4_20",
+            "username": "ro_manufacturing",
+            "password": "demo_1-4-20"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "6 分钟前",
+          "recordCount": 77540,
+          "description": "供应链阶段本体数据库，服务于事件风险本体；用于结构化抽取与实体主数据归集。场景：供应韧性Agent：监控全球新闻，遇到中断自动寻找绕路方案",
+          "createdAt": "2025-01-21T08:00:00.000Z",
+          "updatedAt": "2025-02-02T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-5-21-business",
+          "name": "制造业_CPQ配置逻辑本体_业务库",
+          "category": "structured",
+          "type": "SAP ERP",
+          "connection": {
+            "host": "manufacturing-1-5-21-business.db.demo.local",
+            "port": 3300,
+            "database": "onto_1_5_21",
+            "username": "ro_manufacturing",
+            "password": "demo_1-5-21"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "7 分钟前",
+          "recordCount": 94377,
+          "description": "销售阶段本体数据库，服务于CPQ配置逻辑本体；用于结构化抽取与实体主数据归集。场景：智能配置Agent：防止客户在官网选配出无法生产的矛盾产品",
+          "createdAt": "2025-01-22T08:00:00.000Z",
+          "updatedAt": "2025-02-03T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-5-21-analytics",
+          "name": "制造业_CPQ配置逻辑本体_分析库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-5-21-analytics.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_5_21_analytics",
+            "username": "ro_manufacturing",
+            "password": "demo_1-5-21"
+          },
+          "syncFrequency": "hourly",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 55083,
+          "description": "销售阶段本体数据库，服务于CPQ配置逻辑本体；用于结构化抽取与实体主数据归集。场景：智能配置Agent：防止客户在官网选配出无法生产的矛盾产品",
+          "createdAt": "2025-01-23T08:00:00.000Z",
+          "updatedAt": "2025-02-04T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-5-21-assets",
+          "name": "制造业_CPQ配置逻辑本体_资料桶",
+          "category": "unstructured",
+          "type": "S3",
+          "connection": {
+            "endpoint": "https://s3.manufacturing.demo.local",
+            "bucket": "ontology-manufacturing-1-5-21-assets",
+            "region": "cn-east-1",
+            "pathPrefix": "CPQ配置逻辑本体/v1/",
+            "accessKey": "ak_1-5-21",
+            "secretKey": "sk_1-5-21"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "10 分钟前",
+          "recordCount": 31599,
+          "description": "销售阶段本体对象存储，用于沉淀CPQ配置逻辑本体相关文档、半结构化抽取结果与图谱附件。场景：智能配置Agent：防止客户在官网选配出无法生产的矛盾产品",
+          "createdAt": "2025-01-23T08:00:00.000Z",
+          "updatedAt": "2025-02-06T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-5-22-analytics",
+          "name": "制造业_市场情报本体_分析库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-5-22-analytics.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_5_22",
+            "username": "ro_manufacturing",
+            "password": "demo_1-5-22"
+          },
+          "syncFrequency": "manual",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 40414,
+          "description": "销售阶段本体数据库，服务于市场情报本体；用于结构化抽取与实体主数据归集。场景：竞争策略Agent：当竞品降价时，自动分析利润空间并建议促策略",
+          "createdAt": "2025-01-23T08:00:00.000Z",
+          "updatedAt": "2025-02-04T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-5-23-ledger",
+          "name": "制造业_客户360本体_台账库",
+          "category": "structured",
+          "type": "MongoDB",
+          "connection": {
+            "host": "manufacturing-1-5-23-ledger.db.demo.local",
+            "port": 27017,
+            "database": "onto_1_5_23",
+            "username": "ro_manufacturing",
+            "password": "demo_1-5-23"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "9 分钟前",
+          "recordCount": 71651,
+          "description": "销售阶段本体数据库，服务于客户360本体；用于结构化抽取与实体主数据归集。场景：精准营销Agent：根据客户历史偏好自动生成个性化产品手册",
+          "createdAt": "2025-01-24T08:00:00.000Z",
+          "updatedAt": "2025-02-05T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-5-24-archive",
+          "name": "制造业_合同约束本体_归档库",
+          "category": "structured",
+          "type": "SAP ERP",
+          "connection": {
+            "host": "manufacturing-1-5-24-archive.db.demo.local",
+            "port": 3300,
+            "database": "onto_1_5_24",
+            "username": "ro_manufacturing",
+            "password": "demo_1-5-24"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "10 分钟前",
+          "recordCount": 93288,
+          "description": "销售阶段本体数据库，服务于合同约束本体；用于结构化抽取与实体主数据归集。场景：法务风险Agent：自动扫描合同草案中的不平等或高风险三元组",
+          "createdAt": "2025-01-25T08:00:00.000Z",
+          "updatedAt": "2025-02-06T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-5-24-primary",
+          "name": "制造业_合同约束本体_主库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-5-24-primary.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_5_24_primary",
+            "username": "ro_manufacturing",
+            "password": "demo_1-5-24"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "11 分钟前",
+          "recordCount": 54452,
+          "description": "销售阶段本体数据库，服务于合同约束本体；用于结构化抽取与实体主数据归集。场景：法务风险Agent：自动扫描合同草案中的不平等或高风险三元组",
+          "createdAt": "2025-01-26T08:00:00.000Z",
+          "updatedAt": "2025-02-07T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-5-25-primary",
+          "name": "制造业_预测需求本体_主库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-5-25-primary.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_5_25",
+            "username": "ro_manufacturing",
+            "password": "demo_1-5-25"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "11 分钟前",
+          "recordCount": 104125,
+          "description": "销售阶段本体数据库，服务于预测需求本体；用于结构化抽取与实体主数据归集。场景：需求感知Agent：结合气象和社交数据预测下季度的销量波动",
+          "createdAt": "2025-01-26T08:00:00.000Z",
+          "updatedAt": "2025-02-07T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-6-26-business",
+          "name": "制造业_故障现象本体_业务库",
+          "category": "structured",
+          "type": "MongoDB",
+          "connection": {
+            "host": "manufacturing-1-6-26-business.db.demo.local",
+            "port": 27017,
+            "database": "onto_1_6_26",
+            "username": "ro_manufacturing",
+            "password": "demo_1-6-26"
+          },
+          "syncFrequency": "hourly",
+          "status": "Inactive",
+          "lastSync": null,
+          "recordCount": 74162,
+          "description": "售后阶段本体数据库，服务于故障现象本体；用于结构化抽取与实体主数据归集。场景：专家辅助Agent：通过语音交互引导现场工人排查故障",
+          "createdAt": "2025-01-27T08:00:00.000Z",
+          "updatedAt": "2025-02-08T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-6-27-analytics",
+          "name": "制造业_维护SOP本体_分析库",
+          "category": "structured",
+          "type": "SAP ERP",
+          "connection": {
+            "host": "manufacturing-1-6-27-analytics.db.demo.local",
+            "port": 3300,
+            "database": "onto_1_6_27",
+            "username": "ro_manufacturing",
+            "password": "demo_1-6-27"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "13 分钟前",
+          "recordCount": 90999,
+          "description": "售后阶段本体数据库，服务于维护SOP本体；用于结构化抽取与实体主数据归集。场景：维修指引Agent：自动为特定故障生成可视化的维修作业指导书",
+          "createdAt": "2025-01-28T08:00:00.000Z",
+          "updatedAt": "2025-02-09T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-6-27-ledger",
+          "name": "制造业_维护SOP本体_台账库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-6-27-ledger.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_6_27_ledger",
+            "username": "ro_manufacturing",
+            "password": "demo_1-6-27"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "14 分钟前",
+          "recordCount": 53121,
+          "description": "售后阶段本体数据库，服务于维护SOP本体；用于结构化抽取与实体主数据归集。场景：维修指引Agent：自动为特定故障生成可视化的维修作业指导书",
+          "createdAt": "2025-01-29T08:00:00.000Z",
+          "updatedAt": "2025-02-10T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-6-28-ledger",
+          "name": "制造业_备件兼容性本体_台账库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-6-28-ledger.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_6_28",
+            "username": "ro_manufacturing",
+            "password": "demo_1-6-28"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "14 分钟前",
+          "recordCount": 87436,
+          "description": "售后阶段本体数据库，服务于备件兼容性本体；用于结构化抽取与实体主数据归集。场景：备件搜索Agent：在老旧设备维修时，自动匹配可用的替代零件",
+          "createdAt": "2025-01-29T08:00:00.000Z",
+          "updatedAt": "2025-02-10T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-6-28-docs",
+          "name": "制造业_备件兼容性本体_文档仓",
+          "category": "unstructured",
+          "type": "MinIO",
+          "connection": {
+            "endpoint": "https://minio.manufacturing.demo.local",
+            "bucket": "ontology-manufacturing-1-6-28-docs",
+            "region": "cn-north-1",
+            "pathPrefix": "备件兼容性本体/v2/",
+            "accessKey": "ak_1-6-28",
+            "secretKey": "sk_1-6-28"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "2 分钟前",
+          "recordCount": 29332,
+          "description": "售后阶段本体对象存储，用于沉淀备件兼容性本体相关文档、半结构化抽取结果与图谱附件。场景：备件搜索Agent：在老旧设备维修时，自动匹配可用的替代零件",
+          "createdAt": "2025-01-30T08:00:00.000Z",
+          "updatedAt": "2025-02-13T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-6-29-archive",
+          "name": "制造业_服务履历本体_归档库",
+          "category": "structured",
+          "type": "MongoDB",
+          "connection": {
+            "host": "manufacturing-1-6-29-archive.db.demo.local",
+            "port": 27017,
+            "database": "onto_1_6_29",
+            "username": "ro_manufacturing",
+            "password": "demo_1-6-29"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "15 分钟前",
+          "recordCount": 101873,
+          "description": "售后阶段本体数据库，服务于服务履历本体；用于结构化抽取与实体主数据归集。场景：退役决策Agent：分析维修成本与残值，建议设备报废或翻新",
+          "createdAt": "2025-01-30T08:00:00.000Z",
+          "updatedAt": "2025-02-11T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-6-30-primary",
+          "name": "制造业_客户反馈情感本体_主库",
+          "category": "structured",
+          "type": "SAP ERP",
+          "connection": {
+            "host": "manufacturing-1-6-30-primary.db.demo.local",
+            "port": 3300,
+            "database": "onto_1_6_30",
+            "username": "ro_manufacturing",
+            "password": "demo_1-6-30"
+          },
+          "syncFrequency": "daily",
+          "status": "Active",
+          "lastSync": "1 分钟前",
+          "recordCount": 50310,
+          "description": "售后阶段本体数据库，服务于客户反馈情感本体；用于结构化抽取与实体主数据归集。场景：危机公关Agent：自动识别高危差评并触发紧急客服介入流程",
+          "createdAt": "2025-01-31T08:00:00.000Z",
+          "updatedAt": "2025-02-12T08:00:00.000Z"
+        },
+        {
+          "id": "ds-1-6-30-business",
+          "name": "制造业_客户反馈情感本体_业务库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "manufacturing-1-6-30-business.db.demo.local",
+            "port": 3306,
+            "database": "onto_1_6_30_business",
+            "username": "ro_manufacturing",
+            "password": "demo_1-6-30"
+          },
+          "syncFrequency": "daily",
+          "status": "Active",
+          "lastSync": "2 分钟前",
+          "recordCount": 29390,
+          "description": "售后阶段本体数据库，服务于客户反馈情感本体；用于结构化抽取与实体主数据归集。场景：危机公关Agent：自动识别高危差评并触发紧急客服介入流程",
+          "createdAt": "2025-02-01T08:00:00.000Z",
+          "updatedAt": "2025-02-13T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-1-1-business",
+          "name": "零售业_品类架构本体_业务库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-1-1-business.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_1_1",
+            "username": "ro_retail",
+            "password": "demo_2-1-1"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "2 分钟前",
+          "recordCount": 89947,
+          "description": "选品与规划阶段本体数据库，服务于品类架构本体；用于结构化抽取与实体主数据归集。场景：自动上新Agent：根据类目缺失度自动建议补充特定价格带的SKU",
+          "createdAt": "2025-02-01T08:00:00.000Z",
+          "updatedAt": "2025-02-13T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-1-1-analytics",
+          "name": "零售业_品类架构本体_分析库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-1-1-analytics.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_1_1_analytics",
+            "username": "ro_retail",
+            "password": "demo_2-1-1"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "3 分钟前",
+          "recordCount": 52513,
+          "description": "选品与规划阶段本体数据库，服务于品类架构本体；用于结构化抽取与实体主数据归集。场景：自动上新Agent：根据类目缺失度自动建议补充特定价格带的SKU",
+          "createdAt": "2025-02-02T08:00:00.000Z",
+          "updatedAt": "2025-02-14T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-1-2-analytics",
+          "name": "零售业_趋势信号本体_分析库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-1-2-analytics.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_1_2",
+            "username": "ro_retail",
+            "password": "demo_2-1-2"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "3 分钟前",
+          "recordCount": 39584,
+          "description": "选品与规划阶段本体数据库，服务于趋势信号本体；用于结构化抽取与实体主数据归集。场景：选品雷达Agent：抓取社交媒体趋势，预测下一个爆款潜力商品",
+          "createdAt": "2025-02-02T08:00:00.000Z",
+          "updatedAt": "2025-02-14T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-1-3-ledger",
+          "name": "零售业_商品属性本体_台账库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-1-3-ledger.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_1_3",
+            "username": "ro_retail",
+            "password": "demo_2-1-3"
+          },
+          "syncFrequency": "daily",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 13221,
+          "description": "选品与规划阶段本体数据库，服务于商品属性本体；用于结构化抽取与实体主数据归集。场景：智能文案Agent：基于属性三元组自动生成多平台的种草笔记",
+          "createdAt": "2025-02-03T08:00:00.000Z",
+          "updatedAt": "2025-02-15T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-1-3-assets",
+          "name": "零售业_商品属性本体_资料桶",
+          "category": "unstructured",
+          "type": "S3",
+          "connection": {
+            "endpoint": "https://s3.retail.demo.local",
+            "bucket": "ontology-retail-2-1-3-assets",
+            "region": "cn-east-1",
+            "pathPrefix": "商品属性本体/v1/",
+            "accessKey": "ak_2-1-3",
+            "secretKey": "sk_2-1-3"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "7 分钟前",
+          "recordCount": 4627,
+          "description": "选品与规划阶段本体对象存储，用于沉淀商品属性本体相关文档、半结构化抽取结果与图谱附件。场景：智能文案Agent：基于属性三元组自动生成多平台的种草笔记",
+          "createdAt": "2025-02-04T08:00:00.000Z",
+          "updatedAt": "2025-02-18T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-1-4-archive",
+          "name": "零售业_价格带分布本体_归档库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-1-4-archive.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_1_4",
+            "username": "ro_retail",
+            "password": "demo_2-1-4"
+          },
+          "syncFrequency": "manual",
+          "status": "Error",
+          "lastSync": "5 小时前",
+          "recordCount": 60058,
+          "description": "选品与规划阶段本体数据库，服务于价格带分布本体；用于结构化抽取与实体主数据归集。场景：定价策略Agent：自动分析竞品价格，建议最优利润率下的价格锚点",
+          "createdAt": "2025-02-04T08:00:00.000Z",
+          "updatedAt": "2025-02-16T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-1-5-primary",
+          "name": "零售业_季节性/周期本体_主库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-1-5-primary.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_1_5",
+            "username": "ro_retail",
+            "password": "demo_2-1-5"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "6 分钟前",
+          "recordCount": 54095,
+          "description": "选品与规划阶段本体数据库，服务于季节性/周期本体；用于结构化抽取与实体主数据归集。场景：季节性规划Agent：提前3个月触发生产与采购的资源锁定期",
+          "createdAt": "2025-02-05T08:00:00.000Z",
+          "updatedAt": "2025-02-17T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-2-6-business",
+          "name": "零售业_供方准入本体_业务库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-2-6-business.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_2_6",
+            "username": "ro_retail",
+            "password": "demo_2-2-6"
+          },
+          "syncFrequency": "15min",
+          "status": "Active",
+          "lastSync": "7 分钟前",
+          "recordCount": 97332,
+          "description": "采购与供应阶段本体数据库，服务于供方准入本体；用于结构化抽取与实体主数据归集。场景：准入审核Agent：自动验证供应商资质，剔除不符合ESG要求的伙伴",
+          "createdAt": "2025-02-06T08:00:00.000Z",
+          "updatedAt": "2025-02-18T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-2-6-analytics",
+          "name": "零售业_供方准入本体_分析库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-2-6-analytics.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_2_6_analytics",
+            "username": "ro_retail",
+            "password": "demo_2-2-6"
+          },
+          "syncFrequency": "15min",
+          "status": "Active",
+          "lastSync": "8 分钟前",
+          "recordCount": 56828,
+          "description": "采购与供应阶段本体数据库，服务于供方准入本体；用于结构化抽取与实体主数据归集。场景：准入审核Agent：自动验证供应商资质，剔除不符合ESG要求的伙伴",
+          "createdAt": "2025-02-07T08:00:00.000Z",
+          "updatedAt": "2025-02-19T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-2-7-analytics",
+          "name": "零售业_契约逻辑本体_分析库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-2-7-analytics.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_2_7",
+            "username": "ro_retail",
+            "password": "demo_2-2-7"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "8 分钟前",
+          "recordCount": 92569,
+          "description": "采购与供应阶段本体数据库，服务于契约逻辑本体；用于结构化抽取与实体主数据归集。场景：财务协同Agent：自动对账并根据现金流状态建议最优支付时间",
+          "createdAt": "2025-02-07T08:00:00.000Z",
+          "updatedAt": "2025-02-19T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-2-7-assets",
+          "name": "零售业_契约逻辑本体_资料桶",
+          "category": "unstructured",
+          "type": "S3",
+          "connection": {
+            "endpoint": "https://s3.retail.demo.local",
+            "bucket": "ontology-retail-2-2-7-assets",
+            "region": "cn-east-1",
+            "pathPrefix": "契约逻辑本体/v2/",
+            "accessKey": "ak_2-2-7",
+            "secretKey": "sk_2-2-7"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "11 分钟前",
+          "recordCount": 31103,
+          "description": "采购与供应阶段本体对象存储，用于沉淀契约逻辑本体相关文档、半结构化抽取结果与图谱附件。场景：财务协同Agent：自动对账并根据现金流状态建议最优支付时间",
+          "createdAt": "2025-02-08T08:00:00.000Z",
+          "updatedAt": "2025-02-22T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-2-8-ledger",
+          "name": "零售业_起订量(MOQ)本体_台账库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-2-8-ledger.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_2_8",
+            "username": "ro_retail",
+            "password": "demo_2-2-8"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "9 分钟前",
+          "recordCount": 47006,
+          "description": "采购与供应阶段本体数据库，服务于起订量(MOQ)本体；用于结构化抽取与实体主数据归集。场景：采购拼单Agent：跨区域合并小额订单以达成供应商的MOQ门槛",
+          "createdAt": "2025-02-08T08:00:00.000Z",
+          "updatedAt": "2025-02-20T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-2-9-archive",
+          "name": "零售业_原料溯源本体_归档库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-2-9-archive.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_2_9",
+            "username": "ro_retail",
+            "password": "demo_2-2-9"
+          },
+          "syncFrequency": "hourly",
+          "status": "Inactive",
+          "lastSync": null,
+          "recordCount": 97443,
+          "description": "采购与供应阶段本体数据库，服务于原料溯源本体；用于结构化抽取与实体主数据归集。场景：透明供应链Agent：为消费者提供可扫码查看的链路溯源证据",
+          "createdAt": "2025-02-09T08:00:00.000Z",
+          "updatedAt": "2025-02-21T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-2-10-primary",
+          "name": "零售业_生产前置期本体_主库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-2-10-primary.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_2_10",
+            "username": "ro_retail",
+            "password": "demo_2-2-10"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "11 分钟前",
+          "recordCount": 51880,
+          "description": "采购与供应阶段本体数据库，服务于生产前置期本体；用于结构化抽取与实体主数据归集。场景：补货预警Agent：结合销量趋势和前置期，精准计算下单时机",
+          "createdAt": "2025-02-10T08:00:00.000Z",
+          "updatedAt": "2025-02-22T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-3-11-business",
+          "name": "零售业_仓储拓扑本体_业务库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-3-11-business.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_3_11",
+            "username": "ro_retail",
+            "password": "demo_2-3-11"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "12 分钟前",
+          "recordCount": 74717,
+          "description": "仓储与物流阶段本体数据库，服务于仓储拓扑本体；用于结构化抽取与实体主数据归集。场景：选址模拟Agent：基于人口密度和配送距离，建议下一个前置仓坐标",
+          "createdAt": "2025-02-11T08:00:00.000Z",
+          "updatedAt": "2025-02-23T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-3-11-analytics",
+          "name": "零售业_仓储拓扑本体_分析库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-3-11-analytics.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_3_11_analytics",
+            "username": "ro_retail",
+            "password": "demo_2-3-11"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "13 分钟前",
+          "recordCount": 43643,
+          "description": "仓储与物流阶段本体数据库，服务于仓储拓扑本体；用于结构化抽取与实体主数据归集。场景：选址模拟Agent：基于人口密度和配送距离，建议下一个前置仓坐标",
+          "createdAt": "2025-02-12T08:00:00.000Z",
+          "updatedAt": "2025-02-24T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-3-11-assets",
+          "name": "零售业_仓储拓扑本体_资料桶",
+          "category": "unstructured",
+          "type": "S3",
+          "connection": {
+            "endpoint": "https://s3.retail.demo.local",
+            "bucket": "ontology-retail-2-3-11-assets",
+            "region": "cn-east-1",
+            "pathPrefix": "仓储拓扑本体/v3/",
+            "accessKey": "ak_2-3-11",
+            "secretKey": "sk_2-3-11"
+          },
+          "syncFrequency": "hourly",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 25179,
+          "description": "仓储与物流阶段本体对象存储，用于沉淀仓储拓扑本体相关文档、半结构化抽取结果与图谱附件。场景：选址模拟Agent：基于人口密度和配送距离，建议下一个前置仓坐标",
+          "createdAt": "2025-02-12T08:00:00.000Z",
+          "updatedAt": "2025-02-26T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-3-12-analytics",
+          "name": "零售业_库存状态本体_分析库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-3-12-analytics.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_3_12",
+            "username": "ro_retail",
+            "password": "demo_2-3-12"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "13 分钟前",
+          "recordCount": 69954,
+          "description": "仓储与物流阶段本体数据库，服务于库存状态本体；用于结构化抽取与实体主数据归集。场景：临期清货Agent：自动下发折扣指令至POS端，加速陈旧库存周转",
+          "createdAt": "2025-02-12T08:00:00.000Z",
+          "updatedAt": "2025-02-24T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-3-13-ledger",
+          "name": "零售业_物流温控本体_台账库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-3-13-ledger.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_3_13",
+            "username": "ro_retail",
+            "password": "demo_2-3-13"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "14 分钟前",
+          "recordCount": 79591,
+          "description": "仓储与物流阶段本体数据库，服务于物流温控本体；用于结构化抽取与实体主数据归集。场景：冷链监控Agent：传感器波动时，自动联系司机并重新评估商品残值",
+          "createdAt": "2025-02-13T08:00:00.000Z",
+          "updatedAt": "2025-02-25T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-3-14-archive",
+          "name": "零售业_包材规则本体_归档库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-3-14-archive.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_3_14",
+            "username": "ro_retail",
+            "password": "demo_2-3-14"
+          },
+          "syncFrequency": "hourly",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 96428,
+          "description": "仓储与物流阶段本体数据库，服务于包材规则本体；用于结构化抽取与实体主数据归集。场景：智能打包Agent：根据订单内商品组合，自动选择最省耗材的包材",
+          "createdAt": "2025-02-14T08:00:00.000Z",
+          "updatedAt": "2025-02-26T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-3-15-primary",
+          "name": "零售业_末端运力本体_主库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-3-15-primary.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_3_15",
+            "username": "ro_retail",
+            "password": "demo_2-3-15"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "1 分钟前",
+          "recordCount": 91665,
+          "description": "仓储与物流阶段本体数据库，服务于末端运力本体；用于结构化抽取与实体主数据归集。场景：即时配送调度Agent：在高峰期平衡配送时长与骑手收益，优化路线",
+          "createdAt": "2025-02-15T08:00:00.000Z",
+          "updatedAt": "2025-02-27T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-3-15-assets",
+          "name": "零售业_末端运力本体_资料桶",
+          "category": "unstructured",
+          "type": "S3",
+          "connection": {
+            "endpoint": "https://s3.retail.demo.local",
+            "bucket": "ontology-retail-2-3-15-assets",
+            "region": "cn-east-1",
+            "pathPrefix": "末端运力本体/v1/",
+            "accessKey": "ak_2-3-15",
+            "secretKey": "sk_2-3-15"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "4 分钟前",
+          "recordCount": 30855,
+          "description": "仓储与物流阶段本体对象存储，用于沉淀末端运力本体相关文档、半结构化抽取结果与图谱附件。场景：即时配送调度Agent：在高峰期平衡配送时长与骑手收益，优化路线",
+          "createdAt": "2025-02-16T08:00:00.000Z",
+          "updatedAt": "2025-03-02T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-4-16-business",
+          "name": "零售业_货架图谱本体_业务库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-4-16-business.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_4_16",
+            "username": "ro_retail",
+            "password": "demo_2-4-16"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "2 分钟前",
+          "recordCount": 85702,
+          "description": "门店与运营阶段本体数据库，服务于货架图谱本体；用于结构化抽取与实体主数据归集。场景：货架优化Agent：利用关联购买数据，建议能够提升连带率的陈列布局",
+          "createdAt": "2025-02-16T08:00:00.000Z",
+          "updatedAt": "2025-02-28T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-4-16-analytics",
+          "name": "零售业_货架图谱本体_分析库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-4-16-analytics.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_4_16_analytics",
+            "username": "ro_retail",
+            "password": "demo_2-4-16"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "3 分钟前",
+          "recordCount": 50058,
+          "description": "门店与运营阶段本体数据库，服务于货架图谱本体；用于结构化抽取与实体主数据归集。场景：货架优化Agent：利用关联购买数据，建议能够提升连带率的陈列布局",
+          "createdAt": "2025-02-17T08:00:00.000Z",
+          "updatedAt": "2025-03-01T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-4-17-analytics",
+          "name": "零售业_客流行为本体_分析库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-4-17-analytics.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_4_17",
+            "username": "ro_retail",
+            "password": "demo_2-4-17"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "3 分钟前",
+          "recordCount": 92939,
+          "description": "门店与运营阶段本体数据库，服务于客流行为本体；用于结构化抽取与实体主数据归集。场景：门店热力Agent：识别高流量死角，调整动线引导",
+          "createdAt": "2025-02-17T08:00:00.000Z",
+          "updatedAt": "2025-03-01T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-4-18-ledger",
+          "name": "零售业_补货策略本体_台账库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-4-18-ledger.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_4_18",
+            "username": "ro_retail",
+            "password": "demo_2-4-18"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "4 分钟前",
+          "recordCount": 88176,
+          "description": "门店与运营阶段本体数据库，服务于补货策略本体；用于结构化抽取与实体主数据归集。场景：自动订单Agent：根据不同SKU的周期属性，自动计算本次应补货数量",
+          "createdAt": "2025-02-18T08:00:00.000Z",
+          "updatedAt": "2025-03-02T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-4-19-archive",
+          "name": "零售业_设备能耗本体_归档库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-4-19-archive.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_4_19",
+            "username": "ro_retail",
+            "password": "demo_2-4-19"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "5 分钟前",
+          "recordCount": 61813,
+          "description": "门店与运营阶段本体数据库，服务于设备能耗本体；用于结构化抽取与实体主数据归集。场景：绿色门店Agent：根据进店人数实时调节灯光与温控系统",
+          "createdAt": "2025-02-19T08:00:00.000Z",
+          "updatedAt": "2025-03-03T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-4-19-assets",
+          "name": "零售业_设备能耗本体_资料桶",
+          "category": "unstructured",
+          "type": "S3",
+          "connection": {
+            "endpoint": "https://s3.retail.demo.local",
+            "bucket": "ontology-retail-2-4-19-assets",
+            "region": "cn-east-1",
+            "pathPrefix": "设备能耗本体/v2/",
+            "accessKey": "ak_2-4-19",
+            "secretKey": "sk_2-4-19"
+          },
+          "syncFrequency": "hourly",
+          "status": "Inactive",
+          "lastSync": null,
+          "recordCount": 20931,
+          "description": "门店与运营阶段本体对象存储，用于沉淀设备能耗本体相关文档、半结构化抽取结果与图谱附件。场景：绿色门店Agent：根据进店人数实时调节灯光与温控系统",
+          "createdAt": "2025-02-20T08:00:00.000Z",
+          "updatedAt": "2025-03-06T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-4-20-primary",
+          "name": "零售业_店员排班本体_主库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-4-20-primary.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_4_20",
+            "username": "ro_retail",
+            "password": "demo_2-4-20"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "6 分钟前",
+          "recordCount": 59450,
+          "description": "门店与运营阶段本体数据库，服务于店员排班本体；用于结构化抽取与实体主数据归集。场景：弹性排班Agent：预测客流波峰，自动生成跨店调拨的人力计划",
+          "createdAt": "2025-02-20T08:00:00.000Z",
+          "updatedAt": "2025-03-04T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-4-21-business",
+          "name": "零售业_全渠道库存本体_业务库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-4-21-business.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_4_21",
+            "username": "ro_retail",
+            "password": "demo_2-4-21"
+          },
+          "syncFrequency": "hourly",
+          "status": "Error",
+          "lastSync": "4 小时前",
+          "recordCount": 65487,
+          "description": "门店与运营阶段本体数据库，服务于全渠道库存本体；用于结构化抽取与实体主数据归集。场景：O2O履约Agent：根据库存距离和成本，决定从仓库发货还是门店自提",
+          "createdAt": "2025-02-21T08:00:00.000Z",
+          "updatedAt": "2025-03-05T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-4-21-analytics",
+          "name": "零售业_全渠道库存本体_分析库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-4-21-analytics.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_4_21_analytics",
+            "username": "ro_retail",
+            "password": "demo_2-4-21"
+          },
+          "syncFrequency": "hourly",
+          "status": "Inactive",
+          "lastSync": null,
+          "recordCount": 38273,
+          "description": "门店与运营阶段本体数据库，服务于全渠道库存本体；用于结构化抽取与实体主数据归集。场景：O2O履约Agent：根据库存距离和成本，决定从仓库发货还是门店自提",
+          "createdAt": "2025-02-22T08:00:00.000Z",
+          "updatedAt": "2025-03-06T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-5-22-analytics",
+          "name": "零售业_会员画像本体_分析库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-5-22-analytics.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_5_22",
+            "username": "ro_retail",
+            "password": "demo_2-5-22"
+          },
+          "syncFrequency": "hourly",
+          "status": "Inactive",
+          "lastSync": null,
+          "recordCount": 89524,
+          "description": "营销与CRM阶段本体数据库，服务于会员画像本体；用于结构化抽取与实体主数据归集。场景：精准推送Agent：仅针对感兴趣的用户推送特定优惠",
+          "createdAt": "2025-02-22T08:00:00.000Z",
+          "updatedAt": "2025-03-06T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-5-23-ledger",
+          "name": "零售业_促销逻辑本体_台账库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-5-23-ledger.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_5_23",
+            "username": "ro_retail",
+            "password": "demo_2-5-23"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "9 分钟前",
+          "recordCount": 70361,
+          "description": "营销与CRM阶段本体数据库，服务于促销逻辑本体；用于结构化抽取与实体主数据归集。场景：营销校验Agent：防止多重折扣叠加导致毛利归零甚至亏损",
+          "createdAt": "2025-02-23T08:00:00.000Z",
+          "updatedAt": "2025-03-07T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-5-23-assets",
+          "name": "零售业_促销逻辑本体_资料桶",
+          "category": "unstructured",
+          "type": "S3",
+          "connection": {
+            "endpoint": "https://s3.retail.demo.local",
+            "bucket": "ontology-retail-2-5-23-assets",
+            "region": "cn-east-1",
+            "pathPrefix": "促销逻辑本体/v3/",
+            "accessKey": "ak_2-5-23",
+            "secretKey": "sk_2-5-23"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "12 分钟前",
+          "recordCount": 23807,
+          "description": "营销与CRM阶段本体对象存储，用于沉淀促销逻辑本体相关文档、半结构化抽取结果与图谱附件。场景：营销校验Agent：防止多重折扣叠加导致毛利归零甚至亏损",
+          "createdAt": "2025-02-24T08:00:00.000Z",
+          "updatedAt": "2025-03-10T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-5-24-archive",
+          "name": "零售业_情感反馈本体_归档库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-5-24-archive.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_5_24",
+            "username": "ro_retail",
+            "password": "demo_2-5-24"
+          },
+          "syncFrequency": "15min",
+          "status": "Active",
+          "lastSync": "10 分钟前",
+          "recordCount": 133998,
+          "description": "营销与CRM阶段本体数据库，服务于情感反馈本体；用于结构化抽取与实体主数据归集。场景：舆情响应Agent：自动识别愤怒客户，发放补偿券并安排人工介入",
+          "createdAt": "2025-02-24T08:00:00.000Z",
+          "updatedAt": "2025-03-08T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-5-25-primary",
+          "name": "零售业_权益积分本体_主库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-5-25-primary.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_5_25",
+            "username": "ro_retail",
+            "password": "demo_2-5-25"
+          },
+          "syncFrequency": "manual",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 57235,
+          "description": "营销与CRM阶段本体数据库，服务于权益积分本体；用于结构化抽取与实体主数据归集。场景：忠诚度管理Agent：预测积分过期可能导致的用户流失，提前提醒兑换",
+          "createdAt": "2025-02-25T08:00:00.000Z",
+          "updatedAt": "2025-03-09T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-5-26-business",
+          "name": "零售业_社交影响力本体_业务库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-5-26-business.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_5_26",
+            "username": "ro_retail",
+            "password": "demo_2-5-26"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "12 分钟前",
+          "recordCount": 50072,
+          "description": "营销与CRM阶段本体数据库，服务于社交影响力本体；用于结构化抽取与实体主数据归集。场景：达人筛选Agent：基于历史数据模型，为新品推荐最匹配的博主",
+          "createdAt": "2025-02-26T08:00:00.000Z",
+          "updatedAt": "2025-03-10T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-5-26-analytics",
+          "name": "零售业_社交影响力本体_分析库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-5-26-analytics.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_5_26_analytics",
+            "username": "ro_retail",
+            "password": "demo_2-5-26"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "13 分钟前",
+          "recordCount": 29288,
+          "description": "营销与CRM阶段本体数据库，服务于社交影响力本体；用于结构化抽取与实体主数据归集。场景：达人筛选Agent：基于历史数据模型，为新品推荐最匹配的博主",
+          "createdAt": "2025-02-27T08:00:00.000Z",
+          "updatedAt": "2025-03-11T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-6-27-analytics",
+          "name": "零售业_售后策略本体_分析库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-6-27-analytics.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_6_27",
+            "username": "ro_retail",
+            "password": "demo_2-6-27"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "13 分钟前",
+          "recordCount": 95709,
+          "description": "服务与循环阶段本体数据库，服务于售后策略本体；用于结构化抽取与实体主数据归集。场景：智能客服Agent：根据品类和客单价，自主决定赔付策略以降低成本",
+          "createdAt": "2025-02-27T08:00:00.000Z",
+          "updatedAt": "2025-03-11T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-6-27-assets",
+          "name": "零售业_售后策略本体_资料桶",
+          "category": "unstructured",
+          "type": "S3",
+          "connection": {
+            "endpoint": "https://s3.retail.demo.local",
+            "bucket": "ontology-retail-2-6-27-assets",
+            "region": "cn-east-1",
+            "pathPrefix": "售后策略本体/v1/",
+            "accessKey": "ak_2-6-27",
+            "secretKey": "sk_2-6-27"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "1 分钟前",
+          "recordCount": 32283,
+          "description": "服务与循环阶段本体对象存储，用于沉淀售后策略本体相关文档、半结构化抽取结果与图谱附件。场景：智能客服Agent：根据品类和客单价，自主决定赔付策略以降低成本",
+          "createdAt": "2025-02-28T08:00:00.000Z",
+          "updatedAt": "2025-03-14T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-6-28-ledger",
+          "name": "零售业_逆向物流本体_台账库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-6-28-ledger.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_6_28",
+            "username": "ro_retail",
+            "password": "demo_2-6-28"
+          },
+          "syncFrequency": "15min",
+          "status": "Active",
+          "lastSync": "14 分钟前",
+          "recordCount": 111346,
+          "description": "服务与循环阶段本体数据库，服务于逆向物流本体；用于结构化抽取与实体主数据归集。场景：退货质检Agent：判定商品是否可进行二次销售或需降级进入特卖",
+          "createdAt": "2025-02-28T08:00:00.000Z",
+          "updatedAt": "2025-03-12T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-6-29-archive",
+          "name": "零售业_旧物回收本体_归档库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-6-29-archive.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_6_29",
+            "username": "ro_retail",
+            "password": "demo_2-6-29"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "15 分钟前",
+          "recordCount": 88583,
+          "description": "服务与循环阶段本体数据库，服务于旧物回收本体；用于结构化抽取与实体主数据归集。场景：环保激励Agent：引导客户参与以旧换新，提升用户粘性与品牌形象",
+          "createdAt": "2025-03-01T08:00:00.000Z",
+          "updatedAt": "2025-03-13T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-6-30-primary",
+          "name": "零售业_维修配件本体_主库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-6-30-primary.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_6_30",
+            "username": "ro_retail",
+            "password": "demo_2-6-30"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "1 分钟前",
+          "recordCount": 97020,
+          "description": "服务与循环阶段本体数据库，服务于维修配件本体；用于结构化抽取与实体主数据归集。场景：自助维修Agent：通过图文指引引导用户自行解决小故障",
+          "createdAt": "2025-03-02T08:00:00.000Z",
+          "updatedAt": "2025-03-14T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-6-31-business",
+          "name": "零售业_服务业务本体_业务库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "retail-2-6-31-business.db.demo.local",
+            "port": 5432,
+            "database": "onto_2_6_31",
+            "username": "ro_retail",
+            "password": "demo_2-6-31"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "2 分钟前",
+          "recordCount": 111457,
+          "description": "服务与循环阶段本体数据库，服务于服务业务本体；用于结构化抽取与实体主数据归集。场景：智慧导购Agent：在直播间或聊天框24小时解答产品参数疑问",
+          "createdAt": "2025-03-03T08:00:00.000Z",
+          "updatedAt": "2025-03-15T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-6-31-analytics",
+          "name": "零售业_服务业务本体_分析库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "retail-2-6-31-analytics.db.demo.local",
+            "port": 3306,
+            "database": "onto_2_6_31_analytics",
+            "username": "ro_retail",
+            "password": "demo_2-6-31"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "3 分钟前",
+          "recordCount": 65103,
+          "description": "服务与循环阶段本体数据库，服务于服务业务本体；用于结构化抽取与实体主数据归集。场景：智慧导购Agent：在直播间或聊天框24小时解答产品参数疑问",
+          "createdAt": "2025-03-04T08:00:00.000Z",
+          "updatedAt": "2025-03-16T08:00:00.000Z"
+        },
+        {
+          "id": "ds-2-6-31-assets",
+          "name": "零售业_服务业务本体_资料桶",
+          "category": "unstructured",
+          "type": "S3",
+          "connection": {
+            "endpoint": "https://s3.retail.demo.local",
+            "bucket": "ontology-retail-2-6-31-assets",
+            "region": "cn-east-1",
+            "pathPrefix": "服务业务本体/v2/",
+            "accessKey": "ak_2-6-31",
+            "secretKey": "sk_2-6-31"
+          },
+          "syncFrequency": "15min",
+          "status": "Active",
+          "lastSync": "5 分钟前",
+          "recordCount": 37559,
+          "description": "服务与循环阶段本体对象存储，用于沉淀服务业务本体相关文档、半结构化抽取结果与图谱附件。场景：智慧导购Agent：在直播间或聊天框24小时解答产品参数疑问",
+          "createdAt": "2025-03-04T08:00:00.000Z",
+          "updatedAt": "2025-03-18T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-1-1-analytics",
+          "name": "医疗健康_疾病诊断本体(ICD-11)_分析库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "medical-3-1-1-analytics.db.demo.local",
+            "port": 5432,
+            "database": "onto_3_1_1",
+            "username": "ro_medical",
+            "password": "demo_3-1-1"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "3 分钟前",
+          "recordCount": 46694,
+          "description": "临床诊疗阶段本体数据库，服务于疾病诊断本体(ICD-11)；用于结构化抽取与实体主数据归集。场景：预诊分诊Agent：根据患者主诉，自动推荐挂号科室与紧急程度优先级",
+          "createdAt": "2025-03-04T08:00:00.000Z",
+          "updatedAt": "2025-03-16T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-1-1-ledger",
+          "name": "医疗健康_疾病诊断本体(ICD-11)_台账库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-1-1-ledger.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_1_1_ledger",
+            "username": "ro_medical",
+            "password": "demo_3-1-1"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "4 分钟前",
+          "recordCount": 27326,
+          "description": "临床诊疗阶段本体数据库，服务于疾病诊断本体(ICD-11)；用于结构化抽取与实体主数据归集。场景：预诊分诊Agent：根据患者主诉，自动推荐挂号科室与紧急程度优先级",
+          "createdAt": "2025-03-05T08:00:00.000Z",
+          "updatedAt": "2025-03-17T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-1-2-ledger",
+          "name": "医疗健康_临床路径(CP)本体_台账库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-1-2-ledger.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_1_2",
+            "username": "ro_medical",
+            "password": "demo_3-1-2"
+          },
+          "syncFrequency": "daily",
+          "status": "Active",
+          "lastSync": "4 分钟前",
+          "recordCount": 25131,
+          "description": "临床诊疗阶段本体数据库，服务于临床路径(CP)本体；用于结构化抽取与实体主数据归集。场景：诊疗偏离预警Agent：实时监控住院医嘱，若偏离标准临床路径自动提醒",
+          "createdAt": "2025-03-05T08:00:00.000Z",
+          "updatedAt": "2025-03-17T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-1-2-attachments",
+          "name": "医疗健康_临床路径(CP)本体_附件仓",
+          "category": "unstructured",
+          "type": "MinIO",
+          "connection": {
+            "endpoint": "https://minio.medical.demo.local",
+            "bucket": "ontology-medical-3-1-2-attachments",
+            "region": "ap-southeast-1",
+            "pathPrefix": "临床路径(CP)本体/v1/",
+            "accessKey": "ak_3-1-2",
+            "secretKey": "sk_3-1-2"
+          },
+          "syncFrequency": "manual",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 8797,
+          "description": "临床诊疗阶段本体对象存储，用于沉淀临床路径(CP)本体相关文档、半结构化抽取结果与图谱附件。场景：诊疗偏离预警Agent：实时监控住院医嘱，若偏离标准临床路径自动提醒",
+          "createdAt": "2025-03-06T08:00:00.000Z",
+          "updatedAt": "2025-03-20T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-1-3-archive",
+          "name": "医疗健康_药物交互(DDI)本体_归档库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "medical-3-1-3-archive.db.demo.local",
+            "port": 5432,
+            "database": "onto_3_1_3",
+            "username": "ro_medical",
+            "password": "demo_3-1-3"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "5 分钟前",
+          "recordCount": 39568,
+          "description": "临床诊疗阶段本体数据库，服务于药物交互(DDI)本体；用于结构化抽取与实体主数据归集。场景：用药安全检查Agent：在医生开方时，自动扫描处方内药物的冲突三元组",
+          "createdAt": "2025-03-06T08:00:00.000Z",
+          "updatedAt": "2025-03-18T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-1-4-primary",
+          "name": "医疗健康_临床试验方案本体_主库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-1-4-primary.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_1_4",
+            "username": "ro_medical",
+            "password": "demo_3-1-4"
+          },
+          "syncFrequency": "hourly",
+          "status": "Inactive",
+          "lastSync": null,
+          "recordCount": 63605,
+          "description": "临床诊疗阶段本体数据库，服务于临床试验方案本体；用于结构化抽取与实体主数据归集。场景：受试者自动精准招募Agent：扫描电子病历自动识别符合试验标准的受试者",
+          "createdAt": "2025-03-07T08:00:00.000Z",
+          "updatedAt": "2025-03-19T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-1-5-business",
+          "name": "医疗健康_医学影像特征本体_业务库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "medical-3-1-5-business.db.demo.local",
+            "port": 5432,
+            "database": "onto_3_1_5",
+            "username": "ro_medical",
+            "password": "demo_3-1-5"
+          },
+          "syncFrequency": "daily",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 25242,
+          "description": "临床诊疗阶段本体数据库，服务于医学影像特征本体；用于结构化抽取与实体主数据归集。场景：影像辅助诊断Agent：辅助识别影像切片中的关键特征，自动生成报告",
+          "createdAt": "2025-03-08T08:00:00.000Z",
+          "updatedAt": "2025-03-20T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-1-5-archive",
+          "name": "医疗健康_医学影像特征本体_归档桶",
+          "category": "unstructured",
+          "type": "OSS",
+          "connection": {
+            "endpoint": "https://oss.medical.demo.local",
+            "bucket": "ontology-medical-3-1-5-archive",
+            "region": "cn-south-1",
+            "pathPrefix": "医学影像特征本体/v1/",
+            "accessKey": "ak_3-1-5",
+            "secretKey": "sk_3-1-5"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "10 分钟前",
+          "recordCount": 8854,
+          "description": "临床诊疗阶段本体对象存储，用于沉淀医学影像特征本体相关文档、半结构化抽取结果与图谱附件。场景：影像辅助诊断Agent：辅助识别影像切片中的关键特征，自动生成报告",
+          "createdAt": "2025-03-09T08:00:00.000Z",
+          "updatedAt": "2025-03-23T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-2-6-analytics",
+          "name": "医疗健康_医疗资源效能本体_分析库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-2-6-analytics.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_2_6",
+            "username": "ro_medical",
+            "password": "demo_3-2-6"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "8 分钟前",
+          "recordCount": 49279,
+          "description": "医院运营阶段本体数据库，服务于医疗资源效能本体；用于结构化抽取与实体主数据归集。场景：手术排程Agent：根据手术难度与洁净等级，自动生成最优手术计划表",
+          "createdAt": "2025-03-09T08:00:00.000Z",
+          "updatedAt": "2025-03-21T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-2-7-ledger",
+          "name": "医疗健康_床位周转本体_台账库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "medical-3-2-7-ledger.db.demo.local",
+            "port": 5432,
+            "database": "onto_3_2_7",
+            "username": "ro_medical",
+            "password": "demo_3-2-7"
+          },
+          "syncFrequency": "manual",
+          "status": "Error",
+          "lastSync": "3 小时前",
+          "recordCount": 52916,
+          "description": "医院运营阶段本体数据库，服务于床位周转本体；用于结构化抽取与实体主数据归集。场景：动态床位管理Agent：预测出院人数，自动平衡急诊入院与择期手术的床位",
+          "createdAt": "2025-03-10T08:00:00.000Z",
+          "updatedAt": "2025-03-22T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-2-7-archive",
+          "name": "医疗健康_床位周转本体_归档库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-2-7-archive.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_2_7_archive",
+            "username": "ro_medical",
+            "password": "demo_3-2-7"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "10 分钟前",
+          "recordCount": 30964,
+          "description": "医院运营阶段本体数据库，服务于床位周转本体；用于结构化抽取与实体主数据归集。场景：动态床位管理Agent：预测出院人数，自动平衡急诊入院与择期手术的床位",
+          "createdAt": "2025-03-11T08:00:00.000Z",
+          "updatedAt": "2025-03-23T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-2-8-archive",
+          "name": "医疗健康_人员资质本体_归档库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-2-8-archive.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_2_8",
+            "username": "ro_medical",
+            "password": "demo_3-2-8"
+          },
+          "syncFrequency": "daily",
+          "status": "Active",
+          "lastSync": "10 分钟前",
+          "recordCount": 43353,
+          "description": "医院运营阶段本体数据库，服务于人员资质本体；用于结构化抽取与实体主数据归集。场景：排班合规Agent：确保排班表中每项诊疗活动都有具备相应资质的人员",
+          "createdAt": "2025-03-11T08:00:00.000Z",
+          "updatedAt": "2025-03-23T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-2-8-assets",
+          "name": "医疗健康_人员资质本体_资料桶",
+          "category": "unstructured",
+          "type": "MinIO",
+          "connection": {
+            "endpoint": "https://minio.medical.demo.local",
+            "bucket": "ontology-medical-3-2-8-assets",
+            "region": "cn-east-1",
+            "pathPrefix": "人员资质本体/v1/",
+            "accessKey": "ak_3-2-8",
+            "secretKey": "sk_3-2-8"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "13 分钟前",
+          "recordCount": 14911,
+          "description": "医院运营阶段本体对象存储，用于沉淀人员资质本体相关文档、半结构化抽取结果与图谱附件。场景：排班合规Agent：确保排班表中每项诊疗活动都有具备相应资质的人员",
+          "createdAt": "2025-03-12T08:00:00.000Z",
+          "updatedAt": "2025-03-26T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-2-9-primary",
+          "name": "医疗健康_医疗设备孪生本体_主库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "medical-3-2-9-primary.db.demo.local",
+            "port": 5432,
+            "database": "onto_3_2_9",
+            "username": "ro_medical",
+            "password": "demo_3-2-9"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "11 分钟前",
+          "recordCount": 61390,
+          "description": "医院运营阶段本体数据库，服务于医疗设备孪生本体；用于结构化抽取与实体主数据归集。场景：主动维保Agent：在大型设备故障前根据传感器三元组触发维保",
+          "createdAt": "2025-03-12T08:00:00.000Z",
+          "updatedAt": "2025-03-24T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-3-10-business",
+          "name": "医疗健康_高值耗材追溯本体_业务库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-3-10-business.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_3_10",
+            "username": "ro_medical",
+            "password": "demo_3-3-10"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "12 分钟前",
+          "recordCount": 59027,
+          "description": "医药供应链阶段本体数据库，服务于高值耗材追溯本体；用于结构化抽取与实体主数据归集。场景：高值耗材闭环Agent：实现从供应商到手术植入、再到医保报销的全流程追溯",
+          "createdAt": "2025-03-13T08:00:00.000Z",
+          "updatedAt": "2025-03-25T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-3-11-analytics",
+          "name": "医疗健康_药品冷链质量本体_分析库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "medical-3-3-11-analytics.db.demo.local",
+            "port": 5432,
+            "database": "onto_3_3_11",
+            "username": "ro_medical",
+            "password": "demo_3-3-11"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "13 分钟前",
+          "recordCount": 87864,
+          "description": "医药供应链阶段本体数据库，服务于药品冷链质量本体；用于结构化抽取与实体主数据归集。场景：药品质量保障Agent：冷链异常时自动标记受影响批次，禁止入库",
+          "createdAt": "2025-03-14T08:00:00.000Z",
+          "updatedAt": "2025-03-26T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-3-11-docs",
+          "name": "医疗健康_药品冷链质量本体_文档仓",
+          "category": "unstructured",
+          "type": "OSS",
+          "connection": {
+            "endpoint": "https://oss.medical.demo.local",
+            "bucket": "ontology-medical-3-3-11-docs",
+            "region": "cn-north-1",
+            "pathPrefix": "药品冷链质量本体/v1/",
+            "accessKey": "ak_3-3-11",
+            "secretKey": "sk_3-3-11"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "1 分钟前",
+          "recordCount": 29768,
+          "description": "医药供应链阶段本体对象存储，用于沉淀药品冷链质量本体相关文档、半结构化抽取结果与图谱附件。场景：药品质量保障Agent：冷链异常时自动标记受影响批次，禁止入库",
+          "createdAt": "2025-03-15T08:00:00.000Z",
+          "updatedAt": "2025-03-29T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-3-12-ledger",
+          "name": "医疗健康_VMI供应商管理库存本体_台账库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-3-12-ledger.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_3_12",
+            "username": "ro_medical",
+            "password": "demo_3-3-12"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "14 分钟前",
+          "recordCount": 59101,
+          "description": "医药供应链阶段本体数据库，服务于VMI供应商管理库存本体；用于结构化抽取与实体主数据归集。场景：自动补货Agent：药品跌破安全库位时，自动向药企发送补货指令",
+          "createdAt": "2025-03-15T08:00:00.000Z",
+          "updatedAt": "2025-03-27T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-3-13-archive",
+          "name": "医疗健康_替代药品本体_归档库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "medical-3-3-13-archive.db.demo.local",
+            "port": 5432,
+            "database": "onto_3_3_13",
+            "username": "ro_medical",
+            "password": "demo_3-3-13"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "15 分钟前",
+          "recordCount": 38738,
+          "description": "医药供应链阶段本体数据库，服务于替代药品本体；用于结构化抽取与实体主数据归集。场景：断药协调Agent：当某药品断货时，自动建议成分等价的替代方案",
+          "createdAt": "2025-03-16T08:00:00.000Z",
+          "updatedAt": "2025-03-28T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-3-13-primary",
+          "name": "医疗健康_替代药品本体_主库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-3-13-primary.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_3_13_primary",
+            "username": "ro_medical",
+            "password": "demo_3-3-13"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "1 分钟前",
+          "recordCount": 22702,
+          "description": "医药供应链阶段本体数据库，服务于替代药品本体；用于结构化抽取与实体主数据归集。场景：断药协调Agent：当某药品断货时，自动建议成分等价的替代方案",
+          "createdAt": "2025-03-17T08:00:00.000Z",
+          "updatedAt": "2025-03-29T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-4-14-primary",
+          "name": "医疗健康_患者画像(PHR)本体_主库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-4-14-primary.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_4_14",
+            "username": "ro_medical",
+            "password": "demo_3-4-14"
+          },
+          "syncFrequency": "daily",
+          "status": "Active",
+          "lastSync": "1 分钟前",
+          "recordCount": 39975,
+          "description": "患者服务阶段本体数据库，服务于患者画像(PHR)本体；用于结构化抽取与实体主数据归集。场景：个性化宣教Agent：根据患者手术类型和过敏史，自动推送康复课程",
+          "createdAt": "2025-03-17T08:00:00.000Z",
+          "updatedAt": "2025-03-29T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-4-14-attachments",
+          "name": "医疗健康_患者画像(PHR)本体_附件仓",
+          "category": "unstructured",
+          "type": "MinIO",
+          "connection": {
+            "endpoint": "https://minio.medical.demo.local",
+            "bucket": "ontology-medical-3-4-14-attachments",
+            "region": "ap-southeast-1",
+            "pathPrefix": "患者画像(PHR)本体/v1/",
+            "accessKey": "ak_3-4-14",
+            "secretKey": "sk_3-4-14"
+          },
+          "syncFrequency": "manual",
+          "status": "Inactive",
+          "lastSync": null,
+          "recordCount": 13825,
+          "description": "患者服务阶段本体对象存储，用于沉淀患者画像(PHR)本体相关文档、半结构化抽取结果与图谱附件。场景：个性化宣教Agent：根据患者手术类型和过敏史，自动推送康复课程",
+          "createdAt": "2025-03-18T08:00:00.000Z",
+          "updatedAt": "2025-04-01T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-4-15-business",
+          "name": "医疗健康_随访随办本体_业务库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "medical-3-4-15-business.db.demo.local",
+            "port": 5432,
+            "database": "onto_3_4_15",
+            "username": "ro_medical",
+            "password": "demo_3-4-15"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "2 分钟前",
+          "recordCount": 35212,
+          "description": "患者服务阶段本体数据库，服务于随访随办本体；用于结构化抽取与实体主数据归集。场景：自动随访Agent：通过AI语音或短信自动回访患者康复情况",
+          "createdAt": "2025-03-18T08:00:00.000Z",
+          "updatedAt": "2025-03-30T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-4-16-analytics",
+          "name": "医疗健康_患者情感本体_分析库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-4-16-analytics.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_4_16",
+            "username": "ro_medical",
+            "password": "demo_3-4-16"
+          },
+          "syncFrequency": "hourly",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 65249,
+          "description": "患者服务阶段本体数据库，服务于患者情感本体；用于结构化抽取与实体主数据归集。场景：医患关系预警Agent：识别高风险投诉三元组，自动转办至医务处干预",
+          "createdAt": "2025-03-19T08:00:00.000Z",
+          "updatedAt": "2025-03-31T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-5-17-ledger",
+          "name": "医疗健康_医保控费(DRGs)本体_台账库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "medical-3-5-17-ledger.db.demo.local",
+            "port": 5432,
+            "database": "onto_3_5_17",
+            "username": "ro_medical",
+            "password": "demo_3-5-17"
+          },
+          "syncFrequency": "daily",
+          "status": "Inactive",
+          "lastSync": null,
+          "recordCount": 40086,
+          "description": "医保与合规阶段本体数据库，服务于医保控费(DRGs)本体；用于结构化抽取与实体主数据归集。场景：成本控费Agent：实时计算住院费用，接近限额时提醒医生检查资源使用",
+          "createdAt": "2025-03-20T08:00:00.000Z",
+          "updatedAt": "2025-04-01T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-5-17-archive",
+          "name": "医疗健康_医保控费(DRGs)本体_归档桶",
+          "category": "unstructured",
+          "type": "OSS",
+          "connection": {
+            "endpoint": "https://oss.medical.demo.local",
+            "bucket": "ontology-medical-3-5-17-archive",
+            "region": "cn-south-1",
+            "pathPrefix": "医保控费(DRGs)本体/v1/",
+            "accessKey": "ak_3-5-17",
+            "secretKey": "sk_3-5-17"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "7 分钟前",
+          "recordCount": 13882,
+          "description": "医保与合规阶段本体对象存储，用于沉淀医保控费(DRGs)本体相关文档、半结构化抽取结果与图谱附件。场景：成本控费Agent：实时计算住院费用，接近限额时提醒医生检查资源使用",
+          "createdAt": "2025-03-21T08:00:00.000Z",
+          "updatedAt": "2025-04-04T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-5-18-archive",
+          "name": "医疗健康_检查合理性本体_归档库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-5-18-archive.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_5_18",
+            "username": "ro_medical",
+            "password": "demo_3-5-18"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "5 分钟前",
+          "recordCount": 48523,
+          "description": "医保与合规阶段本体数据库，服务于检查合理性本体；用于结构化抽取与实体主数据归集。场景：反欺诈检查Agent：自动识别过度诊疗和虚假报销行为三元组",
+          "createdAt": "2025-03-21T08:00:00.000Z",
+          "updatedAt": "2025-04-02T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-5-19-primary",
+          "name": "医疗健康_电子病历质控本体_主库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "medical-3-5-19-primary.db.demo.local",
+            "port": 5432,
+            "database": "onto_3_5_19",
+            "username": "ro_medical",
+            "password": "demo_3-5-19"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "6 分钟前",
+          "recordCount": 61760,
+          "description": "医保与合规阶段本体数据库，服务于电子病历质控本体；用于结构化抽取与实体主数据归集。场景：病历质控Agent：实时检查病历书写质量，确保满足法律文书合规要求",
+          "createdAt": "2025-03-22T08:00:00.000Z",
+          "updatedAt": "2025-04-03T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-5-19-business",
+          "name": "医疗健康_电子病历质控本体_业务库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-5-19-business.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_5_19_business",
+            "username": "ro_medical",
+            "password": "demo_3-5-19"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "7 分钟前",
+          "recordCount": 36140,
+          "description": "医保与合规阶段本体数据库，服务于电子病历质控本体；用于结构化抽取与实体主数据归集。场景：病历质控Agent：实时检查病历书写质量，确保满足法律文书合规要求",
+          "createdAt": "2025-03-23T08:00:00.000Z",
+          "updatedAt": "2025-04-04T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-6-20-business",
+          "name": "医疗健康_靶点-配体相互作用本体_业务库",
+          "category": "structured",
+          "type": "Oracle",
+          "connection": {
+            "host": "medical-3-6-20-business.db.demo.local",
+            "port": 1521,
+            "database": "onto_3_6_20",
+            "username": "ro_medical",
+            "password": "demo_3-6-20"
+          },
+          "syncFrequency": "daily",
+          "status": "Active",
+          "lastSync": "7 分钟前",
+          "recordCount": 37797,
+          "description": "药物发现阶段本体数据库，服务于靶点-配体相互作用本体；用于结构化抽取与实体主数据归集。场景：虚拟筛选Agent：在百万分子库中，通过亲和力三元组推理筛选先导化合物",
+          "createdAt": "2025-03-23T08:00:00.000Z",
+          "updatedAt": "2025-04-04T08:00:00.000Z"
+        },
+        {
+          "id": "ds-3-6-20-assets",
+          "name": "医疗健康_靶点-配体相互作用本体_资料桶",
+          "category": "unstructured",
+          "type": "MinIO",
+          "connection": {
+            "endpoint": "https://minio.medical.demo.local",
+            "bucket": "ontology-medical-3-6-20-assets",
+            "region": "cn-east-1",
+            "pathPrefix": "靶点-配体相互作用本体/v1/",
+            "accessKey": "ak_3-6-20",
+            "secretKey": "sk_3-6-20"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "10 分钟前",
+          "recordCount": 13139,
+          "description": "药物发现阶段本体对象存储，用于沉淀靶点-配体相互作用本体相关文档、半结构化抽取结果与图谱附件。场景：虚拟筛选Agent：在百万分子库中，通过亲和力三元组推理筛选先导化合物",
+          "createdAt": "2025-03-24T08:00:00.000Z",
+          "updatedAt": "2025-04-07T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-1-1-analytics",
+          "name": "交通物流_路网拓扑本体_分析库",
+          "category": "structured",
+          "type": "SQL Server",
+          "connection": {
+            "host": "transport-4-1-1-analytics.db.demo.local",
+            "port": 1433,
+            "database": "onto_4_1_1",
+            "username": "ro_transport",
+            "password": "demo_4-1-1"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "8 分钟前",
+          "recordCount": 40234,
+          "description": "基础设施阶段本体数据库，服务于路网拓扑本体；用于结构化抽取与实体主数据归集。场景：路径规划Agent：基于静态拓扑与实时封闭信息，计算最优避让路径",
+          "createdAt": "2025-03-24T08:00:00.000Z",
+          "updatedAt": "2025-04-05T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-1-2-ledger",
+          "name": "交通物流_枢纽设施本体_台账库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "transport-4-1-2-ledger.db.demo.local",
+            "port": 5432,
+            "database": "onto_4_1_2",
+            "username": "ro_transport",
+            "password": "demo_4-1-2"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "9 分钟前",
+          "recordCount": 18671,
+          "description": "基础设施阶段本体数据库，服务于枢纽设施本体；用于结构化抽取与实体主数据归集。场景：泊位分配Agent：根据载具长度与枢纽实时占用情况，自动指派停靠位置",
+          "createdAt": "2025-03-25T08:00:00.000Z",
+          "updatedAt": "2025-04-06T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-1-2-archive",
+          "name": "交通物流_枢纽设施本体_归档库",
+          "category": "structured",
+          "type": "SQL Server",
+          "connection": {
+            "host": "transport-4-1-2-archive.db.demo.local",
+            "port": 1433,
+            "database": "onto_4_1_2_archive",
+            "username": "ro_transport",
+            "password": "demo_4-1-2"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "10 分钟前",
+          "recordCount": 11009,
+          "description": "基础设施阶段本体数据库，服务于枢纽设施本体；用于结构化抽取与实体主数据归集。场景：泊位分配Agent：根据载具长度与枢纽实时占用情况，自动指派停靠位置",
+          "createdAt": "2025-03-26T08:00:00.000Z",
+          "updatedAt": "2025-04-07T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-1-3-archive",
+          "name": "交通物流_健康监测本体_归档库",
+          "category": "structured",
+          "type": "SQL Server",
+          "connection": {
+            "host": "transport-4-1-3-archive.db.demo.local",
+            "port": 1433,
+            "database": "onto_4_1_3",
+            "username": "ro_transport",
+            "password": "demo_4-1-3"
+          },
+          "syncFrequency": "daily",
+          "status": "Active",
+          "lastSync": "10 分钟前",
+          "recordCount": 29508,
+          "description": "基础设施阶段本体数据库，服务于健康监测本体；用于结构化抽取与实体主数据归集。场景：预防性维护Agent：识别设施疲劳三元组，在风险临界点前触发维修",
+          "createdAt": "2025-03-26T08:00:00.000Z",
+          "updatedAt": "2025-04-07T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-1-3-docs",
+          "name": "交通物流_健康监测本体_文档仓",
+          "category": "unstructured",
+          "type": "S3",
+          "connection": {
+            "endpoint": "https://s3.transport.demo.local",
+            "bucket": "ontology-transport-4-1-3-docs",
+            "region": "cn-north-1",
+            "pathPrefix": "健康监测本体/v1/",
+            "accessKey": "ak_4-1-3",
+            "secretKey": "sk_4-1-3"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "13 分钟前",
+          "recordCount": 10396,
+          "description": "基础设施阶段本体对象存储，用于沉淀健康监测本体相关文档、半结构化抽取结果与图谱附件。场景：预防性维护Agent：识别设施疲劳三元组，在风险临界点前触发维修",
+          "createdAt": "2025-03-27T08:00:00.000Z",
+          "updatedAt": "2025-04-10T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-2-4-primary",
+          "name": "交通物流_载具数字孪生本体_主库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "transport-4-2-4-primary.db.demo.local",
+            "port": 5432,
+            "database": "onto_4_2_4",
+            "username": "ro_transport",
+            "password": "demo_4-2-4"
+          },
+          "syncFrequency": "manual",
+          "status": "Error",
+          "lastSync": "2 小时前",
+          "recordCount": 36745,
+          "description": "载具资产阶段本体数据库，服务于载具数字孪生本体；用于结构化抽取与实体主数据归集。场景：资产全生命周期Agent：评估载具残值，建议报废或进入二级维护",
+          "createdAt": "2025-03-27T08:00:00.000Z",
+          "updatedAt": "2025-04-08T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-2-5-business",
+          "name": "交通物流_实时工况本体_业务库",
+          "category": "structured",
+          "type": "SQL Server",
+          "connection": {
+            "host": "transport-4-2-5-business.db.demo.local",
+            "port": 1433,
+            "database": "onto_4_2_5",
+            "username": "ro_transport",
+            "password": "demo_4-2-5"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "12 分钟前",
+          "recordCount": 51182,
+          "description": "载具资产阶段本体数据库，服务于实时工况本体；用于结构化抽取与实体主数据归集。场景：能耗优化Agent：实时干预驾驶员或自动驾驶策略，降低非必要能耗",
+          "createdAt": "2025-03-28T08:00:00.000Z",
+          "updatedAt": "2025-04-09T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-2-6-analytics",
+          "name": "交通物流_载具能力本体_分析库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "transport-4-2-6-analytics.db.demo.local",
+            "port": 5432,
+            "database": "onto_4_2_6",
+            "username": "ro_transport",
+            "password": "demo_4-2-6"
+          },
+          "syncFrequency": "daily",
+          "status": "Active",
+          "lastSync": "13 分钟前",
+          "recordCount": 62019,
+          "description": "载具资产阶段本体数据库，服务于载具能力本体；用于结构化抽取与实体主数据归集。场景：运力匹配Agent：根据货物对温度、重量的要求，自动筛选合规载具",
+          "createdAt": "2025-03-29T08:00:00.000Z",
+          "updatedAt": "2025-04-10T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-3-7-ledger",
+          "name": "交通物流_动态流量本体_台账库",
+          "category": "structured",
+          "type": "SQL Server",
+          "connection": {
+            "host": "transport-4-3-7-ledger.db.demo.local",
+            "port": 1433,
+            "database": "onto_4_3_7",
+            "username": "ro_transport",
+            "password": "demo_4-3-7"
+          },
+          "syncFrequency": "realtime",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 45256,
+          "description": "调度指挥阶段本体数据库，服务于动态流量本体；用于结构化抽取与实体主数据归集。场景：信号灯自适应Agent：通过感应流量三元组，动态调整绿信比缓解拥堵",
+          "createdAt": "2025-03-30T08:00:00.000Z",
+          "updatedAt": "2025-04-11T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-3-8-archive",
+          "name": "交通物流_多模态联运本体_归档库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "transport-4-3-8-archive.db.demo.local",
+            "port": 5432,
+            "database": "onto_4_3_8",
+            "username": "ro_transport",
+            "password": "demo_4-3-8"
+          },
+          "syncFrequency": "realtime",
+          "status": "Active",
+          "lastSync": "Live",
+          "recordCount": 48893,
+          "description": "调度指挥阶段本体数据库，服务于多模态联运本体；用于结构化抽取与实体主数据归集。场景：联运协调Agent：当主干线路延误时，自动调整末端接驳工具的待命时间",
+          "createdAt": "2025-03-31T08:00:00.000Z",
+          "updatedAt": "2025-04-12T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-3-9-primary",
+          "name": "交通物流_冲突消解本体_主库",
+          "category": "structured",
+          "type": "SQL Server",
+          "connection": {
+            "host": "transport-4-3-9-primary.db.demo.local",
+            "port": 1433,
+            "database": "onto_4_3_9",
+            "username": "ro_transport",
+            "password": "demo_4-3-9"
+          },
+          "syncFrequency": "realtime",
+          "status": "Active",
+          "lastSync": "Live",
+          "recordCount": 47730,
+          "description": "调度指挥阶段本体数据库，服务于冲突消解本体；用于结构化抽取与实体主数据归集。场景：安全避碰Agent：预测四维轨迹冲突，实时下发航向或空层改变指令",
+          "createdAt": "2025-04-01T08:00:00.000Z",
+          "updatedAt": "2025-04-13T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-3-9-archive",
+          "name": "交通物流_冲突消解本体_归档桶",
+          "category": "unstructured",
+          "type": "S3",
+          "connection": {
+            "endpoint": "https://s3.transport.demo.local",
+            "bucket": "ontology-transport-4-3-9-archive",
+            "region": "cn-south-1",
+            "pathPrefix": "冲突消解本体/v1/",
+            "accessKey": "ak_4-3-9",
+            "secretKey": "sk_4-3-9"
+          },
+          "syncFrequency": "realtime",
+          "status": "Active",
+          "lastSync": "Live",
+          "recordCount": 16510,
+          "description": "调度指挥阶段本体对象存储，用于沉淀冲突消解本体相关文档、半结构化抽取结果与图谱附件。场景：安全避碰Agent：预测四维轨迹冲突，实时下发航向或空层改变指令",
+          "createdAt": "2025-04-02T08:00:00.000Z",
+          "updatedAt": "2025-04-16T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-4-10-business",
+          "name": "交通物流_货物单元本体_业务库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "transport-4-4-10-business.db.demo.local",
+            "port": 5432,
+            "database": "onto_4_4_10",
+            "username": "ro_transport",
+            "password": "demo_4-4-10"
+          },
+          "syncFrequency": "manual",
+          "status": "Inactive",
+          "lastSync": null,
+          "recordCount": 60967,
+          "description": "货物与运输阶段本体数据库，服务于货物单元本体；用于结构化抽取与实体主数据归集。场景：装载方案Agent：根据重心平衡和危险品配装禁忌，自动生成最优配载图",
+          "createdAt": "2025-04-02T08:00:00.000Z",
+          "updatedAt": "2025-04-14T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-4-10-analytics",
+          "name": "交通物流_货物单元本体_分析库",
+          "category": "structured",
+          "type": "SQL Server",
+          "connection": {
+            "host": "transport-4-4-10-analytics.db.demo.local",
+            "port": 1433,
+            "database": "onto_4_4_10_analytics",
+            "username": "ro_transport",
+            "password": "demo_4-4-10"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "3 分钟前",
+          "recordCount": 35693,
+          "description": "货物与运输阶段本体数据库，服务于货物单元本体；用于结构化抽取与实体主数据归集。场景：装载方案Agent：根据重心平衡和危险品配装禁忌，自动生成最优配载图",
+          "createdAt": "2025-04-03T08:00:00.000Z",
+          "updatedAt": "2025-04-15T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-4-11-analytics",
+          "name": "交通物流_订单履约本体_分析库",
+          "category": "structured",
+          "type": "SQL Server",
+          "connection": {
+            "host": "transport-4-4-11-analytics.db.demo.local",
+            "port": 1433,
+            "database": "onto_4_4_11",
+            "username": "ro_transport",
+            "password": "demo_4-4-11"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "3 分钟前",
+          "recordCount": 58604,
+          "description": "货物与运输阶段本体数据库，服务于订单履约本体；用于结构化抽取与实体主数据归集。场景：时效督办Agent：预测延误风险，自动触发加急运输或多式联运切换",
+          "createdAt": "2025-04-03T08:00:00.000Z",
+          "updatedAt": "2025-04-15T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-5-12-ledger",
+          "name": "交通物流_气象约束本体_台账库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "transport-4-5-12-ledger.db.demo.local",
+            "port": 5432,
+            "database": "onto_4_5_12",
+            "username": "ro_transport",
+            "password": "demo_4-5-12"
+          },
+          "syncFrequency": "daily",
+          "status": "Active",
+          "lastSync": "4 分钟前",
+          "recordCount": 47841,
+          "description": "运行环境阶段本体数据库，服务于气象约束本体；用于结构化抽取与实体主数据归集。场景：安全降级Agent：在极端气象下，自动下发限速或全线封停指令",
+          "createdAt": "2025-04-04T08:00:00.000Z",
+          "updatedAt": "2025-04-16T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-5-13-archive",
+          "name": "交通物流_地理围栏本体_归档库",
+          "category": "structured",
+          "type": "SQL Server",
+          "connection": {
+            "host": "transport-4-5-13-archive.db.demo.local",
+            "port": 1433,
+            "database": "onto_4_5_13",
+            "username": "ro_transport",
+            "password": "demo_4-5-13"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "5 分钟前",
+          "recordCount": 31078,
+          "description": "运行环境阶段本体数据库，服务于地理围栏本体；用于结构化抽取与实体主数据归集。场景：准入合规Agent：自动校验载具属性，拦截不符合环保或行政要求的入城申请",
+          "createdAt": "2025-04-05T08:00:00.000Z",
+          "updatedAt": "2025-04-17T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-6-14-primary",
+          "name": "交通物流_用户需求本体_主库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "transport-4-6-14-primary.db.demo.local",
+            "port": 5432,
+            "database": "onto_4_6_14",
+            "username": "ro_transport",
+            "password": "demo_4-6-14"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "6 分钟前",
+          "recordCount": 58715,
+          "description": "出行服务阶段本体数据库，服务于用户需求本体；用于结构化抽取与实体主数据归集。场景：个人助手Agent：基于用户画像三元组，定制化推荐多模式组合出行方案",
+          "createdAt": "2025-04-06T08:00:00.000Z",
+          "updatedAt": "2025-04-18T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-6-15-business",
+          "name": "交通物流_动态定价本体_业务库",
+          "category": "structured",
+          "type": "SQL Server",
+          "connection": {
+            "host": "transport-4-6-15-business.db.demo.local",
+            "port": 1433,
+            "database": "onto_4_6_15",
+            "username": "ro_transport",
+            "password": "demo_4-6-15"
+          },
+          "syncFrequency": "daily",
+          "status": "Active",
+          "lastSync": "7 分钟前",
+          "recordCount": 50352,
+          "description": "出行服务阶段本体数据库，服务于动态定价本体；用于结构化抽取与实体主数据归集。场景：收益管理Agent：实时调节票价或运费，利用价格杠杆调节客流分布",
+          "createdAt": "2025-04-07T08:00:00.000Z",
+          "updatedAt": "2025-04-19T08:00:00.000Z"
+        },
+        {
+          "id": "ds-4-6-15-docs",
+          "name": "交通物流_动态定价本体_文档仓",
+          "category": "unstructured",
+          "type": "S3",
+          "connection": {
+            "endpoint": "https://s3.transport.demo.local",
+            "bucket": "ontology-transport-4-6-15-docs",
+            "region": "cn-north-1",
+            "pathPrefix": "动态定价本体/v1/",
+            "accessKey": "ak_4-6-15",
+            "secretKey": "sk_4-6-15"
+          },
+          "syncFrequency": "manual",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 17424,
+          "description": "出行服务阶段本体对象存储，用于沉淀动态定价本体相关文档、半结构化抽取结果与图谱附件。场景：收益管理Agent：实时调节票价或运费，利用价格杠杆调节客流分布",
+          "createdAt": "2025-04-08T08:00:00.000Z",
+          "updatedAt": "2025-04-22T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-1-1-analytics",
+          "name": "通用业务_科目核算本体_分析库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "general-5-1-1-analytics.db.demo.local",
+            "port": 5432,
+            "database": "onto_5_1_1",
+            "username": "ro_general",
+            "password": "demo_5-1-1"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "8 分钟前",
+          "recordCount": 58789,
+          "description": "财务管理阶段本体数据库，服务于科目核算本体；用于结构化抽取与实体主数据归集。场景：自动报销Agent：自动比对发票、行程与预算，识别违规支出",
+          "createdAt": "2025-04-08T08:00:00.000Z",
+          "updatedAt": "2025-04-20T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-1-2-ledger",
+          "name": "通用业务_资金风险本体_台账库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "general-5-1-2-ledger.db.demo.local",
+            "port": 3306,
+            "database": "onto_5_1_2",
+            "username": "ro_general",
+            "password": "demo_5-1-2"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "9 分钟前",
+          "recordCount": 40826,
+          "description": "财务管理阶段本体数据库，服务于资金风险本体；用于结构化抽取与实体主数据归集。场景：现金流预警Agent：预测未来3个月收支缺口，自动提出融资建议",
+          "createdAt": "2025-04-09T08:00:00.000Z",
+          "updatedAt": "2025-04-21T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-2-3-archive",
+          "name": "通用业务_组织架构与职能本体_归档库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "general-5-2-3-archive.db.demo.local",
+            "port": 5432,
+            "database": "onto_5_2_3",
+            "username": "ro_general",
+            "password": "demo_5-2-3"
+          },
+          "syncFrequency": "hourly",
+          "status": "Syncing",
+          "lastSync": "同步中",
+          "recordCount": 68463,
+          "description": "人力资源阶段本体数据库，服务于组织架构与职能本体；用于结构化抽取与实体主数据归集。场景：自动入职/调岗Agent：当员工岗位变动时，自动更新权限及配套资源",
+          "createdAt": "2025-04-10T08:00:00.000Z",
+          "updatedAt": "2025-04-22T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-2-4-primary",
+          "name": "通用业务_技能图谱本体_主库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "general-5-2-4-primary.db.demo.local",
+            "port": 3306,
+            "database": "onto_5_2_4",
+            "username": "ro_general",
+            "password": "demo_5-2-4"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "11 分钟前",
+          "recordCount": 37300,
+          "description": "人力资源阶段本体数据库，服务于技能图谱本体；用于结构化抽取与实体主数据归集。场景：动态组队Agent：根据任务属性，在人才池中自动拼凑最优项目组",
+          "createdAt": "2025-04-11T08:00:00.000Z",
+          "updatedAt": "2025-04-23T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-3-5-business",
+          "name": "通用业务_资产与办公资源本体_业务库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "general-5-3-5-business.db.demo.local",
+            "port": 5432,
+            "database": "onto_5_3_5",
+            "username": "ro_general",
+            "password": "demo_5-3-5"
+          },
+          "syncFrequency": "hourly",
+          "status": "Active",
+          "lastSync": "12 分钟前",
+          "recordCount": 63737,
+          "description": "行政与办公阶段本体数据库，服务于资产与办公资源本体；用于结构化抽取与实体主数据归集。场景：智能行政助手：根据会议参会人数与设备需求，自动预定空间",
+          "createdAt": "2025-04-12T08:00:00.000Z",
+          "updatedAt": "2025-04-24T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-3-6-analytics",
+          "name": "通用业务_合规政策本体_分析库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "general-5-3-6-analytics.db.demo.local",
+            "port": 3306,
+            "database": "onto_5_3_6",
+            "username": "ro_general",
+            "password": "demo_5-3-6"
+          },
+          "syncFrequency": "daily",
+          "status": "Error",
+          "lastSync": "1 小时前",
+          "recordCount": 43374,
+          "description": "行政与办公阶段本体数据库，服务于合规政策本体；用于结构化抽取与实体主数据归集。场景：差旅合规Agent：在预订环节自动拦截不合规的酒店选择",
+          "createdAt": "2025-04-13T08:00:00.000Z",
+          "updatedAt": "2025-04-25T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-4-7-ledger",
+          "name": "通用业务_战略指标(KPI/OKR)本体_台账库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "general-5-4-7-ledger.db.demo.local",
+            "port": 5432,
+            "database": "onto_5_4_7",
+            "username": "ro_general",
+            "password": "demo_5-4-7"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "14 分钟前",
+          "recordCount": 35011,
+          "description": "管理与决策阶段本体数据库，服务于战略指标(KPI/OKR)本体；用于结构化抽取与实体主数据归集。场景：战略对齐Agent：识别下级指标是否背离上级目标",
+          "createdAt": "2025-04-14T08:00:00.000Z",
+          "updatedAt": "2025-04-26T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-4-7-archive",
+          "name": "通用业务_战略指标(KPI/OKR)本体_归档库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "general-5-4-7-archive.db.demo.local",
+            "port": 3306,
+            "database": "onto_5_4_7_archive",
+            "username": "ro_general",
+            "password": "demo_5-4-7"
+          },
+          "syncFrequency": "manual",
+          "status": "Inactive",
+          "lastSync": null,
+          "recordCount": 20569,
+          "description": "管理与决策阶段本体数据库，服务于战略指标(KPI/OKR)本体；用于结构化抽取与实体主数据归集。场景：战略对齐Agent：识别下级指标是否背离上级目标",
+          "createdAt": "2025-04-15T08:00:00.000Z",
+          "updatedAt": "2025-04-27T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-4-8-archive",
+          "name": "通用业务_决策影响因子本体_归档库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "general-5-4-8-archive.db.demo.local",
+            "port": 3306,
+            "database": "onto_5_4_8",
+            "username": "ro_general",
+            "password": "demo_5-4-8"
+          },
+          "syncFrequency": "manual",
+          "status": "Inactive",
+          "lastSync": null,
+          "recordCount": 27848,
+          "description": "管理与决策阶段本体数据库，服务于决策影响因子本体；用于结构化抽取与实体主数据归集。场景：模拟决策Agent：在执行前模拟\"如果...那么...\"场景，评估副作用",
+          "createdAt": "2025-04-15T08:00:00.000Z",
+          "updatedAt": "2025-04-27T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-4-8-docs",
+          "name": "通用业务_决策影响因子本体_文档仓",
+          "category": "unstructured",
+          "type": "MinIO",
+          "connection": {
+            "endpoint": "https://minio.general.demo.local",
+            "bucket": "ontology-general-5-4-8-docs",
+            "region": "cn-north-1",
+            "pathPrefix": "决策影响因子本体/v3/",
+            "accessKey": "ak_5-4-8",
+            "secretKey": "sk_5-4-8"
+          },
+          "syncFrequency": "daily",
+          "status": "Active",
+          "lastSync": "3 分钟前",
+          "recordCount": 9976,
+          "description": "管理与决策阶段本体对象存储，用于沉淀决策影响因子本体相关文档、半结构化抽取结果与图谱附件。场景：模拟决策Agent：在执行前模拟\"如果...那么...\"场景，评估副作用",
+          "createdAt": "2025-04-16T08:00:00.000Z",
+          "updatedAt": "2025-04-30T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-5-9-primary",
+          "name": "通用业务_数据语义本体_主库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "general-5-5-9-primary.db.demo.local",
+            "port": 5432,
+            "database": "onto_5_5_9",
+            "username": "ro_general",
+            "password": "demo_5-5-9"
+          },
+          "syncFrequency": "daily",
+          "status": "Active",
+          "lastSync": "1 分钟前",
+          "recordCount": 39885,
+          "description": "业务分析阶段本体数据库，服务于数据语义本体；用于结构化抽取与实体主数据归集。场景：自动化报表Agent：即使数据源不同，也能通过语义对齐生成一致经营大表",
+          "createdAt": "2025-04-16T08:00:00.000Z",
+          "updatedAt": "2025-04-28T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-5-10-business",
+          "name": "通用业务_因果推断本体_业务库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "general-5-5-10-business.db.demo.local",
+            "port": 3306,
+            "database": "onto_5_5_10",
+            "username": "ro_general",
+            "password": "demo_5-5-10"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "2 分钟前",
+          "recordCount": 61522,
+          "description": "业务分析阶段本体数据库，服务于因果推断本体；用于结构化抽取与实体主数据归集。场景：根因洞察Agent：当KPI异常波动时，自动下钻数据并生成归因报告",
+          "createdAt": "2025-04-17T08:00:00.000Z",
+          "updatedAt": "2025-04-29T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-6-11-analytics",
+          "name": "通用业务_内部控制本体_分析库",
+          "category": "structured",
+          "type": "PostgreSQL",
+          "connection": {
+            "host": "general-5-6-11-analytics.db.demo.local",
+            "port": 5432,
+            "database": "onto_5_6_11",
+            "username": "ro_general",
+            "password": "demo_5-6-11"
+          },
+          "syncFrequency": "manual",
+          "status": "Active",
+          "lastSync": "3 分钟前",
+          "recordCount": 53159,
+          "description": "风险与合规阶段本体数据库，服务于内部控制本体；用于结构化抽取与实体主数据归集。场景：风控Agent：实时监控业务流，自动拦截违反\"职责分离\"原则的操作",
+          "createdAt": "2025-04-18T08:00:00.000Z",
+          "updatedAt": "2025-04-30T08:00:00.000Z"
+        },
+        {
+          "id": "ds-5-6-12-ledger",
+          "name": "通用业务_法律法规库本体_台账库",
+          "category": "structured",
+          "type": "MySQL",
+          "connection": {
+            "host": "general-5-6-12-ledger.db.demo.local",
+            "port": 3306,
+            "database": "onto_5_6_12",
+            "username": "ro_general",
+            "password": "demo_5-6-12"
+          },
+          "syncFrequency": "daily",
+          "status": "Active",
+          "lastSync": "4 分钟前",
+          "recordCount": 51996,
+          "description": "风险与合规阶段本体数据库，服务于法律法规库本体；用于结构化抽取与实体主数据归集。场景：法务审查Agent：自动扫描业务合同，识别潜在的法律违规条款",
+          "createdAt": "2025-04-19T08:00:00.000Z",
+          "updatedAt": "2025-05-01T08:00:00.000Z"
         }
-      ]
+      ],
+      "_v": 3
     },
     "training-datasets": {
       "items": [
