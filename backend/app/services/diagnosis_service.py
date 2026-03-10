@@ -229,9 +229,9 @@ def _build_tool_definitions() -> list:
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "query": {"type": "string", "description": "故障描述关键词，如'W轴限位报警'"},
+                        "query": {"type": "string", "description": "故障描述关键词，如'主轴温升异常'"},
                         "symptoms": {"type": "array", "items": {"type": "string"}, "description": "症状关键词列表"},
-                        "device_type": {"type": "string", "description": "设备类型，如'激光切割机'"},
+                        "device_type": {"type": "string", "description": "设备类型，如'数控加工中心'"},
                     },
                     "required": [],
                 },

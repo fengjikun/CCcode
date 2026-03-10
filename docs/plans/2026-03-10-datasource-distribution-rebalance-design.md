@@ -50,7 +50,7 @@ Keep one database for every ontology and add object storage only for selected on
 Pros:
 
 - smallest logic change
-- immediately breaks the 109/109 symmetry
+- immediately breaks the one-to-one symmetry
 
 Cons:
 
@@ -144,7 +144,7 @@ Visible names remain Chinese and business-facing. Internal IDs can stay ASCII-sa
 
 ## Expected Outcome
 
-With 109 ontology presets, the target visual shape should be approximately:
+With 108 ontology presets, the target visual shape should be approximately:
 
 - databases: 120 to 130
 - object storage: 25 to 35

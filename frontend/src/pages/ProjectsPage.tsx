@@ -632,7 +632,7 @@ export default function ProjectsPage() {
             <Select placeholder="选择所属领域分类" options={categoryOptions} />
           </Form.Item>
           <Form.Item name="name" label="本体名称" rules={[{ required: true, message: '请输入本体名称' }]}>
-            <Input placeholder="例如：设备维修本体、CPQ配置逻辑本体" maxLength={64} />
+            <Input placeholder="例如：故障诊断本体、CPQ配置逻辑本体" maxLength={64} />
           </Form.Item>
           <Form.Item name="description" label="本体说明">
             <Input.TextArea rows={3} placeholder="可选，描述该本体的业务范围与边界" maxLength={300} />

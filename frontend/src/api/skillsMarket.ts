@@ -12,7 +12,7 @@ import {
 import { buildDefaultSkillsMarketStore } from '../mocks/skills/skillGenerator'
 import { ensureMockStore, setMockStore } from './mockStoreClient'
 
-const STORE_KEY = 'skills-market'
+const STORE_KEY = 'skills-market-v2'
 
 const DEFAULT_STORE: SkillsMarketStore = buildDefaultSkillsMarketStore()
 

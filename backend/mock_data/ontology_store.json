@@ -1,101 +1,156 @@
 {
   "objectTypes": [
-    { "id": 1, "name": "Equipment", "displayName": "设备", "description": "生产设备实体，如激光切割机、数控机床等", "icon": "🔧", "color": "#1890ff" },
-    { "id": 2, "name": "Phenomenon", "displayName": "故障现象", "description": "设备运行中可观察到的异常现象", "icon": "⚠️", "color": "#ff4d4f" },
-    { "id": 3, "name": "SubPhenomenon", "displayName": "子现象", "description": "故障现象的细分表现形式", "icon": "🔍", "color": "#fa541c" },
-    { "id": 4, "name": "Checkpoint", "displayName": "检查点", "description": "故障排查时需要检查的关键项目", "icon": "✅", "color": "#52c41a" },
-    { "id": 5, "name": "Cause", "displayName": "故障原因", "description": "导致故障现象的根本原因", "icon": "🎯", "color": "#722ed1" },
-    { "id": 6, "name": "Solution", "displayName": "解决方案", "description": "针对故障原因的修复方案和步骤", "icon": "💡", "color": "#13c2c2" },
-    { "id": 7, "name": "Component", "displayName": "部件", "description": "设备的组成部件和模块", "icon": "⚙️", "color": "#2f54eb" },
-    { "id": 8, "name": "Parameter", "displayName": "参数", "description": "设备运行的可监测参数和指标", "icon": "📊", "color": "#fa8c16" }
+    { "id": 1, "name": "Equipment", "displayName": "设备", "description": "工业设备资产实体，如立式加工中心、液压站、刀库单元等", "icon": "🔧", "color": "#1890ff" },
+    { "id": 2, "name": "Phenomenon", "displayName": "故障现象", "description": "设备运行中可观测的异常现象或报警主题", "icon": "⚠️", "color": "#ff4d4f" },
+    { "id": 3, "name": "SubPhenomenon", "displayName": "子现象", "description": "用于定位故障根因的细分表现和诊断特征", "icon": "🔍", "color": "#fa541c" },
+    { "id": 4, "name": "Checkpoint", "displayName": "检查点", "description": "检修过程中需要核验的关键项目、数据和安全前提", "icon": "✅", "color": "#52c41a" },
+    { "id": 5, "name": "Cause", "displayName": "故障原因", "description": "导致故障现象的根因或失效机理", "icon": "🎯", "color": "#722ed1" },
+    { "id": 6, "name": "Solution", "displayName": "处置方案", "description": "针对故障原因的修复、校准或替换方案", "icon": "💡", "color": "#13c2c2" },
+    { "id": 7, "name": "Component", "displayName": "部件", "description": "设备关键部件、组件或可更换单元", "icon": "⚙️", "color": "#2f54eb" },
+    { "id": 8, "name": "Parameter", "displayName": "参数", "description": "状态监测、点检和控制所依赖的关键运行参数", "icon": "📊", "color": "#fa8c16" }
   ],
   "properties": {
     "1": [
-      { "id": 101, "name": "model", "displayName": "型号", "dataType": "STRING", "required": true, "sortOrder": 1 },
-      { "id": 102, "name": "manufacturer", "displayName": "制造商", "dataType": "STRING", "required": false, "sortOrder": 2 },
-      { "id": 103, "name": "description", "displayName": "描述", "dataType": "STRING", "required": false, "sortOrder": 3 }
+      { "id": 101, "name": "assetCode", "displayName": "设备编码", "dataType": "STRING", "required": true, "sortOrder": 1 },
+      { "id": 102, "name": "model", "displayName": "设备型号", "dataType": "STRING", "required": true, "sortOrder": 2 },
+      { "id": 103, "name": "equipmentClass", "displayName": "设备类别", "dataType": "STRING", "required": false, "sortOrder": 3 },
+      { "id": 104, "name": "location", "displayName": "安装位置", "dataType": "STRING", "required": false, "sortOrder": 4 },
+      { "id": 105, "name": "criticality", "displayName": "关键等级", "dataType": "STRING", "required": false, "sortOrder": 5 },
+      { "id": 106, "name": "description", "displayName": "说明", "dataType": "STRING", "required": false, "sortOrder": 6 }
     ],
     "2": [
       { "id": 201, "name": "code", "displayName": "故障码", "dataType": "STRING", "required": true, "sortOrder": 1 },
-      { "id": 202, "name": "description", "displayName": "描述", "dataType": "STRING", "required": true, "sortOrder": 2 }
+      { "id": 202, "name": "category", "displayName": "故障类别", "dataType": "STRING", "required": true, "sortOrder": 2 },
+      { "id": 203, "name": "description", "displayName": "现象描述", "dataType": "STRING", "required": true, "sortOrder": 3 },
+      { "id": 204, "name": "severityLevel", "displayName": "严重级别", "dataType": "STRING", "required": false, "sortOrder": 4 }
     ],
     "3": [
-      { "id": 301, "name": "description", "displayName": "描述", "dataType": "STRING", "required": true, "sortOrder": 1 }
+      { "id": 301, "name": "description", "displayName": "细分描述", "dataType": "STRING", "required": true, "sortOrder": 1 },
+      { "id": 302, "name": "signal", "displayName": "诊断信号", "dataType": "STRING", "required": false, "sortOrder": 2 }
     ],
     "4": [
       { "id": 401, "name": "priority", "displayName": "优先级", "dataType": "INTEGER", "required": true, "sortOrder": 1 },
       { "id": 402, "name": "method", "displayName": "检查方法", "dataType": "STRING", "required": true, "sortOrder": 2 },
       { "id": 403, "name": "expectedValue", "displayName": "期望值", "dataType": "STRING", "required": true, "sortOrder": 3 },
-      { "id": 404, "name": "description", "displayName": "描述", "dataType": "STRING", "required": false, "sortOrder": 4 }
+      { "id": 404, "name": "safetyNote", "displayName": "安全要求", "dataType": "STRING", "required": false, "sortOrder": 4 },
+      { "id": 405, "name": "description", "displayName": "说明", "dataType": "STRING", "required": false, "sortOrder": 5 }
     ],
     "5": [
-      { "id": 501, "name": "description", "displayName": "描述", "dataType": "STRING", "required": true, "sortOrder": 1 }
+      { "id": 501, "name": "description", "displayName": "原因描述", "dataType": "STRING", "required": true, "sortOrder": 1 },
+      { "id": 502, "name": "causeCategory", "displayName": "原因分类", "dataType": "STRING", "required": false, "sortOrder": 2 },
+      { "id": 503, "name": "evidenceHint", "displayName": "判定依据", "dataType": "STRING", "required": false, "sortOrder": 3 }
     ],
     "6": [
-      { "id": 601, "name": "steps", "displayName": "操作步骤", "dataType": "STRING", "required": true, "sortOrder": 1 },
+      { "id": 601, "name": "steps", "displayName": "执行步骤", "dataType": "STRING", "required": true, "sortOrder": 1 },
       { "id": 602, "name": "estimatedTime", "displayName": "预计耗时", "dataType": "STRING", "required": false, "sortOrder": 2 },
-      { "id": 603, "name": "effectiveness", "displayName": "有效性", "dataType": "STRING", "required": false, "sortOrder": 3 },
-      { "id": 604, "name": "riskLevel", "displayName": "风险等级", "dataType": "STRING", "required": false, "sortOrder": 4 }
+      { "id": 603, "name": "effectiveness", "displayName": "预期效果", "dataType": "STRING", "required": false, "sortOrder": 3 },
+      { "id": 604, "name": "riskLevel", "displayName": "风险等级", "dataType": "STRING", "required": false, "sortOrder": 4 },
+      { "id": 605, "name": "requiredSkill", "displayName": "技能要求", "dataType": "STRING", "required": false, "sortOrder": 5 }
     ],
     "7": [
-      { "id": 701, "name": "description", "displayName": "描述", "dataType": "STRING", "required": true, "sortOrder": 1 }
+      { "id": 701, "name": "description", "displayName": "部件说明", "dataType": "STRING", "required": true, "sortOrder": 1 },
+      { "id": 702, "name": "componentClass", "displayName": "部件类别", "dataType": "STRING", "required": false, "sortOrder": 2 },
+      { "id": 703, "name": "sparePartCode", "displayName": "备件编码", "dataType": "STRING", "required": false, "sortOrder": 3 }
     ],
     "8": [
       { "id": 801, "name": "dataType", "displayName": "数据类型", "dataType": "STRING", "required": true, "sortOrder": 1 },
-      { "id": 802, "name": "source", "displayName": "数据来源", "dataType": "STRING", "required": true, "sortOrder": 2 },
+      { "id": 802, "name": "source", "displayName": "采集来源", "dataType": "STRING", "required": true, "sortOrder": 2 },
       { "id": 803, "name": "unit", "displayName": "单位", "dataType": "STRING", "required": false, "sortOrder": 3 },
-      { "id": 804, "name": "opcUaPath", "displayName": "OPC-UA路径", "dataType": "STRING", "required": false, "sortOrder": 4 }
+      { "id": 804, "name": "collectionCycle", "displayName": "采样周期", "dataType": "STRING", "required": false, "sortOrder": 4 },
+      { "id": 805, "name": "opcUaPath", "displayName": "采集路径", "dataType": "STRING", "required": false, "sortOrder": 5 }
     ]
   },
   "linkTypes": [
-    { "id": 1, "name": "prone_to", "displayName": "易发故障", "sourceObjectTypeId": 1, "targetObjectTypeId": 2, "cardinality": "ONE_TO_MANY", "description": "设备易发生的故障现象" },
-    { "id": 2, "name": "contains", "displayName": "包含子现象", "sourceObjectTypeId": 2, "targetObjectTypeId": 3, "cardinality": "ONE_TO_MANY", "description": "故障现象包含的细分子现象" },
-    { "id": 3, "name": "needs_check", "displayName": "需要检查", "sourceObjectTypeId": 2, "targetObjectTypeId": 4, "cardinality": "ONE_TO_MANY", "description": "故障现象/子现象需要的检查项" },
-    { "id": 4, "name": "discovers", "displayName": "发现异常", "sourceObjectTypeId": 4, "targetObjectTypeId": 3, "cardinality": "ONE_TO_MANY", "description": "检查点可发现的子现象" },
-    { "id": 5, "name": "located_at", "displayName": "定位部件", "sourceObjectTypeId": 3, "targetObjectTypeId": 7, "cardinality": "MANY_TO_ONE", "description": "子现象/检查点关联的设备部件" },
-    { "id": 6, "name": "caused_by", "displayName": "原因归因", "sourceObjectTypeId": 3, "targetObjectTypeId": 5, "cardinality": "MANY_TO_ONE", "description": "子现象由该原因导致" },
-    { "id": 7, "name": "solved_by", "displayName": "推荐方案", "sourceObjectTypeId": 5, "targetObjectTypeId": 6, "cardinality": "ONE_TO_MANY", "description": "故障原因的推荐解决方案" },
-    { "id": 8, "name": "supports", "displayName": "参数支撑", "sourceObjectTypeId": 8, "targetObjectTypeId": 4, "cardinality": "MANY_TO_ONE", "description": "参数为检查点提供数据支撑" }
+    { "id": 1, "name": "prone_to", "displayName": "易发故障", "sourceObjectTypeId": 1, "targetObjectTypeId": 2, "cardinality": "ONE_TO_MANY", "description": "设备资产常见或高风险故障现象" },
+    { "id": 2, "name": "contains", "displayName": "包含子现象", "sourceObjectTypeId": 2, "targetObjectTypeId": 3, "cardinality": "ONE_TO_MANY", "description": "故障现象拆解后的可验证细分表现" },
+    { "id": 3, "name": "needs_check", "displayName": "需要检查", "sourceObjectTypeId": 2, "targetObjectTypeId": 4, "cardinality": "ONE_TO_MANY", "description": "现象或子现象需要执行的检查点" },
+    { "id": 4, "name": "discovers", "displayName": "发现异常", "sourceObjectTypeId": 4, "targetObjectTypeId": 3, "cardinality": "ONE_TO_MANY", "description": "检查点能够验证或发现的细分异常" },
+    { "id": 5, "name": "located_at", "displayName": "定位部件", "sourceObjectTypeId": 3, "targetObjectTypeId": 7, "cardinality": "MANY_TO_ONE", "description": "异常所归属的关键部件或部件域" },
+    { "id": 6, "name": "caused_by", "displayName": "原因归因", "sourceObjectTypeId": 3, "targetObjectTypeId": 5, "cardinality": "MANY_TO_ONE", "description": "子现象与根因之间的归因关系" },
+    { "id": 7, "name": "solved_by", "displayName": "推荐方案", "sourceObjectTypeId": 5, "targetObjectTypeId": 6, "cardinality": "ONE_TO_MANY", "description": "根因对应的标准处置与恢复方案" },
+    { "id": 8, "name": "supports", "displayName": "参数支撑", "sourceObjectTypeId": 8, "targetObjectTypeId": 4, "cardinality": "MANY_TO_ONE", "description": "参数数据支撑检查点判断和趋势比对" }
   ],
   "actionTypes": [
     {
-      "id": 1, "name": "auto_diagnose", "displayName": "自动故障诊断",
-      "description": "基于设备报警信号自动触发故障诊断流程，匹配知识图谱中的故障模式", "status": "ACTIVE",
-      "targetObjectTypeId": 2, "triggerType": "EVENT", "triggerConfigJson": "{\"event\":\"device.alarm\",\"source\":\"opc_ua\"}",
-      "exceptionPolicy": "RETRY", "validationRulesJson": "[{\"name\":\"alarm_code_check\",\"condition\":\"alarm_code matches ALM-*\",\"message\":\"报警码格式必须为 ALM- 前缀\"}]"
+      "id": 1,
+      "name": "auto_fault_triage",
+      "displayName": "自动故障分诊",
+      "description": "基于状态监测告警和知识图谱规则自动识别故障现象，生成首轮排查建议。",
+      "status": "ACTIVE",
+      "targetObjectTypeId": 2,
+      "triggerType": "EVENT",
+      "triggerConfigJson": "{\"event\":\"condition.alarm\",\"source\":\"edge-gateway\"}",
+      "exceptionPolicy": "RETRY",
+      "validationRulesJson": "[{\"name\":\"alarm_code_check\",\"condition\":\"alarm_code matches ALM-*\",\"message\":\"报警码需满足 ALM-* 规范\"}]"
     },
     {
-      "id": 2, "name": "generate_work_order", "displayName": "生成维修工单",
-      "description": "诊断完成后自动生成维修工单，包含检查清单和修复方案", "status": "ACTIVE",
-      "targetObjectTypeId": 6, "triggerType": "EVENT", "triggerConfigJson": "{\"event\":\"diagnosis.completed\"}",
+      "id": 2,
+      "name": "generate_inspection_work_order",
+      "displayName": "生成排查工单",
+      "description": "在完成初步诊断后自动生成标准排查工单，附带检查点、备件和安全要求。",
+      "status": "ACTIVE",
+      "targetObjectTypeId": 6,
+      "triggerType": "EVENT",
+      "triggerConfigJson": "{\"event\":\"triage.completed\"}",
       "exceptionPolicy": "RETRY"
     },
     {
-      "id": 3, "name": "check_spare_parts", "displayName": "备件库存检查",
-      "description": "维修工单生成时自动检查所需备件库存", "status": "DRAFT",
-      "targetObjectTypeId": 7, "triggerType": "MANUAL"
+      "id": 3,
+      "name": "verify_spare_readiness",
+      "displayName": "校验备件齐套性",
+      "description": "下发检修工单前校验关键备件、专用工装和技能资质是否齐备。",
+      "status": "DRAFT",
+      "targetObjectTypeId": 7,
+      "triggerType": "MANUAL"
     }
   ],
   "actionParameters": {
     "1": [
       { "id": 11, "name": "equipmentId", "displayName": "设备ID", "dataType": "STRING", "required": true, "sortOrder": 1 },
       { "id": 12, "name": "alarmCode", "displayName": "报警码", "dataType": "STRING", "required": true, "sortOrder": 2 },
-      { "id": 13, "name": "severity", "displayName": "严重程度", "dataType": "STRING", "required": true, "defaultValue": "MEDIUM", "sortOrder": 3 }
+      { "id": 13, "name": "severity", "displayName": "风险等级", "dataType": "STRING", "required": true, "defaultValue": "MEDIUM", "sortOrder": 3 },
+      { "id": 14, "name": "shift", "displayName": "班次", "dataType": "STRING", "required": false, "sortOrder": 4 }
     ],
     "2": [
-      { "id": 21, "name": "diagnosisId", "displayName": "诊断记录ID", "dataType": "INTEGER", "required": true, "sortOrder": 1 },
-      { "id": 22, "name": "priority", "displayName": "工单优先级", "dataType": "STRING", "required": true, "sortOrder": 2 }
+      { "id": 21, "name": "triageId", "displayName": "分诊记录ID", "dataType": "INTEGER", "required": true, "sortOrder": 1 },
+      { "id": 22, "name": "priority", "displayName": "工单优先级", "dataType": "STRING", "required": true, "sortOrder": 2 },
+      { "id": 23, "name": "plannedStart", "displayName": "计划开始时间", "dataType": "STRING", "required": false, "sortOrder": 3 }
     ]
   },
   "actionRules": {
     "1": [
-      { "id": 11, "ruleType": "CREATE", "targetObjectTypeName": "Checkpoint", "sortOrder": 1, "propertyMappingsJson": "{\"alarmCode\":\"$alarmCode\",\"severity\":\"$severity\"}" }
+      { "id": 11, "ruleType": "CREATE", "targetObjectTypeName": "Checkpoint", "sortOrder": 1, "propertyMappingsJson": "{\"alarmCode\":\"$alarmCode\",\"severity\":\"$severity\"}" },
+      { "id": 12, "ruleType": "UPDATE", "targetObjectTypeName": "Equipment", "sortOrder": 2, "propertyMappingsJson": "{\"criticality\":\"$severity\"}" }
     ]
   },
   "functions": [
-    { "id": 1, "name": "match_fault_pattern", "displayName": "故障模式匹配", "description": "在知识图谱中匹配故障现象对应的故障模式和根因", "status": "ACTIVE", "scriptType": "PYTHON", "scriptContent": "def match_fault_pattern(alarm_code, symptoms):\n    \"\"\"匹配故障模式\"\"\"\n    patterns = graph.query(f\"MATCH (p:Phenomenon)-[:contains]->(sp:SubPhenomenon) WHERE p.code = '{alarm_code}' RETURN sp\")\n    return rank_by_similarity(patterns, symptoms)" },
-    { "id": 2, "name": "calc_repair_priority", "displayName": "维修优先级计算", "description": "综合设备重要性、故障严重度、生产影响计算维修优先级", "status": "ACTIVE", "scriptType": "PYTHON", "scriptContent": "def calc_repair_priority(severity, equipment_class, production_impact):\n    weights = {\"CRITICAL\": 1.0, \"HIGH\": 0.8, \"MEDIUM\": 0.5, \"LOW\": 0.2}\n    score = weights.get(severity, 0.5) * 0.4 + equipment_class * 0.3 + production_impact * 0.3\n    return \"P1\" if score > 0.8 else \"P2\" if score > 0.5 else \"P3\"" },
-    { "id": 3, "name": "generate_checkpoint_list", "displayName": "生成检查清单", "description": "根据故障现象自动生成按优先级排序的检查清单", "status": "ACTIVE", "scriptType": "PYTHON", "scriptContent": "def generate_checkpoint_list(phenomenon_id):\n    checkpoints = graph.query(\n        f\"MATCH (p:Phenomenon)-[:needs_check]->(cp:Checkpoint) WHERE p.id = '{phenomenon_id}' RETURN cp ORDER BY cp.priority\"\n    )\n    return [{\"step\": i+1, \"name\": cp.label, \"method\": cp.method} for i, cp in enumerate(checkpoints)]" }
+    {
+      "id": 1,
+      "name": "match_fault_pattern",
+      "displayName": "故障模式匹配",
+      "description": "根据报警码、趋势参数和诊断信号匹配最可能的故障模式及根因链路。",
+      "status": "ACTIVE",
+      "scriptType": "PYTHON",
+      "scriptContent": "def match_fault_pattern(alarm_code, signals):\n    \"\"\"匹配故障模式并返回候选链路\"\"\"\n    patterns = graph.query(f\"MATCH (p:Phenomenon)-[:contains]->(sp:SubPhenomenon) WHERE p.code = '{alarm_code}' RETURN p, sp\")\n    return rank_by_signal_similarity(patterns, signals)"
+    },
+    {
+      "id": 2,
+      "name": "calc_maintenance_priority",
+      "displayName": "维修优先级评估",
+      "description": "综合设备关键等级、停机影响和安全风险计算维修优先级。",
+      "status": "ACTIVE",
+      "scriptType": "PYTHON",
+      "scriptContent": "def calc_maintenance_priority(severity, criticality, downtime_impact):\n    weights = {\"CRITICAL\": 1.0, \"HIGH\": 0.8, \"MEDIUM\": 0.5, \"LOW\": 0.2}\n    score = weights.get(severity, 0.5) * 0.45 + criticality * 0.35 + downtime_impact * 0.20\n    return \"P1\" if score > 0.8 else \"P2\" if score > 0.55 else \"P3\""
+    },
+    {
+      "id": 3,
+      "name": "generate_checkpoint_list",
+      "displayName": "生成排查清单",
+      "description": "基于故障现象自动输出按优先级排序的检查点和安全确认步骤。",
+      "status": "ACTIVE",
+      "scriptType": "PYTHON",
+      "scriptContent": "def generate_checkpoint_list(phenomenon_id):\n    checkpoints = graph.query(\n        f\"MATCH (p:Phenomenon)-[:needs_check]->(cp:Checkpoint) WHERE p.id = '{phenomenon_id}' RETURN cp ORDER BY cp.priority\"\n    )\n    return [{\"step\": i + 1, \"name\": cp.label, \"method\": cp.method, \"safety\": cp.safetyNote} for i, cp in enumerate(checkpoints)]"
+    }
   ],
   "idSeq": 1000
 }

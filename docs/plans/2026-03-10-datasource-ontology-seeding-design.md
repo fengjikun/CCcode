@@ -8,7 +8,7 @@ The platform datasource page at `frontend/src/pages/platform/DataSourcePage.tsx`
 
 The product requirement for this iteration is to seed datasource records that align with the ontology list and support both database-style sources and object-storage-style sources. The current UI labels `unstructured` as "对象存储", but the underlying type model only supports file-like values such as `CSV`, `PDF`, and `Word`. That mismatch makes the page look broader than the model it actually supports.
 
-There is also a source-of-truth detail that matters for this implementation: the project code currently defines 109 ontology presets in `ONTOLOGY_DEFS`, not 108. The datasource generator must follow the code, not stale external counts.
+There is also a source-of-truth detail that matters for this implementation: the project code currently defines 108 ontology presets in `ONTOLOGY_DEFS`. The datasource generator must follow the code as the canonical count.
 
 ## Goals
 

@@ -12,7 +12,7 @@ import { ONTOLOGY_DEFS } from './projectManagement'
 import { ensureMockStore, setMockStore } from './mockStoreClient'
 
 const STORE_KEY = 'data-sources'
-const DATA_VERSION = 3
+const DATA_VERSION = 4
 
 interface DSStore {
   items: DataSource[]
