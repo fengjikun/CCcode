@@ -12,9 +12,11 @@ import { ONTOLOGY_DEFS } from './projectManagement'
 import { ensureMockStore, setMockStore } from './mockStoreClient'
 
 const STORE_KEY = 'data-sources'
+const DATA_VERSION = 3
 
 interface DSStore {
   items: DataSource[]
+  _v?: number
 }
 
 const INDUSTRY_LABELS: Record<string, string> = {
@@ -51,6 +53,10 @@ const STRUCTURED_PORTS: Record<StructuredType, number> = {
 }
 
 const STORAGE_REGIONS = ['cn-north-1', 'cn-east-1', 'cn-south-1', 'ap-southeast-1'] as const
+const DB_DISPLAY_LABELS = ['主库', '业务库', '分析库', '台账库', '归档库'] as const
+const DB_ID_LABELS = ['primary', 'business', 'analytics', 'ledger', 'archive'] as const
+const STORAGE_DISPLAY_LABELS = ['文档仓', '资料桶', '归档桶', '附件仓'] as const
+const STORAGE_ID_LABELS = ['docs', 'assets', 'archive', 'attachments'] as const
 
 function toAsciiSlug(value: string): string {
   return value
@@ -109,32 +115,39 @@ function buildStructuredDataSource(
   agentScene: string,
   dataCount: number,
   index: number,
+  variant: number,
 ): DataSource {
-  const type = resolveStructuredType(industry, index)
+  const type = resolveStructuredType(industry, index + variant)
   const syncFrequency = resolveSyncFrequency(phase, dataCount, index)
-  const status = resolveStatus(index)
+  const status = resolveStatus(index + variant)
   const codeSlug = toCodeSlug(code)
   const industryLabel = INDUSTRY_LABELS[industry] ?? industry
+  const dbLabel = DB_DISPLAY_LABELS[(index + variant) % DB_DISPLAY_LABELS.length]
+  const dbIdLabel = DB_ID_LABELS[(index + variant) % DB_ID_LABELS.length]
+  const recordMultiplier = variant === 0 ? 12 : 7
+  const databaseName = variant === 0
+    ? `onto_${codeSlug.replace(/-/g, '_')}`
+    : `onto_${codeSlug.replace(/-/g, '_')}_${dbIdLabel}`
 
   return {
-    id: `ds-${codeSlug}-db`,
-    name: `${industryLabel}_${ontologyName}_db`,
+    id: `ds-${codeSlug}-${dbIdLabel}`,
+    name: `${industryLabel}_${ontologyName}_${dbLabel}`,
     category: 'structured',
     type,
     connection: {
-      host: `${toAsciiSlug(industry)}-${codeSlug}.db.demo.local`,
+      host: `${toAsciiSlug(industry)}-${codeSlug}-${dbIdLabel}.db.demo.local`,
       port: STRUCTURED_PORTS[type],
-      database: `onto_${codeSlug.replace(/-/g, '_')}`,
+      database: databaseName,
       username: `ro_${toAsciiSlug(industry) || 'general'}`,
       password: `demo_${codeSlug}`,
     },
     syncFrequency,
     status,
-    lastSync: resolveLastSync(syncFrequency, status, index),
-    recordCount: dataCount * 12 + index * 37,
+    lastSync: resolveLastSync(syncFrequency, status, index + variant),
+    recordCount: dataCount * recordMultiplier + index * (variant === 0 ? 37 : 23),
     description: `${phase}阶段本体数据库，服务于${ontologyName}；用于结构化抽取与实体主数据归集。场景：${agentScene}`,
-    createdAt: buildTimestamp(index, 0),
-    updatedAt: buildTimestamp(index, 12),
+    createdAt: buildTimestamp(index, variant),
+    updatedAt: buildTimestamp(index, 12 + variant),
   }
 }
 
@@ -153,15 +166,17 @@ function buildObjectStorageDataSource(
   const codeSlug = toCodeSlug(code)
   const industryLabel = INDUSTRY_LABELS[industry] ?? industry
   const endpointHost = `${type.toLowerCase()}.${toAsciiSlug(industry) || 'general'}.demo.local`
+  const storageLabel = STORAGE_DISPLAY_LABELS[index % STORAGE_DISPLAY_LABELS.length]
+  const storageIdLabel = STORAGE_ID_LABELS[index % STORAGE_ID_LABELS.length]
 
   return {
-    id: `ds-${codeSlug}-bucket`,
-    name: `${industryLabel}_${ontologyName}_bucket`,
+    id: `ds-${codeSlug}-${storageIdLabel}`,
+    name: `${industryLabel}_${ontologyName}_${storageLabel}`,
     category: 'unstructured',
     type,
     connection: {
       endpoint: `https://${endpointHost}`,
-      bucket: `ontology-${toAsciiSlug(industry) || 'general'}-${codeSlug}`,
+      bucket: `ontology-${toAsciiSlug(industry) || 'general'}-${codeSlug}-${storageIdLabel}`,
       region: STORAGE_REGIONS[index % STORAGE_REGIONS.length],
       pathPrefix: `${ontologyName}/v${(index % 3) + 1}/`,
       accessKey: `ak_${codeSlug}`,
@@ -177,19 +192,83 @@ function buildObjectStorageDataSource(
   }
 }
 
+function shouldAddSecondaryDatabase(industry: string, index: number): boolean {
+  switch (industry) {
+    case 'manufacturing':
+      return index % 3 === 0
+    case 'retail':
+      return index % 5 === 1
+    case 'medical':
+      return index % 6 === 2
+    case 'transport':
+      return index % 8 === 3
+    case 'general':
+      return index % 9 === 4
+    default:
+      return false
+  }
+}
+
+function shouldAddObjectStorage(industry: string, index: number): boolean {
+  switch (industry) {
+    case 'manufacturing':
+      return index % 7 === 0
+    case 'retail':
+      return index % 4 === 1
+    case 'medical':
+      return index % 3 === 0
+    case 'transport':
+      return index % 6 === 0
+    case 'general':
+      return index % 8 === 0
+    default:
+      return false
+  }
+}
+
+function buildDatasourceBundle(
+  code: string,
+  ontologyName: string,
+  industry: string,
+  phase: string,
+  agentScene: string,
+  dataCount: number,
+  index: number,
+): DataSource[] {
+  const items = [
+    buildStructuredDataSource(code, ontologyName, industry, phase, agentScene, dataCount, index, 0),
+  ]
+
+  if (shouldAddSecondaryDatabase(industry, index)) {
+    items.push(buildStructuredDataSource(code, ontologyName, industry, phase, agentScene, dataCount, index, 1))
+  }
+
+  if (shouldAddObjectStorage(industry, index)) {
+    items.push(buildObjectStorageDataSource(code, ontologyName, industry, phase, agentScene, dataCount, index))
+  }
+
+  return items
+}
+
 function buildDefaultItems(): DataSource[] {
-  return ONTOLOGY_DEFS.flatMap(([code, ontologyName, industry, phase, , agentScene, , dataCount], index) => [
-    buildStructuredDataSource(code, ontologyName, industry, phase, agentScene, dataCount, index),
-    buildObjectStorageDataSource(code, ontologyName, industry, phase, agentScene, dataCount, index),
-  ])
+  return ONTOLOGY_DEFS.flatMap(([code, ontologyName, industry, phase, , agentScene, , dataCount], index) =>
+    buildDatasourceBundle(code, ontologyName, industry, phase, agentScene, dataCount, index),
+  )
 }
 
 const DEFAULT_STORE: DSStore = {
   items: buildDefaultItems(),
+  _v: DATA_VERSION,
 }
 
 async function loadStore(): Promise<DSStore> {
-  return ensureMockStore<DSStore>(STORE_KEY, DEFAULT_STORE)
+  const store = await ensureMockStore<DSStore>(STORE_KEY, DEFAULT_STORE)
+  if (store._v === DATA_VERSION && Array.isArray(store.items) && store.items.length > 0) {
+    return store
+  }
+
+  await saveStore(DEFAULT_STORE)
+  return DEFAULT_STORE
 }
 
 async function saveStore(store: DSStore): Promise<void> {

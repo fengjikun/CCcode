@@ -1,16 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mockStore: { items: any[] } = { items: [] }
+const mockStore: { items: any[]; _v?: number } = { items: [] }
 
 vi.mock('./mockStoreClient', () => ({
-  ensureMockStore: vi.fn(async (_namespace: string, defaults: { items: any[] }) => {
+  ensureMockStore: vi.fn(async (_namespace: string, defaults: { items: any[]; _v?: number }) => {
     if (mockStore.items.length === 0) {
       mockStore.items = structuredClone(defaults.items)
+      mockStore._v = defaults._v
     }
-    return { items: structuredClone(mockStore.items) }
+    return { items: structuredClone(mockStore.items), _v: mockStore._v }
   }),
-  setMockStore: vi.fn(async (_namespace: string, value: { items: any[] }) => {
+  setMockStore: vi.fn(async (_namespace: string, value: { items: any[]; _v?: number }) => {
     mockStore.items = structuredClone(value.items)
+    mockStore._v = value._v
     return value
   }),
 }))
@@ -27,6 +29,7 @@ import { OBJECT_STORAGE_TYPES } from '../types/dataSource'
 describe('dataSource ontology seeding', () => {
   beforeEach(() => {
     mockStore.items = []
+    mockStore._v = undefined
   })
 
   it('exports ontology presets for datasource generation', () => {
@@ -40,13 +43,63 @@ describe('dataSource ontology seeding', () => {
 
   it('generates one database datasource and one object storage datasource per ontology', async () => {
     const list = await listDataSources()
+    const databaseCount = list.filter((item) => item.category === 'structured').length
+    const objectStorageCount = list.filter((item) => item.category === 'unstructured').length
+    const ontologyNameToDatabaseCount = new Map<string, number>()
 
-    expect(list.length).toBe(ONTOLOGY_DEFS.length * 2)
-    expect(list.some((item) => item.category === 'structured')).toBe(true)
-    expect(list.some((item) => item.category === 'unstructured')).toBe(true)
+    for (const item of list.filter((entry) => entry.category === 'structured')) {
+      const ontologyName = item.name.split('_').slice(1, -1).join('_')
+      ontologyNameToDatabaseCount.set(ontologyName, (ontologyNameToDatabaseCount.get(ontologyName) ?? 0) + 1)
+    }
+
+    expect(databaseCount).toBeGreaterThan(objectStorageCount)
+    expect(objectStorageCount).toBeGreaterThan(0)
+    expect(databaseCount).toBeGreaterThan(ONTOLOGY_DEFS.length)
     expect(list.some((item) => item.type === 'S3' || item.type === 'OSS' || item.type === 'MinIO')).toBe(true)
-    expect(list.some((item) => item.name === '制造业_故障诊断本体_db')).toBe(true)
-    expect(list.some((item) => item.name === '制造业_故障诊断本体_bucket')).toBe(true)
+    expect(list.some((item) => item.name.includes('制造业_故障诊断本体'))).toBe(true)
+    expect([...ontologyNameToDatabaseCount.values()].some((count) => count > 1)).toBe(true)
+  })
+
+  it('migrates legacy persisted datasource stores to the seeded version', async () => {
+    mockStore.items = [
+      {
+        id: 'ds-001',
+        name: 'ds_sap_orders',
+        category: 'structured',
+        type: 'SAP ERP',
+        connection: { host: 'sap.company.com', port: 3300, database: 'PRD', username: 'sap_reader' },
+        syncFrequency: '15min',
+        status: 'Active',
+        lastSync: '3 分钟前',
+        recordCount: 125840,
+        description: 'legacy',
+        createdAt: '2024-06-15T08:00:00.000Z',
+        updatedAt: '2024-12-01T10:30:00.000Z',
+      },
+      {
+        id: 'ds-002',
+        name: 'ds_iot_sensors',
+        category: 'structured',
+        type: 'MongoDB',
+        connection: { host: 'mongo-iot.internal', port: 27017, database: 'sensor_data', username: 'iot_reader' },
+        syncFrequency: 'realtime',
+        status: 'Active',
+        lastSync: 'Live',
+        recordCount: 2340000,
+        description: 'legacy',
+        createdAt: '2024-07-20T08:00:00.000Z',
+        updatedAt: '2024-12-01T10:30:00.000Z',
+      },
+    ]
+    mockStore._v = undefined
+
+    const list = await listDataSources()
+
+    expect(list.filter((item) => item.category === 'structured').length).toBeGreaterThan(
+      list.filter((item) => item.category === 'unstructured').length,
+    )
+    expect(list.some((item) => item.name.includes('制造业_故障诊断本体'))).toBe(true)
+    expect(mockStore._v).toBeDefined()
   })
 
   it('creates an object storage datasource with bucket connection fields', async () => {
