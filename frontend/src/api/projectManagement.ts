@@ -25,7 +25,7 @@ import type {
 
 const STORAGE_KEY = 'deepexios_projects_v3'
 /** 当默认数据结构变化时递增此值，触发本地缓存迁移 */
-const DATA_VERSION = 10
+const DATA_VERSION = 11
 
 interface ProjectStore {
   projects: ProjectDetail[]
@@ -322,6 +322,51 @@ const PRODUCT_REPLENISHMENT_DOCUMENTS: ProjectDocument[] = [
     enabled: false,
     uploadedAt: '2026-03-05T09:40:00.000Z',
   },
+  {
+    id: 'doc-rp-006',
+    name: '上海区域A类门店补货优先级清单.xlsx',
+    fileType: 'xlsx',
+    size: 162304,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-06T10:00:00.000Z',
+  },
+  {
+    id: 'doc-rp-007',
+    name: '城市单品补货阈值与目标满足天数策略.md',
+    fileType: 'md',
+    size: 108544,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-06T13:30:00.000Z',
+  },
+  {
+    id: 'doc-rp-008',
+    name: '重点SKU黄金尺码保障规则与断码预警.xlsx',
+    fileType: 'xlsx',
+    size: 193536,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-07T09:10:00.000Z',
+  },
+  {
+    id: 'doc-rp-009',
+    name: '上海城市单品补货计划复盘报告-2026W10.docx',
+    fileType: 'docx',
+    size: 214528,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-08T16:20:00.000Z',
+  },
+  {
+    id: 'doc-rp-010',
+    name: '门店调拨单批量下发样例-华东零售.jsonl',
+    fileType: 'jsonl',
+    size: 132884,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-09T08:45:00.000Z',
+  },
 ]
 
 const PRODUCT_REPLENISHMENT_DATA_SOURCES: StructuredDataSource[] = [
@@ -532,18 +577,18 @@ const PRODUCT_REPLENISHMENT_AI_INSIGHT_RUN: AiInsightRun = {
   progress: 100,
   createdAt: '2026-03-06T09:10:00.000Z',
   completedAt: '2026-03-06T09:18:00.000Z',
-  scannedDocumentCount: 5,
-  addedEntityCount: 3,
-  addedRelationCount: 4,
-  addedEntityNames: ['SizeProfile', 'ReplenishmentPlan', 'PurchaseOrder'],
-  addedRelationNames: ['uses_size_profile', 'plans_for_product', 'targets_store', 'generated_purchase_order'],
+  scannedDocumentCount: 10,
+  addedEntityCount: 8,
+  addedRelationCount: 11,
+  addedEntityNames: ['Product', 'Store', 'Warehouse', 'SalesOrder', 'Inventory', 'SizeProfile', 'ReplenishmentPlan', 'PurchaseOrder'],
+  addedRelationNames: ['records_sales', 'orders_product', 'holds_inventory', 'inventory_of_product', 'uses_size_profile', 'plans_for_product', 'targets_store', 'allocated_from', 'generated_purchase_order', 'ships_to_store', 'fulfilled_by_warehouse'],
   warnings: [],
   stage: '完成',
   currentDocument: '百丽城市单品补货业务本体模型数据说明示例.docx',
   logs: [
-    '解析城市单品补货业务说明文档和接口映射资料',
-    '新增 SizeProfile、ReplenishmentPlan、PurchaseOrder 三类专业补货实体',
-    '补充尺码模型、门店目标配货和调拨单生成链路关系',
+    '解析 10 份城市单品补货业务文档、规则说明与调拨样例',
+    '补齐 Product、Store、Warehouse、SalesOrder、Inventory、SizeProfile、ReplenishmentPlan、PurchaseOrder 八类专业补货实体',
+    '扩展销量聚合、库存供给、尺码拆分、计划生成与调拨履约等 11 条关键关系链路',
   ],
 }
 
@@ -553,15 +598,15 @@ const PRODUCT_REPLENISHMENT_RUN: ExtractionRun = {
   progress: 100,
   createdAt: '2026-03-06T10:00:00.000Z',
   completedAt: '2026-03-06T10:12:00.000Z',
-  candidateEntityCount: 18,
-  candidateRelationCount: 14,
+  candidateEntityCount: 90,
+  candidateRelationCount: 70,
   pendingReviewCount: 0,
   stage: '完成',
   currentDocument: 'Nike Air Max 270 上海区域自动补货演示样例.jsonl',
   logs: [
-    '抽取上海区域 80 家门店近14日销售与库存样例',
-    '识别高销店、基础店、无销店分层标签与尺码曲线模型',
-    '生成补货计划候选 18 个、关系 14 条，并自动产出调拨单示例',
+    '抽取上海区域 10 份业务资料，汇聚 80 家门店近14日销售、库存和尺码模型样例',
+    '识别高销店、基础店、无销店分层标签，并展开门店-仓库-SKU-尺码的补货决策链路',
+    '生成补货图谱候选实体 90 个、关系 70 条，并自动产出批量调拨单示例',
   ],
   warnings: [],
   reviewItems: [
@@ -584,8 +629,8 @@ const PRODUCT_REPLENISHMENT_VERSION: OntologyVersion = {
   label: '城市单品补货执行图谱',
   createdAt: '2026-03-06T10:15:00.000Z',
   sourceRunId: 'run-rp-001',
-  entityCount: 18,
-  relationCount: 14,
+  entityCount: 90,
+  relationCount: 70,
 }
 
 const PRODUCT_REPLENISHMENT_ACTIONS: ActionDefinition[] = [
