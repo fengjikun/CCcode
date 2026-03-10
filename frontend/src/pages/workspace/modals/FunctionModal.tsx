@@ -44,7 +44,7 @@ export default function FunctionModal({ open, onClose, onSuccess, projectId }: F
 
   return (
     <Modal
-      title="新建 Cell"
+      title="新建 Skill"
       open={open}
       onCancel={handleCancel}
       onOk={() => void handleOk()}

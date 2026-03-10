@@ -117,7 +117,7 @@ const NotebookPanel: React.FC<Props> = ({ functions, onRefresh, loading }) => {
             可以保存、执行并查看输出结果。点击下方按钮创建第一个 Cell。
           </p>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
-            新建 Cell
+            新建 Skill
           </Button>
         </div>
         {renderModal()}
@@ -183,7 +183,7 @@ const NotebookPanel: React.FC<Props> = ({ functions, onRefresh, loading }) => {
         <div style={styles.toolbar}>
           <span style={{ fontWeight: 600, fontSize: 16 }}>Groovy Notebook ({functions.length} cells)</span>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
-            新建 Cell
+            新建 Skill
           </Button>
         </div>
 

@@ -93,7 +93,7 @@ export default function FunctionsTab({ projectId, functions, loadProject }: Func
           <span className="notebook-label">Skills 清单</span>
         </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
-          + 新建 Cell
+          新建 Skill
         </Button>
       </div>
 
