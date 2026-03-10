@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Alert,
   Button,
@@ -14,7 +14,6 @@ import {
 } from 'antd'
 import type { TableProps } from 'antd'
 import {
-  ApiOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   DatabaseOutlined,
@@ -22,161 +21,94 @@ import {
   SyncOutlined,
   WarningOutlined,
 } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
+import { listDataSources } from '../../api/dataSource'
 import PageHeader from '../../components/shared/PageHeader'
 import StatCards from '../../components/shared/StatCards'
+import type { DataSource, DataSourceStatus } from '../../types/dataSource'
+import {
+  DATA_SOURCE_STATUS_LABELS,
+  type IngestionJobView,
+  toIngestionJobView,
+} from './dataIngestion.helpers'
 
 const { Text } = Typography
 
-type JobStatus = '运行中' | '成功' | '失败' | '待执行'
-type JobMode = 'FULL' | 'INCREMENTAL' | 'CDC' | 'API'
-
-interface IngestionJob {
-  id: string
-  name: string
-  source: string
-  sourceType: '数据库' | '对象存储' | 'API'
-  mode: JobMode
-  schedule: string
-  status: JobStatus
-  lastRun: string
-  rows: string
-  latency: string
-  owner: string
+const STATUS_COLORS: Record<DataSourceStatus, string> = {
+  Active: 'success',
+  Inactive: 'default',
+  Error: 'error',
+  Syncing: 'processing',
 }
-
-const STATUS_COLORS: Record<JobStatus, string> = {
-  运行中: 'processing',
-  成功: 'success',
-  失败: 'error',
-  待执行: 'default',
-}
-
-const JOBS: IngestionJob[] = [
-  {
-    id: 'job_erp_sales',
-    name: 'ERP 销售订单增量同步',
-    source: 'SAP ERP Production',
-    sourceType: '数据库',
-    mode: 'INCREMENTAL',
-    schedule: '每 10 分钟',
-    status: '运行中',
-    lastRun: '2026-03-10 19:45',
-    rows: '84.2k',
-    latency: '38s',
-    owner: '数据平台组',
-  },
-  {
-    id: 'job_crm_customer',
-    name: 'CRM 客户主数据全量校准',
-    source: 'Salesforce CN',
-    sourceType: 'API',
-    mode: 'FULL',
-    schedule: '每日 02:00',
-    status: '成功',
-    lastRun: '2026-03-10 02:03',
-    rows: '12.6k',
-    latency: '4m 12s',
-    owner: '主数据团队',
-  },
-  {
-    id: 'job_iot_device',
-    name: '设备遥测 CDC 同步',
-    source: 'IoT Telemetry Hub',
-    sourceType: '数据库',
-    mode: 'CDC',
-    schedule: '实时',
-    status: '运行中',
-    lastRun: '2026-03-10 20:05',
-    rows: '1.2M',
-    latency: '8s',
-    owner: '工业数智组',
-  },
-  {
-    id: 'job_contract_docs',
-    name: '合同文档落库任务',
-    source: 'OSS Archive Bucket',
-    sourceType: '对象存储',
-    mode: 'FULL',
-    schedule: '每小时',
-    status: '失败',
-    lastRun: '2026-03-10 18:00',
-    rows: '3.4k',
-    latency: '1m 08s',
-    owner: '法务数据组',
-  },
-  {
-    id: 'job_service_ticket',
-    name: '客服工单接口采集',
-    source: 'Service Desk OpenAPI',
-    sourceType: 'API',
-    mode: 'API',
-    schedule: '每 30 分钟',
-    status: '待执行',
-    lastRun: '2026-03-10 19:30',
-    rows: '9.8k',
-    latency: '26s',
-    owner: '客户运营组',
-  },
-]
 
 export default function DataIngestionPage() {
-  const [statusFilter, setStatusFilter] = useState<JobStatus | 'all'>('all')
-  const [sourceTypeFilter, setSourceTypeFilter] = useState<IngestionJob['sourceType'] | 'all'>('all')
+  const navigate = useNavigate()
+  const [dataSources, setDataSources] = useState<DataSource[]>([])
+  const [statusFilter, setStatusFilter] = useState<DataSourceStatus | 'all'>('all')
+  const [sourceTypeFilter, setSourceTypeFilter] = useState<'structured' | 'unstructured' | 'all'>('all')
   const [keyword, setKeyword] = useState('')
 
-  const filteredJobs = useMemo(() => JOBS.filter(job => {
+  const reload = useCallback(() => {
+    listDataSources().then(setDataSources)
+  }, [])
+
+  useEffect(() => {
+    reload()
+  }, [reload])
+
+  const jobs = useMemo(() => dataSources.map(toIngestionJobView), [dataSources])
+
+  const filteredJobs = useMemo(() => jobs.filter(job => {
     if (statusFilter !== 'all' && job.status !== statusFilter) return false
-    if (sourceTypeFilter !== 'all' && job.sourceType !== sourceTypeFilter) return false
+    if (sourceTypeFilter !== 'all' && job.category !== sourceTypeFilter) return false
     if (!keyword) return true
 
     const normalizedKeyword = keyword.toLowerCase()
     return [
-      job.name,
-      job.source,
-      job.owner,
-      job.mode,
+      job.taskName,
+      job.sourceName,
+      job.dataSourceType,
+      job.targetLabel,
     ].some(value => value.toLowerCase().includes(normalizedKeyword))
-  }), [keyword, sourceTypeFilter, statusFilter])
+  }), [jobs, keyword, sourceTypeFilter, statusFilter])
 
   const stats = [
-    { title: '任务总数', value: JOBS.length, icon: <SyncOutlined />, cls: 'stat-primary' },
-    { title: '运行中', value: JOBS.filter(job => job.status === '运行中').length, icon: <ClockCircleOutlined />, cls: 'stat-info' },
-    { title: '今日成功', value: JOBS.filter(job => job.status === '成功').length, icon: <CheckCircleOutlined />, cls: 'stat-success' },
-    { title: '失败告警', value: JOBS.filter(job => job.status === '失败').length, icon: <WarningOutlined />, cls: 'stat-warning' },
+    { title: '任务总数', value: jobs.length, icon: <SyncOutlined />, cls: 'stat-primary' },
+    { title: '启用中', value: jobs.filter(job => job.status === 'Active' || job.status === 'Syncing').length, icon: <CheckCircleOutlined />, cls: 'stat-success' },
+    { title: '同步中', value: jobs.filter(job => job.status === 'Syncing').length, icon: <ClockCircleOutlined />, cls: 'stat-info' },
+    { title: '异常任务', value: jobs.filter(job => job.status === 'Error').length, icon: <WarningOutlined />, cls: 'stat-warning' },
   ]
 
-  const columns: TableProps<IngestionJob>['columns'] = [
+  const columns: TableProps<IngestionJobView>['columns'] = [
     {
       title: '任务名称',
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: 'taskName',
+      key: 'taskName',
       render: (_value, record) => (
         <Space direction="vertical" size={2}>
-          <Text strong>{record.name}</Text>
-          <Text type="secondary">{record.source}</Text>
+          <Text strong>{record.taskName}</Text>
+          <Text type="secondary">{record.sourceName}</Text>
         </Space>
       ),
     },
     {
       title: '来源类型',
-      dataIndex: 'sourceType',
-      key: 'sourceType',
+      dataIndex: 'categoryLabel',
+      key: 'categoryLabel',
       width: 120,
-      render: (value: IngestionJob['sourceType']) => (
-        <Tag icon={value === '数据库' ? <DatabaseOutlined /> : <ApiOutlined />}>{value}</Tag>
-      ),
+      render: (_value, record) => <Tag icon={<DatabaseOutlined />}>{record.categoryLabel}</Tag>,
     },
     {
-      title: '同步模式',
-      dataIndex: 'mode',
-      key: 'mode',
+      title: '数据源类型',
+      dataIndex: 'dataSourceType',
+      key: 'dataSourceType',
       width: 120,
-      render: (value: JobMode) => <Tag color="blue">{value}</Tag>,
+      render: (value: string) => <Tag>{value}</Tag>,
     },
     {
-      title: '调度周期',
-      dataIndex: 'schedule',
-      key: 'schedule',
+      title: '调度策略',
+      dataIndex: 'scheduleLabel',
+      key: 'scheduleLabel',
       width: 120,
     },
     {
@@ -184,38 +116,33 @@ export default function DataIngestionPage() {
       dataIndex: 'status',
       key: 'status',
       width: 110,
-      render: (value: JobStatus) => <Tag color={STATUS_COLORS[value]}>{value}</Tag>,
+      render: (value: DataSourceStatus) => <Tag color={STATUS_COLORS[value]}>{DATA_SOURCE_STATUS_LABELS[value]}</Tag>,
     },
     {
-      title: '最近执行',
-      dataIndex: 'lastRun',
-      key: 'lastRun',
+      title: '最近同步',
+      dataIndex: 'lastRunLabel',
+      key: 'lastRunLabel',
       width: 160,
     },
     {
       title: '处理量',
-      dataIndex: 'rows',
-      key: 'rows',
+      dataIndex: 'recordCountLabel',
+      key: 'recordCountLabel',
       width: 100,
     },
     {
-      title: '耗时',
-      dataIndex: 'latency',
-      key: 'latency',
-      width: 100,
-    },
-    {
-      title: '责任人',
-      dataIndex: 'owner',
-      key: 'owner',
-      width: 120,
+      title: '接入目标',
+      dataIndex: 'targetLabel',
+      key: 'targetLabel',
+      width: 260,
+      render: (value: string) => <Text type="secondary">{value}</Text>,
     },
   ]
 
   return (
     <div className="page-container">
       <Card className="section-card">
-        <PageHeader title="数据接入任务" subtitle="统一查看采集调度、同步状态、失败重试与增量水位，作为数据平台的运行看板入口" />
+        <PageHeader title="数据接入任务" subtitle="统一查看采集调度、同步状态与最近同步结果" />
 
         <StatCards items={stats} />
 
@@ -225,8 +152,8 @@ export default function DataIngestionPage() {
               title="接入任务列表"
               extra={(
                 <Space>
-                  <Button icon={<ReloadOutlined />}>刷新状态</Button>
-                  <Button type="primary" icon={<SyncOutlined />}>新建接入任务</Button>
+                  <Button icon={<ReloadOutlined />} onClick={reload}>刷新状态</Button>
+                  <Button type="primary" icon={<DatabaseOutlined />} onClick={() => navigate('/datasource')}>前往数据源管理</Button>
                 </Space>
               )}
             >
@@ -237,10 +164,10 @@ export default function DataIngestionPage() {
                   style={{ width: 140 }}
                   options={[
                     { value: 'all', label: '全部状态' },
-                    { value: '运行中', label: '运行中' },
-                    { value: '成功', label: '成功' },
-                    { value: '失败', label: '失败' },
-                    { value: '待执行', label: '待执行' },
+                    { value: 'Active', label: '正常' },
+                    { value: 'Syncing', label: '同步中' },
+                    { value: 'Error', label: '异常' },
+                    { value: 'Inactive', label: '未启用' },
                   ]}
                 />
                 <Select
@@ -249,17 +176,16 @@ export default function DataIngestionPage() {
                   style={{ width: 140 }}
                   options={[
                     { value: 'all', label: '全部来源' },
-                    { value: '数据库', label: '数据库' },
-                    { value: '对象存储', label: '对象存储' },
-                    { value: 'API', label: 'API' },
+                    { value: 'structured', label: '数据库' },
+                    { value: 'unstructured', label: '对象存储' },
                   ]}
                 />
                 <Input.Search
                   allowClear
-                  placeholder="搜索任务名称 / 数据源 / 责任人"
+                  placeholder="搜索任务名称 / 数据源 / 类型 / 接入目标"
                   value={keyword}
                   onChange={event => setKeyword(event.target.value)}
-                  style={{ width: 280 }}
+                  style={{ width: 320 }}
                 />
               </Space>
 
@@ -269,11 +195,34 @@ export default function DataIngestionPage() {
                 columns={columns}
                 dataSource={filteredJobs}
                 pagination={false}
-                locale={{ emptyText: '暂无匹配的接入任务' }}
+                locale={{ emptyText: '暂无匹配的接入任务，先到数据源管理中配置数据源' }}
               />
             </Card>
           </Col>
 
+          <Col xs={24} xl={7}>
+            <Space direction="vertical" size={16} style={{ width: '100%' }}>
+              <Card title="当前对齐原则">
+                <Space direction="vertical" size={10}>
+                  <Text>接入任务不再维护独立 mock 数据，统一来自数据源列表。</Text>
+                  <Text>页面统计口径与数据源页保持一致，避免两边数字不同步。</Text>
+                  <Text>后续如果支持“一源多任务”，再从数据源模型中拆出独立任务实体。</Text>
+                  <Text>当前阶段先保证信息架构和底层数据模型一致。</Text>
+                </Space>
+              </Card>
+
+              <Card title="后续可补字段">
+                <Space size={[6, 6]} wrap>
+                  <Tag color="green">增量水位</Tag>
+                  <Tag color="blue">失败原因</Tag>
+                  <Tag color="purple">重试次数</Tag>
+                  <Tag color="gold">任务日志</Tag>
+                  <Tag color="cyan">SLA</Tag>
+                  <Tag color="red">告警订阅</Tag>
+                </Space>
+              </Card>
+            </Space>
+          </Col>
         </Row>
       </Card>
     </div>

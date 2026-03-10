@@ -9,13 +9,13 @@ const appSource = readFileSync(
   'utf8',
 )
 
-describe('App route table data platform routes', () => {
-  it('registers the extended data platform pages', () => {
+describe('App route table data center routes', () => {
+  it('registers only the retained data center pages', () => {
     expect(appSource).toContain('<Route path="/datasource" element={<DataSourcePage />} />')
     expect(appSource).toContain('<Route path="/data-platform/ingestion-jobs" element={<DataIngestionPage />} />')
     expect(appSource).toContain('<Route path="/transform" element={<TransformPage />} />')
-    expect(appSource).toContain('<Route path="/data-platform/quality" element={<DataQualityPage />} />')
-    expect(appSource).toContain('<Route path="/data-platform/catalog" element={<DataCatalogPage />} />')
-    expect(appSource).toContain('<Route path="/data-platform/governance" element={<DataGovernancePage />} />')
+    expect(appSource).not.toContain('<Route path="/data-platform/quality"')
+    expect(appSource).not.toContain('<Route path="/data-platform/catalog"')
+    expect(appSource).not.toContain('<Route path="/data-platform/governance"')
   })
 })
