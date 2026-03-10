@@ -91,9 +91,6 @@ export default function FunctionsTab({ projectId, functions, loadProject }: Func
         <div className="notebook-title">
           <span className="notebook-icon">&#9679;</span>
           <span className="notebook-label">Skills 清单</span>
-          <Tag>Groovy 4.0</Tag>
-          <Tag>JVM 25</Tag>
-          <Tag>30s timeout</Tag>
         </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
           + 新建 Cell

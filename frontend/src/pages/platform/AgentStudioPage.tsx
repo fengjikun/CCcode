@@ -573,7 +573,7 @@ export default function AgentStudioPage() {
   return (
     <div className="page-container">
       <Card className="section-card">
-        <PageHeader title="Co-worker 智能体编排" subtitle="L4 智能体平台 — 创建、编排和管理 AI 智能体，绑定 Skills 赋能企业数字化运营" />
+        <PageHeader title="智能体编排" subtitle="L4 智能体平台 — 创建、编排和管理 AI 智能体，绑定 Skills 赋能企业数字化运营" />
 
         <StatCards items={[
           { title: '智能体总数', value: list.length, icon: <RobotOutlined />, cls: 'stat-primary' },

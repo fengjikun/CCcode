@@ -42,7 +42,7 @@ const menuItems: MenuItem[] = [
   {
     key: 'digital-worker',
     icon: <TeamOutlined />,
-    label: '数字员工应用',
+    label: 'AI员工',
     children: [
       { key: '/digital-worker/business', icon: <SolutionOutlined />, label: '业务数字员工' },
       { key: '/digital-worker/dic', icon: <DesktopOutlined />, label: 'FDE 数字员工' },
@@ -51,11 +51,11 @@ const menuItems: MenuItem[] = [
   {
     key: 'coworker',
     icon: <RobotOutlined />,
-    label: 'Co-worker平台',
+    label: 'workspace 工作台',
     children: [
+      { key: '/coworker/skills', icon: <AppstoreOutlined />, label: 'Skills Hub' },
       { key: '/coworker/agents', icon: <RobotOutlined />, label: '智能体编排' },
       { key: '/coworker/agents/logs', icon: <FileSearchOutlined />, label: '智能体日志' },
-      { key: '/coworker/skills', icon: <AppstoreOutlined />, label: 'Skills Hub' },
     ],
   },
   {
@@ -69,20 +69,20 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    key: '/transform',
-    icon: <SwapOutlined />,
-    label: '数据转换',
-  },
-  {
     key: 'model-lab',
     icon: <ExperimentOutlined />,
-    label: '大模型Lab',
+    label: '模型中心',
     children: [
       { key: '/model-lab/gateway', icon: <ApiOutlined />, label: '模型网关' },
       { key: '/model-lab/training', icon: <ExperimentOutlined />, label: '模型训练' },
       { key: '/model-lab/evaluation', icon: <LineChartOutlined />, label: '模型评估' },
       { key: '/model-lab/datasets', icon: <FolderOpenOutlined />, label: '训练数据集' },
     ],
+  },
+  {
+    key: '/transform',
+    icon: <SwapOutlined />,
+    label: '数据转换',
   },
   {
     key: '/datasource',
