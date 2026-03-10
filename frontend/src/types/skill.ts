@@ -19,6 +19,9 @@ export type SkillCategory =
   | 'domain-expert'  // 领域专家
 
 export type SkillStatus = 'Active' | 'Draft' | 'Disabled'
+export type SkillMarketType = 'business' | 'general'
+export type SkillCoverageLevel = 'core' | 'enhanced' | 'optional'
+export type SkillIndustry = 'manufacturing' | 'retail' | 'medical' | 'transport' | 'general'
 
 export const SKILL_CATEGORIES: SkillCategory[] = [
   'enterprise', 'development', 'data-analysis', 'document', 'communication', 'domain-expert',
@@ -66,6 +69,36 @@ export const SKILL_STATUS_COLORS: Record<SkillStatus, string> = {
   Disabled: 'default',
 }
 
+export const SKILL_MARKET_TYPE_LABELS: Record<SkillMarketType, string> = {
+  business: '业务 Skill',
+  general: '通用 Skill',
+}
+
+export const SKILL_MARKET_TYPE_COLORS: Record<SkillMarketType, string> = {
+  business: 'geekblue',
+  general: 'gold',
+}
+
+export const SKILL_COVERAGE_LEVEL_LABELS: Record<SkillCoverageLevel, string> = {
+  core: '核心',
+  enhanced: '增强',
+  optional: '可选',
+}
+
+export const SKILL_COVERAGE_LEVEL_COLORS: Record<SkillCoverageLevel, string> = {
+  core: 'red',
+  enhanced: 'blue',
+  optional: 'default',
+}
+
+export const SKILL_INDUSTRY_LABELS: Record<SkillIndustry, string> = {
+  manufacturing: '制造业',
+  retail: '零售业',
+  medical: '医疗健康',
+  transport: '交通物流',
+  general: '通用业务',
+}
+
 /** template/ 目录下的模板文件 */
 export interface SkillTemplateFile {
   name: string
@@ -76,6 +109,44 @@ export interface SkillTemplateFile {
 export interface SkillScriptFile {
   name: string
   description?: string
+}
+
+export interface OntologyFunctionItemLike {
+  id: string
+  name: string
+  projectName: string
+  projectId: string
+  description: string
+  scriptContent: string
+  status: string
+}
+
+export interface SkillsMarketInsightStats {
+  totalSkills: number
+  businessSkills: number
+  generalSkills: number
+  coveredOntologies: number
+  coveredIndustries: number
+}
+
+export interface IndustrySkillBucket {
+  industry: SkillIndustry
+  skillIds: string[]
+}
+
+export interface OntologySkillMapping {
+  ontologyCode: string
+  ontologyName: string
+  skillIds: string[]
+}
+
+export interface SkillsMarketStore {
+  skills: Skill[]
+  importableFunctions: OntologyFunctionItemLike[]
+  featuredSkillIds: string[]
+  industryBuckets: IndustrySkillBucket[]
+  ontologySkillMappings: OntologySkillMapping[]
+  insightStats: SkillsMarketInsightStats
 }
 
 /** Skill 完整定义 */
@@ -102,6 +173,20 @@ export interface Skill {
   tags: string[]
   /** 安装/使用次数 */
   installs: number
+  marketType: SkillMarketType
+  industry: SkillIndustry
+  phase: string
+  featured: boolean
+  recommendedScore: number
+  usageCount: number
+  successRate?: number
+  avgLatencyMs?: number
+  sourceOntologyCodes: string[]
+  sourceOntologyNames: string[]
+  recommendedFor: string[]
+  capabilities: string[]
+  coverageLevel: SkillCoverageLevel
+  recommendationReason: string
   /** 作者 */
   author: string
   createdAt: string

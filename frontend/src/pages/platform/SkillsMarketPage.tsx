@@ -18,11 +18,11 @@ import {
   Typography,
   message,
 } from 'antd'
+import type { ColumnsType } from 'antd/es/table'
 import {
   AppstoreOutlined,
   CheckCircleOutlined,
   CloudDownloadOutlined,
-  CodeOutlined,
   DeleteOutlined,
   DownloadOutlined,
   EditOutlined,
@@ -37,34 +37,56 @@ import {
   ReloadOutlined,
   SearchOutlined,
   TagOutlined,
+  ThunderboltOutlined,
   UserOutlined,
 } from '@ant-design/icons'
 import {
   createSkill,
   deleteSkill,
-  listSkills,
-  updateSkill,
-  toggleSkillStatus,
-  listImportableFunctions,
+  filterImportableFunctions,
+  getSkillsMarketInsightStats,
   importFunctionAsSkill,
+  listImportableFunctions,
+  listSkills,
+  toggleSkillStatus,
+  updateSkill,
 } from '../../api/skillsMarket'
 import type { OntologyFunctionItem } from '../../api/skillsMarket'
-import type { Skill, SkillTemplateFile, SkillScriptFile } from '../../types/skill'
+import ModalHeader from '../../components/shared/ModalHeader'
+import ActionColumn from '../../components/shared/ActionColumn'
+import {
+  collectPhaseOptions,
+  filterSkills,
+  getFeaturedSkills,
+  type SkillsMarketFilters,
+} from './skillsMarket.helpers'
+import type {
+  Skill,
+  SkillCategory,
+  SkillCoverageLevel,
+  SkillIndustry,
+  SkillMarketType,
+  SkillScriptFile,
+  SkillsMarketInsightStats,
+  SkillStatus,
+  SkillTemplateFile,
+} from '../../types/skill'
 import {
   SKILL_CATEGORIES,
   SKILL_CATEGORY_COLORS,
   SKILL_CATEGORY_ICONS,
   SKILL_CATEGORY_LABELS,
+  SKILL_COVERAGE_LEVEL_COLORS,
+  SKILL_COVERAGE_LEVEL_LABELS,
+  SKILL_INDUSTRY_LABELS,
+  SKILL_MARKET_TYPE_COLORS,
+  SKILL_MARKET_TYPE_LABELS,
   SKILL_STATUS_COLORS,
 } from '../../types/skill'
-import ModalHeader from '../../components/shared/ModalHeader'
-import ActionColumn from '../../components/shared/ActionColumn'
-import type { SkillCategory, SkillStatus } from '../../types/skill'
 
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
 
-/* ──────────── 表单类型 ──────────── */
 interface SkillFormValues {
   name: string
   displayName: string
@@ -76,7 +98,15 @@ interface SkillFormValues {
   tags?: string
 }
 
-/* ──────────── 文件列表编辑器 ──────────── */
+const DEFAULT_FILTERS: SkillsMarketFilters = {
+  query: '',
+  category: 'all',
+  marketType: 'all',
+  industry: 'all',
+  phase: 'all',
+  coverageLevel: 'all',
+}
+
 function FileListEditor({
   title,
   icon,
@@ -110,29 +140,36 @@ function FileListEditor({
       {files.length === 0 && (
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无文件" style={{ margin: '4px 0' }} />
       )}
-      {files.map((f, i) => (
-        <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+      {files.map((file, index) => (
+        <div key={`${file.name}-${index}`} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
           <Input
             placeholder={placeholder}
-            value={f.name}
-            onChange={e => {
-              const next = [...files]; next[i] = { ...next[i], name: e.target.value }; onChange(next)
+            value={file.name}
+            onChange={(event) => {
+              const next = [...files]
+              next[index] = { ...next[index], name: event.target.value }
+              onChange(next)
             }}
             style={{ flex: 2 }}
             size="small"
           />
           <Input
             placeholder="说明"
-            value={f.description || ''}
-            onChange={e => {
-              const next = [...files]; next[i] = { ...next[i], description: e.target.value }; onChange(next)
+            value={file.description || ''}
+            onChange={(event) => {
+              const next = [...files]
+              next[index] = { ...next[index], description: event.target.value }
+              onChange(next)
             }}
             style={{ flex: 2 }}
             size="small"
           />
           <Button
-            type="text" danger size="small" icon={<MinusCircleOutlined />}
-            onClick={() => onChange(files.filter((_, idx) => idx !== i))}
+            type="text"
+            danger
+            size="small"
+            icon={<MinusCircleOutlined />}
+            onClick={() => onChange(files.filter((_, current) => current !== index))}
           />
         </div>
       ))}
@@ -140,65 +177,52 @@ function FileListEditor({
   )
 }
 
-/* ──────────── 目录树组件 ──────────── */
 function SkillDirectoryTree({ skill }: { skill: Skill }) {
-  const hasRef = !!skill.reference
-  const hasTpl = skill.templates.length > 0
-  const hasScr = skill.scripts.length > 0
-  const fileCount = 1 + (hasRef ? 1 : 0) + skill.templates.length + skill.scripts.length
+  const fileCount = 1 + (skill.reference ? 1 : 0) + skill.templates.length + skill.scripts.length
 
   return (
-    <div className="dir-tree" style={{ fontFamily: '"Cascadia Code", "Fira Code", Consolas, monospace', fontSize: 13 }}>
-      <div className="dir-item" style={{ fontWeight: 600 }}>
+    <div style={{ fontFamily: '"Cascadia Code", "Fira Code", Consolas, monospace', fontSize: 13 }}>
+      <div style={{ fontWeight: 600 }}>
         <FolderOpenOutlined style={{ marginRight: 6, color: '#faad14' }} />
         {skill.name}/
         <Text type="secondary" style={{ fontSize: 11, marginLeft: 8, fontWeight: 400 }}>
           {fileCount} 个文件
         </Text>
       </div>
-      {/* SKILL.md — 必要 */}
-      <div className="dir-item" style={{ paddingLeft: 24 }}>
+      <div style={{ paddingLeft: 24 }}>
         <FileMarkdownOutlined style={{ marginRight: 6, color: '#7c3aed' }} />
         SKILL.md
-        <Tag color="purple" style={{ marginLeft: 8, fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>必要</Tag>
-        <Text type="secondary" style={{ fontSize: 11, marginLeft: 4 }}>— 名称、触发时机、工具、执行流程</Text>
       </div>
-      {/* reference.md — 可选 */}
-      {hasRef && (
-        <div className="dir-item" style={{ paddingLeft: 24 }}>
+      {skill.reference && (
+        <div style={{ paddingLeft: 24 }}>
           <FileTextOutlined style={{ marginRight: 6, color: '#1677ff' }} />
           reference.md
-          <Text type="secondary" style={{ fontSize: 11, marginLeft: 8 }}>— 格式范本、专有名词、填写范例</Text>
         </div>
       )}
-      {/* template/ */}
-      {hasTpl && (
+      {skill.templates.length > 0 && (
         <>
-          <div className="dir-item" style={{ paddingLeft: 24 }}>
+          <div style={{ paddingLeft: 24 }}>
             <FolderOutlined style={{ marginRight: 6, color: '#faad14' }} />
             template/
-            <Text type="secondary" style={{ fontSize: 11, marginLeft: 8 }}>— 输出模板</Text>
           </div>
-          {skill.templates.map(t => (
-            <div key={t.name} className="dir-item" style={{ paddingLeft: 48 }}>
-              📋 {t.name}
-              {t.description && <Text type="secondary" style={{ fontSize: 11, marginLeft: 8 }}>— {t.description}</Text>}
+          {skill.templates.map((item) => (
+            <div key={item.name} style={{ paddingLeft: 48 }}>
+              {item.name}
+              {item.description && <Text type="secondary" style={{ fontSize: 11, marginLeft: 8 }}>- {item.description}</Text>}
             </div>
           ))}
         </>
       )}
-      {/* scripts/ */}
-      {hasScr && (
+      {skill.scripts.length > 0 && (
         <>
-          <div className="dir-item" style={{ paddingLeft: 24 }}>
-            <FolderOutlined style={{ marginRight: 6, color: '#faad14' }} />
+          <div style={{ paddingLeft: 24 }}>
+            <FolderOutlined style={{ marginRight: 6, color: '#52c41a' }} />
             scripts/
-            <Text type="secondary" style={{ fontSize: 11, marginLeft: 8 }}>— 执行脚本</Text>
           </div>
-          {skill.scripts.map(s => (
-            <div key={s.name} className="dir-item" style={{ paddingLeft: 48 }}>
-              📜 {s.name}
-              {s.description && <Text type="secondary" style={{ fontSize: 11, marginLeft: 8 }}>— {s.description}</Text>}
+          {skill.scripts.map((item) => (
+            <div key={item.name} style={{ paddingLeft: 48 }}>
+              {item.name}
+              {item.description && <Text type="secondary" style={{ fontSize: 11, marginLeft: 8 }}>- {item.description}</Text>}
             </div>
           ))}
         </>
@@ -207,20 +231,26 @@ function SkillDirectoryTree({ skill }: { skill: Skill }) {
   )
 }
 
-/* ──────────── 主页面 ──────────── */
+function formatCompactNumber(value: number): string {
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}K`
+  return `${value}`
+}
+
+function getFileCount(skill: Skill): number {
+  return 1 + (skill.reference ? 1 : 0) + skill.templates.length + skill.scripts.length
+}
+
 export default function SkillsMarketPage() {
   const [list, setList] = useState<Skill[]>([])
-  const [search, setSearch] = useState('')
-  const [filterCategory, setFilterCategory] = useState<SkillCategory | 'all'>('all')
+  const [stats, setStats] = useState<SkillsMarketInsightStats | null>(null)
+  const [filters, setFilters] = useState<SkillsMarketFilters>(DEFAULT_FILTERS)
 
-  // 注册弹窗
   const [createOpen, setCreateOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [form] = Form.useForm<SkillFormValues>()
   const [templates, setTemplates] = useState<SkillTemplateFile[]>([])
   const [scripts, setScripts] = useState<SkillScriptFile[]>([])
 
-  // 编辑弹窗
   const [editOpen, setEditOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Skill | null>(null)
   const [editing, setEditing] = useState(false)
@@ -228,38 +258,34 @@ export default function SkillsMarketPage() {
   const [editTemplates, setEditTemplates] = useState<SkillTemplateFile[]>([])
   const [editScripts, setEditScripts] = useState<SkillScriptFile[]>([])
 
-  // 详情弹窗
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailTarget, setDetailTarget] = useState<Skill | null>(null)
 
-  // 本体导入弹窗
   const [importOpen, setImportOpen] = useState(false)
   const [importFunctions, setImportFunctions] = useState<OntologyFunctionItem[]>([])
   const [selectedImports, setSelectedImports] = useState<string[]>([])
 
   const reload = useCallback(async () => {
-    setList(await listSkills())
+    const [skills, insightStats] = await Promise.all([listSkills(), getSkillsMarketInsightStats()])
+    setList(skills)
+    setStats(insightStats)
   }, [])
 
-  useEffect(() => { reload() }, [reload])
+  useEffect(() => {
+    void reload()
+  }, [reload])
 
-  /* 过滤 */
-  const filtered = list.filter(s => {
-    if (filterCategory !== 'all' && s.category !== filterCategory) return false
-    if (search) {
-      const q = search.toLowerCase()
-      return s.displayName.toLowerCase().includes(q)
-        || s.name.toLowerCase().includes(q)
-        || s.tags.some(t => t.toLowerCase().includes(q))
-    }
-    return true
-  })
+  const filtered = filterSkills(list, filters)
+  const featured = getFeaturedSkills(list, 6)
+  const phaseOptions = collectPhaseOptions(list)
+  const insightStats = stats || {
+    totalSkills: list.length,
+    businessSkills: list.filter((skill) => skill.marketType === 'business').length,
+    generalSkills: list.filter((skill) => skill.marketType === 'general').length,
+    coveredOntologies: new Set(list.flatMap((skill) => skill.sourceOntologyCodes)).size,
+    coveredIndustries: new Set(list.map((skill) => skill.industry)).size,
+  }
 
-  /* 统计 */
-  const totalInstalls = list.reduce((sum, s) => sum + s.installs, 0)
-  const activeCount = list.filter(s => s.status === 'Active').length
-
-  /* 创建 */
   const handleCreate = async () => {
     try {
       const values = await form.validateFields()
@@ -271,8 +297,8 @@ export default function SkillsMarketPage() {
         description: values.description,
         instructions: values.instructions,
         reference: values.reference || undefined,
-        templates: templates.filter(t => t.name.trim()),
-        scripts: scripts.filter(s => s.name.trim()),
+        templates: templates.filter((item) => item.name.trim()),
+        scripts: scripts.filter((item) => item.name.trim()),
         dependencies: values.dependencies,
         tags: values.tags ? values.tags.split(/[,，、\s]+/).filter(Boolean) : [],
       })
@@ -282,15 +308,14 @@ export default function SkillsMarketPage() {
       setTemplates([])
       setScripts([])
       await reload()
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'errorFields' in err) return
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'errorFields' in error) return
       message.error('创建失败')
     } finally {
       setCreating(false)
     }
   }
 
-  /* 编辑 */
   const openEdit = (skill: Skill) => {
     setEditTarget(skill)
     editForm.setFieldsValue({
@@ -309,57 +334,52 @@ export default function SkillsMarketPage() {
   }
 
   const handleEdit = async () => {
+    if (!editTarget) return
     try {
       const values = await editForm.validateFields()
       setEditing(true)
-      await updateSkill(editTarget!.id, {
+      await updateSkill(editTarget.id, {
         displayName: values.displayName,
         description: values.description,
         instructions: values.instructions,
         reference: values.reference || undefined,
         category: values.category,
         dependencies: values.dependencies,
-        templates: editTemplates.filter(t => t.name.trim()),
-        scripts: editScripts.filter(s => s.name.trim()),
+        templates: editTemplates.filter((item) => item.name.trim()),
+        scripts: editScripts.filter((item) => item.name.trim()),
         tags: values.tags ? values.tags.split(/[,，、\s]+/).filter(Boolean) : [],
       })
       message.success('修改成功')
       setEditOpen(false)
       await reload()
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'errorFields' in err) return
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'errorFields' in error) return
       message.error('修改失败')
     } finally {
       setEditing(false)
     }
   }
 
-  /* 删除 */
   const handleDelete = async (id: string) => {
     await deleteSkill(id)
     message.success('Skill 已删除')
     await reload()
   }
 
-  /* 状态切换 */
   const handleToggle = async (id: string) => {
     await toggleSkillStatus(id)
     message.success('状态已更新')
     await reload()
   }
 
-  /* 详情 */
   const openDetail = (skill: Skill) => {
     setDetailTarget(skill)
     setDetailOpen(true)
   }
 
-  /* 从本体导入 */
   const openImport = async () => {
-    const fns = await listImportableFunctions()
-    // 过滤掉已导入的（按 name 匹配）
-    const existingNames = list.map(s => s.tags).flat()
-    setImportFunctions(fns.filter(f => !existingNames.includes(f.name)))
+    const functions = await listImportableFunctions()
+    setImportFunctions(filterImportableFunctions(functions, list))
     setSelectedImports([])
     setImportOpen(true)
   }
@@ -369,22 +389,22 @@ export default function SkillsMarketPage() {
       message.warning('请选择要导入的 Function')
       return
     }
-    const selected = importFunctions.filter(f => selectedImports.includes(f.id))
-    await Promise.all(selected.map(fn => importFunctionAsSkill(fn)))
+    const selected = importFunctions.filter((item) => selectedImports.includes(item.id))
+    await Promise.all(selected.map((item) => importFunctionAsSkill(item)))
     message.success(`成功导入 ${selected.length} 个 Function 为 Skill`)
     setImportOpen(false)
     await reload()
   }
 
-  /* Skill 表单 (创建/编辑复用) */
   const renderSkillForm = (
-    formInst: ReturnType<typeof Form.useForm<SkillFormValues>>[0],
-    tplFiles: SkillTemplateFile[],
-    setTplFiles: (f: SkillTemplateFile[]) => void,
-    scrFiles: SkillScriptFile[],
-    setScrFiles: (f: SkillScriptFile[]) => void,
+    formInstance: ReturnType<typeof Form.useForm<SkillFormValues>>[0],
+    templateFiles: SkillTemplateFile[],
+    onTemplateChange: (next: SkillTemplateFile[]) => void,
+    scriptFiles: SkillScriptFile[],
+    onScriptChange: (next: SkillScriptFile[]) => void,
+    readOnlyName = false,
   ) => (
-    <Form<SkillFormValues> form={formInst} layout="vertical" style={{ marginTop: 16 }}>
+    <Form<SkillFormValues> form={formInstance} layout="vertical" style={{ marginTop: 16 }}>
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item name="displayName" label="Skill 显示名称" rules={[{ required: true, message: '请输入显示名称' }]}>
@@ -392,10 +412,13 @@ export default function SkillsMarketPage() {
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item name="name" label="Skill ID（目录名）" rules={[{ required: true, message: '请输入标识名' }]}
+          <Form.Item
+            name="name"
+            label="Skill ID（目录名）"
+            rules={[{ required: true, message: '请输入标识名' }]}
             extra="小写字母 + 连字符，如 equipment-fault-diagnosis"
           >
-            <Input placeholder="例如：equipment-fault-diagnosis" maxLength={64} />
+            <Input placeholder="例如：equipment-fault-diagnosis" maxLength={64} disabled={readOnlyName} />
           </Form.Item>
         </Col>
       </Row>
@@ -403,81 +426,66 @@ export default function SkillsMarketPage() {
         <Col span={12}>
           <Form.Item name="category" label="分类" rules={[{ required: true }]}>
             <Select
-              options={SKILL_CATEGORIES.map(c => ({
-                value: c,
-                label: `${SKILL_CATEGORY_ICONS[c]} ${SKILL_CATEGORY_LABELS[c]}`,
+              options={SKILL_CATEGORIES.map((category) => ({
+                value: category,
+                label: `${SKILL_CATEGORY_ICONS[category]} ${SKILL_CATEGORY_LABELS[category]}`,
               }))}
             />
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item name="tags" label="标签"
-            extra="逗号分隔，如：设备运维, 故障诊断, IoT"
-          >
+          <Form.Item name="tags" label="标签" extra="逗号分隔，如：设备运维, 故障诊断, IoT">
             <Input placeholder="设备运维, 故障诊断" />
           </Form.Item>
         </Col>
       </Row>
-      <Form.Item name="description" label="触发描述" rules={[{ required: true, message: '请输入描述' }]}
+      <Form.Item
+        name="description"
+        label="触发描述"
+        rules={[{ required: true, message: '请输入描述' }]}
         extra="Agent 根据此描述判断何时自动加载该 Skill（最多 200 字）"
       >
         <TextArea rows={2} placeholder="描述该 Skill 的功能和适用场景" maxLength={200} showCount />
       </Form.Item>
 
-      {/* SKILL.md */}
       <Divider titlePlacement="left" plain style={{ margin: '8px 0 16px', fontSize: 13 }}>
         <FileMarkdownOutlined style={{ marginRight: 4, color: '#7c3aed' }} />
-        SKILL.md <Tag color="purple" style={{ fontSize: 10, marginLeft: 4, lineHeight: '16px', padding: '0 4px' }}>必要</Tag>
+        SKILL.md
       </Divider>
-      <Form.Item name="instructions" rules={[{ required: true, message: '请输入 SKILL.md 内容' }]}
-        extra="主设定：名称、触发时机、可用工具、执行流程、输出规范"
-      >
-        <TextArea
-          rows={10}
-          placeholder={`# Skill 名称\n\n> **触发时机**：当...时自动加载。\n\n## 可用工具\n\n- \`tool-name\` — 说明\n\n## 执行流程\n\n1. ...\n2. ...\n\n## 输出规范\n\n- ...`}
-          style={{ fontFamily: '"Cascadia Code", "Fira Code", Consolas, monospace', fontSize: 13 }}
-        />
+      <Form.Item name="instructions" rules={[{ required: true, message: '请输入 SKILL.md 内容' }]}>
+        <TextArea rows={10} style={{ fontFamily: '"Cascadia Code", "Fira Code", Consolas, monospace', fontSize: 13 }} />
       </Form.Item>
 
-      {/* reference.md */}
       <Divider titlePlacement="left" plain style={{ margin: '8px 0 16px', fontSize: 13 }}>
         <FileTextOutlined style={{ marginRight: 4, color: '#1677ff' }} />
-        reference.md <Text type="secondary" style={{ fontSize: 11, marginLeft: 4 }}>（可选）</Text>
+        reference.md
       </Divider>
-      <Form.Item name="reference"
-        extra="补充参考：格式范本、专有名词、填写范例等"
-      >
-        <TextArea
-          rows={6}
-          placeholder={`# 参考资料\n\n## 专有名词\n\n| 缩写 | 全称 | 说明 |\n|------|------|------|\n| ... | ... | ... |\n\n## 填写范例\n\n...`}
-          style={{ fontFamily: '"Cascadia Code", "Fira Code", Consolas, monospace', fontSize: 13 }}
-        />
+      <Form.Item name="reference">
+        <TextArea rows={6} style={{ fontFamily: '"Cascadia Code", "Fira Code", Consolas, monospace', fontSize: 13 }} />
       </Form.Item>
 
-      {/* template/ */}
       <Divider titlePlacement="left" plain style={{ margin: '8px 0 16px', fontSize: 13 }}>
         <FolderOutlined style={{ marginRight: 4, color: '#faad14' }} />
-        template/ <Text type="secondary" style={{ fontSize: 11, marginLeft: 4 }}>（可选）</Text>
+        template/
       </Divider>
       <FileListEditor
         title="输出模板文件"
         icon={<span>📋</span>}
         placeholder="文件名，如 report.md"
-        files={tplFiles}
-        onChange={setTplFiles}
+        files={templateFiles}
+        onChange={onTemplateChange}
       />
 
-      {/* scripts/ */}
       <Divider titlePlacement="left" plain style={{ margin: '8px 0 16px', fontSize: 13 }}>
         <FolderOutlined style={{ marginRight: 4, color: '#52c41a' }} />
-        scripts/ <Text type="secondary" style={{ fontSize: 11, marginLeft: 4 }}>（可选）</Text>
+        scripts/
       </Divider>
       <FileListEditor
         title="执行脚本文件"
         icon={<span>📜</span>}
         placeholder="文件名，如 analyze.py"
-        files={scrFiles}
-        onChange={setScrFiles}
+        files={scriptFiles}
+        onChange={onScriptChange}
       />
 
       <Divider style={{ margin: '8px 0 16px' }} />
@@ -487,81 +495,72 @@ export default function SkillsMarketPage() {
     </Form>
   )
 
-  /* 表格列 — 资源概况 */
-  const getFileCount = (s: Skill) => {
-    let count = 1 // SKILL.md
-    if (s.reference) count++
-    count += s.templates.length + s.scripts.length
-    return count
-  }
-
-  /* 表格列 */
-  const columns = [
+  const columns: ColumnsType<Skill> = [
     {
       title: 'Skill',
       key: 'skill',
-      render: (_: unknown, r: Skill) => (
-        <Space>
-          <span style={{ fontSize: 20 }}>{SKILL_CATEGORY_ICONS[r.category]}</span>
+      width: 240,
+      render: (_, record) => (
+        <Space align="start">
+          <span style={{ fontSize: 20 }}>{SKILL_CATEGORY_ICONS[record.category]}</span>
           <div>
-            <Text strong style={{ cursor: 'pointer', color: '#1677ff' }} onClick={() => openDetail(r)}>
-              {r.displayName}
+            <Text strong style={{ cursor: 'pointer', color: '#1677ff' }} onClick={() => openDetail(record)}>
+              {record.displayName}
             </Text>
-            <br />
-            <Text type="secondary" style={{ fontSize: 11 }}>{r.name}/</Text>
+            <div>
+              <Text type="secondary" style={{ fontSize: 11 }}>{record.name}</Text>
+            </div>
+            <Space size={[4, 4]} wrap style={{ marginTop: 6 }}>
+              <Tag color={SKILL_CATEGORY_COLORS[record.category]}>{SKILL_CATEGORY_LABELS[record.category]}</Tag>
+              <Tag color={SKILL_MARKET_TYPE_COLORS[record.marketType]}>{SKILL_MARKET_TYPE_LABELS[record.marketType]}</Tag>
+            </Space>
           </div>
         </Space>
       ),
     },
     {
-      title: '分类',
-      dataIndex: 'category',
-      key: 'category',
-      width: 110,
-      render: (v: SkillCategory) => (
-        <Tag color={SKILL_CATEGORY_COLORS[v]}>{SKILL_CATEGORY_ICONS[v]} {SKILL_CATEGORY_LABELS[v]}</Tag>
+      title: '适用范围',
+      key: 'scope',
+      width: 190,
+      render: (_, record) => (
+        <Space direction="vertical" size={2}>
+          <Text>{SKILL_INDUSTRY_LABELS[record.industry]}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{record.phase}</Text>
+          <Tag color={SKILL_COVERAGE_LEVEL_COLORS[record.coverageLevel]}>{SKILL_COVERAGE_LEVEL_LABELS[record.coverageLevel]}</Tag>
+        </Space>
       ),
     },
     {
-      title: '描述',
-      dataIndex: 'description',
-      key: 'description',
-      width: 280,
-      render: (v: string) => (
-        <Text type="secondary" style={{ fontSize: 12 }}>{v.length > 60 ? v.slice(0, 60) + '...' : v}</Text>
+      title: '推荐说明',
+      key: 'recommendation',
+      width: 320,
+      render: (_, record) => (
+        <Space direction="vertical" size={4}>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {record.recommendationReason}
+          </Text>
+          <Space size={[4, 4]} wrap>
+            {record.sourceOntologyNames.slice(0, 2).map((item) => (
+              <Tag key={item}>{item}</Tag>
+            ))}
+            {record.sourceOntologyNames.length > 2 && <Tag>+{record.sourceOntologyNames.length - 2}</Tag>}
+          </Space>
+        </Space>
       ),
     },
     {
-      title: '目录结构',
-      key: 'structure',
-      width: 160,
-      render: (_: unknown, r: Skill) => {
-        const parts: string[] = ['SKILL.md']
-        if (r.reference) parts.push('reference.md')
-        if (r.templates.length > 0) parts.push(`template/ (${r.templates.length})`)
-        if (r.scripts.length > 0) parts.push(`scripts/ (${r.scripts.length})`)
-        return (
-          <Tooltip title={parts.join('\n')} overlayStyle={{ whiteSpace: 'pre-line' }}>
-            <Space size={4} wrap>
-              <Tag icon={<FileMarkdownOutlined />} color="purple">SKILL.md</Tag>
-              {r.reference && <Tag icon={<FileTextOutlined />} color="blue">ref</Tag>}
-              {r.templates.length > 0 && <Tag icon={<FolderOutlined />} color="orange">tpl:{r.templates.length}</Tag>}
-              {r.scripts.length > 0 && <Tag icon={<CodeOutlined />} color="green">scripts:{r.scripts.length}</Tag>}
-            </Space>
-          </Tooltip>
-        )
-      },
-    },
-    {
-      title: '安装量',
-      dataIndex: 'installs',
-      key: 'installs',
-      width: 90,
-      sorter: (a: Skill, b: Skill) => a.installs - b.installs,
-      render: (v: number) => (
-        <Space size={4}>
-          <DownloadOutlined style={{ color: '#8c8c8c' }} />
-          {v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v}
+      title: '执行指标',
+      key: 'metrics',
+      width: 180,
+      render: (_, record) => (
+        <Space direction="vertical" size={2}>
+          <Text>{formatCompactNumber(record.usageCount)} 调用</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            成功率 {record.successRate?.toFixed(1) || '--'}%
+          </Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {record.avgLatencyMs || '--'} ms
+          </Text>
         </Space>
       ),
     },
@@ -569,41 +568,85 @@ export default function SkillsMarketPage() {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 90,
-      filters: [
-        { text: 'Active', value: 'Active' },
-        { text: 'Draft', value: 'Draft' },
-        { text: 'Disabled', value: 'Disabled' },
-      ],
-      onFilter: (value: unknown, record: Skill) => record.status === value,
-      render: (v: SkillStatus) => (
+      width: 100,
+      render: (value: SkillStatus) => (
         <span>
-          <span className={`status-dot ${v === 'Active' ? 'active' : v === 'Draft' ? 'warning' : 'error'}`} />
-          <Tag color={SKILL_STATUS_COLORS[v]}>{v}</Tag>
+          <span className={`status-dot ${value === 'Active' ? 'active' : value === 'Draft' ? 'warning' : 'error'}`} />
+          <Tag color={SKILL_STATUS_COLORS[value]}>{value}</Tag>
         </span>
+      ),
+    },
+    {
+      title: '文件',
+      key: 'files',
+      width: 120,
+      render: (_, record) => (
+        <Tooltip title={`共 ${getFileCount(record)} 个文件`}>
+          <Space size={4} wrap>
+            <Tag color="purple">SKILL</Tag>
+            {record.reference && <Tag color="blue">REF</Tag>}
+            {record.templates.length > 0 && <Tag color="orange">TPL {record.templates.length}</Tag>}
+            {record.scripts.length > 0 && <Tag color="green">PY {record.scripts.length}</Tag>}
+          </Space>
+        </Tooltip>
       ),
     },
     {
       title: '操作',
       key: 'action',
       width: 160,
-      render: (_: unknown, record: Skill) => (
-        <ActionColumn actions={[
-          { key: 'view', icon: <EyeOutlined />, tooltip: '查看详情', onClick: () => openDetail(record) },
-          { key: 'edit', icon: <EditOutlined />, tooltip: '编辑', onClick: () => openEdit(record) },
-          { key: 'toggle', icon: <CheckCircleOutlined />, tooltip: record.status === 'Active' ? '禁用' : '启用', onClick: () => handleToggle(record.id) },
-          { key: 'delete', icon: <DeleteOutlined />, tooltip: '删除', danger: true, confirm: '确认删除该 Skill？', onClick: () => handleDelete(record.id) },
-        ]} />
+      render: (_, record) => (
+        <ActionColumn
+          actions={[
+            { key: 'view', icon: <EyeOutlined />, tooltip: '查看详情', onClick: () => openDetail(record) },
+            { key: 'edit', icon: <EditOutlined />, tooltip: '编辑', onClick: () => openEdit(record) },
+            {
+              key: 'toggle',
+              icon: <CheckCircleOutlined />,
+              tooltip: record.status === 'Active' ? '禁用' : '启用',
+              onClick: () => handleToggle(record.id),
+            },
+            {
+              key: 'delete',
+              icon: <DeleteOutlined />,
+              tooltip: '删除',
+              danger: true,
+              confirm: '确认删除该 Skill？',
+              onClick: () => handleDelete(record.id),
+            },
+          ]}
+        />
       ),
     },
   ]
 
-  /* 统计卡片 */
   const statItems = [
-    { title: 'Skills 总数', value: list.length, icon: <AppstoreOutlined />, color: '#4f46e5', bg: '#eef2ff' },
-    { title: '已启用', value: activeCount, icon: <CheckCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
-    { title: '分类覆盖', value: new Set(list.map(s => s.category)).size, icon: <TagOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
-    { title: '总安装量', value: totalInstalls >= 1000 ? `${(totalInstalls / 1000).toFixed(1)}K` : totalInstalls, icon: <CloudDownloadOutlined />, color: '#d97706', bg: '#fffbeb' },
+    { title: 'Skill 总数', value: insightStats.totalSkills, icon: <AppstoreOutlined />, color: '#4f46e5', bg: '#eef2ff' },
+    { title: '业务 Skill', value: insightStats.businessSkills, icon: <ThunderboltOutlined />, color: '#0f766e', bg: '#ecfeff' },
+    { title: '通用 Skill', value: insightStats.generalSkills, icon: <TagOutlined />, color: '#a16207', bg: '#fefce8' },
+    { title: '覆盖本体', value: insightStats.coveredOntologies, icon: <CheckCircleOutlined />, color: '#15803d', bg: '#f0fdf4' },
+    { title: '覆盖行业', value: insightStats.coveredIndustries, icon: <CloudDownloadOutlined />, color: '#c2410c', bg: '#fff7ed' },
+  ]
+
+  const marketTypeOptions: { value: SkillMarketType | 'all'; label: string }[] = [
+    { value: 'all', label: '全部类型' },
+    { value: 'business', label: SKILL_MARKET_TYPE_LABELS.business },
+    { value: 'general', label: SKILL_MARKET_TYPE_LABELS.general },
+  ]
+
+  const industryOptions: { value: SkillIndustry | 'all'; label: string }[] = [
+    { value: 'all', label: '全部行业' },
+    ...(['manufacturing', 'retail', 'medical', 'transport', 'general'] as SkillIndustry[]).map((industry) => ({
+      value: industry,
+      label: SKILL_INDUSTRY_LABELS[industry],
+    })),
+  ]
+
+  const coverageOptions: { value: SkillCoverageLevel | 'all'; label: string }[] = [
+    { value: 'all', label: '全部覆盖等级' },
+    { value: 'core', label: SKILL_COVERAGE_LEVEL_LABELS.core },
+    { value: 'enhanced', label: SKILL_COVERAGE_LEVEL_LABELS.enhanced },
+    { value: 'optional', label: SKILL_COVERAGE_LEVEL_LABELS.optional },
   ]
 
   return (
@@ -612,22 +655,21 @@ export default function SkillsMarketPage() {
         <div className="page-header">
           <Title level={4}>Skills Hub</Title>
           <Text type="secondary">
-            L4 能力资产 — 将专业知识、工作流与最佳实践封装为可复用的 AI Skill，Agent 按需自动加载
+            L4 能力资产市场，按本体推荐业务 Skill，并混合展示跨行业复用的通用 Skill。
           </Text>
         </div>
 
-        {/* 统计 */}
         <Row gutter={[14, 14]} style={{ margin: '16px 0 20px' }}>
-          {statItems.map(s => (
-            <Col span={6} key={s.title}>
+          {statItems.map((item) => (
+            <Col xs={24} sm={12} lg={Math.floor(24 / statItems.length)} key={item.title}>
               <Card size="small" className="stat-card card-hover" styles={{ body: { padding: '16px 18px' } }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div className="stat-icon-wrap" style={{ background: s.bg, color: s.color }}>
-                    {s.icon}
+                  <div className="stat-icon-wrap" style={{ background: item.bg, color: item.color }}>
+                    {item.icon}
                   </div>
                   <div>
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{s.title}</Text>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>{s.value}</div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{item.title}</Text>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: item.color, lineHeight: 1.2 }}>{item.value}</div>
                   </div>
                 </div>
               </Card>
@@ -635,90 +677,153 @@ export default function SkillsMarketPage() {
           ))}
         </Row>
 
-        {/* 分类说明 */}
-        <Row gutter={[12, 12]} style={{ marginBottom: 20 }}>
-          {SKILL_CATEGORIES.map(c => (
-            <Col span={4} key={c}>
-              <Card
-                size="small"
-                hoverable
-                style={{
-                  background: filterCategory === c ? '#e6f4ff' : '#fafafa',
-                  borderColor: filterCategory === c ? '#91caff' : undefined,
-                  cursor: 'pointer',
-                }}
-                styles={{ body: { padding: '10px 12px', textAlign: 'center' } }}
-                onClick={() => setFilterCategory(filterCategory === c ? 'all' : c)}
-              >
-                <div style={{ fontSize: 22, marginBottom: 2 }}>{SKILL_CATEGORY_ICONS[c]}</div>
-                <Text strong style={{ fontSize: 12 }}>{SKILL_CATEGORY_LABELS[c]}</Text>
-                <br />
-                <Text type="secondary" style={{ fontSize: 10 }}>
-                  {list.filter(s => s.category === c).length} 个
-                </Text>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-
-        {/* 工具栏 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-          <Space>
-            <Select
-              value={filterCategory}
-              onChange={setFilterCategory}
-              style={{ width: 150 }}
-              size="small"
-              options={[
-                { value: 'all', label: '全部分类' },
-                ...SKILL_CATEGORIES.map(c => ({
-                  value: c,
-                  label: `${SKILL_CATEGORY_ICONS[c]} ${SKILL_CATEGORY_LABELS[c]}`,
-                })),
-              ]}
-            />
-            <Input
-              placeholder="搜索 Skill 名称 / 标签"
-              prefix={<SearchOutlined />}
-              allowClear
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ width: 260 }}
-              size="small"
-            />
-          </Space>
-          <Space>
-            <Button icon={<ReloadOutlined />} onClick={reload} size="small">刷新</Button>
-            <Button
-              icon={<ImportOutlined />}
-              onClick={openImport}
-            >
-              从本体导入
-            </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => { setCreateOpen(true); form.resetFields(); setTemplates([]); setScripts([]) }}
-            >
-              创建 Skill
-            </Button>
-          </Space>
+        <div className="skills-market-featured">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div>
+              <Title level={5} style={{ marginBottom: 4 }}>推荐 Skill</Title>
+              <Text type="secondary">优先展示本体驱动的业务能力与高复用通用能力。</Text>
+            </div>
+            <Tag color="geekblue">{featured.length} 个推荐位</Tag>
+          </div>
+          <Row gutter={[12, 12]}>
+            {featured.map((skill) => (
+              <Col xs={24} md={12} xl={8} key={skill.id}>
+                <Card hoverable className="skills-market-featured-card" onClick={() => openDetail(skill)}>
+                  <Space direction="vertical" size={10} style={{ width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                      <Space align="start">
+                        <span style={{ fontSize: 24 }}>{SKILL_CATEGORY_ICONS[skill.category]}</span>
+                        <div>
+                          <Text strong>{skill.displayName}</Text>
+                          <div>
+                            <Text type="secondary" style={{ fontSize: 12 }}>{SKILL_INDUSTRY_LABELS[skill.industry]} · {skill.phase}</Text>
+                          </div>
+                        </div>
+                      </Space>
+                      <Tag color={SKILL_MARKET_TYPE_COLORS[skill.marketType]}>{SKILL_MARKET_TYPE_LABELS[skill.marketType]}</Tag>
+                    </div>
+                    <Paragraph type="secondary" style={{ marginBottom: 0, minHeight: 44 }}>
+                      {skill.recommendationReason}
+                    </Paragraph>
+                    <Space size={[4, 4]} wrap>
+                      {skill.capabilities.slice(0, 3).map((item) => (
+                        <Tag key={item}>{item}</Tag>
+                      ))}
+                    </Space>
+                    <div className="skills-market-featured-meta">
+                      <span>{formatCompactNumber(skill.usageCount)} 调用</span>
+                      <span>{skill.successRate?.toFixed(1)}% 成功率</span>
+                      <span>{skill.avgLatencyMs} ms</span>
+                    </div>
+                  </Space>
+                </Card>
+              </Col>
+            ))}
+          </Row>
         </div>
+
+        <Card size="small" style={{ marginTop: 20, marginBottom: 16, background: '#fafafa' }}>
+          <Row gutter={[12, 12]}>
+            <Col xs={24} md={12} xl={6}>
+              <Input
+                placeholder="搜索 Skill / 本体 / 场景"
+                prefix={<SearchOutlined />}
+                allowClear
+                value={filters.query}
+                onChange={(event) => setFilters((prev) => ({ ...prev, query: event.target.value }))}
+              />
+            </Col>
+            <Col xs={12} md={12} xl={4}>
+              <Select
+                value={filters.marketType}
+                onChange={(value) => setFilters((prev) => ({ ...prev, marketType: value }))}
+                options={marketTypeOptions}
+                style={{ width: '100%' }}
+              />
+            </Col>
+            <Col xs={12} md={12} xl={4}>
+              <Select
+                value={filters.industry}
+                onChange={(value) => setFilters((prev) => ({ ...prev, industry: value }))}
+                options={industryOptions}
+                style={{ width: '100%' }}
+              />
+            </Col>
+            <Col xs={12} md={12} xl={4}>
+              <Select
+                value={filters.category}
+                onChange={(value) => setFilters((prev) => ({ ...prev, category: value }))}
+                options={[
+                  { value: 'all', label: '全部分类' },
+                  ...SKILL_CATEGORIES.map((category) => ({
+                    value: category,
+                    label: `${SKILL_CATEGORY_ICONS[category]} ${SKILL_CATEGORY_LABELS[category]}`,
+                  })),
+                ]}
+                style={{ width: '100%' }}
+              />
+            </Col>
+            <Col xs={12} md={12} xl={3}>
+              <Select
+                value={filters.phase}
+                onChange={(value) => setFilters((prev) => ({ ...prev, phase: value }))}
+                options={[
+                  { value: 'all', label: '全部阶段' },
+                  ...phaseOptions.map((phase) => ({ value: phase, label: phase })),
+                ]}
+                style={{ width: '100%' }}
+              />
+            </Col>
+            <Col xs={12} md={12} xl={3}>
+              <Select
+                value={filters.coverageLevel}
+                onChange={(value) => setFilters((prev) => ({ ...prev, coverageLevel: value }))}
+                options={coverageOptions}
+                style={{ width: '100%' }}
+              />
+            </Col>
+          </Row>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, gap: 12, flexWrap: 'wrap' }}>
+            <Text type="secondary">当前结果 {filtered.length} 条</Text>
+            <Space>
+              <Button icon={<ReloadOutlined />} onClick={() => void reload()} size="small">刷新</Button>
+              <Button onClick={() => setFilters(DEFAULT_FILTERS)} size="small">重置筛选</Button>
+              <Button icon={<ImportOutlined />} onClick={() => void openImport()}>从本体导入</Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  setCreateOpen(true)
+                  form.resetFields()
+                  setTemplates([])
+                  setScripts([])
+                }}
+              >
+                创建 Skill
+              </Button>
+            </Space>
+          </div>
+        </Card>
 
         <Table
           dataSource={filtered}
           columns={columns}
           rowKey="id"
-          pagination={filtered.length > 10 ? { pageSize: 10, showSizeChanger: true, showTotal: t => `共 ${t} 条` } : false}
           size="middle"
+          scroll={{ x: 1320 }}
+          pagination={filtered.length > 10 ? { pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` } : false}
         />
       </Card>
 
-      {/* ===== 创建弹窗 ===== */}
       <Modal
         title={<ModalHeader icon={<FolderOpenOutlined />} title="创建 Skill" color="#faad14" />}
         open={createOpen}
-        onCancel={() => { setCreateOpen(false); form.resetFields(); setTemplates([]); setScripts([]) }}
+        onCancel={() => {
+          setCreateOpen(false)
+          form.resetFields()
+          setTemplates([])
+          setScripts([])
+        }}
         onOk={() => void handleCreate()}
         okText="创建"
         cancelText="取消"
@@ -729,11 +834,13 @@ export default function SkillsMarketPage() {
         {renderSkillForm(form, templates, setTemplates, scripts, setScripts)}
       </Modal>
 
-      {/* ===== 编辑弹窗 ===== */}
       <Modal
         title={<ModalHeader icon={<EditOutlined />} title="编辑 Skill" />}
         open={editOpen}
-        onCancel={() => { setEditOpen(false); editForm.resetFields() }}
+        onCancel={() => {
+          setEditOpen(false)
+          editForm.resetFields()
+        }}
         onOk={() => void handleEdit()}
         okText="保存"
         cancelText="取消"
@@ -741,149 +848,165 @@ export default function SkillsMarketPage() {
         width={800}
         destroyOnClose
       >
-        {renderSkillForm(editForm, editTemplates, setEditTemplates, editScripts, setEditScripts)}
+        {renderSkillForm(editForm, editTemplates, setEditTemplates, editScripts, setEditScripts, true)}
       </Modal>
 
-      {/* ===== 详情弹窗 ===== */}
       <Modal
         title={<ModalHeader icon={<EyeOutlined />} title="Skill 详情" />}
         open={detailOpen}
         onCancel={() => setDetailOpen(false)}
         footer={<Button onClick={() => setDetailOpen(false)}>关闭</Button>}
-        width={800}
+        width={860}
         destroyOnClose
       >
         {detailTarget && (
           <>
-            {/* 头部 */}
             <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
               <span style={{ fontSize: 40 }}>{SKILL_CATEGORY_ICONS[detailTarget.category]}</span>
               <Title level={4} style={{ margin: '8px 0 4px' }}>{detailTarget.displayName}</Title>
               <Space wrap>
-                <Tag color={SKILL_CATEGORY_COLORS[detailTarget.category]}>
-                  {SKILL_CATEGORY_LABELS[detailTarget.category]}
-                </Tag>
-                <Tag color={SKILL_STATUS_COLORS[detailTarget.status]}>{detailTarget.status}</Tag>
+                <Tag color={SKILL_CATEGORY_COLORS[detailTarget.category]}>{SKILL_CATEGORY_LABELS[detailTarget.category]}</Tag>
+                <Tag color={SKILL_MARKET_TYPE_COLORS[detailTarget.marketType]}>{SKILL_MARKET_TYPE_LABELS[detailTarget.marketType]}</Tag>
+                <Tag color={SKILL_COVERAGE_LEVEL_COLORS[detailTarget.coverageLevel]}>{SKILL_COVERAGE_LEVEL_LABELS[detailTarget.coverageLevel]}</Tag>
                 <Tag icon={<UserOutlined />}>{detailTarget.author}</Tag>
                 <Tag icon={<DownloadOutlined />}>{detailTarget.installs.toLocaleString()} 安装</Tag>
               </Space>
-              <Paragraph type="secondary" style={{ margin: '8px auto 0', maxWidth: 500 }}>
+              <Paragraph type="secondary" style={{ margin: '8px auto 0', maxWidth: 640 }}>
                 {detailTarget.description}
               </Paragraph>
             </div>
 
-            {/* 标签 */}
-            {detailTarget.tags.length > 0 && (
-              <div style={{ textAlign: 'center', margin: '8px 0 16px' }}>
-                {detailTarget.tags.map(t => <Tag key={t} color="default" style={{ margin: 2 }}>{t}</Tag>)}
-              </div>
-            )}
+            <Descriptions column={2} bordered size="small" style={{ marginBottom: 16 }}>
+              <Descriptions.Item label="适用行业">{SKILL_INDUSTRY_LABELS[detailTarget.industry]}</Descriptions.Item>
+              <Descriptions.Item label="业务阶段">{detailTarget.phase}</Descriptions.Item>
+              <Descriptions.Item label="调用量">{detailTarget.usageCount.toLocaleString()}</Descriptions.Item>
+              <Descriptions.Item label="成功率">{detailTarget.successRate?.toFixed(1) || '--'}%</Descriptions.Item>
+              <Descriptions.Item label="平均耗时">{detailTarget.avgLatencyMs || '--'} ms</Descriptions.Item>
+              <Descriptions.Item label="目录文件">{getFileCount(detailTarget)} 个</Descriptions.Item>
+              <Descriptions.Item label="推荐场景" span={2}>
+                <Space size={[4, 4]} wrap>
+                  {detailTarget.recommendedFor.map((item) => <Tag key={item}>{item}</Tag>)}
+                </Space>
+              </Descriptions.Item>
+              <Descriptions.Item label="来源本体" span={2}>
+                <Space size={[4, 4]} wrap>
+                  {detailTarget.sourceOntologyNames.length === 0 ? (
+                    <Text type="secondary">未绑定本体</Text>
+                  ) : (
+                    detailTarget.sourceOntologyNames.map((item) => <Tag key={item}>{item}</Tag>)
+                  )}
+                </Space>
+              </Descriptions.Item>
+              <Descriptions.Item label="能力标签" span={2}>
+                <Space size={[4, 4]} wrap>
+                  {detailTarget.capabilities.map((item) => <Tag color="blue" key={item}>{item}</Tag>)}
+                </Space>
+              </Descriptions.Item>
+              <Descriptions.Item label="推荐理由" span={2}>
+                {detailTarget.recommendationReason}
+              </Descriptions.Item>
+            </Descriptions>
 
-            {/* 目录结构 */}
             <Divider titlePlacement="left" plain style={{ fontSize: 13 }}>
               <FolderOpenOutlined style={{ marginRight: 4 }} />目录结构 ({getFileCount(detailTarget)} 个文件)
             </Divider>
             <SkillDirectoryTree skill={detailTarget} />
 
-            {/* SKILL.md */}
             <Divider titlePlacement="left" plain style={{ fontSize: 13 }}>
               <FileMarkdownOutlined style={{ marginRight: 4, color: '#7c3aed' }} />
               SKILL.md
-              <Tag color="purple" style={{ fontSize: 10, marginLeft: 6, lineHeight: '16px', padding: '0 4px' }}>必要</Tag>
             </Divider>
-            <pre className="code-block" style={{ whiteSpace: 'pre-wrap', maxHeight: 360, overflowY: 'auto' }}>
+            <pre className="code-block" style={{ whiteSpace: 'pre-wrap', maxHeight: 320, overflowY: 'auto' }}>
               {detailTarget.instructions}
             </pre>
 
-            {/* reference.md */}
             {detailTarget.reference && (
               <>
                 <Divider titlePlacement="left" plain style={{ fontSize: 13 }}>
                   <FileTextOutlined style={{ marginRight: 4, color: '#1677ff' }} />
                   reference.md
                 </Divider>
-                <pre className="code-block" style={{ whiteSpace: 'pre-wrap', maxHeight: 280, overflowY: 'auto' }}>
+                <pre className="code-block" style={{ whiteSpace: 'pre-wrap', maxHeight: 220, overflowY: 'auto' }}>
                   {detailTarget.reference}
                 </pre>
               </>
             )}
-
-            {/* 元信息 */}
-            <Divider titlePlacement="left" plain style={{ fontSize: 13 }}>元信息</Divider>
-            <Descriptions column={2} bordered size="small">
-              <Descriptions.Item label="Skill ID"><Text code>{detailTarget.name}</Text></Descriptions.Item>
-              <Descriptions.Item label="分类">
-                <Tag color={SKILL_CATEGORY_COLORS[detailTarget.category]}>{SKILL_CATEGORY_LABELS[detailTarget.category]}</Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="依赖">{detailTarget.dependencies || '无'}</Descriptions.Item>
-              <Descriptions.Item label="作者">{detailTarget.author}</Descriptions.Item>
-              <Descriptions.Item label="创建时间">{new Date(detailTarget.createdAt).toLocaleDateString('zh-CN')}</Descriptions.Item>
-              <Descriptions.Item label="最近更新">{new Date(detailTarget.updatedAt).toLocaleDateString('zh-CN')}</Descriptions.Item>
-            </Descriptions>
           </>
         )}
       </Modal>
 
-      {/* ===== 从本体导入弹窗 ===== */}
       <Modal
         title={<ModalHeader icon={<ImportOutlined />} title="从本体 Function 导入" color="#7c3aed" />}
         open={importOpen}
         onCancel={() => setImportOpen(false)}
-        onOk={handleImport}
+        onOk={() => void handleImport()}
         okText={`导入 (${selectedImports.length})`}
         cancelText="取消"
         okButtonProps={{ disabled: selectedImports.length === 0 }}
-        width={640}
+        width={680}
         destroyOnClose
       >
         <div style={{ marginTop: 16 }}>
-          <div style={{
-            padding: '10px 14px', background: '#f9f0ff', border: '1px solid #d3adf7',
-            borderRadius: 6, marginBottom: 16, fontSize: 13,
-          }}>
+          <div
+            style={{
+              padding: '10px 14px',
+              background: '#f9f0ff',
+              border: '1px solid #d3adf7',
+              borderRadius: 6,
+              marginBottom: 16,
+              fontSize: 13,
+            }}
+          >
             <ImportOutlined style={{ color: '#7c3aed', marginRight: 6 }} />
-            从 L3 本体项目中的 Function 定义导入为 Skill，自动生成 SKILL.md 和脚本文件。
+            从 L3 本体项目的 Function 导入能力入口，自动映射为业务 Skill 并补齐基础元数据。
           </div>
           {importFunctions.length === 0 ? (
             <Empty description="所有可用 Function 已导入" />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 400, overflowY: 'auto' }}>
-              {importFunctions.map(fn => {
-                const checked = selectedImports.includes(fn.id)
+              {importFunctions.map((item) => {
+                const checked = selectedImports.includes(item.id)
                 return (
                   <div
-                    key={fn.id}
+                    key={item.id}
                     onClick={() => {
-                      setSelectedImports(prev =>
-                        checked ? prev.filter(id => id !== fn.id) : [...prev, fn.id]
-                      )
+                      setSelectedImports((prev) => (
+                        checked ? prev.filter((id) => id !== item.id) : [...prev, item.id]
+                      ))
                     }}
                     style={{
-                      display: 'flex', alignItems: 'flex-start', gap: 10,
-                      padding: '10px 14px', borderRadius: 8, cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 10,
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      cursor: 'pointer',
                       background: checked ? '#f9f0ff' : '#fafafa',
                       border: `1px solid ${checked ? '#d3adf7' : '#f0f0f0'}`,
-                      transition: 'all 0.2s',
                     }}
                   >
                     <CheckCircleOutlined style={{ color: checked ? '#7c3aed' : '#d9d9d9', fontSize: 18, marginTop: 2 }} />
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <Text strong style={{ fontSize: 14 }}>{fn.name}()</Text>
-                        <Tag color="purple" style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>
-                          {fn.projectName}
-                        </Tag>
-                        <Tag color={fn.status === 'ACTIVE' ? 'green' : 'default'} style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>
-                          {fn.status}
-                        </Tag>
+                        <Text strong style={{ fontSize: 14 }}>{item.name}()</Text>
+                        <Tag color="purple" style={{ fontSize: 10 }}>{item.projectName}</Tag>
+                        <Tag color={item.status === 'ACTIVE' ? 'green' : 'default'} style={{ fontSize: 10 }}>{item.status}</Tag>
                       </div>
-                      <Text type="secondary" style={{ fontSize: 12 }}>{fn.description}</Text>
-                      <pre style={{
-                        margin: '6px 0 0', padding: '6px 10px', background: '#f6f8fa',
-                        borderRadius: 4, fontSize: 11, lineHeight: 1.5, overflow: 'hidden',
-                        maxHeight: 60, color: '#586069',
-                      }}>
-                        {fn.scriptContent}
+                      <Text type="secondary" style={{ fontSize: 12 }}>{item.description}</Text>
+                      <pre
+                        style={{
+                          margin: '6px 0 0',
+                          padding: '6px 10px',
+                          background: '#f6f8fa',
+                          borderRadius: 4,
+                          fontSize: 11,
+                          lineHeight: 1.5,
+                          overflow: 'hidden',
+                          maxHeight: 64,
+                          color: '#586069',
+                        }}
+                      >
+                        {item.scriptContent}
                       </pre>
                     </div>
                   </div>
@@ -893,7 +1016,7 @@ export default function SkillsMarketPage() {
           )}
           {selectedImports.length > 0 && (
             <div style={{ marginTop: 12, paddingTop: 8, borderTop: '1px solid #f0f0f0' }}>
-              <Text type="secondary">已选择 {selectedImports.length} 个 Function，导入后将创建对应 Skill（状态为 Draft）</Text>
+              <Text type="secondary">已选择 {selectedImports.length} 个 Function，导入后将创建对应业务 Skill。</Text>
             </div>
           )}
         </div>

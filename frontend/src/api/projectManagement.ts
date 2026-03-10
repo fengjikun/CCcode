@@ -39,9 +39,9 @@ interface ProjectStore {
 
 /* ========== 108 行业本体定义（来源：滴普科技行业本体清单v3_3.xlsx） ========== */
 // [code, name, industry, phase, triple, agentScene, trainingType, dataCount]
-type OntologyDef = [string, string, string, string, string, string, string, number]
+export type OntologyDef = [string, string, string, string, string, string, string, number]
 
-const ONTOLOGY_DEFS: OntologyDef[] = [
+export const ONTOLOGY_DEFS: OntologyDef[] = [
   // ── 00 故障诊断本体（排第一）──
   ['0.0.1', '故障诊断本体', 'manufacturing', '生产', '(故障现象:W轴限位报警) -[caused_by]-> (IO点位常闭常开状态错误)', '故障诊断Agent：根据设备报警现象自动定位根因并推荐解决方案', '分析类', 8500],
   // ── 01 制造行业（30 个）──
