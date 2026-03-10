@@ -6,6 +6,7 @@ import { buildDefaultTrainingProjects } from '../api/modelTraining'
 import { buildDefaultTrainingDatasets } from '../api/trainingDataset'
 import {
   DATASET_TYPE_LABELS,
+  MODEL_CENTER_PAGE_LABELS,
   MODEL_FAMILY_LABELS,
   MODEL_MODALITY_LABELS,
   TRAIN_STAGE_LABELS,
@@ -80,5 +81,14 @@ describe('modelCenter shared domain vocabulary', () => {
     expect(routes.map(route => route.path)).toEqual(
       expect.arrayContaining(['/chat/completions', '/responses', '/vl/understand', '/doc/parse']),
     )
+  })
+
+  it('exposes the renamed model center navigation labels', () => {
+    expect(MODEL_CENTER_PAGE_LABELS).toEqual({
+      gateway: '推理网关',
+      training: '训练与微调',
+      evaluation: '评测与对齐',
+      datasets: '训练语料',
+    })
   })
 })

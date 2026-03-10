@@ -42,3 +42,10 @@ export const MODEL_CAPABILITY_LABELS: Record<ModelCapability, string> = {
   'document-parsing': '文档解析',
   ocr: 'OCR',
 }
+
+export const MODEL_CENTER_PAGE_LABELS = {
+  gateway: '推理网关',
+  training: '训练与微调',
+  evaluation: '评测与对齐',
+  datasets: '训练语料',
+} as const
