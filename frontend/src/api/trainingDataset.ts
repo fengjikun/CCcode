@@ -7,6 +7,64 @@ interface DatasetStore {
   items: TrainingDataset[]
 }
 
+function inferLegacyDatasetType(dataset: Partial<TrainingDataset>): TrainingDataset['datasetType'] {
+  const sample = dataset.sampleData?.[0]
+  if (sample && typeof sample === 'object') {
+    if ('messages' in sample) return 'conversation'
+    if ('chosen' in sample && 'rejected' in sample) return 'preference'
+    if ('image' in sample && 'question' in sample) return 'vqa'
+    if ('image' in sample && 'ocr_text' in sample) return 'image-caption'
+  }
+  return 'instruction'
+}
+
+function inferLegacyModality(dataset: Partial<TrainingDataset>): TrainingDataset['modality'] {
+  const sample = dataset.sampleData?.[0]
+  if (sample && typeof sample === 'object' && 'image' in sample) return 'image-text'
+  return 'text'
+}
+
+export function normalizeTrainingDataset(dataset: Partial<TrainingDataset>): TrainingDataset {
+  const records = dataset.records ?? 0
+  const datasetType = dataset.datasetType ?? inferLegacyDatasetType(dataset)
+  const modality = dataset.modality ?? inferLegacyModality(dataset)
+
+  return {
+    key: dataset.key ?? `legacy-${Date.now()}`,
+    name: dataset.name ?? '',
+    datasetType,
+    modality,
+    source: dataset.source ?? '',
+    trainSplit: dataset.trainSplit ?? 80,
+    valSplit: dataset.valSplit ?? 10,
+    testSplit: dataset.testSplit ?? 10,
+    records,
+    version: dataset.version ?? 'v1.0',
+    status: dataset.status ?? 'Ready',
+    size: dataset.size ?? '—',
+    createdAt: dataset.createdAt ?? new Date().toISOString().slice(0, 10),
+    updatedAt: dataset.updatedAt ?? new Date().toISOString().slice(0, 10),
+    linkedModels: dataset.linkedModels ?? [],
+    linkedRuns: dataset.linkedRuns ?? [],
+    tokenCount: dataset.tokenCount ?? Math.max(records * 380, records > 0 ? 380 : 0),
+    imageCount: dataset.imageCount ?? (modality === 'image-text' ? records : 0),
+    qualityScore: dataset.qualityScore ?? 80,
+    annotationSchema: dataset.annotationSchema ?? dataset.schemaFields ?? [],
+    format: dataset.format ?? 'JSONL',
+    promptTemplate: dataset.promptTemplate ?? '',
+    schemaFields: dataset.schemaFields ?? [],
+    buildProgress: dataset.buildProgress ?? 0,
+    buildLog: dataset.buildLog ?? [],
+    sampleData: dataset.sampleData ?? [],
+  }
+}
+
+function normalizeDatasetStore(store: DatasetStore): DatasetStore {
+  return {
+    items: store.items.map(normalizeTrainingDataset),
+  }
+}
+
 function buildConversationSample(): Array<Record<string, unknown>> {
   return [
     {
@@ -175,11 +233,18 @@ const DEFAULT_STORE: DatasetStore = {
 }
 
 async function loadStore(): Promise<DatasetStore> {
-  return ensureMockStore<DatasetStore>(STORE_KEY, DEFAULT_STORE)
+  const store = await ensureMockStore<DatasetStore>(STORE_KEY, DEFAULT_STORE)
+  const normalized = normalizeDatasetStore(store)
+
+  const changed = JSON.stringify(store) !== JSON.stringify(normalized)
+  if (changed) {
+    await setMockStore(STORE_KEY, normalized)
+  }
+  return normalized
 }
 
 async function saveStore(store: DatasetStore): Promise<void> {
-  await setMockStore(store ? STORE_KEY : STORE_KEY, store)
+  await setMockStore(STORE_KEY, normalizeDatasetStore(store))
 }
 
 export async function listDatasets(): Promise<TrainingDataset[]> {
