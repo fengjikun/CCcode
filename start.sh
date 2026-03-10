@@ -3,4 +3,6 @@
 
 cd frontend
 npm install
+# 补充删除9002端口占用
+lsof -i :9002 | grep LISTEN | awk '{print $2}' | xargs kill -9
 nohup npm run dev > ./logs/dev-frontend.log 2>&1 &
