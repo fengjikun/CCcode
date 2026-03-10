@@ -1,205 +1,347 @@
-import type { TrainingJob, TrainingProject, Framework, TrainMethod, BaseModel } from '../types/modelTraining'
+import type { TrainingJob, TrainingProject, Framework, TrainMethod, BaseModel, TrainingStatus } from '../types/modelTraining'
 import { delay, rand } from './mockConfig'
 
-/** 生成模拟 loss 曲线：从 startVal 开始递减，带噪声 */
+function clone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
 function generateLossCurve(points: number, startVal: number, endVal: number): number[] {
   const curve: number[] = []
   for (let i = 0; i < points; i++) {
-    const ratio = i / (points - 1)
+    const ratio = i / Math.max(points - 1, 1)
     const base = startVal - (startVal - endVal) * (1 - Math.exp(-3 * ratio))
-    const noise = (Math.random() - 0.5) * 0.04 * (1 - ratio)
+    const noise = (Math.random() - 0.5) * 0.03 * (1 - ratio)
     curve.push(Math.max(0.01, parseFloat((base + noise).toFixed(4))))
   }
   return curve
 }
 
-/** 生成学习率 warmup + cosine decay 曲线 */
 function generateLrCurve(points: number, peakLr: number, warmupRatio: number): number[] {
   const curve: number[] = []
-  const warmupSteps = Math.floor(points * warmupRatio)
+  const warmupSteps = Math.max(1, Math.floor(points * warmupRatio))
   for (let i = 0; i < points; i++) {
-    let lr: number
-    if (i < warmupSteps) {
-      lr = peakLr * (i / warmupSteps)
-    } else {
-      const decay = (i - warmupSteps) / (points - warmupSteps)
-      lr = peakLr * 0.5 * (1 + Math.cos(Math.PI * decay))
-    }
+    const lr = i < warmupSteps
+      ? peakLr * (i / warmupSteps)
+      : peakLr * 0.5 * (1 + Math.cos(Math.PI * ((i - warmupSteps) / Math.max(points - warmupSteps, 1))))
     curve.push(parseFloat(lr.toExponential(2)))
   }
   return curve
 }
 
-function generateLogs(jobName: string, status: string, epoch: string, totalSteps: number): string[] {
-  const lines: string[] = [
-    `[2025-03-08 09:00:01] INFO  Initializing training environment...`,
-    `[2025-03-08 09:00:02] INFO  Loading base model weights from checkpoint...`,
-    `[2025-03-08 09:00:05] INFO  Model loaded successfully. Parameters: 7.2B (trainable: 18.4M via LoRA)`,
-    `[2025-03-08 09:00:06] INFO  Loading dataset: purchase_orders_v3 (24,580 samples)`,
-    `[2025-03-08 09:00:08] INFO  Dataset split: train=19,664 / val=2,458 / test=2,458`,
-    `[2025-03-08 09:00:08] INFO  Hyperparameters: lr=2e-5, batch_size=16, warmup=100, max_seq_len=2048`,
-    `[2025-03-08 09:00:09] INFO  Starting training for ${epoch.split('/')[1] || 50} epochs (${totalSteps} steps)...`,
-    `[2025-03-08 09:00:10] INFO  [Epoch 1/50] Step 100/25000 | loss=2.3412 | lr=2.00e-05 | GPU mem=12.4/16.0 GB`,
-    `[2025-03-08 09:15:30] INFO  [Epoch 5/50] Step 2500/25000 | loss=1.2845 | lr=1.95e-05 | GPU mem=12.6/16.0 GB`,
-    `[2025-03-08 09:30:45] INFO  [Epoch 10/50] Step 5000/25000 | loss=0.8234 | lr=1.80e-05 | GPU mem=12.5/16.0 GB`,
-    `[2025-03-08 09:45:12] INFO  [Epoch 15/50] Step 7500/25000 | loss=0.5621 | lr=1.55e-05 | GPU mem=12.4/16.0 GB`,
-    `[2025-03-08 10:00:28] INFO  Checkpoint saved: models/checkpoint-epoch15-loss0.5621.pt`,
+function buildTrainingLogs(job: Pick<TrainingJob, 'name' | 'status' | 'baseModel' | 'datasetName' | 'tokenCount' | 'imageCount' | 'trainStage' | 'totalSteps' | 'gpu'>): string[] {
+  const logs = [
+    '[2026-03-10 08:00:01] INFO  Initializing distributed training runtime...',
+    `[2026-03-10 08:00:04] INFO  Loading base model ${job.baseModel} weights...`,
+    `[2026-03-10 08:00:08] INFO  Loading corpus ${job.datasetName} | tokens=${job.tokenCount.toLocaleString()} | images=${job.imageCount.toLocaleString()}`,
+    `[2026-03-10 08:00:10] INFO  Preparing ${job.trainStage.toUpperCase()} adapters and optimizer states...`,
+    `[2026-03-10 08:00:12] INFO  GPU allocation ready on ${job.gpu}`,
+    `[2026-03-10 08:02:11] INFO  Step 120/${job.totalSteps} | train_loss=1.8421 | grad_norm=0.92 | lr=1.50e-05`,
+    `[2026-03-10 08:18:35] INFO  Step 980/${job.totalSteps} | eval/judge_pass_rate=0.781 | eval/grounded_score=0.744`,
+    `[2026-03-10 08:18:37] INFO  Checkpoint saved: checkpoints/${job.name}/step-980`,
   ]
 
-  if (status === 'Running') {
-    lines.push(`[2025-03-08 10:15:43] INFO  [Epoch 20/50] Step 10000/25000 | loss=0.4102 | lr=1.25e-05 | GPU mem=12.6/16.0 GB`)
-    lines.push(`[2025-03-08 10:30:55] INFO  Training in progress... ETA: 1h 12m`)
-  } else if (status === 'Completed') {
-    lines.push(`[2025-03-08 11:00:00] INFO  [Epoch 50/50] Step 25000/25000 | loss=0.1245 | lr=1.00e-07 | GPU mem=12.4/16.0 GB`)
-    lines.push(`[2025-03-08 11:00:01] INFO  Training completed. Best val_loss=0.1892 at epoch 47`)
-    lines.push(`[2025-03-08 11:00:02] INFO  Final model saved: models/${jobName}-final.pt`)
-  } else if (status === 'Failed') {
-    lines.push(`[2025-03-08 10:15:43] ERROR CUDA out of memory. Tried to allocate 2.4 GB. GPU 0 has 0.3 GB free.`)
-    lines.push(`[2025-03-08 10:15:43] ERROR Training terminated due to OOM error. Consider reducing batch_size or max_seq_len.`)
+  if (job.status === 'Running') {
+    logs.push(`[2026-03-10 08:42:10] INFO  Step 2180/${job.totalSteps} | tokens/s=5180 | images/s=3.2 | ETA=2h 10m`)
   }
-
-  return lines
+  if (job.status === 'Completed') {
+    logs.push(`[2026-03-10 10:12:44] INFO  Final eval complete | judge_pass_rate=0.918 | hallucination_rate=0.039`)
+    logs.push(`[2026-03-10 10:12:45] INFO  Final checkpoint merged: checkpoints/${job.name}/final-merged`)
+  }
+  if (job.status === 'Failed') {
+    logs.push('[2026-03-10 08:44:18] ERROR NCCL communicator aborted during all_reduce step')
+    logs.push('[2026-03-10 08:44:18] ERROR Training run marked as failed; please retry from latest checkpoint')
+  }
+  if (job.status === 'Queued') {
+    return ['[2026-03-10 11:32:00] INFO  Run queued. Waiting for available H100 worker group...']
+  }
+  return logs
 }
 
-const MOCK_JOBS: TrainingJob[] = [
-  {
-    key: '1', name: 'run-2025030801', projectName: 'purchase-order-classifier',
-    dataSource: 'ontology://PurchaseOrder/output', framework: 'PyTorch', gpu: 'V100 - 16GB',
-    status: 'Completed', progress: 100, epoch: '50/50', bestMetric: '95.3%', metricName: 'Accuracy',
-    startedAt: '2025-03-08 09:00', duration: '2h 15m', createdBy: '李工',
-    learningRate: 2e-5, batchSize: 16, warmupSteps: 100, totalSteps: 25000, currentStep: 25000,
-    trainLoss: generateLossCurve(50, 2.35, 0.12),
-    valLoss: generateLossCurve(50, 2.50, 0.19),
-    lrHistory: generateLrCurve(50, 2e-5, 0.04),
-    gpuMemUsage: '12.4/16.0 GB', gpuUtil: '92%',
-    logs: generateLogs('run-2025030801', 'Completed', '50/50', 25000),
-  },
-  {
-    key: '2', name: 'run-2025030802', projectName: 'equipment-fault-predictor',
-    dataSource: 'ontology://Equipment/output', framework: 'TensorFlow', gpu: 'A100 - 40GB',
-    status: 'Running', progress: 68, epoch: '34/50', bestMetric: '91.8%', metricName: 'F1-Score',
-    startedAt: '2025-03-08 11:30', duration: '1h 42m', createdBy: '张工',
-    learningRate: 3e-5, batchSize: 32, warmupSteps: 200, totalSteps: 15000, currentStep: 10200,
-    trainLoss: generateLossCurve(34, 2.10, 0.38),
-    valLoss: generateLossCurve(34, 2.28, 0.45),
-    lrHistory: generateLrCurve(34, 3e-5, 0.06),
-    gpuMemUsage: '28.6/40.0 GB', gpuUtil: '89%',
-    logs: generateLogs('run-2025030802', 'Running', '34/50', 15000),
-  },
-  {
-    key: '3', name: 'run-2025030803', projectName: 'demand-forecaster',
-    dataSource: 'ontology://Inventory/output', framework: 'scikit-learn', gpu: 'CPU Only',
-    status: 'Completed', progress: 100, epoch: '—', bestMetric: '88.4%', metricName: 'MAPE',
-    startedAt: '2025-03-08 08:00', duration: '45m', createdBy: '王工',
-    learningRate: 1e-3, batchSize: 64, warmupSteps: 0, totalSteps: 5000, currentStep: 5000,
-    trainLoss: generateLossCurve(50, 1.80, 0.22),
-    valLoss: generateLossCurve(50, 1.95, 0.28),
-    lrHistory: generateLrCurve(50, 1e-3, 0.02),
-    gpuMemUsage: '—', gpuUtil: '—',
-    logs: generateLogs('run-2025030803', 'Completed', '—', 5000),
-  },
-  {
-    key: '4', name: 'run-2025030804', projectName: 'sentiment-analyzer',
-    dataSource: 'ontology://Customer/output', framework: 'Transformers', gpu: 'A100 - 40GB',
-    status: 'Queued', progress: 0, epoch: '0/30', bestMetric: '—', metricName: 'Accuracy',
-    startedAt: '—', duration: '—', createdBy: '赵工',
-    learningRate: 2e-5, batchSize: 8, warmupSteps: 50, totalSteps: 18000, currentStep: 0,
-    trainLoss: [], valLoss: [], lrHistory: [],
-    gpuMemUsage: '—', gpuUtil: '—',
-    logs: ['[2025-03-08 12:00:00] INFO  Job queued. Waiting for GPU resources...'],
-  },
-  {
-    key: '5', name: 'run-2025030705', projectName: 'churn-predictor',
-    dataSource: 'ontology://Customer/output', framework: 'PyTorch', gpu: 'V100 - 16GB',
-    status: 'Failed', progress: 42, epoch: '21/50', bestMetric: '—', metricName: 'AUC',
-    startedAt: '2025-03-07 22:00', duration: '1h 10m', createdBy: '李工',
-    learningRate: 5e-5, batchSize: 32, warmupSteps: 100, totalSteps: 20000, currentStep: 8400,
-    trainLoss: generateLossCurve(21, 2.20, 0.65),
-    valLoss: generateLossCurve(21, 2.40, 0.72),
-    lrHistory: generateLrCurve(21, 5e-5, 0.05),
-    gpuMemUsage: '15.8/16.0 GB', gpuUtil: '98%',
-    logs: generateLogs('run-2025030705', 'Failed', '21/50', 20000),
-  },
-  {
-    key: '6', name: 'run-2025030706', projectName: 'supplier-risk-scorer',
-    dataSource: 'ontology://Supplier/output', framework: 'scikit-learn', gpu: 'CPU Only',
-    status: 'Completed', progress: 100, epoch: '—', bestMetric: '87.2%', metricName: 'AUC',
-    startedAt: '2025-03-07 14:00', duration: '32m', createdBy: '王工',
-    learningRate: 1e-4, batchSize: 64, warmupSteps: 0, totalSteps: 3000, currentStep: 3000,
-    trainLoss: generateLossCurve(50, 1.60, 0.18),
-    valLoss: generateLossCurve(50, 1.75, 0.24),
-    lrHistory: generateLrCurve(50, 1e-4, 0.02),
-    gpuMemUsage: '—', gpuUtil: '—',
-    logs: generateLogs('run-2025030706', 'Completed', '—', 3000),
-  },
-]
+export function buildDefaultTrainingProjects(): TrainingProject[] {
+  return [
+    {
+      key: 'tp-llm-sft',
+      name: 'deepseek-r1-factory-sft',
+      displayName: 'Factory Copilot SFT',
+      description: '工业问答与 SOP 执行助手监督微调项目',
+      modelFamily: 'LLM',
+      modality: 'text',
+      trainStage: 'sft',
+      capability: 'reasoning',
+      datasetType: 'conversation',
+      alignmentTags: ['工业知识增强', '长上下文'],
+      dataSource: 'corpus://factory-copilot-dialog-sft-v2',
+      framework: 'Transformers',
+      gpu: '8 x H100 80GB',
+      jobs: 6,
+      bestMetric: 'Judge Pass 91.8%',
+      createdAt: '2026-02-20',
+      trainMethod: 'sft',
+      baseModel: 'DeepSeek-R1-Distill-32B',
+      datasetName: 'factory_copilot_dialog_sft_v2',
+      contextWindow: 32768,
+      tokenCount: 148000000,
+      imageCount: 0,
+      loraRank: 64,
+      hyperParams: {
+        learningRate: 1.5e-5,
+        batchSize: 64,
+        epochs: 3,
+        warmupSteps: 400,
+        maxSeqLen: 32768,
+      },
+    },
+    {
+      key: 'tp-vl-qlora',
+      name: 'qwen2.5-vl-inspection-assistant',
+      displayName: 'Inspection VL Assistant',
+      description: '巡检图像问答与缺陷解释多模态微调项目',
+      modelFamily: 'VL',
+      modality: 'image-text',
+      trainStage: 'qlora',
+      capability: 'vision-language-understanding',
+      datasetType: 'vqa',
+      alignmentTags: ['图像理解', '安全对齐'],
+      dataSource: 'corpus://inspection-vqa-v3',
+      framework: 'Transformers',
+      gpu: '4 x H100 80GB',
+      jobs: 4,
+      bestMetric: 'Grounded VQA 88.4%',
+      createdAt: '2026-02-24',
+      trainMethod: 'qlora',
+      baseModel: 'Qwen2.5-VL-32B-Instruct',
+      datasetName: 'inspection_vqa_v3',
+      contextWindow: 16384,
+      tokenCount: 32000000,
+      imageCount: 48000,
+      loraRank: 32,
+      hyperParams: {
+        learningRate: 2e-5,
+        batchSize: 24,
+        epochs: 2,
+        warmupSteps: 300,
+        maxSeqLen: 16384,
+      },
+    },
+    {
+      key: 'tp-vl-doc',
+      name: 'qwen-doc-parser-lora',
+      displayName: 'Doc Parser LoRA',
+      description: '票据、工单与检修文档解析能力 LoRA 强化项目',
+      modelFamily: 'VL',
+      modality: 'image-text',
+      trainStage: 'lora',
+      capability: 'document-parsing',
+      datasetType: 'image-caption',
+      alignmentTags: ['OCR增强', '文档解析'],
+      dataSource: 'corpus://doc-parse-caption-v2',
+      framework: 'Transformers',
+      gpu: '2 x A100 80GB',
+      jobs: 3,
+      bestMetric: 'Doc Parse 90.1%',
+      createdAt: '2026-03-01',
+      trainMethod: 'lora',
+      baseModel: 'Qwen2.5-VL-7B-Instruct',
+      datasetName: 'doc_parse_caption_v2',
+      contextWindow: 8192,
+      tokenCount: 21000000,
+      imageCount: 125000,
+      loraRank: 16,
+      hyperParams: {
+        learningRate: 2.5e-5,
+        batchSize: 16,
+        epochs: 3,
+        warmupSteps: 180,
+        maxSeqLen: 8192,
+      },
+    },
+    {
+      key: 'tp-llm-dpo',
+      name: 'factory-copilot-dpo-alignment',
+      displayName: 'Factory Copilot DPO',
+      description: '工业问答拒答边界与事实性偏好对齐项目',
+      modelFamily: 'LLM',
+      modality: 'text',
+      trainStage: 'dpo',
+      capability: 'chat',
+      datasetType: 'preference',
+      alignmentTags: ['安全对齐', '事实性增强'],
+      dataSource: 'corpus://factory-safety-preference-v1',
+      framework: 'PyTorch',
+      gpu: '8 x A100 80GB',
+      jobs: 2,
+      bestMetric: 'Win Rate 66.2%',
+      createdAt: '2026-03-04',
+      trainMethod: 'dpo',
+      baseModel: 'Qwen2.5-72B-Instruct',
+      datasetName: 'factory_safety_preference_v1',
+      contextWindow: 32768,
+      tokenCount: 42000000,
+      imageCount: 0,
+      hyperParams: {
+        learningRate: 7e-6,
+        batchSize: 32,
+        epochs: 2,
+        warmupSteps: 120,
+        maxSeqLen: 32768,
+      },
+    },
+  ]
+}
 
-const MOCK_PROJECTS: TrainingProject[] = [
-  { key: '1', name: 'purchase-order-classifier', description: '采购订单分类模型', dataSource: 'ontology://PurchaseOrder/output', framework: 'PyTorch', gpu: 'V100 - 16GB', jobs: 12, bestMetric: '95.3%', createdAt: '2024-11-15', trainMethod: 'lora', baseModel: 'DeepSeek-V3', datasetName: 'purchase_orders_v3', hyperParams: { learningRate: 2e-5, batchSize: 16, epochs: 50, warmupSteps: 100, maxSeqLen: 2048 } },
-  { key: '2', name: 'equipment-fault-predictor', description: '设备故障预测模型', dataSource: 'ontology://Equipment/output', framework: 'TensorFlow', gpu: 'A100 - 40GB', jobs: 8, bestMetric: '92.7%', createdAt: '2024-12-01', trainMethod: 'qlora', baseModel: 'Qwen-72B', datasetName: 'equipment_sensors_v2', hyperParams: { learningRate: 3e-5, batchSize: 32, epochs: 50, warmupSteps: 200, maxSeqLen: 4096 } },
-  { key: '3', name: 'demand-forecaster', description: '需求预测模型', dataSource: 'ontology://Inventory/output', framework: 'scikit-learn', gpu: 'CPU Only', jobs: 5, bestMetric: '88.4%', createdAt: '2025-01-10', trainMethod: 'full', baseModel: 'GLM-4', datasetName: 'inventory_demand_v1', hyperParams: { learningRate: 1e-3, batchSize: 64, epochs: 100, warmupSteps: 0, maxSeqLen: 512 } },
-  { key: '4', name: 'sentiment-analyzer', description: '客户情感分析模型', dataSource: 'ontology://Customer/output', framework: 'Transformers', gpu: 'A100 - 40GB', jobs: 3, bestMetric: '91.2%', createdAt: '2025-02-01', trainMethod: 'lora', baseModel: 'DeepSeek-R1', datasetName: 'customer_reviews_v4', hyperParams: { learningRate: 2e-5, batchSize: 8, epochs: 30, warmupSteps: 50, maxSeqLen: 2048 } },
-  { key: '5', name: 'churn-predictor', description: '客户流失预测模型', dataSource: 'ontology://Customer/output', framework: 'PyTorch', gpu: 'V100 - 16GB', jobs: 6, bestMetric: '85.6%', createdAt: '2025-01-20', trainMethod: 'qlora', baseModel: 'Llama-3.1-70B', datasetName: 'customer_churn_v2', hyperParams: { learningRate: 5e-5, batchSize: 32, epochs: 50, warmupSteps: 100, maxSeqLen: 1024 } },
-  { key: '6', name: 'supplier-risk-scorer', description: '供应商风险评估模型', dataSource: 'ontology://Supplier/output', framework: 'scikit-learn', gpu: 'CPU Only', jobs: 4, bestMetric: '87.2%', createdAt: '2025-02-15', trainMethod: 'full', baseModel: 'GLM-4', datasetName: 'supplier_data_v3', hyperParams: { learningRate: 1e-4, batchSize: 64, epochs: 80, warmupSteps: 0, maxSeqLen: 512 } },
-]
+export function buildDefaultTrainingJobs(projects: TrainingProject[] = buildDefaultTrainingProjects()): TrainingJob[] {
+  const projectMap = new Map(projects.map(project => [project.key, project]))
+
+  const buildJob = (
+    key: string,
+    projectKey: string,
+    status: TrainingStatus,
+    progress: number,
+    epoch: string,
+    bestMetric: string,
+    metricName: string,
+    startedAt: string,
+    duration: string,
+    totalSteps: number,
+    currentStep: number,
+    gpuMemUsage: string,
+    gpuUtil: string,
+  ): TrainingJob => {
+    const project = projectMap.get(projectKey)!
+    const name = `${project.name}-run-${key}`
+    return {
+      key,
+      name,
+      projectName: project.name,
+      modelFamily: project.modelFamily,
+      modality: project.modality,
+      trainStage: project.trainStage,
+      capability: project.capability,
+      datasetType: project.datasetType,
+      datasetName: project.datasetName,
+      baseModel: project.baseModel,
+      alignmentTags: project.alignmentTags,
+      checkpoint: `checkpoints/${name}/latest`,
+      contextWindow: project.contextWindow,
+      loraRank: project.loraRank,
+      tokenCount: project.tokenCount,
+      imageCount: project.imageCount,
+      dataSource: project.dataSource,
+      framework: project.framework,
+      gpu: project.gpu,
+      status,
+      progress,
+      epoch,
+      bestMetric,
+      metricName,
+      startedAt,
+      duration,
+      createdBy: '模型平台团队',
+      learningRate: project.hyperParams.learningRate,
+      batchSize: project.hyperParams.batchSize,
+      warmupSteps: project.hyperParams.warmupSteps,
+      totalSteps,
+      currentStep,
+      trainLoss: status === 'Queued' ? [] : generateLossCurve(Math.max(Math.ceil(progress / 2), 12), 2.12, 0.23),
+      valLoss: status === 'Queued' ? [] : generateLossCurve(Math.max(Math.ceil(progress / 2), 12), 2.31, 0.29),
+      lrHistory: status === 'Queued' ? [] : generateLrCurve(Math.max(Math.ceil(progress / 2), 12), project.hyperParams.learningRate, 0.05),
+      gpuMemUsage,
+      gpuUtil,
+      logs: buildTrainingLogs({
+        name,
+        status,
+        baseModel: project.baseModel,
+        datasetName: project.datasetName,
+        tokenCount: project.tokenCount,
+        imageCount: project.imageCount,
+        trainStage: project.trainStage,
+        totalSteps,
+        gpu: project.gpu,
+      }),
+    }
+  }
+
+  return [
+    buildJob('1', 'tp-llm-sft', 'Completed', 100, '3/3', '91.8%', 'Judge Pass Rate', '2026-03-10 08:00', '2h 12m', 4800, 4800, '612/640 GB', '94%'),
+    buildJob('2', 'tp-vl-qlora', 'Running', 62, '2/2', '88.4%', 'Grounded VQA', '2026-03-10 11:00', '1h 18m', 3600, 2240, '278/320 GB', '89%'),
+    buildJob('3', 'tp-vl-doc', 'Queued', 0, '0/3', '—', 'Doc Parse Score', '—', '—', 4200, 0, '—', '—'),
+    buildJob('4', 'tp-llm-dpo', 'Failed', 41, '1/2', '63.1%', 'Win Rate', '2026-03-09 23:10', '54m', 2600, 1066, '498/640 GB', '81%'),
+  ]
+}
+
+const MOCK_PROJECTS: TrainingProject[] = buildDefaultTrainingProjects()
+const MOCK_JOBS: TrainingJob[] = buildDefaultTrainingJobs(MOCK_PROJECTS)
 
 export async function listTrainingJobs(): Promise<TrainingJob[]> {
   await delay(rand(300, 600))
-  return MOCK_JOBS
+  return clone(MOCK_JOBS)
 }
 
 export async function listTrainingProjects(): Promise<TrainingProject[]> {
   await delay(rand(300, 600))
-  return MOCK_PROJECTS
+  return clone(MOCK_PROJECTS)
 }
 
 export async function getJobDetail(key: string): Promise<TrainingJob | undefined> {
   await delay(rand(200, 400))
-  return MOCK_JOBS.find(j => j.key === key)
+  const job = MOCK_JOBS.find(item => item.key === key)
+  return job ? clone(job) : undefined
 }
 
 export async function startTraining(projectKey: string): Promise<TrainingJob> {
   await delay(rand(500, 1000))
-  const project = MOCK_PROJECTS.find(p => p.key === projectKey)
+  const project = MOCK_PROJECTS.find(item => item.key === projectKey)
   const newJob: TrainingJob = {
     key: `job-${Date.now()}`,
-    name: `run-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}${String(MOCK_JOBS.length + 1).padStart(2, '0')}`,
-    projectName: project?.name ?? 'unknown-project',
+    name: `${project?.name ?? 'unknown-model'}-run-${new Date().toISOString().slice(11, 19).replace(/:/g, '')}`,
+    projectName: project?.name ?? 'unknown-model',
+    modelFamily: project?.modelFamily ?? 'LLM',
+    modality: project?.modality ?? 'text',
+    trainStage: project?.trainStage ?? 'sft',
+    capability: project?.capability ?? 'chat',
+    datasetType: project?.datasetType ?? 'conversation',
+    datasetName: project?.datasetName ?? '',
+    baseModel: project?.baseModel ?? 'DeepSeek-R1-Distill-32B',
+    alignmentTags: project?.alignmentTags ?? ['工业知识增强'],
+    checkpoint: `checkpoints/${project?.name ?? 'unknown-model'}/bootstrap`,
+    contextWindow: project?.contextWindow ?? 8192,
+    loraRank: project?.loraRank,
+    tokenCount: project?.tokenCount ?? 12000000,
+    imageCount: project?.imageCount ?? 0,
     dataSource: project?.dataSource ?? '',
-    framework: project?.framework ?? 'PyTorch',
-    gpu: project?.gpu ?? 'V100 - 16GB',
+    framework: project?.framework ?? 'Transformers',
+    gpu: project?.gpu ?? '4 x A100 80GB',
     status: 'Running',
     progress: 0,
-    epoch: `0/${project?.hyperParams.epochs ?? 50}`,
+    epoch: `0/${project?.hyperParams.epochs ?? 2}`,
     bestMetric: '—',
-    metricName: 'Accuracy',
+    metricName: 'Judge Pass Rate',
     startedAt: new Date().toLocaleString('zh-CN'),
     duration: '0m',
     createdBy: '当前用户',
-    learningRate: project?.hyperParams.learningRate ?? 2e-5,
+    learningRate: project?.hyperParams.learningRate ?? 1.5e-5,
     batchSize: project?.hyperParams.batchSize ?? 16,
     warmupSteps: project?.hyperParams.warmupSteps ?? 100,
-    totalSteps: 10000,
+    totalSteps: 3200,
     currentStep: 0,
     trainLoss: [],
     valLoss: [],
     lrHistory: [],
-    gpuMemUsage: '0.0/16.0 GB',
+    gpuMemUsage: '0/0 GB',
     gpuUtil: '0%',
-    logs: [`[${new Date().toISOString().slice(0, 19).replace('T', ' ')}] INFO  Training job started. Initializing...`],
+    logs: ['[2026-03-10 12:30:00] INFO  Training run created. Waiting for worker bootstrap...'],
   }
   MOCK_JOBS.unshift(newJob)
-  return newJob
+  return clone(newJob)
 }
 
 export async function stopTraining(jobKey: string): Promise<TrainingJob | undefined> {
   await delay(rand(300, 600))
-  const job = MOCK_JOBS.find(j => j.key === jobKey)
-  if (job) {
-    job.status = 'Stopped'
-    job.logs.push(`[${new Date().toISOString().slice(0, 19).replace('T', ' ')}] WARN  Training stopped by user.`)
-  }
-  return job
+  const job = MOCK_JOBS.find(item => item.key === jobKey)
+  if (!job) return undefined
+  job.status = 'Stopped'
+  job.logs.push('[2026-03-10 12:31:20] WARN  Run stopped by operator request.')
+  return clone(job)
 }
 
 export async function createTrainingProject(input: {
@@ -217,20 +359,37 @@ export async function createTrainingProject(input: {
   const project: TrainingProject = {
     key: `tp-${Date.now()}`,
     name: input.name,
+    displayName: input.name,
     description: input.description,
+    modelFamily: input.baseModel?.includes('VL') ? 'VL' : 'LLM',
+    modality: input.baseModel?.includes('VL') ? 'image-text' : 'text',
+    trainStage: input.trainMethod ?? 'sft',
+    capability: input.baseModel?.includes('VL') ? 'vision-language-understanding' : 'chat',
+    datasetType: 'conversation',
+    alignmentTags: ['工业知识增强'],
     dataSource: input.dataSource,
     framework: input.framework,
     gpu: input.gpu,
     jobs: 0,
     bestMetric: '—',
     createdAt: new Date().toISOString().slice(0, 10),
-    trainMethod: input.trainMethod ?? 'lora',
-    baseModel: input.baseModel ?? 'DeepSeek-V3',
+    trainMethod: input.trainMethod ?? 'sft',
+    baseModel: input.baseModel ?? 'DeepSeek-R1-Distill-32B',
     datasetName: input.datasetName ?? '',
-    hyperParams: input.hyperParams ?? { learningRate: 2e-5, batchSize: 16, epochs: 3, warmupSteps: 100, maxSeqLen: 2048 },
+    contextWindow: input.hyperParams?.maxSeqLen ?? 8192,
+    tokenCount: 12000000,
+    imageCount: 0,
+    loraRank: input.trainMethod === 'lora' || input.trainMethod === 'qlora' ? 16 : undefined,
+    hyperParams: input.hyperParams ?? {
+      learningRate: 2e-5,
+      batchSize: 16,
+      epochs: 2,
+      warmupSteps: 100,
+      maxSeqLen: 8192,
+    },
   }
   MOCK_PROJECTS.unshift(project)
-  return project
+  return clone(project)
 }
 
 export interface TrainingStats {
@@ -244,12 +403,14 @@ export interface TrainingStats {
 
 export async function getTrainingStats(): Promise<TrainingStats> {
   await delay(rand(200, 400))
+  const running = MOCK_JOBS.filter(job => job.status === 'Running').length
+  const completed = MOCK_JOBS.filter(job => job.status === 'Completed').length
   return {
     projects: MOCK_PROJECTS.length,
     totalJobs: MOCK_JOBS.length,
-    running: MOCK_JOBS.filter(j => j.status === 'Running').length,
-    completed: MOCK_JOBS.filter(j => j.status === 'Completed').length,
-    gpuUtilization: '72%',
-    avgTrainTime: '1h 28m',
+    running,
+    completed,
+    gpuUtilization: '81%',
+    avgTrainTime: '1h 47m',
   }
 }

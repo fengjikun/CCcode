@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import { buildDefaultTrainingProjects } from '../api/modelTraining'
+import { buildDefaultTrainingDatasets } from '../api/trainingDataset'
 import {
   DATASET_TYPE_LABELS,
   MODEL_FAMILY_LABELS,
@@ -31,5 +33,28 @@ describe('modelCenter shared domain vocabulary', () => {
       'image-caption',
       'vqa',
     ])
+  })
+
+  it('replaces legacy training projects with llm and vl project samples', () => {
+    const projects = buildDefaultTrainingProjects()
+
+    expect(projects.some(project => project.modelFamily === 'LLM')).toBe(true)
+    expect(projects.some(project => project.modelFamily === 'VL')).toBe(true)
+    expect(projects.map(project => project.name)).not.toEqual(
+      expect.arrayContaining(['demand-forecaster', 'supplier-risk-scorer', 'equipment-fault-predictor']),
+    )
+  })
+
+  it('uses large-model dataset samples instead of structured feature rows', () => {
+    const datasets = buildDefaultTrainingDatasets()
+
+    expect(datasets.some(dataset => dataset.datasetType === 'conversation')).toBe(true)
+    expect(datasets.some(dataset => dataset.datasetType === 'vqa')).toBe(true)
+    expect(datasets.some(dataset => dataset.tokenCount && dataset.tokenCount > 0)).toBe(true)
+    expect(
+      datasets.some(dataset =>
+        dataset.sampleData.some(sample => 'messages' in sample || 'chosen' in sample || 'image' in sample),
+      ),
+    ).toBe(true)
   })
 })

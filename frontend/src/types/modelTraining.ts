@@ -2,21 +2,40 @@
  * L5 模型训练类型定义
  */
 
-import type { DatasetType, ModelFamily, ModelModality, TrainStage } from './modelCenter'
+import type { DatasetType, ModelCapability, ModelFamily, ModelModality, TrainStage } from './modelCenter'
 
 export type TrainingStatus = 'Running' | 'Completed' | 'Failed' | 'Queued' | 'Stopped'
-export type Framework = 'PyTorch' | 'TensorFlow' | 'scikit-learn' | 'Transformers'
-export type TrainMethod = 'full' | 'lora' | 'qlora'
-export type BaseModel = 'DeepSeek-V3' | 'DeepSeek-R1' | 'Qwen-72B' | 'GLM-4' | 'Llama-3.1-70B'
+export type Framework = 'PyTorch' | 'Transformers'
+export type TrainMethod = TrainStage
+export type BaseModel =
+  | 'DeepSeek-R1-Distill-32B'
+  | 'Qwen2.5-72B-Instruct'
+  | 'Qwen2.5-VL-32B-Instruct'
+  | 'Qwen2.5-VL-7B-Instruct'
+  | 'InternVL2.5-38B'
+  | 'DeepSeek-V3'
+  | 'DeepSeek-R1'
+  | 'Qwen-72B'
+  | 'GLM-4'
+  | 'Llama-3.1-70B'
 
 export interface TrainingJob {
   key: string
   name: string
   projectName: string
-  modelFamily?: ModelFamily
-  modality?: ModelModality
-  trainStage?: TrainStage
-  datasetType?: DatasetType
+  modelFamily: ModelFamily
+  modality: ModelModality
+  trainStage: TrainStage
+  capability: ModelCapability
+  datasetType: DatasetType
+  datasetName: string
+  baseModel: BaseModel
+  alignmentTags: string[]
+  checkpoint: string
+  contextWindow: number
+  loraRank?: number
+  tokenCount: number
+  imageCount: number
   dataSource: string
   framework: Framework
   gpu: string
@@ -45,10 +64,13 @@ export interface TrainingProject {
   key: string
   name: string
   description: string
-  modelFamily?: ModelFamily
-  modality?: ModelModality
-  trainStage?: TrainStage
-  datasetType?: DatasetType
+  displayName: string
+  modelFamily: ModelFamily
+  modality: ModelModality
+  trainStage: TrainStage
+  capability: ModelCapability
+  datasetType: DatasetType
+  alignmentTags: string[]
   dataSource: string
   framework: Framework
   gpu: string
@@ -58,6 +80,10 @@ export interface TrainingProject {
   trainMethod: TrainMethod
   baseModel: BaseModel
   datasetName: string
+  contextWindow: number
+  tokenCount: number
+  imageCount: number
+  loraRank?: number
   hyperParams: {
     learningRate: number
     batchSize: number
@@ -77,7 +103,5 @@ export const TRAINING_STATUS_COLORS: Record<TrainingStatus, string> = {
 
 export const FRAMEWORK_COLORS: Record<Framework, string> = {
   PyTorch: 'red',
-  TensorFlow: 'orange',
-  'scikit-learn': 'blue',
   Transformers: 'purple',
 }
