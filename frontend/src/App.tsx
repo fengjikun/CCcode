@@ -7,7 +7,7 @@ import NotFoundPage from './pages/NotFoundPage'
 
 // L7 数字员工应用
 import DigitalHumanListPage from './pages/DigitalHumanListPage'
-import DeviceFaultMonitorPage from './pages/DeviceFaultMonitorPage'
+import DigitalWorkerConfigPage from './pages/DigitalWorkerConfigPage'
 import DICWorkerPage from './pages/platform/DICWorkerPage'
 
 // L4 workspace 工作台
@@ -68,7 +68,7 @@ export default function App() {
 
         {/* L7 数字员工应用 */}
         <Route path="/digital-worker/business" element={<DigitalHumanListPage />} />
-        <Route path="/digital-worker/business/:id" element={<DeviceFaultMonitorPage />} />
+        <Route path="/digital-worker/business/:id" element={<DigitalWorkerConfigPage />} />
         <Route path="/digital-worker/dic" element={<DICWorkerPage />} />
 
         {/* L4 workspace 工作台 */}

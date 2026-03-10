@@ -56,8 +56,7 @@ const menuItems: MenuItem[] = [
     label: 'Workspace 工作台',
     children: [
       { key: '/studio/agents', icon: <RobotOutlined />, label: '智能体编排' },
-      { key: '/studio/skills', icon: <AppstoreOutlined />, label: 'Skills Hub' },
-      { key: '/studio/agents/logs', icon: <FileSearchOutlined />, label: '智能体日志' },
+      { key: '/studio/skills', icon: <AppstoreOutlined />, label: 'Skills Hub' }
     ],
   },
   {

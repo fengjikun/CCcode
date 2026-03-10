@@ -10,6 +10,8 @@ export type DigitalHumanType =
   | 'data-ops'
   | 'tax-planning'
 
+export type DigitalHumanPublishStatus = 'draft' | 'testing' | 'published'
+
 export const DIGITAL_HUMAN_TYPES: DigitalHumanType[] = [
   'fault-repair',
   'engineering-design',
@@ -77,6 +79,17 @@ export interface DigitalHuman {
   ontologyPhase?: string
   agentScene?: string
   trainingType?: string
+  owner?: string
+  maintainers?: string[]
+  linkedAgentIds?: string[]
+  linkedSkillIds?: string[]
+  preferredModel?: string
+  systemPrompt?: string
+  targetUsers?: string
+  serviceBoundary?: string
+  handoffTarget?: string
+  publishStatus?: DigitalHumanPublishStatus
+  publishChannels?: string[]
   createdAt: string
   updatedAt: string
 }

@@ -1,4 +1,4 @@
-import { Tag, Typography } from 'antd'
+import { Typography } from 'antd'
 
 const { Title, Text } = Typography
 
@@ -13,6 +13,7 @@ interface PageHeaderProps {
 export default function PageHeader({ title, subtitle }: PageHeaderProps) {
   return (
     <div className="page-header">
+      <Title level={4}>{title}</Title>
       {subtitle && <Text type="secondary">{subtitle}</Text>}
     </div>
   )

@@ -442,7 +442,7 @@ export default function TrainingDatasetsPage() {
             rules={[{ required: true, message: '请选择来源本体' }]}
             extra={selectedSourceProject
               ? `将生成来源标识：${buildOntologyDatasetSource(selectedSourceProject)}`
-              : '语料来源从本体列表获取，创建后自动生成 ontology:// 来源标识'}
+              : '语料来源从本体列表获取，创建后自动生成 deepology:// 来源标识'}
           >
             <Select
               showSearch

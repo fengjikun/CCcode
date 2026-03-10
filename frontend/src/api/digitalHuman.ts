@@ -1,5 +1,6 @@
 import { ONTOLOGY_CATALOG } from '../mocks/skills/ontologyCatalog'
-import type { DigitalHuman, DigitalHumanType } from '../types/digitalHuman'
+import type { DigitalHuman, DigitalHumanPublishStatus, DigitalHumanType } from '../types/digitalHuman'
+import { DIGITAL_HUMAN_TYPE_DESCRIPTIONS } from '../types/digitalHuman'
 import { ensureMockStore, setMockStore } from './mockStoreClient'
 
 const STORE_KEY = 'digital-humans'
@@ -23,6 +24,17 @@ export interface CreateDigitalHumanInput
     | 'ontologyPhase'
     | 'agentScene'
     | 'trainingType'
+    | 'owner'
+    | 'maintainers'
+    | 'linkedAgentIds'
+    | 'linkedSkillIds'
+    | 'preferredModel'
+    | 'systemPrompt'
+    | 'targetUsers'
+    | 'serviceBoundary'
+    | 'handoffTarget'
+    | 'publishStatus'
+    | 'publishChannels'
   > {}
 
 interface SeedSpec {
@@ -69,21 +81,102 @@ function toProjectId(code: string) {
   return `proj-${code.replace(/\./g, '')}`
 }
 
+const DEFAULT_CHANNELS = ['管理平台']
+
+const MODEL_BY_TYPE: Record<DigitalHumanType, string> = {
+  'fault-repair': 'Deepexi-Platform-70B',
+  'engineering-design': 'Deepexi-Industry-60B-Instruct',
+  'process-optimization': 'Deepexi-R1-Reasoner',
+  'bom-analysis': 'Deepexi-Platform-70B',
+  'operation-decision': 'Deepexi-R1-Reasoner',
+  'store-matching': 'Deepexi-General-Agent',
+  'data-ops': 'Deepexi-Platform-70B',
+  'tax-planning': 'Deepexi-R1-Reasoner',
+}
+
+const OWNER_BY_TYPE: Record<DigitalHumanType, string> = {
+  'fault-repair': '制造运营负责人',
+  'engineering-design': '研发规范负责人',
+  'process-optimization': '工艺改进负责人',
+  'bom-analysis': '供应链计划负责人',
+  'operation-decision': '业务运营负责人',
+  'store-matching': '渠道运营负责人',
+  'data-ops': '数据治理负责人',
+  'tax-planning': '财务共享负责人',
+}
+
+const PUBLISH_STATUS_BY_TYPE: Record<DigitalHumanType, DigitalHumanPublishStatus> = {
+  'fault-repair': 'published',
+  'engineering-design': 'testing',
+  'process-optimization': 'testing',
+  'bom-analysis': 'testing',
+  'operation-decision': 'testing',
+  'store-matching': 'testing',
+  'data-ops': 'draft',
+  'tax-planning': 'draft',
+}
+
+function defaultTargetUsers(dh: Pick<DigitalHuman, 'type' | 'ontologyPhase'>): string {
+  if (dh.type === 'engineering-design') return '工程师、设计审核员、研发经理'
+  if (dh.type === 'fault-repair') return '设备工程师、现场维修班组、产线班长'
+  if (dh.type === 'process-optimization') return '工艺工程师、计划调度员、产线主管'
+  if (dh.type === 'bom-analysis') return '采购计划员、供应链经理、成本分析师'
+  if (dh.type === 'store-matching') return '门店督导、商品运营、履约调度'
+  if (dh.type === 'data-ops') return '数据治理专员、平台运维、质量负责人'
+  if (dh.type === 'tax-planning') return '财务BP、税务经理、风控专员'
+  return dh.ontologyPhase ? `${dh.ontologyPhase}负责人、业务分析师` : '业务负责人、运营分析师'
+}
+
+function defaultServiceBoundary(dh: Pick<DigitalHuman, 'type' | 'ontologyName' | 'agentScene'>): string {
+  const ontology = dh.ontologyName ? `围绕 ${dh.ontologyName}` : '围绕当前业务本体'
+  if (dh.type === 'engineering-design') {
+    return `${ontology}，负责规则审查、标准比对与风险提示，不直接替代 CAD/PLM 设计提交。`
+  }
+  if (dh.type === 'fault-repair') {
+    return `${ontology}，负责告警解读、根因分析与 SOP 建议，不直接控制设备执行动作。`
+  }
+  if (dh.type === 'process-optimization') {
+    return `${ontology}，负责调度建议与流程优化，不直接下发生产控制指令。`
+  }
+  return `${ontology}，承接 ${dh.agentScene || '业务分析'} 场景的建议生成与流程协同，不直接发起最终业务审批。`
+}
+
+function defaultSystemPrompt(dh: Pick<DigitalHuman, 'name' | 'type' | 'ontologyName'>): string {
+  return `你是${dh.name}，负责${DIGITAL_HUMAN_TYPE_DESCRIPTIONS[dh.type]}。请严格依据${dh.ontologyName || '业务本体'}输出结构化结论，先给风险和依据，再给下一步动作。`
+}
+
+function withDigitalHumanDefaults(input: DigitalHuman): DigitalHuman {
+  return {
+    ...input,
+    owner: input.owner ?? OWNER_BY_TYPE[input.type],
+    maintainers: input.maintainers ?? ['AI平台运营', '业务域负责人'],
+    linkedAgentIds: input.linkedAgentIds ?? [],
+    linkedSkillIds: input.linkedSkillIds ?? [],
+    preferredModel: input.preferredModel ?? MODEL_BY_TYPE[input.type],
+    systemPrompt: input.systemPrompt ?? defaultSystemPrompt(input),
+    targetUsers: input.targetUsers ?? defaultTargetUsers(input),
+    serviceBoundary: input.serviceBoundary ?? defaultServiceBoundary(input),
+    handoffTarget: input.handoffTarget ?? '统一门户 Chat 端（待接入）',
+    publishStatus: input.publishStatus ?? PUBLISH_STATUS_BY_TYPE[input.type],
+    publishChannels: input.publishChannels ?? DEFAULT_CHANNELS,
+  }
+}
+
 function buildSeedItem(spec: SeedSpec): DigitalHuman {
   const entry = ONTOLOGY_CATALOG.find(item => item.code === spec.code)
   if (!entry) {
     const now = new Date().toISOString()
-    return {
+    return withDigitalHumanDefaults({
       id: spec.id,
       name: spec.name,
       type: spec.type,
       description: spec.description,
       createdAt: now,
       updatedAt: now,
-    }
+    })
   }
 
-  return {
+  return withDigitalHumanDefaults({
     id: spec.id,
     name: spec.name,
     type: spec.type,
@@ -97,7 +190,7 @@ function buildSeedItem(spec: SeedSpec): DigitalHuman {
     trainingType: entry.trainingType,
     createdAt: '2025-01-01T00:00:00.000Z',
     updatedAt: '2025-03-01T00:00:00.000Z',
-  }
+  })
 }
 
 const DEFAULT_ITEMS = SEED_SPECS.map(buildSeedItem)
@@ -109,10 +202,24 @@ const DEFAULT_STORE: DHStore = {
 
 async function loadStore(): Promise<DHStore> {
   const store = await ensureMockStore<DHStore>(STORE_KEY, DEFAULT_STORE)
-  if ((store.seedVersion ?? 0) >= SEED_VERSION) return store
+  let changed = false
+  const normalizedItems = store.items.map((item) => {
+    const normalized = withDigitalHumanDefaults(item)
+    if (JSON.stringify(normalized) !== JSON.stringify(item)) changed = true
+    return normalized
+  })
 
-  const existingIds = new Set(store.items.map(item => item.id))
-  const seeded = [...store.items]
+  if ((store.seedVersion ?? 0) >= SEED_VERSION) {
+    if (changed) {
+      const normalizedStore = { ...store, items: normalizedItems }
+      await setMockStore(STORE_KEY, normalizedStore)
+      return normalizedStore
+    }
+    return { ...store, items: normalizedItems }
+  }
+
+  const existingIds = new Set(normalizedItems.map(item => item.id))
+  const seeded = [...normalizedItems]
   for (const item of DEFAULT_ITEMS) {
     if (!existingIds.has(item.id)) seeded.push(item)
   }
@@ -145,12 +252,12 @@ export async function createDigitalHuman(
     ? { name: inputOrName, type: type ?? 'fault-repair', description }
     : inputOrName
   const now = new Date().toISOString()
-  const dh: DigitalHuman = {
+  const dh: DigitalHuman = withDigitalHumanDefaults({
     id: `dh-${Date.now()}`,
     ...input,
     createdAt: now,
     updatedAt: now,
-  }
+  })
   const store = await loadStore()
   store.items.push(dh)
   await saveStore(store)
@@ -159,12 +266,34 @@ export async function createDigitalHuman(
 
 export async function updateDigitalHuman(
   id: string,
-  patch: Partial<Pick<DigitalHuman, 'name' | 'description' | 'projectId'>>,
+  patch: Partial<
+    Pick<
+      DigitalHuman,
+      | 'name'
+      | 'description'
+      | 'projectId'
+      | 'owner'
+      | 'maintainers'
+      | 'linkedAgentIds'
+      | 'linkedSkillIds'
+      | 'preferredModel'
+      | 'systemPrompt'
+      | 'targetUsers'
+      | 'serviceBoundary'
+      | 'handoffTarget'
+      | 'publishStatus'
+      | 'publishChannels'
+    >
+  >,
 ): Promise<DigitalHuman | null> {
   const store = await loadStore()
   const idx = store.items.findIndex(d => d.id === id)
   if (idx < 0) return null
-  store.items[idx] = { ...store.items[idx], ...patch, updatedAt: new Date().toISOString() }
+  store.items[idx] = withDigitalHumanDefaults({
+    ...store.items[idx],
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  })
   await saveStore(store)
   return store.items[idx]
 }
@@ -176,5 +305,6 @@ export async function deleteDigitalHuman(id: string): Promise<void> {
 }
 
 export async function getDigitalHuman(id: string): Promise<DigitalHuman | null> {
-  return (await loadStore()).items.find(d => d.id === id) ?? null
+  const item = (await loadStore()).items.find(d => d.id === id) ?? null
+  return item ? withDigitalHumanDefaults(item) : null
 }
