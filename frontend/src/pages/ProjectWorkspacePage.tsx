@@ -109,7 +109,7 @@ export default function ProjectWorkspacePage() {
           },
           {
             key: 'schema',
-            label: '2. 本体建模与技能',
+            label: '2. 本体定义',
             children: (
               <SchemaTab
                 projectId={projectId}
@@ -126,7 +126,7 @@ export default function ProjectWorkspacePage() {
           },
           {
             key: 'extraction',
-            label: '3. 全量抽取与版本',
+            label: '3. 本体图谱',
             children: (
               <ExtractionTab
                 projectId={projectId}
