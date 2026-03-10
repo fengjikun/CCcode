@@ -24,4 +24,10 @@ describe('DashboardPage responsive layout regression guard', () => {
     expect(dashboardPageSource).toContain('<Col xs={24} xl={16}>')
     expect(dashboardPageSource).toContain('<Col xs={24} xl={8}>')
   })
+
+  it('refreshes the lower dashboard into a business outcomes view', () => {
+    expect(dashboardPageSource).toContain('业务落地成效')
+    expect(dashboardPageSource).not.toContain('平台健康度监控')
+    expect(dashboardPageSource).not.toContain('平台资源一览')
+  })
 })

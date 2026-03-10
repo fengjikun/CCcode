@@ -565,6 +565,104 @@ body {
   word-break: break-word;
 }
 
+.dashboard-outcomes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dashboard-outcome-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-outcome-metric {
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  min-width: 0;
+}
+
+.dashboard-outcome-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dashboard-outcome-value {
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+
+.dashboard-outcome-note {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.dashboard-scenario-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dashboard-scenario-card {
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  min-width: 0;
+}
+
+.dashboard-scenario-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.dashboard-scenario-name {
+  display: block;
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.dashboard-scenario-team {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+}
+
+.dashboard-scenario-summary {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.65;
+  min-height: 60px;
+}
+
+.dashboard-scenario-metric {
+  margin-top: 12px;
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dashboard-scenario-detail {
+  display: block;
+  margin-top: 6px;
+  color: #0891b2;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 @media (max-width: 1279px) {
   .dashboard-pipeline {
     justify-content: flex-start;
@@ -583,6 +681,14 @@ body {
   .dashboard-pipeline-item .pipeline-arrow {
     display: none;
   }
+
+  .dashboard-outcome-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-scenario-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 991px) {
@@ -592,6 +698,10 @@ body {
 
   .dashboard-stat-card-content {
     min-height: 108px;
+  }
+
+  .dashboard-scenario-summary {
+    min-height: auto;
   }
 }
 
@@ -616,6 +726,14 @@ body {
 
   .dashboard-stat-trend {
     font-size: 10px !important;
+  }
+
+  .dashboard-outcome-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-outcome-value {
+    font-size: 24px;
   }
 }
 

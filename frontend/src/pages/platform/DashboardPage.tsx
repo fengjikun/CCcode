@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, Col, Row, Table, Tag, Timeline, Typography } from 'antd'
+import { Card, Col, Row, Tag, Timeline, Typography } from 'antd'
 import {
   DatabaseOutlined,
   SwapOutlined,
@@ -15,11 +15,10 @@ import {
   ClockCircleOutlined,
   UserOutlined,
   AppstoreOutlined,
-  ToolOutlined,
   ArrowUpOutlined,
 } from '@ant-design/icons'
-import { getHealthData, getActivityData, getPlatformStats, type PlatformStats } from '../../api/dashboard'
-import type { HealthEntry, ActivityEntry } from '../../types/dashboard'
+import { getActivityData, getPlatformStats, type PlatformStats } from '../../api/dashboard'
+import type { ActivityEntry } from '../../types/dashboard'
 import type { ReactNode } from 'react'
 
 const { Title, Text } = Typography
@@ -37,41 +36,16 @@ const stages: Stage[] = [
   { key: 'L7', label: 'Workflow Apps',  labelZh: '数字员工', icon: <TeamOutlined />,       color: '#0891b2', count: 15 },
 ]
 
-/* ───── 健康度表格列 ───── */
-const healthColumns = [
-  { title: '组件', dataIndex: 'component', key: 'component', render: (v: string) => <Text strong>{v}</Text> },
-  {
-    title: '状态',
-    dataIndex: 'status',
-    key: 'status',
-    width: 100,
-    render: (v: HealthEntry['status']) => (
-      <span>
-        <span className={`status-dot ${v === 'Healthy' ? 'active' : v === 'Degraded' ? 'warning' : 'error'}`} />
-        <Tag color={v === 'Healthy' ? 'green' : v === 'Degraded' ? 'orange' : 'red'}>
-          {v === 'Healthy' ? '健康' : v === 'Degraded' ? '降级' : '离线'}
-        </Tag>
-      </span>
-    ),
-  },
-  { title: '可用率', dataIndex: 'uptime', key: 'uptime', width: 90 },
-  { title: 'QPS', dataIndex: 'qps', key: 'qps', width: 90, render: (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v },
-  { title: '延迟', dataIndex: 'latency', key: 'latency', width: 80 },
-  { title: '最近检查', dataIndex: 'lastCheck', key: 'lastCheck', width: 100 },
-]
-
 /* ───── 活动日志颜色 ───── */
 const levelColor: Record<ActivityEntry['level'], string> = {
   info: 'blue', success: 'green', warning: 'orange', error: 'red',
 }
 
 export default function DashboardPage() {
-  const [health, setHealth] = useState<HealthEntry[]>([])
   const [activities, setActivities] = useState<ActivityEntry[]>([])
   const [stats, setStats] = useState<PlatformStats>({ datasources: 0, transformJobs: 0, objectTypes: 0, agents: 0, skills: 0, trainingJobs: 0, deployedModels: 0, digitalWorkers: 0, totalRequests: '', avgLatency: '', uptime: '', activeUsers: 0 })
 
   useEffect(() => {
-    getHealthData().then(setHealth)
     getActivityData().then(setActivities)
     getPlatformStats().then(setStats)
   }, [])
@@ -87,6 +61,43 @@ export default function DashboardPage() {
     { title: '平台可用率', value: stats.uptime, icon: <SafetyCertificateOutlined />, color: '#16a34a', bg: '#f0fdf4' },
     { title: '活跃用户', value: stats.activeUsers, icon: <UserOutlined />, color: '#d97706', bg: '#fffbeb', trend: '+8' },
   ]
+
+  const businessMetrics = [
+    { title: '已上线数字员工', value: stats.digitalWorkers, note: '覆盖设备、采购、客服等核心流程', accent: '#0891b2', bg: '#ecfeff' },
+    { title: '活跃业务场景', value: '8', note: '跨制造、供应链、共享服务中心落地', accent: '#7c3aed', bg: '#f5f3ff' },
+    { title: '近 7 日智能体会话', value: '18.6K', note: `较上周 +${stats.activeUsers}% 协作触达`, accent: '#ea580c', bg: '#fff7ed' },
+    { title: '自动完成率', value: '82%', note: '高频流程已形成稳定自动闭环', accent: '#16a34a', bg: '#f0fdf4' },
+  ]
+
+  const landingScenarios = [
+    {
+      name: '设备诊断助手',
+      team: '装备运维中心',
+      summary: '结合本体与历史维修知识，自动完成故障定位和处理建议生成。',
+      metric: '本周完成 1,240 次诊断',
+      detail: '平均将首轮排障时间缩短 37%',
+      status: '规模运行',
+      color: 'blue',
+    },
+    {
+      name: '采购协同助手',
+      team: '供应链中心',
+      summary: '自动汇总缺料信号，生成采购建议并触发跨团队协同动作。',
+      metric: '自动生成 326 单采购建议',
+      detail: '重复人工比对动作下降 61%',
+      status: '稳定增量',
+      color: 'green',
+    },
+    {
+      name: '客服工单助手',
+      team: '客户共享中心',
+      summary: '对常见工单做自动归因、话术生成和闭环跟进建议。',
+      metric: '常见工单自动闭环率 68%',
+      detail: '人工接管率已控制在 12%',
+      status: '持续优化',
+      color: 'purple',
+    },
+  ] as const
 
   return (
     <div className="page-container dashboard-page">
@@ -167,7 +178,7 @@ export default function DashboardPage() {
         ))}
       </Row>
 
-      {/* ── Health + Activity ── */}
+      {/* ── Business outcomes + Activity ── */}
       <Row gutter={[16, 16]} className="dashboard-main-row">
         <Col xs={24} xl={16}>
           <Card
@@ -176,23 +187,46 @@ export default function DashboardPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{
                   width: 28, height: 28, borderRadius: 8,
-                  background: '#f0fdf4', color: '#16a34a',
+                  background: '#ecfeff', color: '#0891b2',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 14,
                 }}>
-                  <SafetyCertificateOutlined />
+                  <TeamOutlined />
                 </div>
-                <span style={{ fontWeight: 600 }}>平台健康度监控</span>
+                <span style={{ fontWeight: 600 }}>业务落地成效</span>
               </div>
             }
           >
-            <Table
-              dataSource={health}
-              columns={healthColumns}
-              pagination={false}
-              size="small"
-              scroll={{ x: 720 }}
-            />
+            <div className="dashboard-outcomes">
+              <div className="dashboard-outcome-metrics">
+                {businessMetrics.map(metric => (
+                  <div key={metric.title} className="dashboard-outcome-metric" style={{ background: metric.bg }}>
+                    <Text type="secondary" className="dashboard-outcome-label">{metric.title}</Text>
+                    <div className="dashboard-outcome-value" style={{ color: metric.accent }}>
+                      {metric.value}
+                    </div>
+                    <Text className="dashboard-outcome-note">{metric.note}</Text>
+                  </div>
+                ))}
+              </div>
+
+              <div className="dashboard-scenario-list">
+                {landingScenarios.map(scenario => (
+                  <div key={scenario.name} className="dashboard-scenario-card">
+                    <div className="dashboard-scenario-head">
+                      <div>
+                        <Text strong className="dashboard-scenario-name">{scenario.name}</Text>
+                        <Text type="secondary" className="dashboard-scenario-team">{scenario.team}</Text>
+                      </div>
+                      <Tag color={scenario.color}>{scenario.status}</Tag>
+                    </div>
+                    <Text className="dashboard-scenario-summary">{scenario.summary}</Text>
+                    <div className="dashboard-scenario-metric">{scenario.metric}</div>
+                    <Text className="dashboard-scenario-detail">{scenario.detail}</Text>
+                  </div>
+                ))}
+              </div>
+            </div>
           </Card>
         </Col>
         <Col xs={24} xl={8}>
@@ -229,56 +263,6 @@ export default function DashboardPage() {
           </Card>
         </Col>
       </Row>
-
-      {/* ── 平台资源概览 ── */}
-      <Card
-        className="section-card"
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 8,
-              background: '#f5f3ff', color: '#7c3aed',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 14,
-            }}>
-              <ToolOutlined />
-            </div>
-            <span style={{ fontWeight: 600 }}>平台资源一览</span>
-          </div>
-        }
-      >
-        <Row gutter={[14, 14]}>
-          {stages.map(s => (
-            <Col xs={24} sm={12} xl={6} key={s.key} className="dashboard-grid-col">
-              <Card
-                size="small"
-                className="dashboard-resource-card"
-                hoverable
-                styles={{ body: { padding: '14px 16px' } }}
-                style={{ borderColor: 'transparent' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 12,
-                    background: `${s.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: s.color, fontSize: 20,
-                    transition: 'all 0.25s',
-                  }}>
-                    {s.icon}
-                  </div>
-                  <div>
-                    <Text strong style={{ fontSize: 13, color: '#1a1f36' }}>{s.key} {s.labelZh}</Text>
-                    <br />
-                    <Text style={{ fontSize: 12, color: '#5e6687' }}>
-                      <span style={{ fontWeight: 600, color: s.color }}>{s.count}</span> 个资源
-                    </Text>
-                  </div>
-                </div>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      </Card>
     </div>
   )
 }
