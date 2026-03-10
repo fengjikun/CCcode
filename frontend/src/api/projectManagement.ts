@@ -279,7 +279,7 @@ const PRODUCT_REPLENISHMENT_DESCRIPTION =
 const PRODUCT_REPLENISHMENT_DOCUMENTS: ProjectDocument[] = [
   {
     id: 'doc-rp-001',
-    name: '百丽城市单品补货业务本体模型数据说明示例.docx',
+    name: '百丽城市单品补货业务本体模型数据说明文档.docx',
     fileType: 'docx',
     size: 128640,
     status: 'READY',
@@ -306,7 +306,7 @@ const PRODUCT_REPLENISHMENT_DOCUMENTS: ProjectDocument[] = [
   },
   {
     id: 'doc-rp-004',
-    name: 'Nike Air Max 270 上海区域自动补货演示样例.jsonl',
+    name: 'Nike Air Max 270 上海区域自动补货静态样本.jsonl',
     fileType: 'jsonl',
     size: 68420,
     status: 'READY',
@@ -360,7 +360,7 @@ const PRODUCT_REPLENISHMENT_DOCUMENTS: ProjectDocument[] = [
   },
   {
     id: 'doc-rp-010',
-    name: '门店调拨单批量下发样例-华东零售.jsonl',
+    name: '门店调拨单批量下发静态样本-华东零售.jsonl',
     fileType: 'jsonl',
     size: 132884,
     status: 'READY',
@@ -584,9 +584,9 @@ const PRODUCT_REPLENISHMENT_AI_INSIGHT_RUN: AiInsightRun = {
   addedRelationNames: ['records_sales', 'orders_product', 'holds_inventory', 'inventory_of_product', 'uses_size_profile', 'plans_for_product', 'targets_store', 'allocated_from', 'generated_purchase_order', 'ships_to_store', 'fulfilled_by_warehouse'],
   warnings: [],
   stage: '完成',
-  currentDocument: '百丽城市单品补货业务本体模型数据说明示例.docx',
+  currentDocument: '百丽城市单品补货业务本体模型数据说明文档.docx',
   logs: [
-    '解析 10 份城市单品补货业务文档、规则说明与调拨样例',
+    '解析 10 份城市单品补货业务文档、规则说明与调拨静态样本',
     '补齐 Product、Store、Warehouse、SalesOrder、Inventory、SizeProfile、ReplenishmentPlan、PurchaseOrder 八类专业补货实体',
     '扩展销量聚合、库存供给、尺码拆分、计划生成与调拨履约等 11 条关键关系链路',
   ],
@@ -602,11 +602,11 @@ const PRODUCT_REPLENISHMENT_RUN: ExtractionRun = {
   candidateRelationCount: 70,
   pendingReviewCount: 0,
   stage: '完成',
-  currentDocument: 'Nike Air Max 270 上海区域自动补货演示样例.jsonl',
+  currentDocument: 'Nike Air Max 270 上海区域自动补货静态样本.jsonl',
   logs: [
-    '抽取上海区域 10 份业务资料，汇聚 80 家门店近14日销售、库存和尺码模型样例',
+    '抽取上海区域 10 份业务资料，汇聚 80 家门店近14日销售、库存和尺码模型静态样本',
     '识别高销店、基础店、无销店分层标签，并展开门店-仓库-SKU-尺码的补货决策链路',
-    '生成补货图谱候选实体 90 个、关系 70 条，并自动产出批量调拨单示例',
+    '生成补货图谱候选实体 90 个、关系 70 条，并自动产出批量调拨单模板',
   ],
   warnings: [],
   reviewItems: [
@@ -614,12 +614,12 @@ const PRODUCT_REPLENISHMENT_RUN: ExtractionRun = {
     { id: 'ri-rp-002', kind: 'ENTITY', title: '上海南京东路旗舰店 (Store)', evidence: '上海区域门店近14日销售流速与库存水位对账.xlsx', confidence: 0.98, status: 'APPROVED' },
     { id: 'ri-rp-003', kind: 'ENTITY', title: '华东上海闵行中心仓 (Warehouse)', evidence: 'ERP-WMS 调拨单接口字段映射说明.xlsx', confidence: 0.98, status: 'APPROVED' },
     { id: 'ri-rp-004', kind: 'ENTITY', title: '女鞋标准尺码曲线 (SizeProfile)', evidence: '城市补货尺码模型与优先分配规则.md', confidence: 0.97, status: 'APPROVED' },
-    { id: 'ri-rp-005', kind: 'ENTITY', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan)', evidence: 'Nike Air Max 270 上海区域自动补货演示样例.jsonl', confidence: 0.98, status: 'APPROVED' },
-    { id: 'ri-rp-006', kind: 'ENTITY', title: 'PO-SH-20260310-001 (PurchaseOrder)', evidence: 'Nike Air Max 270 上海区域自动补货演示样例.jsonl', confidence: 0.97, status: 'APPROVED' },
-    { id: 'ri-rp-007', kind: 'RELATION', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan) → plans_for_product → Nike Air Max 270 (Product)', evidence: '演示样例关系', confidence: 0.98, status: 'APPROVED' },
-    { id: 'ri-rp-008', kind: 'RELATION', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan) → targets_store → 上海南京东路旗舰店 (Store)', evidence: '演示样例关系', confidence: 0.97, status: 'APPROVED' },
-    { id: 'ri-rp-009', kind: 'RELATION', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan) → allocated_from → 华东上海闵行中心仓 (Warehouse)', evidence: '演示样例关系', confidence: 0.97, status: 'APPROVED' },
-    { id: 'ri-rp-010', kind: 'RELATION', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan) → generated_purchase_order → PO-SH-20260310-001 (PurchaseOrder)', evidence: '演示样例关系', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-rp-005', kind: 'ENTITY', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan)', evidence: 'Nike Air Max 270 上海区域自动补货静态样本.jsonl', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-rp-006', kind: 'ENTITY', title: 'PO-SH-20260310-001 (PurchaseOrder)', evidence: 'Nike Air Max 270 上海区域自动补货静态样本.jsonl', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-rp-007', kind: 'RELATION', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan) → plans_for_product → Nike Air Max 270 (Product)', evidence: '静态样本关系', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-rp-008', kind: 'RELATION', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan) → targets_store → 上海南京东路旗舰店 (Store)', evidence: '静态样本关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-rp-009', kind: 'RELATION', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan) → allocated_from → 华东上海闵行中心仓 (Warehouse)', evidence: '静态样本关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-rp-010', kind: 'RELATION', title: '上海区域Nike Air Max 270补货计划 (ReplenishmentPlan) → generated_purchase_order → PO-SH-20260310-001 (PurchaseOrder)', evidence: '静态样本关系', confidence: 0.96, status: 'APPROVED' },
   ],
 }
 
@@ -1273,7 +1273,7 @@ export const ONTOLOGY_DEFS: OntologyDef[] = [
   ['5.6.12', '法律法规库本体', 'general', '风险与合规', '(欧盟GDPR) -[约束]-> (用户隐私存储)', '法务审查Agent：自动扫描业务合同，识别潜在的法律违规条款', '治理类', 4000],
 ]
 
-/** 从三元组示例中提取 Subject / Predicate / Object */
+/** 从三元组样本中提取 Subject / Predicate / Object */
 function parseTriple(triple: string): { subject: string; predicate: string; object: string } {
   const m = triple.match(/\(([^)]+)\)\s*-\[([^\]]+)\]->\s*\(([^)]+)\)/)
   if (m) return { subject: m[1], predicate: m[2], object: m[3] }
@@ -1971,7 +1971,7 @@ export async function testProjectDataSourceConnection(
     return {
       status,
       testedAt,
-      message: status === 'SUCCESS' ? '已连接到本地 mock 数据源' : '连接信息不完整',
+      message: status === 'SUCCESS' ? '已完成静态数据连接校验' : '连接信息不完整',
     }
   })
 }

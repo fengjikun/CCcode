@@ -261,7 +261,7 @@ export default function DashboardPage() {
                 }}>
                   <ClockCircleOutlined />
                 </div>
-                <span style={{ fontWeight: 600 }}>实时活动</span>
+                <span style={{ fontWeight: 600 }}>活动样本</span>
               </div>
             }
           >

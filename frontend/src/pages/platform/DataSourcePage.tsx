@@ -19,7 +19,6 @@ import {
   message,
 } from 'antd'
 import {
-  ApiOutlined,
   CheckCircleOutlined,
   CloudUploadOutlined,
   DatabaseOutlined,
@@ -27,7 +26,6 @@ import {
   EditOutlined,
   ExclamationCircleOutlined,
   EyeOutlined,
-  FileTextOutlined,
   LinkOutlined,
   PlusOutlined,
   ReloadOutlined,
@@ -80,7 +78,6 @@ interface EditForm {
   syncFrequency: SyncFrequency
 }
 
-import StatCards from '../../components/shared/StatCards'
 import PageHeader from '../../components/shared/PageHeader'
 import StatusCell from '../../components/shared/StatusCell'
 import ModalHeader from '../../components/shared/ModalHeader'
@@ -306,16 +303,9 @@ export default function DataSourcePage() {
     <div className="page-container">
       {/* ===== Header ===== */}
       <Card className="section-card">
-        <PageHeader title="数据源管理" subtitle="连接并同步企业结构化与非结构化数据，统一管理全域数据接入" />
+        <PageHeader title="数据源管理" subtitle="统一管理结构化与非结构化数据的接入配置与展示结果" />
         
 
-        <StatCards items={[
-          { title: '数据源总数', value: list.length, icon: <DatabaseOutlined />, cls: 'stat-primary' },
-          { title: '数据库', value: list.filter(d => d.category === 'structured').length, icon: <ApiOutlined />, cls: 'stat-success' },
-          { title: '对象存储', value: list.filter(d => d.category === 'unstructured').length, icon: <FileTextOutlined />, cls: 'stat-purple' },
-          { title: '活跃连接', value: list.filter(d => d.status === 'Active' || d.status === 'Syncing').length, icon: <LinkOutlined />, cls: 'stat-warning' },
-          { title: '总记录数', value: list.reduce((s, d) => s + d.recordCount, 0) > 10000 ? `${(list.reduce((s, d) => s + d.recordCount, 0) / 10000).toFixed(1)}万` : list.reduce((s, d) => s + d.recordCount, 0), icon: <SyncOutlined />, cls: 'stat-info' },
-        ]} />
 
         {/* 工具栏 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -455,7 +445,7 @@ export default function DataSourcePage() {
                   onClick={() => void handleTest()}
                   loading={testing}
                 >
-                  测试连接
+                  校验配置
                 </Button>
                 {testResult && (
                   <Tag
@@ -477,7 +467,7 @@ export default function DataSourcePage() {
               <Row gutter={16}>
                 <Col span={14}>
                   <Form.Item name="endpoint" label="Endpoint" rules={[{ required: true, message: '请输入 Endpoint' }]}>
-                    <Input placeholder="例如：https://minio.demo.local" />
+                    <Input placeholder="例如：https://minio.static.local" />
                   </Form.Item>
                 </Col>
                 <Col span={10}>
@@ -516,7 +506,7 @@ export default function DataSourcePage() {
                   onClick={() => void handleTest()}
                   loading={testing}
                 >
-                  测试连接
+                  校验配置
                 </Button>
                 {testResult && (
                   <Tag

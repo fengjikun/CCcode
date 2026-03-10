@@ -276,7 +276,7 @@ export default function GatewayModelsPage() {
     <div className="page-container">
       <PageHeader
         title={MODEL_GATEWAY_PAGE_LABELS.models}
-        subtitle={`${MODEL_CENTER_PAGE_LABELS.gateway}下的模型服务、发布节奏与能力路由管理。`}
+        subtitle={`${MODEL_CENTER_PAGE_LABELS.gateway} 模型服务、发布节奏与能力路由配置。`}
       />
 
       <Space direction="vertical" size={16} style={{ width: '100%' }}>

@@ -236,7 +236,7 @@ export default function DocumentsTab({
             loading={testingDataSourceId === record.id}
             onClick={() => { void handleTestDataSource(record.id) }}
           >
-            测试连接
+            校验配置
           </Button>
           <Button size="small" icon={<EditOutlined />} onClick={() => openEditDataSourceModal(record)}>
             编辑

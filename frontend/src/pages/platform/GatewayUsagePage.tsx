@@ -142,7 +142,7 @@ export default function GatewayUsagePage() {
     <div className="page-container">
       <PageHeader
         title={MODEL_GATEWAY_PAGE_LABELS.usage}
-        subtitle={`${MODEL_CENTER_PAGE_LABELS.gateway}的调用指标、错误分布与请求日志分析。`}
+        subtitle={`${MODEL_CENTER_PAGE_LABELS.gateway}的静态调用指标、错误分布与请求日志分析。`}
       />
 
       <Space direction="vertical" size={16} style={{ width: '100%' }}>

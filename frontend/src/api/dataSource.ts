@@ -135,11 +135,11 @@ function buildStructuredDataSource(
     category: 'structured',
     type,
     connection: {
-      host: `${toAsciiSlug(industry)}-${codeSlug}-${dbIdLabel}.db.demo.local`,
+      host: `${toAsciiSlug(industry)}-${codeSlug}-${dbIdLabel}.db.static.local`,
       port: STRUCTURED_PORTS[type],
       database: databaseName,
       username: `ro_${toAsciiSlug(industry) || 'general'}`,
-      password: `demo_${codeSlug}`,
+      password: `static_${codeSlug}`,
     },
     syncFrequency,
     status,
@@ -165,7 +165,7 @@ function buildObjectStorageDataSource(
   const status = resolveStatus(index + 3)
   const codeSlug = toCodeSlug(code)
   const industryLabel = INDUSTRY_LABELS[industry] ?? industry
-  const endpointHost = `${type.toLowerCase()}.${toAsciiSlug(industry) || 'general'}.demo.local`
+  const endpointHost = `${type.toLowerCase()}.${toAsciiSlug(industry) || 'general'}.static.local`
   const storageLabel = STORAGE_DISPLAY_LABELS[index % STORAGE_DISPLAY_LABELS.length]
   const storageIdLabel = STORAGE_ID_LABELS[index % STORAGE_ID_LABELS.length]
 

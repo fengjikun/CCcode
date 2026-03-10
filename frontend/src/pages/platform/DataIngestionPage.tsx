@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  Alert,
   Button,
   Card,
   Col,
@@ -142,7 +141,7 @@ export default function DataIngestionPage() {
   return (
     <div className="page-container">
       <Card className="section-card">
-        <PageHeader title="数据接入任务" subtitle="统一查看采集调度、同步状态与最近同步结果" />
+        <PageHeader title="数据接入任务" subtitle="统一查看静态采集任务、同步状态样本与最近结果" />
 
         <StatCards items={stats} />
 

@@ -975,7 +975,7 @@ def _build_xlsx_analysis(source_name: str, tables: list[dict[str, Any]]) -> dict
             entity_instances.append(
                 {
                     "type": entity_name,
-                    "name": "样例",
+                    "name": "静态记录",
                     "evidence": f"{source_name} 提供实体定义",
                 }
             )
@@ -987,10 +987,10 @@ def _build_xlsx_analysis(source_name: str, tables: list[dict[str, Any]]) -> dict
             relation_instances.append(
                 {
                     "domain_type": domain_name,
-                    "domain_name": "样例",
+                    "domain_name": "静态记录",
                     "relation": _safe_schema_name(template.get("name"), fallback="related_to"),
                     "range_type": range_name,
-                    "range_name": "样例",
+                    "range_name": "静态记录",
                     "evidence": f"{source_name} 提供关系定义",
                 }
             )
@@ -1967,8 +1967,8 @@ def _generate_xlsx_review_items_for_run(
         relation_name = _safe_schema_name(item.get("relation"), fallback="")
         domain_type = _safe_schema_name(item.get("domain_type"), fallback="")
         range_type = _safe_schema_name(item.get("range_type"), fallback="")
-        domain_name = _safe_schema_name(item.get("domain_name"), fallback="样例")
-        range_name = _safe_schema_name(item.get("range_name"), fallback="样例")
+        domain_name = _safe_schema_name(item.get("domain_name"), fallback="静态记录")
+        range_name = _safe_schema_name(item.get("range_name"), fallback="静态记录")
         if not relation_name or not domain_type or not range_type:
             continue
 
@@ -3039,7 +3039,7 @@ def _generate_review_items_for_run(
     for source in enabled_data_sources:
         source_items.append((source.name, f"数据源 {source.name} 中"))
     if not source_items:
-        source_items.append(("演示来源", "来源样例中"))
+        source_items.append(("静态来源", "静态来源记录中"))
 
     review_rows: list[ReviewItem] = []
     for source_name, evidence_prefix in source_items:
@@ -3697,7 +3697,7 @@ def test_data_source_connection(db: Session, user_id: int, project_id: str, data
     status = "FAILED" if force_failed else "SUCCESS"
     data_source.status = status
     data_source.last_test_at = tested_at
-    data_source.last_error = "连接失败: mock network timeout" if force_failed else ""
+    data_source.last_error = "连接失败: 静态网络校验超时" if force_failed else ""
     data_source.updated_at = tested_at
     _touch_project(project)
     db.commit()

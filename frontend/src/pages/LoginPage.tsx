@@ -39,6 +39,10 @@ export default function LoginPage() {
           请输入账号和密码继续访问系统
         </Text>
 
+        <div className="login-static-note">
+          当前系统登录后的指标、列表、日志和流程结果均为静态展示数据，仅用于界面说明。
+        </div>
+
         <Form<LoginPayload>
           layout="vertical"
           autoComplete="off"

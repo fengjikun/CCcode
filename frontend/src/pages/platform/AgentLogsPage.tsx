@@ -122,7 +122,7 @@ export default function AgentLogsPage() {
   return (
     <div className="page-container">
       <Card className="section-card">
-        <PageHeader title="智能体执行日志" subtitle="实时追踪 Agent 推理链路、工具调用与决策过程" />
+        <PageHeader title="智能体执行日志" subtitle="查看 Agent 推理链路、工具调用与决策过程的静态日志样本" />
 
         <StatCards items={statItems} />
 

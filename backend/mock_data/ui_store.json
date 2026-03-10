@@ -157,7 +157,23 @@
           "type": "fault-repair",
           "description": "基于设备本体与故障知识图谱，智能监控告警与处置建议。",
           "createdAt": "2024-01-01T00:00:00.000Z",
-          "updatedAt": "2024-01-01T00:00:00.000Z"
+          "updatedAt": "2024-01-01T00:00:00.000Z",
+          "owner": "制造运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-Platform-70B",
+          "systemPrompt": "你是设备运维诊断专员，负责基于设备本体与故障知识库，精准定位根因，输出结构化维修方案。请严格依据业务本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "设备工程师、现场维修班组、产线班长",
+          "serviceBoundary": "围绕当前业务本体，负责告警解读、根因分析与 SOP 建议，不直接控制设备执行动作。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "published",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-design-compliance",
@@ -172,7 +188,23 @@
           "agentScene": "合规性自动化审计Agent：实时监控设计文档是否违反法规",
           "trainingType": "治理类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "研发规范负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-Industry-60B-Instruct",
+          "systemPrompt": "你是工程合规审查专员，负责融合工程规范本体，辅助图纸审查、参数校验与设计优化决策。请严格依据标准合规本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "工程师、设计审核员、研发经理",
+          "serviceBoundary": "围绕 标准合规本体，负责规则审查、标准比对与风险提示，不直接替代 CAD/PLM 设计提交。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-resource-matching",
@@ -187,7 +219,23 @@
           "agentScene": "资源匹配Agent：根据设计公差自动筛选满足条件的生产线",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "工艺改进负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是制造资源匹配专员，负责结合工艺知识图谱，分析瓶颈工序，提升良率与节拍效率。请严格依据制造资源能力本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "工艺工程师、计划调度员、产线主管",
+          "serviceBoundary": "围绕 制造资源能力本体，负责调度建议与流程优化，不直接下发生产控制指令。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-production-scheduling",
@@ -202,7 +250,23 @@
           "agentScene": "动态排产Agent：遇插单时自动重算全局最优开工时间",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "工艺改进负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是生产排产调度专员，负责结合工艺知识图谱，分析瓶颈工序，提升良率与节拍效率。请严格依据任务调度本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "工艺工程师、计划调度员、产线主管",
+          "serviceBoundary": "围绕 任务调度本体，负责调度建议与流程优化，不直接下发生产控制指令。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-replenishment",
@@ -217,7 +281,23 @@
           "agentScene": "自动补货Agent：跌破阈值时自动生成订单并分发给多个供应商",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "供应链计划负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-Platform-70B",
+          "systemPrompt": "你是供应链补货协同专员，负责解析物料清单结构，识别替代料与成本优化空间，支持供应链决策。请严格依据库存风险本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "采购计划员、供应链经理、成本分析师",
+          "serviceBoundary": "围绕 库存风险本体，承接 自动补货Agent：跌破阈值时自动生成订单并分发给多个供应商 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-contract-risk",
@@ -232,7 +312,23 @@
           "agentScene": "法务风险Agent：自动扫描合同草案中的不平等或高风险三元组",
           "trainingType": "治理类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "业务运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是合同法务风控专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据合同约束本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "销售负责人、业务分析师",
+          "serviceBoundary": "围绕 合同约束本体，承接 法务风险Agent：自动扫描合同草案中的不平等或高风险三元组 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-repair-guide",
@@ -247,7 +343,23 @@
           "agentScene": "维修指引Agent：自动为特定故障生成可视化的维修作业指导书",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "制造运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-Platform-70B",
+          "systemPrompt": "你是维修作业指引专员，负责基于设备本体与故障知识库，精准定位根因，输出结构化维修方案。请严格依据维护SOP本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "设备工程师、现场维修班组、产线班长",
+          "serviceBoundary": "围绕 维护SOP本体，负责告警解读、根因分析与 SOP 建议，不直接控制设备执行动作。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "published",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-product-planning",
@@ -262,7 +374,23 @@
           "agentScene": "自动上新Agent：根据类目缺失度自动建议补充特定价格带的SKU",
           "trainingType": "分析类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "渠道运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-General-Agent",
+          "systemPrompt": "你是选品规划分析专员，负责基于门店与商品本体，智能匹配货品结构，提升动销率。请严格依据品类架构本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "门店督导、商品运营、履约调度",
+          "serviceBoundary": "围绕 品类架构本体，承接 自动上新Agent：根据类目缺失度自动建议补充特定价格带的SKU 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-traceability",
@@ -277,7 +405,23 @@
           "agentScene": "透明供应链Agent：为消费者提供可扫码查看的链路溯源证据",
           "trainingType": "治理类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "业务运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是供应链溯源专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据原料溯源本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "采购与供应负责人、业务分析师",
+          "serviceBoundary": "围绕 原料溯源本体，承接 透明供应链Agent：为消费者提供可扫码查看的链路溯源证据 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-clearance",
@@ -292,7 +436,23 @@
           "agentScene": "临期清货Agent：自动下发折扣指令至POS端，加速陈旧库存周转",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "渠道运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-General-Agent",
+          "systemPrompt": "你是临期库存处置专员，负责基于门店与商品本体，智能匹配货品结构，提升动销率。请严格依据库存状态本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "门店督导、商品运营、履约调度",
+          "serviceBoundary": "围绕 库存状态本体，承接 临期清货Agent：自动下发折扣指令至POS端，加速陈旧库存周转 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-delivery-dispatch",
@@ -307,7 +467,23 @@
           "agentScene": "即时配送调度Agent：在高峰期平衡配送时长与骑手收益，优化路线",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "渠道运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-General-Agent",
+          "systemPrompt": "你是即时配送调度专员，负责基于门店与商品本体，智能匹配货品结构，提升动销率。请严格依据末端运力本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "门店督导、商品运营、履约调度",
+          "serviceBoundary": "围绕 末端运力本体，承接 即时配送调度Agent：在高峰期平衡配送时长与骑手收益，优化路线 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-shelf-optimization",
@@ -322,7 +498,23 @@
           "agentScene": "货架优化Agent：利用关联购买数据，建议能够提升连带率的陈列布局",
           "trainingType": "决策类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "渠道运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-General-Agent",
+          "systemPrompt": "你是门店货架优化专员，负责基于门店与商品本体，智能匹配货品结构，提升动销率。请严格依据货架图谱本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "门店督导、商品运营、履约调度",
+          "serviceBoundary": "围绕 货架图谱本体，承接 货架优化Agent：利用关联购买数据，建议能够提升连带率的陈列布局 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-staff-scheduling",
@@ -337,7 +529,23 @@
           "agentScene": "弹性排班Agent：预测客流波峰，自动生成跨店调拨的人力计划",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "渠道运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-General-Agent",
+          "systemPrompt": "你是门店排班协同专员，负责基于门店与商品本体，智能匹配货品结构，提升动销率。请严格依据店员排班本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "门店督导、商品运营、履约调度",
+          "serviceBoundary": "围绕 店员排班本体，承接 弹性排班Agent：预测客流波峰，自动生成跨店调拨的人力计划 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-member-growth",
@@ -352,7 +560,23 @@
           "agentScene": "精准推送Agent：仅针对感兴趣的用户推送特定优惠",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "业务运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是会员运营增长专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据会员画像本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "营销与CRM负责人、业务分析师",
+          "serviceBoundary": "围绕 会员画像本体，承接 精准推送Agent：仅针对感兴趣的用户推送特定优惠 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-shopping-guide",
@@ -367,7 +591,23 @@
           "agentScene": "智慧导购Agent：在直播间或聊天框24小时解答产品参数疑问",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "渠道运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-General-Agent",
+          "systemPrompt": "你是智慧导购服务专员，负责基于门店与商品本体，智能匹配货品结构，提升动销率。请严格依据服务业务本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "门店督导、商品运营、履约调度",
+          "serviceBoundary": "围绕 服务业务本体，承接 智慧导购Agent：在直播间或聊天框24小时解答产品参数疑问 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-triage",
@@ -382,7 +622,23 @@
           "agentScene": "预诊分诊Agent：根据患者主诉，自动推荐挂号科室与紧急程度优先级",
           "trainingType": "分析类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "业务运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是预诊分诊专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据疾病诊断本体(ICD-11)输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "临床诊疗负责人、业务分析师",
+          "serviceBoundary": "围绕 疾病诊断本体(ICD-11)，承接 预诊分诊Agent：根据患者主诉，自动推荐挂号科室与紧急程度优先级 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-medication-review",
@@ -397,7 +653,23 @@
           "agentScene": "用药安全检查Agent：在医生开方时，自动扫描处方内药物的冲突三元组",
           "trainingType": "治理类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "业务运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是用药安全审查专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据药物交互(DDI)本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "临床诊疗负责人、业务分析师",
+          "serviceBoundary": "围绕 药物交互(DDI)本体，承接 用药安全检查Agent：在医生开方时，自动扫描处方内药物的冲突三元组 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-surgery-scheduler",
@@ -412,7 +684,23 @@
           "agentScene": "手术排程Agent：根据手术难度与洁净等级，自动生成最优手术计划表",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "业务运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是手术排程协同专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据医疗资源效能本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "医院运营负责人、业务分析师",
+          "serviceBoundary": "围绕 医疗资源效能本体，承接 手术排程Agent：根据手术难度与洁净等级，自动生成最优手术计划表 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-medical-maintenance",
@@ -427,7 +715,23 @@
           "agentScene": "主动维保Agent：在大型设备故障前根据传感器三元组触发维保",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "制造运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-Platform-70B",
+          "systemPrompt": "你是医疗设备主动维保专员，负责基于设备本体与故障知识库，精准定位根因，输出结构化维修方案。请严格依据医疗设备孪生本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "设备工程师、现场维修班组、产线班长",
+          "serviceBoundary": "围绕 医疗设备孪生本体，负责告警解读、根因分析与 SOP 建议，不直接控制设备执行动作。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "published",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-followup",
@@ -442,7 +746,23 @@
           "agentScene": "自动随访Agent：通过AI语音或短信自动回访患者康复情况",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "业务运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是患者随访服务专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据随访随办本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "患者服务负责人、业务分析师",
+          "serviceBoundary": "围绕 随访随办本体，承接 自动随访Agent：通过AI语音或短信自动回访患者康复情况 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-medical-qc",
@@ -457,7 +777,23 @@
           "agentScene": "病历质控Agent：实时检查病历书写质量，确保满足法律文书合规要求",
           "trainingType": "治理类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "数据治理负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-Platform-70B",
+          "systemPrompt": "你是病历质控专员，负责监控数据链路健康度，自动诊断质量问题，保障数据资产稳定运行。请严格依据电子病历质控本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "数据治理专员、平台运维、质量负责人",
+          "serviceBoundary": "围绕 电子病历质控本体，承接 病历质控Agent：实时检查病历书写质量，确保满足法律文书合规要求 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "draft",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-route-planning",
@@ -472,7 +808,23 @@
           "agentScene": "路径规划Agent：基于静态拓扑与实时封闭信息，计算最优避让路径",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "工艺改进负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是路网路径规划专员，负责结合工艺知识图谱，分析瓶颈工序，提升良率与节拍效率。请严格依据路网拓扑本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "工艺工程师、计划调度员、产线主管",
+          "serviceBoundary": "围绕 路网拓扑本体，负责调度建议与流程优化，不直接下发生产控制指令。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-conflict-resolution",
@@ -487,7 +839,23 @@
           "agentScene": "安全避碰Agent：预测四维轨迹冲突，实时下发航向或空层改变指令",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "工艺改进负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是交通安全避碰专员，负责结合工艺知识图谱，分析瓶颈工序，提升良率与节拍效率。请严格依据冲突消解本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "工艺工程师、计划调度员、产线主管",
+          "serviceBoundary": "围绕 冲突消解本体，负责调度建议与流程优化，不直接下发生产控制指令。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-fulfillment",
@@ -502,7 +870,23 @@
           "agentScene": "时效督办Agent：预测延误风险，自动触发加急运输或多式联运切换",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "业务运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是运输履约督办专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据订单履约本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "货物与运输负责人、业务分析师",
+          "serviceBoundary": "围绕 订单履约本体，承接 时效督办Agent：预测延误风险，自动触发加急运输或多式联运切换 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-dynamic-pricing",
@@ -517,7 +901,23 @@
           "agentScene": "收益管理Agent：实时调节票价或运费，利用价格杠杆调节客流分布",
           "trainingType": "决策类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "业务运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是动态定价决策专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据动态定价本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "出行服务负责人、业务分析师",
+          "serviceBoundary": "围绕 动态定价本体，承接 收益管理Agent：实时调节票价或运费，利用价格杠杆调节客流分布 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-cashflow",
@@ -532,7 +932,23 @@
           "agentScene": "现金流预警Agent：预测未来3个月收支缺口，自动提出融资建议",
           "trainingType": "分析类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "财务共享负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是现金流预警专员，负责依托财税知识本体，合规筹划税务结构，降低涉税风险。请严格依据资金风险本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "财务BP、税务经理、风控专员",
+          "serviceBoundary": "围绕 资金风险本体，承接 现金流预警Agent：预测未来3个月收支缺口，自动提出融资建议 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "draft",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-talent-matching",
@@ -547,7 +963,23 @@
           "agentScene": "动态组队Agent：根据任务属性，在人才池中自动拼凑最优项目组",
           "trainingType": "执行类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "业务运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是技能组队调度专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据技能图谱本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "人力资源负责人、业务分析师",
+          "serviceBoundary": "围绕 技能图谱本体，承接 动态组队Agent：根据任务属性，在人才池中自动拼凑最优项目组 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-root-insight",
@@ -562,7 +994,23 @@
           "agentScene": "根因洞察Agent：当KPI异常波动时，自动下钻数据并生成归因报告",
           "trainingType": "分析类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "数据治理负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-Platform-70B",
+          "systemPrompt": "你是经营归因洞察专员，负责监控数据链路健康度，自动诊断质量问题，保障数据资产稳定运行。请严格依据因果推断本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "数据治理专员、平台运维、质量负责人",
+          "serviceBoundary": "围绕 因果推断本体，承接 根因洞察Agent：当KPI异常波动时，自动下钻数据并生成归因报告 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "draft",
+          "publishChannels": [
+            "管理平台"
+          ]
         },
         {
           "id": "dh-default-regulation-review",
@@ -577,7 +1025,23 @@
           "agentScene": "法务审查Agent：自动扫描业务合同，识别潜在的法律违规条款",
           "trainingType": "治理类",
           "createdAt": "2025-01-01T00:00:00.000Z",
-          "updatedAt": "2025-03-01T00:00:00.000Z"
+          "updatedAt": "2025-03-01T00:00:00.000Z",
+          "owner": "业务运营负责人",
+          "maintainers": [
+            "AI平台运营",
+            "业务域负责人"
+          ],
+          "linkedAgentIds": [],
+          "linkedSkillIds": [],
+          "preferredModel": "Deepexi-R1-Reasoner",
+          "systemPrompt": "你是法规审查专员，负责整合运营数据本体，提供实时经营洞察与多维决策支持。请严格依据法律法规库本体输出结构化结论，先给风险和依据，再给下一步动作。",
+          "targetUsers": "风险与合规负责人、业务分析师",
+          "serviceBoundary": "围绕 法律法规库本体，承接 法务审查Agent：自动扫描业务合同，识别潜在的法律违规条款 场景的建议生成与流程协同，不直接发起最终业务审批。",
+          "handoffTarget": "统一门户 Chat 端（待接入）",
+          "publishStatus": "testing",
+          "publishChannels": [
+            "管理平台"
+          ]
         }
       ],
       "seedVersion": 2
@@ -10576,11 +11040,11 @@
           "category": "structured",
           "type": "SAP ERP",
           "connection": {
-            "host": "manufacturing-0-0-1-primary.db.demo.local",
+            "host": "manufacturing-0-0-1-primary.db.static.local",
             "port": 3300,
             "database": "onto_0_0_1",
             "username": "ro_manufacturing",
-            "password": "demo_0-0-1"
+            "password": "static_0-0-1"
           },
           "syncFrequency": "realtime",
           "status": "Syncing",
@@ -10596,11 +11060,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-0-0-1-business.db.demo.local",
+            "host": "manufacturing-0-0-1-business.db.static.local",
             "port": 3306,
             "database": "onto_0_0_1_business",
             "username": "ro_manufacturing",
-            "password": "demo_0-0-1"
+            "password": "static_0-0-1"
           },
           "syncFrequency": "realtime",
           "status": "Active",
@@ -10616,7 +11080,7 @@
           "category": "unstructured",
           "type": "MinIO",
           "connection": {
-            "endpoint": "https://minio.manufacturing.demo.local",
+            "endpoint": "https://minio.manufacturing.static.local",
             "bucket": "ontology-manufacturing-0-0-1-docs",
             "region": "cn-north-1",
             "pathPrefix": "故障诊断本体/v1/",
@@ -10637,11 +11101,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-1-1-business.db.demo.local",
+            "host": "manufacturing-1-1-1-business.db.static.local",
             "port": 3306,
             "database": "onto_1_1_1",
             "username": "ro_manufacturing",
-            "password": "demo_1-1-1"
+            "password": "static_1-1-1"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -10657,11 +11121,11 @@
           "category": "structured",
           "type": "MongoDB",
           "connection": {
-            "host": "manufacturing-1-1-2-analytics.db.demo.local",
+            "host": "manufacturing-1-1-2-analytics.db.static.local",
             "port": 27017,
             "database": "onto_1_1_2",
             "username": "ro_manufacturing",
-            "password": "demo_1-1-2"
+            "password": "static_1-1-2"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -10677,11 +11141,11 @@
           "category": "structured",
           "type": "SAP ERP",
           "connection": {
-            "host": "manufacturing-1-1-3-ledger.db.demo.local",
+            "host": "manufacturing-1-1-3-ledger.db.static.local",
             "port": 3300,
             "database": "onto_1_1_3",
             "username": "ro_manufacturing",
-            "password": "demo_1-1-3"
+            "password": "static_1-1-3"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -10697,11 +11161,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-1-3-archive.db.demo.local",
+            "host": "manufacturing-1-1-3-archive.db.static.local",
             "port": 3306,
             "database": "onto_1_1_3_archive",
             "username": "ro_manufacturing",
-            "password": "demo_1-1-3"
+            "password": "static_1-1-3"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -10717,11 +11181,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-1-4-archive.db.demo.local",
+            "host": "manufacturing-1-1-4-archive.db.static.local",
             "port": 3306,
             "database": "onto_1_1_4",
             "username": "ro_manufacturing",
-            "password": "demo_1-1-4"
+            "password": "static_1-1-4"
           },
           "syncFrequency": "15min",
           "status": "Active",
@@ -10737,11 +11201,11 @@
           "category": "structured",
           "type": "MongoDB",
           "connection": {
-            "host": "manufacturing-1-1-5-primary.db.demo.local",
+            "host": "manufacturing-1-1-5-primary.db.static.local",
             "port": 27017,
             "database": "onto_1_1_5",
             "username": "ro_manufacturing",
-            "password": "demo_1-1-5"
+            "password": "static_1-1-5"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -10757,11 +11221,11 @@
           "category": "structured",
           "type": "SAP ERP",
           "connection": {
-            "host": "manufacturing-1-2-6-business.db.demo.local",
+            "host": "manufacturing-1-2-6-business.db.static.local",
             "port": 3300,
             "database": "onto_1_2_6",
             "username": "ro_manufacturing",
-            "password": "demo_1-2-6"
+            "password": "static_1-2-6"
           },
           "syncFrequency": "daily",
           "status": "Active",
@@ -10777,11 +11241,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-2-6-analytics.db.demo.local",
+            "host": "manufacturing-1-2-6-analytics.db.static.local",
             "port": 3306,
             "database": "onto_1_2_6_analytics",
             "username": "ro_manufacturing",
-            "password": "demo_1-2-6"
+            "password": "static_1-2-6"
           },
           "syncFrequency": "daily",
           "status": "Active",
@@ -10797,11 +11261,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-2-7-analytics.db.demo.local",
+            "host": "manufacturing-1-2-7-analytics.db.static.local",
             "port": 3306,
             "database": "onto_1_2_7",
             "username": "ro_manufacturing",
-            "password": "demo_1-2-7"
+            "password": "static_1-2-7"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -10817,7 +11281,7 @@
           "category": "unstructured",
           "type": "S3",
           "connection": {
-            "endpoint": "https://s3.manufacturing.demo.local",
+            "endpoint": "https://s3.manufacturing.static.local",
             "bucket": "ontology-manufacturing-1-2-7-attachments",
             "region": "ap-southeast-1",
             "pathPrefix": "制造资源能力本体/v2/",
@@ -10838,11 +11302,11 @@
           "category": "structured",
           "type": "MongoDB",
           "connection": {
-            "host": "manufacturing-1-2-8-ledger.db.demo.local",
+            "host": "manufacturing-1-2-8-ledger.db.static.local",
             "port": 27017,
             "database": "onto_1_2_8",
             "username": "ro_manufacturing",
-            "password": "demo_1-2-8"
+            "password": "static_1-2-8"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -10858,11 +11322,11 @@
           "category": "structured",
           "type": "SAP ERP",
           "connection": {
-            "host": "manufacturing-1-2-9-archive.db.demo.local",
+            "host": "manufacturing-1-2-9-archive.db.static.local",
             "port": 3300,
             "database": "onto_1_2_9",
             "username": "ro_manufacturing",
-            "password": "demo_1-2-9"
+            "password": "static_1-2-9"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -10878,11 +11342,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-2-9-primary.db.demo.local",
+            "host": "manufacturing-1-2-9-primary.db.static.local",
             "port": 3306,
             "database": "onto_1_2_9_primary",
             "username": "ro_manufacturing",
-            "password": "demo_1-2-9"
+            "password": "static_1-2-9"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -10898,11 +11362,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-2-10-primary.db.demo.local",
+            "host": "manufacturing-1-2-10-primary.db.static.local",
             "port": 3306,
             "database": "onto_1_2_10",
             "username": "ro_manufacturing",
-            "password": "demo_1-2-10"
+            "password": "static_1-2-10"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -10918,11 +11382,11 @@
           "category": "structured",
           "type": "MongoDB",
           "connection": {
-            "host": "manufacturing-1-3-12-business.db.demo.local",
+            "host": "manufacturing-1-3-12-business.db.static.local",
             "port": 27017,
             "database": "onto_1_3_12",
             "username": "ro_manufacturing",
-            "password": "demo_1-3-12"
+            "password": "static_1-3-12"
           },
           "syncFrequency": "realtime",
           "status": "Syncing",
@@ -10938,11 +11402,11 @@
           "category": "structured",
           "type": "SAP ERP",
           "connection": {
-            "host": "manufacturing-1-3-13-analytics.db.demo.local",
+            "host": "manufacturing-1-3-13-analytics.db.static.local",
             "port": 3300,
             "database": "onto_1_3_13",
             "username": "ro_manufacturing",
-            "password": "demo_1-3-13"
+            "password": "static_1-3-13"
           },
           "syncFrequency": "realtime",
           "status": "Active",
@@ -10958,11 +11422,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-3-13-ledger.db.demo.local",
+            "host": "manufacturing-1-3-13-ledger.db.static.local",
             "port": 3306,
             "database": "onto_1_3_13_ledger",
             "username": "ro_manufacturing",
-            "password": "demo_1-3-13"
+            "password": "static_1-3-13"
           },
           "syncFrequency": "realtime",
           "status": "Inactive",
@@ -10978,11 +11442,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-3-14-ledger.db.demo.local",
+            "host": "manufacturing-1-3-14-ledger.db.static.local",
             "port": 3306,
             "database": "onto_1_3_14",
             "username": "ro_manufacturing",
-            "password": "demo_1-3-14"
+            "password": "static_1-3-14"
           },
           "syncFrequency": "realtime",
           "status": "Inactive",
@@ -10998,11 +11462,11 @@
           "category": "structured",
           "type": "MongoDB",
           "connection": {
-            "host": "manufacturing-1-3-15-archive.db.demo.local",
+            "host": "manufacturing-1-3-15-archive.db.static.local",
             "port": 27017,
             "database": "onto_1_3_15",
             "username": "ro_manufacturing",
-            "password": "demo_1-3-15"
+            "password": "static_1-3-15"
           },
           "syncFrequency": "realtime",
           "status": "Active",
@@ -11018,7 +11482,7 @@
           "category": "unstructured",
           "type": "MinIO",
           "connection": {
-            "endpoint": "https://minio.manufacturing.demo.local",
+            "endpoint": "https://minio.manufacturing.static.local",
             "bucket": "ontology-manufacturing-1-3-15-archive",
             "region": "cn-south-1",
             "pathPrefix": "人员技能本体/v3/",
@@ -11039,11 +11503,11 @@
           "category": "structured",
           "type": "SAP ERP",
           "connection": {
-            "host": "manufacturing-1-4-16-primary.db.demo.local",
+            "host": "manufacturing-1-4-16-primary.db.static.local",
             "port": 3300,
             "database": "onto_1_4_16",
             "username": "ro_manufacturing",
-            "password": "demo_1-4-16"
+            "password": "static_1-4-16"
           },
           "syncFrequency": "daily",
           "status": "Active",
@@ -11059,11 +11523,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-4-16-business.db.demo.local",
+            "host": "manufacturing-1-4-16-business.db.static.local",
             "port": 3306,
             "database": "onto_1_4_16_business",
             "username": "ro_manufacturing",
-            "password": "demo_1-4-16"
+            "password": "static_1-4-16"
           },
           "syncFrequency": "daily",
           "status": "Active",
@@ -11079,11 +11543,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-4-17-business.db.demo.local",
+            "host": "manufacturing-1-4-17-business.db.static.local",
             "port": 3306,
             "database": "onto_1_4_17",
             "username": "ro_manufacturing",
-            "password": "demo_1-4-17"
+            "password": "static_1-4-17"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11099,11 +11563,11 @@
           "category": "structured",
           "type": "MongoDB",
           "connection": {
-            "host": "manufacturing-1-4-18-analytics.db.demo.local",
+            "host": "manufacturing-1-4-18-analytics.db.static.local",
             "port": 27017,
             "database": "onto_1_4_18",
             "username": "ro_manufacturing",
-            "password": "demo_1-4-18"
+            "password": "static_1-4-18"
           },
           "syncFrequency": "hourly",
           "status": "Error",
@@ -11119,11 +11583,11 @@
           "category": "structured",
           "type": "SAP ERP",
           "connection": {
-            "host": "manufacturing-1-4-19-ledger.db.demo.local",
+            "host": "manufacturing-1-4-19-ledger.db.static.local",
             "port": 3300,
             "database": "onto_1_4_19",
             "username": "ro_manufacturing",
-            "password": "demo_1-4-19"
+            "password": "static_1-4-19"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11139,11 +11603,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-4-19-archive.db.demo.local",
+            "host": "manufacturing-1-4-19-archive.db.static.local",
             "port": 3306,
             "database": "onto_1_4_19_archive",
             "username": "ro_manufacturing",
-            "password": "demo_1-4-19"
+            "password": "static_1-4-19"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11159,11 +11623,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-4-20-archive.db.demo.local",
+            "host": "manufacturing-1-4-20-archive.db.static.local",
             "port": 3306,
             "database": "onto_1_4_20",
             "username": "ro_manufacturing",
-            "password": "demo_1-4-20"
+            "password": "static_1-4-20"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11179,11 +11643,11 @@
           "category": "structured",
           "type": "MongoDB",
           "connection": {
-            "host": "manufacturing-1-5-21-primary.db.demo.local",
+            "host": "manufacturing-1-5-21-primary.db.static.local",
             "port": 27017,
             "database": "onto_1_5_21",
             "username": "ro_manufacturing",
-            "password": "demo_1-5-21"
+            "password": "static_1-5-21"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11199,11 +11663,11 @@
           "category": "structured",
           "type": "SAP ERP",
           "connection": {
-            "host": "manufacturing-1-5-22-business.db.demo.local",
+            "host": "manufacturing-1-5-22-business.db.static.local",
             "port": 3300,
             "database": "onto_1_5_22",
             "username": "ro_manufacturing",
-            "password": "demo_1-5-22"
+            "password": "static_1-5-22"
           },
           "syncFrequency": "daily",
           "status": "Active",
@@ -11219,11 +11683,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-5-22-analytics.db.demo.local",
+            "host": "manufacturing-1-5-22-analytics.db.static.local",
             "port": 3306,
             "database": "onto_1_5_22_analytics",
             "username": "ro_manufacturing",
-            "password": "demo_1-5-22"
+            "password": "static_1-5-22"
           },
           "syncFrequency": "daily",
           "status": "Syncing",
@@ -11239,7 +11703,7 @@
           "category": "unstructured",
           "type": "S3",
           "connection": {
-            "endpoint": "https://s3.manufacturing.demo.local",
+            "endpoint": "https://s3.manufacturing.static.local",
             "bucket": "ontology-manufacturing-1-5-22-assets",
             "region": "cn-east-1",
             "pathPrefix": "市场情报本体/v1/",
@@ -11260,11 +11724,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-5-23-analytics.db.demo.local",
+            "host": "manufacturing-1-5-23-analytics.db.static.local",
             "port": 3306,
             "database": "onto_1_5_23",
             "username": "ro_manufacturing",
-            "password": "demo_1-5-23"
+            "password": "static_1-5-23"
           },
           "syncFrequency": "hourly",
           "status": "Syncing",
@@ -11280,11 +11744,11 @@
           "category": "structured",
           "type": "MongoDB",
           "connection": {
-            "host": "manufacturing-1-5-24-ledger.db.demo.local",
+            "host": "manufacturing-1-5-24-ledger.db.static.local",
             "port": 27017,
             "database": "onto_1_5_24",
             "username": "ro_manufacturing",
-            "password": "demo_1-5-24"
+            "password": "static_1-5-24"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11300,11 +11764,11 @@
           "category": "structured",
           "type": "SAP ERP",
           "connection": {
-            "host": "manufacturing-1-5-25-archive.db.demo.local",
+            "host": "manufacturing-1-5-25-archive.db.static.local",
             "port": 3300,
             "database": "onto_1_5_25",
             "username": "ro_manufacturing",
-            "password": "demo_1-5-25"
+            "password": "static_1-5-25"
           },
           "syncFrequency": "15min",
           "status": "Active",
@@ -11320,11 +11784,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-5-25-primary.db.demo.local",
+            "host": "manufacturing-1-5-25-primary.db.static.local",
             "port": 3306,
             "database": "onto_1_5_25_primary",
             "username": "ro_manufacturing",
-            "password": "demo_1-5-25"
+            "password": "static_1-5-25"
           },
           "syncFrequency": "15min",
           "status": "Active",
@@ -11340,11 +11804,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-6-26-primary.db.demo.local",
+            "host": "manufacturing-1-6-26-primary.db.static.local",
             "port": 3306,
             "database": "onto_1_6_26",
             "username": "ro_manufacturing",
-            "password": "demo_1-6-26"
+            "password": "static_1-6-26"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11360,11 +11824,11 @@
           "category": "structured",
           "type": "MongoDB",
           "connection": {
-            "host": "manufacturing-1-6-27-business.db.demo.local",
+            "host": "manufacturing-1-6-27-business.db.static.local",
             "port": 27017,
             "database": "onto_1_6_27",
             "username": "ro_manufacturing",
-            "password": "demo_1-6-27"
+            "password": "static_1-6-27"
           },
           "syncFrequency": "hourly",
           "status": "Inactive",
@@ -11380,11 +11844,11 @@
           "category": "structured",
           "type": "SAP ERP",
           "connection": {
-            "host": "manufacturing-1-6-28-analytics.db.demo.local",
+            "host": "manufacturing-1-6-28-analytics.db.static.local",
             "port": 3300,
             "database": "onto_1_6_28",
             "username": "ro_manufacturing",
-            "password": "demo_1-6-28"
+            "password": "static_1-6-28"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11400,11 +11864,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-6-28-ledger.db.demo.local",
+            "host": "manufacturing-1-6-28-ledger.db.static.local",
             "port": 3306,
             "database": "onto_1_6_28_ledger",
             "username": "ro_manufacturing",
-            "password": "demo_1-6-28"
+            "password": "static_1-6-28"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11420,11 +11884,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "manufacturing-1-6-29-ledger.db.demo.local",
+            "host": "manufacturing-1-6-29-ledger.db.static.local",
             "port": 3306,
             "database": "onto_1_6_29",
             "username": "ro_manufacturing",
-            "password": "demo_1-6-29"
+            "password": "static_1-6-29"
           },
           "syncFrequency": "15min",
           "status": "Active",
@@ -11440,7 +11904,7 @@
           "category": "unstructured",
           "type": "MinIO",
           "connection": {
-            "endpoint": "https://minio.manufacturing.demo.local",
+            "endpoint": "https://minio.manufacturing.static.local",
             "bucket": "ontology-manufacturing-1-6-29-docs",
             "region": "cn-north-1",
             "pathPrefix": "服务履历本体/v2/",
@@ -11461,11 +11925,11 @@
           "category": "structured",
           "type": "MongoDB",
           "connection": {
-            "host": "manufacturing-1-6-30-archive.db.demo.local",
+            "host": "manufacturing-1-6-30-archive.db.static.local",
             "port": 27017,
             "database": "onto_1_6_30",
             "username": "ro_manufacturing",
-            "password": "demo_1-6-30"
+            "password": "static_1-6-30"
           },
           "syncFrequency": "manual",
           "status": "Active",
@@ -11481,11 +11945,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "retail-2-1-1-primary.db.demo.local",
+            "host": "retail-2-1-1-primary.db.static.local",
             "port": 3306,
             "database": "onto_2_1_1",
             "username": "ro_retail",
-            "password": "demo_2-1-1"
+            "password": "static_2-1-1"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11501,11 +11965,11 @@
           "category": "structured",
           "type": "PostgreSQL",
           "connection": {
-            "host": "retail-2-1-2-business.db.demo.local",
+            "host": "retail-2-1-2-business.db.static.local",
             "port": 5432,
             "database": "onto_2_1_2",
             "username": "ro_retail",
-            "password": "demo_2-1-2"
+            "password": "static_2-1-2"
           },
           "syncFrequency": "manual",
           "status": "Active",
@@ -11521,11 +11985,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "retail-2-1-2-analytics.db.demo.local",
+            "host": "retail-2-1-2-analytics.db.static.local",
             "port": 3306,
             "database": "onto_2_1_2_analytics",
             "username": "ro_retail",
-            "password": "demo_2-1-2"
+            "password": "static_2-1-2"
           },
           "syncFrequency": "manual",
           "status": "Active",
@@ -11541,11 +12005,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "retail-2-1-3-analytics.db.demo.local",
+            "host": "retail-2-1-3-analytics.db.static.local",
             "port": 3306,
             "database": "onto_2_1_3",
             "username": "ro_retail",
-            "password": "demo_2-1-3"
+            "password": "static_2-1-3"
           },
           "syncFrequency": "manual",
           "status": "Active",
@@ -11561,11 +12025,11 @@
           "category": "structured",
           "type": "PostgreSQL",
           "connection": {
-            "host": "retail-2-1-4-ledger.db.demo.local",
+            "host": "retail-2-1-4-ledger.db.static.local",
             "port": 5432,
             "database": "onto_2_1_4",
             "username": "ro_retail",
-            "password": "demo_2-1-4"
+            "password": "static_2-1-4"
           },
           "syncFrequency": "daily",
           "status": "Syncing",
@@ -11581,7 +12045,7 @@
           "category": "unstructured",
           "type": "S3",
           "connection": {
-            "endpoint": "https://s3.retail.demo.local",
+            "endpoint": "https://s3.retail.static.local",
             "bucket": "ontology-retail-2-1-4-assets",
             "region": "cn-east-1",
             "pathPrefix": "价格带分布本体/v1/",
@@ -11602,11 +12066,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "retail-2-1-5-archive.db.demo.local",
+            "host": "retail-2-1-5-archive.db.static.local",
             "port": 3306,
             "database": "onto_2_1_5",
             "username": "ro_retail",
-            "password": "demo_2-1-5"
+            "password": "static_2-1-5"
           },
           "syncFrequency": "manual",
           "status": "Error",
@@ -11622,11 +12086,11 @@
           "category": "structured",
           "type": "PostgreSQL",
           "connection": {
-            "host": "retail-2-2-6-primary.db.demo.local",
+            "host": "retail-2-2-6-primary.db.static.local",
             "port": 5432,
             "database": "onto_2_2_6",
             "username": "ro_retail",
-            "password": "demo_2-2-6"
+            "password": "static_2-2-6"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11642,11 +12106,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "retail-2-2-7-business.db.demo.local",
+            "host": "retail-2-2-7-business.db.static.local",
             "port": 3306,
             "database": "onto_2_2_7",
             "username": "ro_retail",
-            "password": "demo_2-2-7"
+            "password": "static_2-2-7"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11662,11 +12126,11 @@
           "category": "structured",
           "type": "PostgreSQL",
           "connection": {
-            "host": "retail-2-2-7-analytics.db.demo.local",
+            "host": "retail-2-2-7-analytics.db.static.local",
             "port": 5432,
             "database": "onto_2_2_7_analytics",
             "username": "ro_retail",
-            "password": "demo_2-2-7"
+            "password": "static_2-2-7"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11682,11 +12146,11 @@
           "category": "structured",
           "type": "PostgreSQL",
           "connection": {
-            "host": "retail-2-2-8-analytics.db.demo.local",
+            "host": "retail-2-2-8-analytics.db.static.local",
             "port": 5432,
             "database": "onto_2_2_8",
             "username": "ro_retail",
-            "password": "demo_2-2-8"
+            "password": "static_2-2-8"
           },
           "syncFrequency": "manual",
           "status": "Active",
@@ -11702,7 +12166,7 @@
           "category": "unstructured",
           "type": "S3",
           "connection": {
-            "endpoint": "https://s3.retail.demo.local",
+            "endpoint": "https://s3.retail.static.local",
             "bucket": "ontology-retail-2-2-8-assets",
             "region": "cn-east-1",
             "pathPrefix": "起订量(MOQ)本体/v2/",
@@ -11723,11 +12187,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "retail-2-2-9-ledger.db.demo.local",
+            "host": "retail-2-2-9-ledger.db.static.local",
             "port": 3306,
             "database": "onto_2_2_9",
             "username": "ro_retail",
-            "password": "demo_2-2-9"
+            "password": "static_2-2-9"
           },
           "syncFrequency": "15min",
           "status": "Active",
@@ -11743,11 +12207,11 @@
           "category": "structured",
           "type": "PostgreSQL",
           "connection": {
-            "host": "retail-2-2-10-archive.db.demo.local",
+            "host": "retail-2-2-10-archive.db.static.local",
             "port": 5432,
             "database": "onto_2_2_10",
             "username": "ro_retail",
-            "password": "demo_2-2-10"
+            "password": "static_2-2-10"
           },
           "syncFrequency": "daily",
           "status": "Inactive",
@@ -11763,11 +12227,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "retail-2-3-11-primary.db.demo.local",
+            "host": "retail-2-3-11-primary.db.static.local",
             "port": 3306,
             "database": "onto_2_3_11",
             "username": "ro_retail",
-            "password": "demo_2-3-11"
+            "password": "static_2-3-11"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11783,11 +12247,11 @@
           "category": "structured",
           "type": "PostgreSQL",
           "connection": {
-            "host": "retail-2-3-12-business.db.demo.local",
+            "host": "retail-2-3-12-business.db.static.local",
             "port": 5432,
             "database": "onto_2_3_12",
             "username": "ro_retail",
-            "password": "demo_2-3-12"
+            "password": "static_2-3-12"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11803,11 +12267,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "retail-2-3-12-analytics.db.demo.local",
+            "host": "retail-2-3-12-analytics.db.static.local",
             "port": 3306,
             "database": "onto_2_3_12_analytics",
             "username": "ro_retail",
-            "password": "demo_2-3-12"
+            "password": "static_2-3-12"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11823,7 +12287,7 @@
           "category": "unstructured",
           "type": "S3",
           "connection": {
-            "endpoint": "https://s3.retail.demo.local",
+            "endpoint": "https://s3.retail.static.local",
             "bucket": "ontology-retail-2-3-12-assets",
             "region": "cn-east-1",
             "pathPrefix": "库存状态本体/v3/",
@@ -11844,11 +12308,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "retail-2-3-13-analytics.db.demo.local",
+            "host": "retail-2-3-13-analytics.db.static.local",
             "port": 3306,
             "database": "onto_2_3_13",
             "username": "ro_retail",
-            "password": "demo_2-3-13"
+            "password": "static_2-3-13"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11864,11 +12328,11 @@
           "category": "structured",
           "type": "PostgreSQL",
           "connection": {
-            "host": "retail-2-3-14-ledger.db.demo.local",
+            "host": "retail-2-3-14-ledger.db.static.local",
             "port": 5432,
             "database": "onto_2_3_14",
             "username": "ro_retail",
-            "password": "demo_2-3-14"
+            "password": "static_2-3-14"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11884,11 +12348,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "retail-2-3-15-archive.db.demo.local",
+            "host": "retail-2-3-15-archive.db.static.local",
             "port": 3306,
             "database": "onto_2_3_15",
             "username": "ro_retail",
-            "password": "demo_2-3-15"
+            "password": "static_2-3-15"
           },
           "syncFrequency": "hourly",
           "status": "Syncing",
@@ -11904,11 +12368,11 @@
           "category": "structured",
           "type": "PostgreSQL",
           "connection": {
-            "host": "retail-2-4-16-primary.db.demo.local",
+            "host": "retail-2-4-16-primary.db.static.local",
             "port": 5432,
             "database": "onto_2_4_16",
             "username": "ro_retail",
-            "password": "demo_2-4-16"
+            "password": "static_2-4-16"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11924,7 +12388,7 @@
           "category": "unstructured",
           "type": "S3",
           "connection": {
-            "endpoint": "https://s3.retail.demo.local",
+            "endpoint": "https://s3.retail.static.local",
             "bucket": "ontology-retail-2-4-16-assets",
             "region": "cn-east-1",
             "pathPrefix": "货架图谱本体/v1/",
@@ -11945,11 +12409,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "retail-2-4-17-business.db.demo.local",
+            "host": "retail-2-4-17-business.db.static.local",
             "port": 3306,
             "database": "onto_2_4_17",
             "username": "ro_retail",
-            "password": "demo_2-4-17"
+            "password": "static_2-4-17"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11965,11 +12429,11 @@
           "category": "structured",
           "type": "PostgreSQL",
           "connection": {
-            "host": "retail-2-4-17-analytics.db.demo.local",
+            "host": "retail-2-4-17-analytics.db.static.local",
             "port": 5432,
             "database": "onto_2_4_17_analytics",
             "username": "ro_retail",
-            "password": "demo_2-4-17"
+            "password": "static_2-4-17"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -11985,11 +12449,11 @@
           "category": "structured",
           "type": "PostgreSQL",
           "connection": {
-            "host": "retail-2-4-18-analytics.db.demo.local",
+            "host": "retail-2-4-18-analytics.db.static.local",
             "port": 5432,
             "database": "onto_2_4_18",
             "username": "ro_retail",
-            "password": "demo_2-4-18"
+            "password": "static_2-4-18"
           },
           "syncFrequency": "hourly",
           "status": "Active",
@@ -12005,11 +12469,11 @@
           "category": "structured",
           "type": "MySQL",
           "connection": {
-            "host": "retail-2-4-19-ledger.db.demo.local",
+            "host": "retail-2-4-19-ledger.db.static.local",
             "port": 3306,
             "database": "onto_2_4_19",
             "username": "ro_retail",
-            "password": "demo_2-4-19"
+            "password": "static_2-4-19"
           },
           "syncFrequency": "hourly",
           "status": "Active",

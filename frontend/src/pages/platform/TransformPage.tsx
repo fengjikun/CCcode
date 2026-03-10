@@ -380,7 +380,7 @@ export default function TransformPage() {
     <div className="page-container">
       {/* Pipeline 流程概览 */}
       <Card className="section-card">
-        <PageHeader title="数据集准备" subtitle="聚焦 PDF、Word、PPT、Excel、扫描件与图片，完成文档解析、版面恢复与训练数据构建" />
+        <PageHeader title="数据集准备" subtitle="基于 PDF、Word、PPT、Excel、扫描件与图片的静态样本，展示文档解析、版面恢复与训练数据构建流程" />
 
         <StatCards items={[
           { title: '准备任务', value: projects.length, icon: <ForkOutlined />, cls: 'stat-primary' },
