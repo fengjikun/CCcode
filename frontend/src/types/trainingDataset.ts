@@ -2,6 +2,8 @@
  * L5 训练数据集类型定义
  */
 
+import type { DatasetType, ModelModality } from './modelCenter'
+
 export type DatasetStatus = 'Ready' | 'Building' | 'Failed' | 'Archived'
 
 export type DatasetFormat = 'JSONL' | 'CSV' | 'Parquet'
@@ -9,6 +11,8 @@ export type DatasetFormat = 'JSONL' | 'CSV' | 'Parquet'
 export interface TrainingDataset {
   key: string
   name: string
+  datasetType?: DatasetType
+  modality?: ModelModality
   source: string
   trainSplit: number
   valSplit: number
@@ -20,6 +24,9 @@ export interface TrainingDataset {
   createdAt: string
   updatedAt: string
   linkedModels: string[]
+  tokenCount?: number
+  imageCount?: number
+  qualityScore?: number
   format: DatasetFormat
   promptTemplate: string
   schemaFields: string[]

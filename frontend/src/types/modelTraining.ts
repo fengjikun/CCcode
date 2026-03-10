@@ -2,6 +2,8 @@
  * L5 模型训练类型定义
  */
 
+import type { DatasetType, ModelFamily, ModelModality, TrainStage } from './modelCenter'
+
 export type TrainingStatus = 'Running' | 'Completed' | 'Failed' | 'Queued' | 'Stopped'
 export type Framework = 'PyTorch' | 'TensorFlow' | 'scikit-learn' | 'Transformers'
 export type TrainMethod = 'full' | 'lora' | 'qlora'
@@ -11,6 +13,10 @@ export interface TrainingJob {
   key: string
   name: string
   projectName: string
+  modelFamily?: ModelFamily
+  modality?: ModelModality
+  trainStage?: TrainStage
+  datasetType?: DatasetType
   dataSource: string
   framework: Framework
   gpu: string
@@ -39,6 +45,10 @@ export interface TrainingProject {
   key: string
   name: string
   description: string
+  modelFamily?: ModelFamily
+  modality?: ModelModality
+  trainStage?: TrainStage
+  datasetType?: DatasetType
   dataSource: string
   framework: Framework
   gpu: string

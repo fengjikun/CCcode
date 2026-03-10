@@ -2,12 +2,16 @@
  * L6 模型网关类型定义
  */
 
+import type { ModelFamily, ModelModality } from './modelCenter'
+
 export type ModelStage = 'Production' | 'Staging' | 'Archived' | 'Canary'
 
 export interface RegisteredModel {
   key: string
   name: string
   displayName: string
+  modelFamily?: ModelFamily
+  modality?: ModelModality
   version: string
   stage: ModelStage
   accuracy: string
@@ -30,6 +34,8 @@ export interface GatewayRoute {
   key: string
   path: string
   model: string
+  modelFamily?: ModelFamily
+  modality?: ModelModality
   version: string
   weight: number
   rateLimit: number

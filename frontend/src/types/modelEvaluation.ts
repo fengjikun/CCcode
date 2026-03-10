@@ -2,6 +2,8 @@
  * L5 模型评估类型定义
  */
 
+import type { DatasetType, ModelFamily, ModelModality } from './modelCenter'
+
 export type EvalStatus = 'Running' | 'Completed' | 'Failed' | 'Pending'
 export type EvalTaskType = 'classification' | 'generation' | 'extraction' | 'qa'
 
@@ -10,6 +12,9 @@ export interface EvalTask {
   name: string
   modelName: string
   modelVersion: string
+  modelFamily?: ModelFamily
+  modality?: ModelModality
+  datasetType?: DatasetType
   datasetName: string
   taskType: EvalTaskType
   status: EvalStatus
@@ -31,6 +36,8 @@ export interface EvalTask {
 
 export interface EvalSample {
   key: string
+  modelFamily?: ModelFamily
+  modality?: ModelModality
   input: string
   expectedOutput: string
   actualOutput: string
@@ -41,6 +48,8 @@ export interface EvalSample {
 export interface EvalComparison {
   modelName: string
   version: string
+  modelFamily?: ModelFamily
+  modality?: ModelModality
   accuracy: number
   f1: number
   precision: number
