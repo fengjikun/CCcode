@@ -25,7 +25,7 @@ import {
   ZoomOutOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import type { GraphData, GraphLink, GraphNode, LinkConfig, NodeConfig } from '../types/graph'
+import type { GraphData, GraphNode, LinkConfig, NodeConfig } from '../types/graph'
 import ForceGraph, { LINK_CONFIG, NODE_CONFIG } from '../components/graph/ForceGraph'
 import type { ForceGraphHandle } from '../components/graph/ForceGraph'
 import GraphSidebar from '../components/graph/GraphSidebar'
@@ -34,47 +34,12 @@ import NodeDetail from '../components/graph/NodeDetail'
 import { batchUpdateRunReviewItems, getProjectDetail, getVersionItems, updateRunReviewItem } from '../api/projectManagement'
 import type { ProjectDetail, ReviewItem, ReviewStatus, VersionItem } from '../types/projectMvp'
 import { buildProjectWorkspacePath } from './workspace/navigation'
+import { buildGraphFromReviews, parseRelationTitle } from './projectGraph.helpers'
 
 const { Title, Text } = Typography
 
 const FALLBACK_COLORS = ['#1565c0', '#e53935', '#f57c00', '#00838f', '#8e24aa', '#2e7d32', '#455a64', '#6d4c41']
 const FALLBACK_SHAPES: Array<NodeConfig['shape']> = ['circle', 'rect', 'hexagon', 'diamond']
-
-function parseEntity(item: ReviewItem): { type: string; name: string } | null {
-  const parts = item.title.split('::')
-  if (parts.length < 2) return null
-  const type = parts[0].trim()
-  const name = parts.slice(1).join('::').trim()
-  if (!type || !name) return null
-  return { type, name }
-}
-
-function parseRelation(item: ReviewItem): {
-  domain: string
-  rel: string
-  range: string
-  domainName?: string
-  rangeName?: string
-} | null {
-  const detailMatch = item.title.match(/^(.+?)::(.+?)\s-\[(.+?)\]->\s(.+?)::(.+)$/)
-  if (detailMatch) {
-    const domain = detailMatch[1].trim()
-    const domainName = detailMatch[2].trim()
-    const rel = detailMatch[3].trim()
-    const range = detailMatch[4].trim()
-    const rangeName = detailMatch[5].trim()
-    if (!domain || !domainName || !rel || !range || !rangeName) return null
-    return { domain, rel, range, domainName, rangeName }
-  }
-
-  const typeMatch = item.title.match(/^(.+)\s-\[(.+)\]->\s(.+)$/)
-  if (!typeMatch) return null
-  const domain = typeMatch[1].trim()
-  const rel = typeMatch[2].trim()
-  const range = typeMatch[3].trim()
-  if (!domain || !rel || !range) return null
-  return { domain, rel, range }
-}
 
 function typeConfig(type: string, idx: number): NodeConfig {
   const known = NODE_CONFIG[type]
@@ -98,75 +63,6 @@ function linkTypeConfig(rel: string, idx: number): LinkConfig {
     label: rel,
     dash: idx % 2 === 0 ? '' : '5,3',
   }
-}
-
-function buildGraphFromReviews(
-  reviews: ReviewItem[],
-  allowedStatuses: Set<ReviewStatus>,
-): GraphData {
-  const entityCandidates = reviews.filter(item => item.kind === 'ENTITY' && allowedStatuses.has(item.status))
-  const relationCandidates = reviews.filter(item => item.kind === 'RELATION' && allowedStatuses.has(item.status))
-
-  const nodes: GraphNode[] = []
-  const keyToNodeId = new Map<string, string>()
-  const typeBuckets = new Map<string, string[]>()
-
-  for (const item of entityCandidates) {
-    const parsed = parseEntity(item)
-    if (!parsed) continue
-    const key = `${parsed.type}::${parsed.name}`
-    if (keyToNodeId.has(key)) continue
-    const nodeId = `node_${keyToNodeId.size + 1}`
-    keyToNodeId.set(key, nodeId)
-    const bucket = typeBuckets.get(parsed.type) || []
-    bucket.push(nodeId)
-    typeBuckets.set(parsed.type, bucket)
-
-    nodes.push({
-      id: nodeId,
-      type: parsed.type,
-      label: parsed.name,
-      props: {
-        status: item.status,
-        confidence: `${Math.round(item.confidence * 100)}%`,
-        evidence: item.evidence,
-      },
-    })
-  }
-
-  const links: GraphLink[] = []
-  const relTypeCursor = new Map<string, number>()
-
-  for (const item of relationCandidates) {
-    const parsed = parseRelation(item)
-    if (!parsed) continue
-    let source = ''
-    let target = ''
-    if (parsed.domainName && parsed.rangeName) {
-      source = keyToNodeId.get(`${parsed.domain}::${parsed.domainName}`) || ''
-      target = keyToNodeId.get(`${parsed.range}::${parsed.rangeName}`) || ''
-    }
-
-    const cursorKey = `${parsed.domain}_${parsed.rel}_${parsed.range}`
-    const cursor = relTypeCursor.get(cursorKey) || 0
-    relTypeCursor.set(cursorKey, cursor + 1)
-
-    if (!source || !target) {
-      const domainNodes = typeBuckets.get(parsed.domain) || []
-      const rangeNodes = typeBuckets.get(parsed.range) || []
-      if (domainNodes.length === 0 || rangeNodes.length === 0) continue
-      source = domainNodes[cursor % domainNodes.length]
-      target = rangeNodes[cursor % rangeNodes.length]
-    }
-
-    links.push({
-      source,
-      target,
-      rel: parsed.rel,
-    })
-  }
-
-  return { nodes, links }
 }
 
 function graphStats(data: GraphData): GraphStats {
@@ -229,10 +125,10 @@ export default function ProjectGraphPage() {
 
       if (sourceFromQuery) {
         setSelectedSource(sourceFromQuery)
+      } else if (detail.runs.length > 0) {
+        setSelectedSource(`run:${detail.runs[detail.runs.length - 1].id}`)
       } else if (detail.currentVersionId) {
         setSelectedSource(`version:${detail.currentVersionId}`)
-      } else if (detail.runs[0]) {
-        setSelectedSource(`run:${detail.runs[0].id}`)
       } else {
         setSelectedSource(undefined)
       }
@@ -325,13 +221,21 @@ export default function ProjectGraphPage() {
     return baseItems.filter(item => {
       if (!sourceIsVersion && !effectiveStatusSet.has(item.status)) return false
       if (selectedRelations.length > 0 && item.kind === 'RELATION') {
-        const relation = parseRelation(item)
+        const relation = parseRelationTitle(item.title)
         if (!relation || !selectedRelations.includes(relation.rel)) return false
       }
       if (!keyword) return true
       return item.title.toLowerCase().includes(keyword) || item.evidence.toLowerCase().includes(keyword)
     })
   }, [effectiveStatusSet, reviewKeyword, selectedRelations, selectedRun, sourceIsVersion, versionItems])
+
+  const graphCandidateItems = useMemo(() => {
+    if (sourceIsVersion) {
+      return versionItems.map(item => ({ ...item, status: 'APPROVED' as ReviewStatus }))
+    }
+    if (!selectedRun) return []
+    return selectedRun.reviewItems.filter(item => effectiveStatusSet.has(item.status))
+  }, [effectiveStatusSet, selectedRun, sourceIsVersion, versionItems])
 
   useEffect(() => {
     const currentIds = new Set(filteredReviewItems.map(item => item.id))
@@ -425,62 +329,49 @@ export default function ProjectGraphPage() {
     },
   ], [handleReviewAction, reviewActionBusy, reviewingItemId, sourceIsVersion])
 
-  const rawGraph = useMemo(() => {
-    if (sourceIsVersion) {
-      // 版本视图：用固化的 VersionItem 数据（全部视为 APPROVED）
-      const asReviewItems: ReviewItem[] = versionItems.map(item => ({
-        ...item,
-        status: 'APPROVED' as ReviewStatus,
-      }))
-      return buildGraphFromReviews(asReviewItems, new Set<ReviewStatus>(['APPROVED']))
-    }
-    if (!selectedRun) return { nodes: [], links: [] }
-    return buildGraphFromReviews(selectedRun.reviewItems, effectiveStatusSet)
-  }, [sourceIsVersion, versionItems, effectiveStatusSet, selectedRun])
-
-  const relationOptions = useMemo(
-    () => Array.from(new Set(rawGraph.links.map(link => link.rel))).map(rel => ({ label: rel, value: rel })),
-    [rawGraph.links],
+  const graphData = useMemo(
+    () => buildGraphFromReviews(filteredReviewItems, new Set<ReviewStatus>(['APPROVED', 'PENDING', 'REJECTED'])),
+    [filteredReviewItems],
   )
 
-  const filteredGraph = useMemo(() => {
-    if (selectedRelations.length === 0) return rawGraph
-    const links = rawGraph.links.filter(link => selectedRelations.includes(link.rel))
-    const linkedNodeIds = new Set<string>()
-    links.forEach(link => {
-      const source = typeof link.source === 'object' ? link.source.id : link.source
-      const target = typeof link.target === 'object' ? link.target.id : link.target
-      linkedNodeIds.add(source)
-      linkedNodeIds.add(target)
-    })
-    const nodes = rawGraph.nodes.filter(node => linkedNodeIds.has(node.id))
-    return { nodes, links }
-  }, [rawGraph, selectedRelations])
+  const filteredEntityCount = useMemo(
+    () => filteredReviewItems.filter(item => item.kind === 'ENTITY').length,
+    [filteredReviewItems],
+  )
+  const filteredRelationCount = useMemo(
+    () => filteredReviewItems.filter(item => item.kind === 'RELATION').length,
+    [filteredReviewItems],
+  )
+
+  const relationOptions = useMemo(
+    () => Array.from(new Set(buildGraphFromReviews(graphCandidateItems, new Set<ReviewStatus>(['APPROVED', 'PENDING', 'REJECTED'])).links.map(link => link.rel))).map(rel => ({ label: rel, value: rel })),
+    [graphCandidateItems],
+  )
 
   const nodeConfigMap = useMemo(() => {
     const map: Record<string, NodeConfig> = {}
-    const uniqueTypes = Array.from(new Set(rawGraph.nodes.map(node => node.type)))
+    const uniqueTypes = Array.from(new Set(graphData.nodes.map(node => node.type)))
     uniqueTypes.forEach((type, idx) => {
       map[type] = typeConfig(type, idx)
     })
     return map
-  }, [rawGraph.nodes])
+  }, [graphData.nodes])
 
   const linkConfigMap = useMemo(() => {
     const map: Record<string, LinkConfig> = {}
-    const uniqueRels = Array.from(new Set(rawGraph.links.map(link => link.rel)))
+    const uniqueRels = Array.from(new Set(graphData.links.map(link => link.rel)))
     uniqueRels.forEach((rel, idx) => {
       map[rel] = linkTypeConfig(rel, idx)
     })
     return map
-  }, [rawGraph.links])
+  }, [graphData.links])
 
   useEffect(() => {
     const next = new Set(Object.keys(nodeConfigMap))
     setActiveTypes(next)
   }, [nodeConfigMap])
 
-  const stats = useMemo(() => graphStats(filteredGraph), [filteredGraph])
+  const stats = useMemo(() => graphStats(graphData), [graphData])
 
   if (loading || versionItemsLoading) {
     return (
@@ -588,7 +479,14 @@ export default function ProjectGraphPage() {
                     <Tag color="orange">待审核 {selectedRun.pendingReviewCount}</Tag>
                   </>
                 )}
+                <Tag color="geekblue">列表实体 {filteredEntityCount}</Tag>
+                <Tag color="magenta">列表关系 {filteredRelationCount}</Tag>
+                <Tag color="cyan">图谱节点 {graphData.nodes.length}</Tag>
+                <Tag color="lime">图谱边 {graphData.links.length}</Tag>
               </Space>
+              <Text type="secondary">
+                任务摘要中的候选实体/关系是 run 的统计值；当前列表与底部图谱都基于审核记录过滤结果，图谱会把关系转成边，并对同名同类型实体去重。
+              </Text>
               {sourceIsVersion && (
                 <Alert
                   type="info"
@@ -646,7 +544,7 @@ export default function ProjectGraphPage() {
             </Space>
           </Card>
 
-          {filteredGraph.nodes.length === 0 ? (
+          {graphData.nodes.length === 0 ? (
             <Card>
               <Alert
                 type="warning"
@@ -707,8 +605,8 @@ export default function ProjectGraphPage() {
 
                 <ForceGraph
                   ref={graphRef}
-                  nodes={filteredGraph.nodes}
-                  links={filteredGraph.links}
+                  nodes={graphData.nodes}
+                  links={graphData.links}
                   activeTypes={activeTypes}
                   searchKeyword={searchKeyword}
                   showEdgeLabels={showEdgeLabels}
@@ -718,8 +616,8 @@ export default function ProjectGraphPage() {
                 {selectedNode && (
                   <NodeDetail
                     node={selectedNode}
-                    links={filteredGraph.links}
-                    nodes={filteredGraph.nodes}
+                    links={graphData.links}
+                    nodes={graphData.nodes}
                     nodeConfig={nodeConfigMap}
                     onClose={() => setSelectedNode(null)}
                   />

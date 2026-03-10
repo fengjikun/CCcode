@@ -11,13 +11,18 @@ const appLayoutSource = readFileSync(
 
 describe('AppLayout workspace route refresh', () => {
   it('keeps the L4 menu labeled as workspace 工作台', () => {
-    expect(appLayoutSource).toContain("label: 'workspace 工作台'")
+    expect(appLayoutSource).toContain("label: 'Workspace 工作台'")
   })
 
   it('uses /studio routes for the workspace menu entries', () => {
     expect(appLayoutSource).toContain("'/studio/skills'")
     expect(appLayoutSource).toContain("'/studio/agents'")
     expect(appLayoutSource).toContain("'/studio/agents/logs'")
+  })
+
+  it('renames the L2 entry to 数据集准备', () => {
+    expect(appLayoutSource).toContain("label: '数据集准备'")
+    expect(appLayoutSource).toContain("'/transform': ['', '数据集准备']")
   })
 
   it('uses workspace 工作台 as the page title parent for L4 pages', () => {

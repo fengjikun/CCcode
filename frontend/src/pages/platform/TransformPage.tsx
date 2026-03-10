@@ -24,13 +24,14 @@ import {
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
-  FilterOutlined,
+  FileTextOutlined,
   ForkOutlined,
-  FundOutlined,
   MergeCellsOutlined,
   MinusCircleOutlined,
+  NodeIndexOutlined,
   PauseCircleOutlined,
   PlusOutlined,
+  SearchOutlined,
   SyncOutlined,
   TableOutlined,
   ThunderboltOutlined,
@@ -45,7 +46,7 @@ import {
 } from '../../api/transform'
 import { listDataSources } from '../../api/dataSource'
 import type { TransformProject, TransformType } from '../../types/transform'
-import { TRANSFORM_TYPE_LABELS } from '../../types/transform'
+import { TRANSFORM_STATUS_LABELS, TRANSFORM_TYPE_LABELS } from '../../types/transform'
 import type { DataSource } from '../../types/dataSource'
 
 import PageHeader from '../../components/shared/PageHeader'
@@ -55,15 +56,15 @@ import ModalHeader from '../../components/shared/ModalHeader'
 const { Text } = Typography
 const { TextArea } = Input
 
-/* ──────────── Pipeline 流程可视化 ──────────── */
+/* ──────────── 文档准备流程可视化 ──────────── */
 function PipelineFlow() {
   const stages = [
-    { icon: <DatabaseOutlined />, label: '数据抽取', sub: 'Extract', color: '#4f46e5' },
-    { icon: <FilterOutlined />, label: '数据清洗', sub: 'Clean', color: '#0891b2' },
-    { icon: <MergeCellsOutlined />, label: '跨源关联', sub: 'Join', color: '#7c3aed' },
-    { icon: <FundOutlined />, label: '聚合计算', sub: 'Aggregate', color: '#d97706' },
-    { icon: <TableOutlined />, label: '规范输出', sub: 'Normalize', color: '#16a34a' },
-    { icon: <CloudServerOutlined />, label: '数据发布', sub: 'Publish', color: '#e11d48' },
+    { icon: <FileTextOutlined />, label: '文档接入', sub: 'Ingest', color: '#4f46e5' },
+    { icon: <NodeIndexOutlined />, label: '版面解析', sub: 'Layout', color: '#0891b2' },
+    { icon: <SearchOutlined />, label: 'OCR 与阅读顺序', sub: 'OCR', color: '#7c3aed' },
+    { icon: <TableOutlined />, label: '表格/图片/公式抽取', sub: 'Extract', color: '#d97706' },
+    { icon: <MergeCellsOutlined />, label: '切片与标注准备', sub: 'Chunk', color: '#16a34a' },
+    { icon: <CloudServerOutlined />, label: '数据集发布', sub: 'Publish', color: '#e11d48' },
   ]
 
   return (
@@ -147,7 +148,7 @@ export default function TransformPage() {
   /* ── 统计 ── */
   const totalRecords = projects.reduce((s, p) => s + p.records, 0)
   const successCount = projects.filter(p => p.status === 'Success').length
-  const dsCount = new Set(projects.flatMap(p => p.inputSources)).size
+  const outputCount = projects.reduce((sum, project) => sum + project.outputDatasets.length, 0)
 
   /* ── 过滤 ── */
   const filtered = projects.filter(p =>
@@ -171,7 +172,7 @@ export default function TransformPage() {
         outputDatasets: outputs,
         schedule: values.schedule || '手动触发',
       })
-      message.success('转换项目创建成功')
+      message.success('数据集准备任务创建成功')
       setCreateOpen(false)
       createForm.resetFields()
       reload()
@@ -226,9 +227,9 @@ export default function TransformPage() {
   /* ── 运行 / 停止 ── */
   const handleRun = async (id: string) => {
     setRunningIds(prev => new Set(prev).add(id))
-    message.loading({ content: '转换任务运行中...', key: id, duration: 0 })
+    message.loading({ content: '文档准备任务运行中...', key: id, duration: 0 })
     await runTransform(id)
-    message.success({ content: '转换任务完成', key: id })
+    message.success({ content: '数据集准备完成', key: id })
     setRunningIds(prev => { const n = new Set(prev); n.delete(id); return n })
     reload()
   }
@@ -247,7 +248,9 @@ export default function TransformPage() {
   }
 
   /* ── 数据源选项 ── */
-  const dsOptions = dataSources.map(d => ({ label: `${d.name} (${d.type})`, value: d.id }))
+  const unstructuredSources = dataSources.filter(source => source.category === 'unstructured')
+  const availableSources = unstructuredSources.length > 0 ? unstructuredSources : dataSources
+  const dsOptions = availableSources.map(d => ({ label: `${d.name} (${d.type})`, value: d.id }))
 
   /* ── 表格列 ── */
   const columns = [
@@ -264,14 +267,14 @@ export default function TransformPage() {
       ),
     },
     {
-      title: '类型',
+      title: '准备类型',
       dataIndex: 'type',
       key: 'type',
       width: 120,
       render: (v: TransformType) => <Tag color="purple">{TRANSFORM_TYPE_LABELS[v]}</Tag>,
     },
     {
-      title: '输入数据源',
+      title: '输入文档源',
       key: 'inputSourceNames',
       width: 200,
       render: (_: unknown, r: TransformProject) => (
@@ -281,7 +284,7 @@ export default function TransformPage() {
       ),
     },
     {
-      title: '输出数据集',
+      title: '输出结果',
       key: 'outputDatasets',
       width: 200,
       render: (_: unknown, r: TransformProject) => (
@@ -291,7 +294,7 @@ export default function TransformPage() {
       ),
     },
     {
-      title: '处理记录',
+      title: '产出样本',
       dataIndex: 'records',
       key: 'records',
       width: 100,
@@ -313,7 +316,7 @@ export default function TransformPage() {
         return (
           <span>
             <span className={`status-dot ${v === 'Success' ? 'active' : v === 'Running' ? 'warning' : v === 'Failed' ? 'error' : ''}`} />
-            <Tag color={color}>{v}</Tag>
+            <Tag color={color}>{TRANSFORM_STATUS_LABELS[v as keyof typeof TRANSFORM_STATUS_LABELS]}</Tag>
           </span>
         )
       },
@@ -345,31 +348,30 @@ export default function TransformPage() {
   /* ── 表单内容（创建/编辑共用） ── */
   const formFields = (
     <>
-      <Form.Item name="name" label="项目名称" rules={[{ required: true, message: '请输入项目名称' }]}>
-        <Input placeholder="如 transform_orders" />
+      <Form.Item name="name" label="任务名称" rules={[{ required: true, message: '请输入任务名称' }]}>
+        <Input placeholder="如 prep_equipment_manuals" />
       </Form.Item>
-      <Form.Item name="type" label="转换类型" rules={[{ required: true, message: '请选择转换类型' }]}>
+      <Form.Item name="type" label="准备类型" rules={[{ required: true, message: '请选择准备类型' }]}>
         <Select placeholder="选择类型" options={
           (Object.keys(TRANSFORM_TYPE_LABELS) as TransformType[]).map(k => ({ label: TRANSFORM_TYPE_LABELS[k], value: k }))
         } />
       </Form.Item>
-      <Form.Item name="inputSources" label="输入数据源" rules={[{ required: true, message: '请选择数据源' }]}>
-        <Select mode="multiple" placeholder="从 L1 数据源选择" options={dsOptions} />
+      <Form.Item name="inputSources" label="输入文档源" rules={[{ required: true, message: '请选择文档源' }]}>
+        <Select mode="multiple" placeholder="从 L1 非结构化数据源选择" options={dsOptions} />
       </Form.Item>
       <Form.Item name="outputDatasets" label="输出数据集">
         <OutputEditor />
       </Form.Item>
       <Form.Item name="schedule" label="调度策略">
         <Select placeholder="运行频率" options={[
-          { label: '实时', value: '实时' },
-          { label: '每 15 分钟', value: '每 15 分钟' },
           { label: '每小时', value: '每小时' },
           { label: '每日', value: '每日' },
+          { label: '事件触发', value: '事件触发' },
           { label: '手动触发', value: '手动触发' },
         ]} />
       </Form.Item>
       <Form.Item name="description" label="描述">
-        <TextArea rows={3} placeholder="转换逻辑说明" />
+        <TextArea rows={3} placeholder="描述文档解析策略、版面恢复要求和目标数据集形态" />
       </Form.Item>
     </>
   )
@@ -378,14 +380,24 @@ export default function TransformPage() {
     <div className="page-container">
       {/* Pipeline 流程概览 */}
       <Card className="section-card">
-        <PageHeader title="数据转换管道" subtitle="L2 数据转换 — 跨源关联、聚合与规范化，构建高质量企业数据资产" />
+        <PageHeader title="数据集准备" subtitle="L2 数据集准备 — 聚焦 PDF、Word、PPT、Excel、扫描件与图片，完成通用文档解析、版面恢复与训练数据构建" />
 
         <StatCards items={[
-          { title: '转换项目', value: projects.length, icon: <ForkOutlined />, cls: 'stat-primary' },
-          { title: '运行成功', value: successCount, icon: <CheckCircleOutlined />, cls: 'stat-success' },
-          { title: '处理记录', value: `${(totalRecords / 10000).toFixed(1)}万`, icon: <SyncOutlined />, cls: 'stat-warning' },
-          { title: '数据源覆盖', value: dsCount, icon: <DatabaseOutlined />, cls: 'stat-info' },
+          { title: '准备任务', value: projects.length, icon: <ForkOutlined />, cls: 'stat-primary' },
+          { title: '完成任务', value: successCount, icon: <CheckCircleOutlined />, cls: 'stat-success' },
+          { title: '产出样本', value: `${(totalRecords / 10000).toFixed(1)}万`, icon: <SyncOutlined />, cls: 'stat-warning' },
+          { title: '输出数据集', value: outputCount, icon: <DatabaseOutlined />, cls: 'stat-info' },
         ]} />
+
+        <Space wrap size={[8, 8]} style={{ marginBottom: 8 }}>
+          <Tag color="blue">PDF</Tag>
+          <Tag color="cyan">Word</Tag>
+          <Tag color="geekblue">PPT</Tag>
+          <Tag color="purple">Excel</Tag>
+          <Tag color="orange">扫描件</Tag>
+          <Tag color="gold">图片</Tag>
+          <Tag color="green">Markdown / JSON / VQA / Chunk</Tag>
+        </Space>
 
         <PipelineFlow />
       </Card>
@@ -393,18 +405,18 @@ export default function TransformPage() {
       {/* 项目列表 */}
       <Card
         className="section-card"
-        title={<Text><ThunderboltOutlined style={{ color: '#1677ff', marginRight: 8 }} />转换项目列表</Text>}
+        title={<Text><ThunderboltOutlined style={{ color: '#1677ff', marginRight: 8 }} />数据集准备任务</Text>}
         extra={
           <Space>
             <Input.Search
-              placeholder="搜索项目"
+              placeholder="搜索任务"
               allowClear
               style={{ width: 220 }}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-              新建转换
+              新建准备任务
             </Button>
           </Space>
         }
@@ -420,7 +432,7 @@ export default function TransformPage() {
 
       {/* 创建弹窗 */}
       <Modal
-        title={<ModalHeader icon={<PlusOutlined />} title="新建转换项目" />}
+        title={<ModalHeader icon={<PlusOutlined />} title="新建数据集准备任务" />}
         open={createOpen}
         onCancel={() => { setCreateOpen(false); createForm.resetFields() }}
         onOk={handleCreate}
@@ -435,7 +447,7 @@ export default function TransformPage() {
 
       {/* 编辑弹窗 */}
       <Modal
-        title={<ModalHeader icon={<EditOutlined />} title="编辑转换项目" />}
+        title={<ModalHeader icon={<EditOutlined />} title="编辑数据集准备任务" />}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={handleEdit}
@@ -450,7 +462,7 @@ export default function TransformPage() {
 
       {/* 详情弹窗 */}
       <Modal
-        title={<ModalHeader icon={<EyeOutlined />} title="转换项目详情" />}
+        title={<ModalHeader icon={<EyeOutlined />} title="数据集准备详情" />}
         open={detailOpen}
         onCancel={() => setDetailOpen(false)}
         footer={null}
@@ -460,24 +472,24 @@ export default function TransformPage() {
         {current && (
           <div style={{ lineHeight: 2.2 }}>
             <Row gutter={16}>
-              <Col span={12}><Text type="secondary">项目名称：</Text><Text strong>{current.name}</Text></Col>
-              <Col span={12}><Text type="secondary">转换类型：</Text><Tag color="purple">{TRANSFORM_TYPE_LABELS[current.type]}</Tag></Col>
+              <Col span={12}><Text type="secondary">任务名称：</Text><Text strong>{current.name}</Text></Col>
+              <Col span={12}><Text type="secondary">准备类型：</Text><Tag color="purple">{TRANSFORM_TYPE_LABELS[current.type]}</Tag></Col>
             </Row>
             <Row gutter={16}>
               <Col span={12}><Text type="secondary">状态：</Text>
-                <Tag color={current.status === 'Success' ? 'green' : current.status === 'Running' ? 'orange' : current.status === 'Failed' ? 'red' : 'default'}>{current.status}</Tag>
+                <Tag color={current.status === 'Success' ? 'green' : current.status === 'Running' ? 'orange' : current.status === 'Failed' ? 'red' : 'default'}>{TRANSFORM_STATUS_LABELS[current.status]}</Tag>
               </Col>
               <Col span={12}><Text type="secondary">调度策略：</Text><Text>{current.schedule}</Text></Col>
             </Row>
             <Row gutter={16}>
-              <Col span={12}><Text type="secondary">处理记录：</Text><Text>{current.records.toLocaleString()}</Text></Col>
+              <Col span={12}><Text type="secondary">产出样本：</Text><Text>{current.records.toLocaleString()}</Text></Col>
               <Col span={12}><Text type="secondary">耗时：</Text><Text>{current.duration}</Text></Col>
             </Row>
             <div style={{ margin: '8px 0' }}>
               <Text type="secondary">描述：</Text><Text>{current.description}</Text>
             </div>
             <div style={{ margin: '8px 0' }}>
-              <Text type="secondary">输入数据源：</Text>
+              <Text type="secondary">输入文档源：</Text>
               {current.inputSourceNames.map(s => <Tag key={s} color="blue" style={{ marginBottom: 4 }}>{s}</Tag>)}
             </div>
             <div style={{ margin: '8px 0' }}>

@@ -7,6 +7,7 @@ vi.mock('./mockStoreClient', () => ({
     if (!storeValue) storeValue = structuredClone(defaults)
     return structuredClone(storeValue)
   },
+  setMockStore: async (_namespace: string, value: unknown) => value,
 }))
 
 vi.mock('./dataSource', () => ({
@@ -15,6 +16,10 @@ vi.mock('./dataSource', () => ({
 
 vi.mock('./projectManagement', () => ({
   listProjects: vi.fn(async () => [{ id: 'proj-1' }, { id: 'proj-2' }, { id: 'proj-3' }]),
+}))
+
+vi.mock('./transform', () => ({
+  listTransforms: vi.fn(async () => [{ id: 'tf-1' }, { id: 'tf-2' }, { id: 'tf-3' }, { id: 'tf-4' }]),
 }))
 
 vi.mock('./digitalHuman', () => ({
@@ -33,6 +38,7 @@ describe('dashboard stats aggregation', () => {
 
     expect(stats).toMatchObject({
       datasources: 2,
+      transformJobs: 4,
       digitalWorkers: 1,
     })
     expect(stats).toHaveProperty('ontologyProjects', 3)

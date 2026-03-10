@@ -637,7 +637,7 @@ const ActionDetail: React.FC<Props> = ({ actionType, objectTypes, onRefresh }) =
     },
     {
       key: 'validation',
-      label: '业务校验',
+      label: '业务审计',
       children: <ValidationTab at={actionType} onRefresh={onRefresh} />,
     },
     {

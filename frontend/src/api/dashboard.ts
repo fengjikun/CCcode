@@ -1,10 +1,12 @@
 import type { HealthEntry, ActivityEntry } from '../types/dashboard'
 import { listDataSources } from './dataSource'
 import { listDigitalHumans } from './digitalHuman'
-import { ensureMockStore } from './mockStoreClient'
+import { ensureMockStore, setMockStore } from './mockStoreClient'
 import { listProjects } from './projectManagement'
+import { listTransforms } from './transform'
 
 const STORE_KEY = 'dashboard'
+const DATA_VERSION = 2
 
 export interface PlatformStats {
   datasources: number
@@ -26,12 +28,13 @@ interface DashboardStore {
   health: HealthEntry[]
   activity: ActivityEntry[]
   stats: PlatformStats
+  _v?: number
 }
 
 const DEFAULT_STORE: DashboardStore = {
   health: [
     { key: '1', component: 'L1 数据接入管道', status: 'Healthy', uptime: '99.97%', qps: 3420, latency: '12ms', lastCheck: '1 分钟前' },
-    { key: '2', component: 'L2 数据转换引擎', status: 'Healthy', uptime: '99.92%', qps: 1850, latency: '38ms', lastCheck: '2 分钟前' },
+    { key: '2', component: 'L2 数据集准备引擎', status: 'Healthy', uptime: '99.92%', qps: 1850, latency: '38ms', lastCheck: '2 分钟前' },
     { key: '3', component: 'L3 本体语义服务', status: 'Healthy', uptime: '99.95%', qps: 960, latency: '15ms', lastCheck: '1 分钟前' },
     { key: '4', component: 'L4 Agent Runtime', status: 'Degraded', uptime: '98.50%', qps: 520, latency: '210ms', lastCheck: '3 分钟前' },
     { key: '5', component: 'L5 训练调度器', status: 'Healthy', uptime: '99.80%', qps: 45, latency: '85ms', lastCheck: '5 分钟前' },
@@ -45,7 +48,7 @@ const DEFAULT_STORE: DashboardStore = {
     { key: '4', time: '13:58:10', user: 'Customer Agent', action: '自动回复工单', target: 'TK-3342', level: 'success' },
     { key: '5', time: '13:45:33', user: '系统', action: 'Agent Runtime 性能降级告警', target: 'L4 服务', level: 'warning' },
     { key: '6', time: '13:30:00', user: '李工', action: '部署模型 v2.1.0', target: 'purchase-order-classifier', level: 'info' },
-    { key: '7', time: '13:12:18', user: '系统', action: '训练任务完成', target: 'equipment-fault-predictor v1.8.2', level: 'success' },
+    { key: '7', time: '13:12:18', user: '系统', action: '文档解析批次完成', target: 'maintenance_manual_markdown', level: 'success' },
     { key: '8', time: '12:55:42', user: '王工', action: '新增数据源连接', target: 'SAP ERP Production', level: 'info' },
   ],
   stats: {
@@ -63,10 +66,16 @@ const DEFAULT_STORE: DashboardStore = {
     uptime: '99.9%',
     activeUsers: 36,
   },
+  _v: DATA_VERSION,
 }
 
 async function loadStore(): Promise<DashboardStore> {
-  return ensureMockStore<DashboardStore>(STORE_KEY, DEFAULT_STORE)
+  const store = await ensureMockStore<DashboardStore>(STORE_KEY, DEFAULT_STORE)
+  if (store._v === DATA_VERSION) {
+    return store
+  }
+  await setMockStore(STORE_KEY, DEFAULT_STORE)
+  return DEFAULT_STORE
 }
 
 export async function getHealthData(): Promise<HealthEntry[]> {
@@ -81,9 +90,10 @@ export async function getActivityData(): Promise<ActivityEntry[]> {
 
 export async function getPlatformStats(): Promise<PlatformStats> {
   const store = await loadStore()
-  const [dataSourcesResult, projectsResult, digitalHumansResult] = await Promise.allSettled([
+  const [dataSourcesResult, projectsResult, transformResult, digitalHumansResult] = await Promise.allSettled([
     listDataSources(),
     listProjects(),
+    listTransforms(),
     listDigitalHumans(),
   ])
 
@@ -91,6 +101,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     ...store.stats,
     datasources: dataSourcesResult.status === 'fulfilled' ? dataSourcesResult.value.length : store.stats.datasources,
     ontologyProjects: projectsResult.status === 'fulfilled' ? projectsResult.value.length : store.stats.ontologyProjects,
+    transformJobs: transformResult.status === 'fulfilled' ? transformResult.value.length : store.stats.transformJobs,
     digitalWorkers: digitalHumansResult.status === 'fulfilled' ? digitalHumansResult.value.length : store.stats.digitalWorkers,
   }
 }

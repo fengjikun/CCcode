@@ -97,6 +97,16 @@ interface ProjectForm {
 }
 
 const TAB_ALL = '__all__'
+const PINNED_PROJECT_NAME = '故障诊断本体'
+
+function sortProjectsForDisplay(list: ProjectSummary[]): ProjectSummary[] {
+  return [...list].sort((a, b) => {
+    const aPinned = a.name === PINNED_PROJECT_NAME
+    const bPinned = b.name === PINNED_PROJECT_NAME
+    if (aPinned === bPinned) return 0
+    return aPinned ? -1 : 1
+  })
+}
 
 export default function ProjectsPage() {
   const [loading, setLoading] = useState(true)
@@ -168,11 +178,11 @@ export default function ProjectsPage() {
     } else {
       list = grouped[activeTab] || []
     }
-    if (!searchText) return list
+    if (!searchText) return sortProjectsForDisplay(list)
     const q = searchText.toLowerCase()
-    return list.filter(
+    return sortProjectsForDisplay(list.filter(
       p => p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)
-    )
+    ))
   }, [projects, grouped, activeTab, searchText])
 
   const totalProjects = projects.length

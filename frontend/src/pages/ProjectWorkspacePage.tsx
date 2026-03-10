@@ -96,7 +96,7 @@ export default function ProjectWorkspacePage() {
         items={[
           {
             key: 'documents',
-            label: '1. 数据来源管理',
+            label: '1. 数据源管理',
             children: (
               <DocumentsTab
                 projectId={projectId}
@@ -126,7 +126,7 @@ export default function ProjectWorkspacePage() {
           },
           {
             key: 'extraction',
-            label: '3. 本体图谱',
+            label: '3. 本体数据集',
             children: (
               <ExtractionTab
                 projectId={projectId}

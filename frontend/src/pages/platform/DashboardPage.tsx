@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Card, Col, Row, Tag, Timeline, Typography } from 'antd'
 import {
   DatabaseOutlined,
-  SwapOutlined,
+  FileSearchOutlined,
   ApartmentOutlined,
   RobotOutlined,
   ExperimentOutlined,
@@ -32,7 +32,7 @@ interface StageTemplate extends Omit<Stage, 'count'> {
 
 const stageTemplates: StageTemplate[] = [
   { key: 'L1', label: 'Datasource', labelZh: '数据源', icon: <DatabaseOutlined />, color: '#16a34a', fallbackCount: 0 },
-  { key: 'L2', label: 'Transform', labelZh: '数据转换', icon: <SwapOutlined />, color: '#d97706', fallbackCount: 156 },
+  { key: 'L2', label: 'Dataset Prep', labelZh: '数据集准备', icon: <FileSearchOutlined />, color: '#d97706', fallbackCount: 0 },
   { key: 'L3', label: 'Ontology', labelZh: '本体层', icon: <ApartmentOutlined />, color: '#4f46e5', fallbackCount: 0 },
   { key: 'L4', label: 'workspace', labelZh: '智能体', icon: <RobotOutlined />, color: '#7c3aed', fallbackCount: 59 },
   { key: 'L5', label: 'Model Train', labelZh: '模型训练', icon: <ExperimentOutlined />, color: '#e11d48', fallbackCount: 6 },
@@ -56,6 +56,7 @@ export default function DashboardPage() {
 
   const stages: Stage[] = stageTemplates.map(stage => {
     if (stage.key === 'L1') return { ...stage, count: stats.datasources }
+    if (stage.key === 'L2') return { ...stage, count: stats.transformJobs }
     if (stage.key === 'L3') return { ...stage, count: stats.ontologyProjects }
     if (stage.key === 'L7') return { ...stage, count: stats.digitalWorkers }
     return { ...stage, count: stage.fallbackCount }

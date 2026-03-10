@@ -21,7 +21,7 @@ import ProjectWorkspacePage from './pages/ProjectWorkspacePage'
 import ProjectGraphPage from './pages/ProjectGraphPage'
 import GraphPage from './pages/GraphPage'
 
-// L2 数据转换
+// L2 数据集准备
 import TransformPage from './pages/platform/TransformPage'
 
 // L5+L6 大模型 Lab
@@ -81,7 +81,7 @@ export default function App() {
         <Route path="/ontology/projects/:projectId/graph" element={<ProjectGraphPage />} />
         <Route path="/ontology/graph" element={<GraphPage />} />
 
-        {/* L2 数据转换 */}
+        {/* L2 数据集准备 */}
         <Route path="/transform" element={<TransformPage />} />
 
         {/* L5+L6 大模型 Lab */}

@@ -1,15 +1,20 @@
-/** L2 数据转换类型定义 */
+/** L2 数据集准备类型定义 */
 
 export type TransformStatus = 'Success' | 'Running' | 'Failed' | 'Idle'
 
-export type TransformType = 'ETL' | 'Join' | 'Aggregate' | 'Normalize' | 'Custom'
+export type TransformType =
+  | 'DocumentParsing'
+  | 'LayoutRecovery'
+  | 'MultimodalExtraction'
+  | 'ChunkAnnotation'
+  | 'DatasetPackaging'
 
 export const TRANSFORM_TYPE_LABELS: Record<TransformType, string> = {
-  ETL: '抽取-转换-加载',
-  Join: '跨源关联',
-  Aggregate: '聚合计算',
-  Normalize: '规范化输出',
-  Custom: '自定义脚本',
+  DocumentParsing: '通用文档解析',
+  LayoutRecovery: '版面恢复',
+  MultimodalExtraction: '多模态要素抽取',
+  ChunkAnnotation: '切片与标注准备',
+  DatasetPackaging: '数据集封装发布',
 }
 
 export const STATUS_COLORS: Record<TransformStatus, string> = {
@@ -19,19 +24,26 @@ export const STATUS_COLORS: Record<TransformStatus, string> = {
   Idle: 'default',
 }
 
+export const TRANSFORM_STATUS_LABELS: Record<TransformStatus, string> = {
+  Success: '已完成',
+  Running: '运行中',
+  Failed: '失败',
+  Idle: '待运行',
+}
+
 export interface TransformProject {
   id: string
   name: string
   description: string
   type: TransformType
-  inputSources: string[]       // 关联的数据源 ID
-  inputSourceNames: string[]   // 数据源显示名
+  inputSources: string[]       // 关联的文档源 ID
+  inputSourceNames: string[]   // 文档源显示名
   outputDatasets: string[]
   status: TransformStatus
   records: number
   duration: string
   lastRun: string | null
-  schedule: string             // cron 表达式或描述
+  schedule: string             // 调度策略
   createdAt: string
   updatedAt: string
 }

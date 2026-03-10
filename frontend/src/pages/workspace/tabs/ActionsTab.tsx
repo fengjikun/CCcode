@@ -804,7 +804,7 @@ function ActionDetail({ action, projectId, functions, entityTypes, onRefresh }: 
     { key: 'basic', label: '基本信息', children: <BasicInfoTab action={action} projectId={projectId} entityTypes={entityTypes} onRefresh={onRefresh} /> },
     { key: 'params', label: '参数配置', children: <ParametersTab action={action} projectId={projectId} onRefresh={onRefresh} /> },
     { key: 'rules', label: '动作逻辑', children: <RulesTab action={action} projectId={projectId} onRefresh={onRefresh} /> },
-    { key: 'validation', label: '业务校验', children: <ValidationTab action={action} projectId={projectId} onRefresh={onRefresh} /> },
+    { key: 'validation', label: '业务审计', children: <ValidationTab action={action} projectId={projectId} onRefresh={onRefresh} /> },
     { key: 'trigger', label: '触发&异常', children: <TriggerTab action={action} projectId={projectId} functions={functions} onRefresh={onRefresh} /> },
   ]
 
