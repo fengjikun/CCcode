@@ -83,6 +83,19 @@ describe('modelCenter shared domain vocabulary', () => {
     )
   })
 
+  it('brands model center defaults with deepexi model names', () => {
+    const projects = buildDefaultTrainingProjects()
+    const tasks = buildDefaultEvalTasks()
+    const models = buildDefaultRegisteredModels()
+    const datasets = buildDefaultTrainingDatasets()
+
+    expect(projects.every(project => project.name.includes('deepexi'))).toBe(true)
+    expect(projects.every(project => project.baseModel.startsWith('Deepexi-'))).toBe(true)
+    expect(tasks.every(task => task.modelName.includes('deepexi'))).toBe(true)
+    expect(models.every(model => model.name.includes('deepexi'))).toBe(true)
+    expect(datasets.every(dataset => dataset.linkedModels.every(model => model.includes('deepexi')))).toBe(true)
+  })
+
   it('exposes the renamed model center navigation labels', () => {
     expect(MODEL_CENTER_PAGE_LABELS).toEqual({
       gateway: '推理网关',

@@ -84,10 +84,10 @@ const MODALITY_COLORS = {
 } as const
 
 const BASE_MODEL_OPTIONS = [
-  'DeepSeek-R1-Distill-32B',
-  'Qwen2.5-72B-Instruct',
-  'Qwen2.5-VL-32B-Instruct',
-  'Qwen2.5-VL-7B-Instruct',
+  'Deepexi-R1-Industry-32B',
+  'Deepexi-Industry-72B-Instruct',
+  'Deepexi-VL-Industry-32B',
+  'Deepexi-VL-Document-7B',
 ]
 
 const GPU_OPTIONS = ['2 x A100 80GB', '4 x H100 80GB', '8 x H100 80GB', '8 x A100 80GB']
@@ -582,7 +582,7 @@ export default function ModelTrainingPage() {
           layout="vertical"
           style={{ marginTop: 16 }}
           initialValues={{
-            baseModel: 'DeepSeek-R1-Distill-32B',
+            baseModel: 'Deepexi-R1-Industry-32B',
             trainMethod: 'sft',
             framework: 'Transformers',
             gpu: '4 x H100 80GB',

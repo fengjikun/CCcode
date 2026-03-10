@@ -7,6 +7,26 @@ interface AgentStore {
   agents: Agent[]
 }
 
+const LEGACY_AGENT_MODEL_MAP: Record<string, string> = {
+  'DeepSeek-V3': 'Deepexi-Platform-70B',
+  'DeepSeek-R1': 'Deepexi-R1-Reasoner',
+  'Qwen-72B': 'Deepexi-Industry-72B-Instruct',
+  'GLM-4': 'Deepexi-General-Agent',
+}
+
+function normalizeAgentModel(model: string): string {
+  return LEGACY_AGENT_MODEL_MAP[model] ?? model
+}
+
+function normalizeStore(store: AgentStore): AgentStore {
+  return {
+    agents: store.agents.map(agent => ({
+      ...agent,
+      model: normalizeAgentModel(agent.model),
+    })),
+  }
+}
+
 const DEFAULT_STORE: AgentStore = {
   agents: [
     {
@@ -17,7 +37,7 @@ const DEFAULT_STORE: AgentStore = {
       version: 'v2.3.1',
       description: '基于设备本体与故障知识图谱，自动分析传感器数据并生成维修方案',
       systemPrompt: '你是一个设备故障诊断专家。',
-      model: 'DeepSeek-V3',
+      model: 'Deepexi-Platform-70B',
       skillIds: ['sk-001'],
       createdAt: '2024-06-15T08:00:00.000Z',
       updatedAt: '2024-11-20T10:00:00.000Z',
@@ -26,11 +46,17 @@ const DEFAULT_STORE: AgentStore = {
 }
 
 async function loadStore(): Promise<AgentStore> {
-  return ensureMockStore<AgentStore>(STORE_KEY, DEFAULT_STORE)
+  const store = await ensureMockStore<AgentStore>(STORE_KEY, DEFAULT_STORE)
+  const normalized = normalizeStore(store)
+  const changed = JSON.stringify(store) !== JSON.stringify(normalized)
+  if (changed) {
+    await setMockStore(STORE_KEY, normalized)
+  }
+  return normalized
 }
 
 async function saveStore(store: AgentStore): Promise<void> {
-  await setMockStore(STORE_KEY, store)
+  await setMockStore(STORE_KEY, normalizeStore(store))
 }
 
 export async function listAgents(): Promise<Agent[]> {

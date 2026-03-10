@@ -232,7 +232,7 @@
           "version": "v2.3.1",
           "description": "基于设备本体与故障知识图谱，自动分析传感器数据并生成维修方案",
           "systemPrompt": "你是一个设备故障诊断专家。",
-          "model": "DeepSeek-V3",
+          "model": "Deepexi-Platform-70B",
           "skillIds": [
             "sk-001"
           ],

@@ -77,7 +77,7 @@
 - `modality`: `text | image-text`
 - `trainStage`: `pretrain | sft | lora | qlora | dpo`
 - `capability`: 如 `chat`、`reasoning`、`vision-language-understanding`、`document-parsing`
-- `baseModel`: 如 `DeepSeek-R1-Distill-32B`、`Qwen2.5-72B-Instruct`、`Qwen2.5-VL-32B-Instruct`
+- `baseModel`: 如 `Deepexi-R1-Industry-32B`、`Deepexi-Industry-72B-Instruct`、`Deepexi-VL-Industry-32B`
 - `alignmentTags`: 如 `安全对齐`、`工业知识增强`、`OCR增强`、`长上下文`
 
 ### 训练对象
@@ -207,9 +207,9 @@
   - `equipment-fault-predictor`
   - `churn-predictor`
 - 替换为大模型命名：
-  - `deepseek-r1-factory-sft`
-  - `qwen2.5-vl-inspection-assistant`
-  - `qwen-doc-parser-lora`
+  - `deepexi-factory-copilot-sft`
+  - `deepexi-vl-inspection-assistant`
+  - `deepexi-doc-parser-lora`
   - `factory-copilot-dpo-run`
 
 ### 样本表达

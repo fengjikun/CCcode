@@ -8,16 +8,10 @@ export type TrainingStatus = 'Running' | 'Completed' | 'Failed' | 'Queued' | 'St
 export type Framework = 'PyTorch' | 'Transformers'
 export type TrainMethod = TrainStage
 export type BaseModel =
-  | 'DeepSeek-R1-Distill-32B'
-  | 'Qwen2.5-72B-Instruct'
-  | 'Qwen2.5-VL-32B-Instruct'
-  | 'Qwen2.5-VL-7B-Instruct'
-  | 'InternVL2.5-38B'
-  | 'DeepSeek-V3'
-  | 'DeepSeek-R1'
-  | 'Qwen-72B'
-  | 'GLM-4'
-  | 'Llama-3.1-70B'
+  | 'Deepexi-R1-Industry-32B'
+  | 'Deepexi-Industry-72B-Instruct'
+  | 'Deepexi-VL-Industry-32B'
+  | 'Deepexi-VL-Document-7B'
 
 export interface TrainingJob {
   key: string

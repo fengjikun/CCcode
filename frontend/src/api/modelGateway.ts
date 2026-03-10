@@ -5,8 +5,8 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
   return [
     {
       key: 'model-1',
-      name: 'deepseek-r1-factory-sft',
-      displayName: 'Factory Copilot',
+      name: 'deepexi-factory-copilot-sft',
+      displayName: 'Deepexi Factory Copilot',
       modelFamily: 'LLM',
       modality: 'text',
       capability: 'reasoning',
@@ -25,7 +25,7 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
       latencyP99: '3.8s',
       lastDeployed: '2026-03-10',
       description: '工业知识增强问答与流程执行模型。',
-      trainedFrom: 'deepseek-r1-factory-sft',
+      trainedFrom: 'deepexi-factory-copilot-sft',
       evalAccuracy: '91.8',
       evalF1: '88.6',
       replicas: 6,
@@ -34,8 +34,8 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
     },
     {
       key: 'model-2',
-      name: 'qwen2.5-vl-inspection-assistant',
-      displayName: 'Inspection VL Assistant',
+      name: 'deepexi-vl-inspection-assistant',
+      displayName: 'Deepexi Inspection VL Assistant',
       modelFamily: 'VL',
       modality: 'image-text',
       capability: 'vision-language-understanding',
@@ -54,7 +54,7 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
       latencyP99: '5.9s',
       lastDeployed: '2026-03-09',
       description: '设备巡检图像问答与 grounded diagnosis 模型。',
-      trainedFrom: 'qwen2.5-vl-inspection-assistant',
+      trainedFrom: 'deepexi-vl-inspection-assistant',
       evalAccuracy: '88.4',
       evalF1: '90.2',
       replicas: 3,
@@ -63,8 +63,8 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
     },
     {
       key: 'model-3',
-      name: 'qwen-doc-parser-lora',
-      displayName: 'Doc Parser',
+      name: 'deepexi-doc-parser-lora',
+      displayName: 'Deepexi Doc Parser',
       modelFamily: 'VL',
       modality: 'image-text',
       capability: 'document-parsing',
@@ -83,7 +83,7 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
       latencyP99: '4.2s',
       lastDeployed: '2026-03-08',
       description: '票据与检修文档解析增强模型。',
-      trainedFrom: 'qwen-doc-parser-lora',
+      trainedFrom: 'deepexi-doc-parser-lora',
       evalAccuracy: '89.7',
       evalF1: '91.4',
       replicas: 2,
@@ -92,8 +92,8 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
     },
     {
       key: 'model-4',
-      name: 'factory-copilot-dpo-alignment',
-      displayName: 'Factory Copilot DPO',
+      name: 'deepexi-factory-copilot-dpo',
+      displayName: 'Deepexi Factory Copilot DPO',
       modelFamily: 'LLM',
       modality: 'text',
       capability: 'chat',
@@ -112,7 +112,7 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
       latencyP99: '3.2s',
       lastDeployed: '2026-03-07',
       description: '强化拒答边界与事实性回答的对齐模型。',
-      trainedFrom: 'factory-copilot-dpo-alignment',
+      trainedFrom: 'deepexi-factory-copilot-dpo',
       evalAccuracy: '94.1',
       evalF1: '97.2',
       replicas: 5,
@@ -124,10 +124,10 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
 
 export function buildDefaultGatewayRoutes(): GatewayRoute[] {
   return [
-    { key: 'route-1', path: '/chat/completions', model: 'factory-copilot-dpo-alignment', modelFamily: 'LLM', modality: 'text', capability: 'chat', version: 'v2026.03.07', weight: 100, rateLimit: 4000, status: 'Active' },
-    { key: 'route-2', path: '/responses', model: 'deepseek-r1-factory-sft', modelFamily: 'LLM', modality: 'text', capability: 'reasoning', version: 'v2026.03.10', weight: 100, rateLimit: 4500, status: 'Active' },
-    { key: 'route-3', path: '/vl/understand', model: 'qwen2.5-vl-inspection-assistant', modelFamily: 'VL', modality: 'image-text', capability: 'vision-language-understanding', version: 'v2026.03.09', weight: 20, rateLimit: 900, status: 'Active' },
-    { key: 'route-4', path: '/doc/parse', model: 'qwen-doc-parser-lora', modelFamily: 'VL', modality: 'image-text', capability: 'document-parsing', version: 'v2026.03.08', weight: 100, rateLimit: 800, status: 'Active' },
+    { key: 'route-1', path: '/chat/completions', model: 'deepexi-factory-copilot-dpo', modelFamily: 'LLM', modality: 'text', capability: 'chat', version: 'v2026.03.07', weight: 100, rateLimit: 4000, status: 'Active' },
+    { key: 'route-2', path: '/responses', model: 'deepexi-factory-copilot-sft', modelFamily: 'LLM', modality: 'text', capability: 'reasoning', version: 'v2026.03.10', weight: 100, rateLimit: 4500, status: 'Active' },
+    { key: 'route-3', path: '/vl/understand', model: 'deepexi-vl-inspection-assistant', modelFamily: 'VL', modality: 'image-text', capability: 'vision-language-understanding', version: 'v2026.03.09', weight: 20, rateLimit: 900, status: 'Active' },
+    { key: 'route-4', path: '/doc/parse', model: 'deepexi-doc-parser-lora', modelFamily: 'VL', modality: 'image-text', capability: 'document-parsing', version: 'v2026.03.08', weight: 100, rateLimit: 800, status: 'Active' },
   ]
 }
 
@@ -235,9 +235,9 @@ export async function getHourlyTraffic(): Promise<HourlyTraffic[]> {
 export async function getRecentErrors(): Promise<RecentError[]> {
   await delay(rand(200, 400))
   return [
-    { key: '1', time: '12:34:21', model: 'qwen-doc-parser-lora', errorCode: 422, errorMessage: 'Document image too large for current preprocessing policy' },
-    { key: '2', time: '12:28:05', model: 'qwen2.5-vl-inspection-assistant', errorCode: 429, errorMessage: 'Image understanding RPM quota exceeded on canary route' },
-    { key: '3', time: '12:15:33', model: 'deepseek-r1-factory-sft', errorCode: 504, errorMessage: 'Judge reranking path timed out after 8s' },
-    { key: '4', time: '11:58:12', model: 'factory-copilot-dpo-alignment', errorCode: 400, errorMessage: 'Input tool schema rejected by responses API validator' },
+    { key: '1', time: '12:34:21', model: 'deepexi-doc-parser-lora', errorCode: 422, errorMessage: 'Document image too large for current preprocessing policy' },
+    { key: '2', time: '12:28:05', model: 'deepexi-vl-inspection-assistant', errorCode: 429, errorMessage: 'Image understanding RPM quota exceeded on canary route' },
+    { key: '3', time: '12:15:33', model: 'deepexi-factory-copilot-sft', errorCode: 504, errorMessage: 'Judge reranking path timed out after 8s' },
+    { key: '4', time: '11:58:12', model: 'deepexi-factory-copilot-dpo', errorCode: 400, errorMessage: 'Input tool schema rejected by responses API validator' },
   ]
 }

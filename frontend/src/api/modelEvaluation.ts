@@ -6,7 +6,7 @@ export function buildDefaultEvalTasks(): EvalTask[] {
     {
       key: 'eval-1',
       name: 'eval-factory-copilot-instruction-v2',
-      modelName: 'deepseek-r1-factory-sft',
+      modelName: 'deepexi-factory-copilot-sft',
       modelVersion: 'v2026.03.10',
       modelFamily: 'LLM',
       modality: 'text',
@@ -33,7 +33,7 @@ export function buildDefaultEvalTasks(): EvalTask[] {
     {
       key: 'eval-2',
       name: 'eval-inspection-grounded-vqa-v3',
-      modelName: 'qwen2.5-vl-inspection-assistant',
+      modelName: 'deepexi-vl-inspection-assistant',
       modelVersion: 'v2026.03.09',
       modelFamily: 'VL',
       modality: 'image-text',
@@ -59,7 +59,7 @@ export function buildDefaultEvalTasks(): EvalTask[] {
     {
       key: 'eval-3',
       name: 'eval-doc-parser-understanding-v1',
-      modelName: 'qwen-doc-parser-lora',
+      modelName: 'deepexi-doc-parser-lora',
       modelVersion: 'v2026.03.08',
       modelFamily: 'VL',
       modality: 'image-text',
@@ -85,7 +85,7 @@ export function buildDefaultEvalTasks(): EvalTask[] {
     {
       key: 'eval-4',
       name: 'eval-factory-copilot-hallucination-v1',
-      modelName: 'factory-copilot-dpo-alignment',
+      modelName: 'deepexi-factory-copilot-dpo',
       modelVersion: 'v2026.03.07',
       modelFamily: 'LLM',
       modality: 'text',
@@ -160,9 +160,9 @@ export function buildDefaultEvalSamples(): EvalSample[] {
 
 export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> {
   return {
-    'deepseek-r1-factory-sft': [
+    'deepexi-factory-copilot-sft': [
       {
-        modelName: 'deepseek-r1-factory-sft',
+        modelName: 'deepexi-factory-copilot-sft',
         version: 'v2026.02.28',
         modelFamily: 'LLM',
         modality: 'text',
@@ -177,7 +177,7 @@ export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> 
         params: '32B',
       },
       {
-        modelName: 'deepseek-r1-factory-sft',
+        modelName: 'deepexi-factory-copilot-sft',
         version: 'v2026.03.10',
         modelFamily: 'LLM',
         modality: 'text',
@@ -192,9 +192,9 @@ export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> 
         params: '32B',
       },
     ],
-    'qwen2.5-vl-inspection-assistant': [
+    'deepexi-vl-inspection-assistant': [
       {
-        modelName: 'qwen2.5-vl-inspection-assistant',
+        modelName: 'deepexi-vl-inspection-assistant',
         version: 'v2026.03.03',
         modelFamily: 'VL',
         modality: 'image-text',
@@ -208,7 +208,7 @@ export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> 
         params: '32B',
       },
       {
-        modelName: 'qwen2.5-vl-inspection-assistant',
+        modelName: 'deepexi-vl-inspection-assistant',
         version: 'v2026.03.09',
         modelFamily: 'VL',
         modality: 'image-text',
@@ -220,6 +220,66 @@ export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> 
         groundedScore: 90.2,
         latency: '2.1s',
         params: '32B',
+      },
+    ],
+    'deepexi-doc-parser-lora': [
+      {
+        modelName: 'deepexi-doc-parser-lora',
+        version: 'v2026.03.05',
+        modelFamily: 'VL',
+        modality: 'image-text',
+        accuracy: 85.9,
+        f1: 85.1,
+        precision: 84.6,
+        recall: 86.4,
+        groundedScore: 85.8,
+        latency: '2.0s',
+        params: '7B',
+      },
+      {
+        modelName: 'deepexi-doc-parser-lora',
+        version: 'v2026.03.08',
+        modelFamily: 'VL',
+        modality: 'image-text',
+        accuracy: 86.7,
+        f1: 86.2,
+        precision: 85.5,
+        recall: 87.1,
+        groundedScore: 87.3,
+        latency: '1.8s',
+        params: '7B',
+      },
+    ],
+    'deepexi-factory-copilot-dpo': [
+      {
+        modelName: 'deepexi-factory-copilot-dpo',
+        version: 'v2026.03.04',
+        modelFamily: 'LLM',
+        modality: 'text',
+        accuracy: 91.5,
+        f1: 91.2,
+        precision: 90.7,
+        recall: 91.8,
+        passRate: 91.5,
+        winRate: 61.4,
+        hallucinationRate: 3.6,
+        latency: '1.2s',
+        params: '72B',
+      },
+      {
+        modelName: 'deepexi-factory-copilot-dpo',
+        version: 'v2026.03.07',
+        modelFamily: 'LLM',
+        modality: 'text',
+        accuracy: 94.1,
+        f1: 93.7,
+        precision: 93.4,
+        recall: 94.0,
+        passRate: 94.1,
+        winRate: 66.2,
+        hallucinationRate: 2.8,
+        latency: '1.0s',
+        params: '72B',
       },
     ],
   }
@@ -246,7 +306,7 @@ export async function getEvalSamples(_key: string): Promise<EvalSample[]> {
 
 export async function getEvalComparisons(modelName: string): Promise<EvalComparison[]> {
   await delay(rand(200, 400))
-  return MOCK_COMPARISONS[modelName] ?? MOCK_COMPARISONS['deepseek-r1-factory-sft']!
+  return MOCK_COMPARISONS[modelName] ?? MOCK_COMPARISONS['deepexi-factory-copilot-sft']!
 }
 
 export async function createEvalTask(input: {

@@ -7,6 +7,26 @@ interface DatasetStore {
   items: TrainingDataset[]
 }
 
+const LEGACY_MODEL_NAME_MAP: Record<string, string> = {
+  'deepseek-r1-factory-sft': 'deepexi-factory-copilot-sft',
+  'qwen2.5-vl-inspection-assistant': 'deepexi-vl-inspection-assistant',
+  'qwen-doc-parser-lora': 'deepexi-doc-parser-lora',
+  'factory-copilot-dpo-alignment': 'deepexi-factory-copilot-dpo',
+}
+
+function normalizeModelReference(modelName: string): string {
+  return LEGACY_MODEL_NAME_MAP[modelName] ?? modelName
+}
+
+function normalizeRunReference(runName: string): string {
+  for (const [legacyName, currentName] of Object.entries(LEGACY_MODEL_NAME_MAP)) {
+    if (runName.startsWith(`${legacyName}-run-`)) {
+      return runName.replace(`${legacyName}-run-`, `${currentName}-run-`)
+    }
+  }
+  return runName
+}
+
 function inferLegacyDatasetType(dataset: Partial<TrainingDataset>): TrainingDataset['datasetType'] {
   const sample = dataset.sampleData?.[0]
   if (sample && typeof sample === 'object') {
@@ -44,8 +64,8 @@ export function normalizeTrainingDataset(dataset: Partial<TrainingDataset>): Tra
     size: dataset.size ?? '—',
     createdAt: dataset.createdAt ?? new Date().toISOString().slice(0, 10),
     updatedAt: dataset.updatedAt ?? new Date().toISOString().slice(0, 10),
-    linkedModels: dataset.linkedModels ?? [],
-    linkedRuns: dataset.linkedRuns ?? [],
+    linkedModels: (dataset.linkedModels ?? []).map(normalizeModelReference),
+    linkedRuns: (dataset.linkedRuns ?? []).map(normalizeRunReference),
     tokenCount: dataset.tokenCount ?? Math.max(records * 380, records > 0 ? 380 : 0),
     imageCount: dataset.imageCount ?? (modality === 'image-text' ? records : 0),
     qualityScore: dataset.qualityScore ?? 80,
@@ -128,8 +148,8 @@ export function buildDefaultTrainingDatasets(): TrainingDataset[] {
       size: '5.6 GB',
       createdAt: '2026-02-18',
       updatedAt: '2026-03-10',
-      linkedModels: ['deepseek-r1-factory-sft'],
-      linkedRuns: ['deepseek-r1-factory-sft-run-1'],
+      linkedModels: ['deepexi-factory-copilot-sft'],
+      linkedRuns: ['deepexi-factory-copilot-sft-run-1'],
       tokenCount: 148000000,
       imageCount: 0,
       qualityScore: 94,
@@ -156,8 +176,8 @@ export function buildDefaultTrainingDatasets(): TrainingDataset[] {
       size: '1.2 GB',
       createdAt: '2026-03-02',
       updatedAt: '2026-03-09',
-      linkedModels: ['factory-copilot-dpo-alignment'],
-      linkedRuns: ['factory-copilot-dpo-run-4'],
+      linkedModels: ['deepexi-factory-copilot-dpo'],
+      linkedRuns: ['deepexi-factory-copilot-dpo-run-4'],
       tokenCount: 42000000,
       imageCount: 0,
       qualityScore: 91,
@@ -184,8 +204,8 @@ export function buildDefaultTrainingDatasets(): TrainingDataset[] {
       size: '9.8 GB',
       createdAt: '2026-02-22',
       updatedAt: '2026-03-10',
-      linkedModels: ['qwen2.5-vl-inspection-assistant'],
-      linkedRuns: ['qwen2.5-vl-inspection-assistant-run-2'],
+      linkedModels: ['deepexi-vl-inspection-assistant'],
+      linkedRuns: ['deepexi-vl-inspection-assistant-run-2'],
       tokenCount: 32000000,
       imageCount: 48000,
       qualityScore: 89,
@@ -212,7 +232,7 @@ export function buildDefaultTrainingDatasets(): TrainingDataset[] {
       size: '—',
       createdAt: '2026-03-05',
       updatedAt: '2026-03-10',
-      linkedModels: ['qwen-doc-parser-lora'],
+      linkedModels: ['deepexi-doc-parser-lora'],
       linkedRuns: [],
       tokenCount: 21000000,
       imageCount: 125000,

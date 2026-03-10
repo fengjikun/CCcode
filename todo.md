@@ -171,7 +171,7 @@
 ### Mock 数据丰富
 - [ ] 每个页面至少包含 1 条 Error/Failed 状态的数据（当前多数只有正常态）
 - [ ] DataSourcePage 添加 Inactive/Error 状态数据源
-- [ ] AgentStudioPage 增加到 8-10 个 Agent（当前只有 3 个），混用不同模型（DeepSeek/Qwen/GLM-4）
+- [ ] AgentStudioPage 增加到 8-10 个 Agent（当前只有 3 个），统一使用 Deepexi 系列模型
 - [ ] DashboardPage Activity 添加 error 级别日志
 - [ ] 时间戳改为相对当前时间动态生成（当前全部硬编码）
 - [ ] ModelGatewayPage QPS 数据应有差异化，P50/P99 延迟需拉开合理差距

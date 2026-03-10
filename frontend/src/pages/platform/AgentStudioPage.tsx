@@ -69,10 +69,10 @@ const { TextArea } = Input
 
 /* ──────────── 模型选项 ──────────── */
 const MODEL_OPTIONS = [
-  { value: 'DeepSeek-V3', label: 'DeepSeek-V3' },
-  { value: 'DeepSeek-R1', label: 'DeepSeek-R1' },
-  { value: 'Qwen-72B', label: 'Qwen-72B' },
-  { value: 'GLM-4', label: 'GLM-4' },
+  { value: 'Deepexi-Platform-70B', label: 'Deepexi-Platform-70B' },
+  { value: 'Deepexi-R1-Reasoner', label: 'Deepexi-R1-Reasoner' },
+  { value: 'Deepexi-Industry-72B-Instruct', label: 'Deepexi-Industry-72B-Instruct' },
+  { value: 'Deepexi-General-Agent', label: 'Deepexi-General-Agent' },
 ]
 
 /* ──────────── 表单类型 ──────────── */
@@ -660,7 +660,7 @@ export default function AgentStudioPage() {
         <Form<CreateForm>
           form={form}
           layout="vertical"
-          initialValues={{ type: 'Operational', model: 'DeepSeek-V3' }}
+          initialValues={{ type: 'Operational', model: 'Deepexi-Platform-70B' }}
           style={{ marginTop: 16 }}
         >
           <Row gutter={16}>
