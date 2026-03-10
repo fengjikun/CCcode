@@ -10,7 +10,7 @@ interface AgentStore {
 const LEGACY_AGENT_MODEL_MAP: Record<string, string> = {
   'DeepSeek-V3': 'Deepexi-Platform-70B',
   'DeepSeek-R1': 'Deepexi-R1-Reasoner',
-  'Qwen-72B': 'Deepexi-Industry-72B-Instruct',
+  'Qwen-72B': 'Deepexi-Industry-60B-Instruct',
   'GLM-4': 'Deepexi-General-Agent',
 }
 

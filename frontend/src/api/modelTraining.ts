@@ -173,7 +173,7 @@ export function buildDefaultTrainingProjects(): TrainingProject[] {
       bestMetric: 'Win Rate 66.2%',
       createdAt: '2026-03-04',
       trainMethod: 'dpo',
-      baseModel: 'Deepexi-Industry-72B-Instruct',
+      baseModel: 'Deepexi-Industry-60B-Instruct',
       datasetName: 'factory_safety_preference_v1',
       contextWindow: 32768,
       tokenCount: 42000000,

@@ -85,7 +85,7 @@ const MODALITY_COLORS = {
 
 const BASE_MODEL_OPTIONS = [
   'Deepexi-R1-Industry-32B',
-  'Deepexi-Industry-72B-Instruct',
+  'Deepexi-Industry-60B-Instruct',
   'Deepexi-VL-Industry-32B',
   'Deepexi-VL-Document-7B',
 ]

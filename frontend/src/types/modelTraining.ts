@@ -9,7 +9,7 @@ export type Framework = 'PyTorch' | 'Transformers'
 export type TrainMethod = TrainStage
 export type BaseModel =
   | 'Deepexi-R1-Industry-32B'
-  | 'Deepexi-Industry-72B-Instruct'
+  | 'Deepexi-Industry-60B-Instruct'
   | 'Deepexi-VL-Industry-32B'
   | 'Deepexi-VL-Document-7B'
 
