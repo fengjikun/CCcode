@@ -23,6 +23,7 @@ class JsonStore:
         self.file_path = file_path
         self._default_factory = default_factory
         self._lock = threading.Lock()
+        self._last_mtime_ns: int | None = None
         self.data = self._load_or_init()
 
     def _load_or_init(self) -> dict[str, Any]:
@@ -36,6 +37,7 @@ class JsonStore:
             with self.file_path.open("r", encoding="utf-8") as f:
                 loaded = json.load(f)
             if isinstance(loaded, dict):
+                self._last_mtime_ns = self.file_path.stat().st_mtime_ns
                 return loaded
         except (OSError, json.JSONDecodeError):
             pass
@@ -51,10 +53,37 @@ class JsonStore:
         with tmp.open("w", encoding="utf-8") as f:
             json.dump(self.data, f, ensure_ascii=False, indent=2)
         tmp.replace(self.file_path)
+        try:
+            self._last_mtime_ns = self.file_path.stat().st_mtime_ns
+        except OSError:
+            self._last_mtime_ns = None
 
     def save(self) -> None:
         with self._lock:
             self._save_locked()
+
+    def reload_if_changed(self) -> bool:
+        try:
+            current_mtime_ns = self.file_path.stat().st_mtime_ns
+        except OSError:
+            return False
+
+        with self._lock:
+            if self._last_mtime_ns == current_mtime_ns:
+                return False
+
+            try:
+                with self.file_path.open("r", encoding="utf-8") as f:
+                    loaded = json.load(f)
+            except (OSError, json.JSONDecodeError):
+                return False
+
+            if not isinstance(loaded, dict):
+                return False
+
+            self.data = loaded
+            self._last_mtime_ns = current_mtime_ns
+            return True
 
     def next_id(self, *, key: str = "idSeq", start: int = 1000) -> int:
         with self._lock:

@@ -102,6 +102,34 @@ describe('dataSource ontology seeding', () => {
     expect(mockStore._v).toBeDefined()
   })
 
+  it('keeps persisted versioned datasource stores instead of reseeding defaults', async () => {
+    mockStore.items = [
+      {
+        id: 'ds-custom-001',
+        name: '企业主数据湖',
+        category: 'structured',
+        type: 'PostgreSQL',
+        connection: { host: 'lake.company.local', port: 5432, database: 'lakehouse', username: 'reader' },
+        syncFrequency: 'hourly',
+        status: 'Active',
+        lastSync: '1 分钟前',
+        recordCount: 9876543210,
+        description: 'persisted',
+        createdAt: '2025-01-01T08:00:00.000Z',
+        updatedAt: '2025-03-10T08:00:00.000Z',
+      },
+    ]
+    mockStore._v = 5
+
+    const list = await listDataSources()
+
+    expect(list).toHaveLength(1)
+    expect(list[0]?.id).toBe('ds-custom-001')
+    expect(list[0]?.name).toBe('企业主数据湖')
+    expect(mockStore.items).toHaveLength(1)
+    expect(mockStore._v).toBe(5)
+  })
+
   it('creates an object storage datasource with bucket connection fields', async () => {
     const created = await createDataSource({
       name: '测试对象存储',

@@ -12,6 +12,7 @@ router = APIRouter(prefix="/api/mock-store", tags=["mock-store"])
 
 
 def _namespaces() -> dict[str, Any]:
+    ui_store.reload_if_changed()
     return ui_store.data.setdefault("namespaces", {})
 
 

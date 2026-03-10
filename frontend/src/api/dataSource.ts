@@ -263,7 +263,7 @@ const DEFAULT_STORE: DSStore = {
 
 async function loadStore(): Promise<DSStore> {
   const store = await ensureMockStore<DSStore>(STORE_KEY, DEFAULT_STORE)
-  if (store._v === DATA_VERSION && Array.isArray(store.items) && store.items.length > 0) {
+  if (typeof store._v === 'number' && Array.isArray(store.items) && store.items.length > 0) {
     return store
   }
 
