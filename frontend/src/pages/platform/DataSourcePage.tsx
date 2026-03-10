@@ -44,8 +44,8 @@ import {
 import type { DataSource, DataSourceCategory, DataSourceConnection } from '../../types/dataSource'
 import {
   CATEGORY_LABELS,
+  OBJECT_STORAGE_TYPES,
   STRUCTURED_TYPES,
-  UNSTRUCTURED_TYPES,
   SYNC_FREQUENCY_LABELS,
   STATUS_COLORS,
   TYPE_ICONS,
@@ -66,7 +66,12 @@ interface CreateForm {
   database?: string
   username?: string
   password?: string
-  fileName?: string
+  endpoint?: string
+  bucket?: string
+  region?: string
+  pathPrefix?: string
+  accessKey?: string
+  secretKey?: string
 }
 
 interface EditForm {
@@ -129,7 +134,14 @@ export default function DataSourcePage() {
       setCreating(true)
       const connection: DataSourceConnection = values.category === 'structured'
         ? { host: values.host, port: values.port, database: values.database, username: values.username, password: values.password }
-        : { fileName: values.fileName }
+        : {
+            endpoint: values.endpoint,
+            bucket: values.bucket,
+            region: values.region,
+            pathPrefix: values.pathPrefix,
+            accessKey: values.accessKey,
+            secretKey: values.secretKey,
+          }
       await createDataSource({
         name: values.name,
         category: values.category,
@@ -154,7 +166,11 @@ export default function DataSourcePage() {
   /* 测试连接 */
   const handleTest = async () => {
     try {
-      await form.validateFields(['host', 'port', 'database'])
+      if (selectedCategory === 'structured') {
+        await form.validateFields(['host', 'port', 'database'])
+      } else {
+        await form.validateFields(['endpoint', 'bucket', 'region'])
+      }
     } catch {
       return // 表单校验失败
     }
@@ -291,11 +307,12 @@ export default function DataSourcePage() {
       {/* ===== Header ===== */}
       <Card className="section-card">
         <PageHeader title="数据源管理" subtitle="L1 数据接入 — 连接并同步企业结构化与非结构化数据，统一数据接入层" />
+        
 
         <StatCards items={[
           { title: '数据源总数', value: list.length, icon: <DatabaseOutlined />, cls: 'stat-primary' },
-          { title: '结构化', value: list.filter(d => d.category === 'structured').length, icon: <ApiOutlined />, cls: 'stat-success' },
-          { title: '非结构化', value: list.filter(d => d.category === 'unstructured').length, icon: <FileTextOutlined />, cls: 'stat-purple' },
+          { title: '数据库', value: list.filter(d => d.category === 'structured').length, icon: <ApiOutlined />, cls: 'stat-success' },
+          { title: '对象存储', value: list.filter(d => d.category === 'unstructured').length, icon: <FileTextOutlined />, cls: 'stat-purple' },
           { title: '活跃连接', value: list.filter(d => d.status === 'Active' || d.status === 'Syncing').length, icon: <LinkOutlined />, cls: 'stat-warning' },
           { title: '总记录数', value: list.reduce((s, d) => s + d.recordCount, 0) > 10000 ? `${(list.reduce((s, d) => s + d.recordCount, 0) / 10000).toFixed(1)}万` : list.reduce((s, d) => s + d.recordCount, 0), icon: <SyncOutlined />, cls: 'stat-info' },
         ]} />
@@ -311,8 +328,8 @@ export default function DataSourcePage() {
               size="small"
             >
               <Radio.Button value="all">全部</Radio.Button>
-              <Radio.Button value="structured">结构化</Radio.Button>
-              <Radio.Button value="unstructured">非结构化</Radio.Button>
+              <Radio.Button value="structured">数据库</Radio.Button>
+              <Radio.Button value="unstructured">对象存储</Radio.Button>
             </Radio.Group>
             <Input
               placeholder="搜索数据源名称 / 类型"
@@ -374,10 +391,10 @@ export default function DataSourcePage() {
               buttonStyle="solid"
             >
               <Radio.Button value="structured">
-                <DatabaseOutlined style={{ marginRight: 4 }} />结构化数据
+                <DatabaseOutlined style={{ marginRight: 4 }} />数据源
               </Radio.Button>
               <Radio.Button value="unstructured">
-                <CloudUploadOutlined style={{ marginRight: 4 }} />非结构化数据
+                <CloudUploadOutlined style={{ marginRight: 4 }} />对象存储
               </Radio.Button>
             </Radio.Group>
           </Form.Item>
@@ -392,7 +409,7 @@ export default function DataSourcePage() {
               <Form.Item name="type" label="数据源类型" rules={[{ required: true, message: '请选择类型' }]}>
                 <Select
                   placeholder="选择类型"
-                  options={(selectedCategory === 'structured' ? STRUCTURED_TYPES : UNSTRUCTURED_TYPES).map(t => ({
+                  options={(selectedCategory === 'structured' ? STRUCTURED_TYPES : OBJECT_STORAGE_TYPES).map(t => ({
                     value: t,
                     label: `${TYPE_ICONS[t] || ''} ${t}`,
                   }))}
@@ -453,13 +470,64 @@ export default function DataSourcePage() {
             </>
           )}
 
-          {/* 非结构化文件配置 */}
+          {/* 对象存储配置 */}
           {selectedCategory === 'unstructured' && (
             <>
-              <Divider titlePlacement="left" plain style={{ margin: '8px 0 16px', fontSize: 13 }}>文件信息</Divider>
-              <Form.Item name="fileName" label="文件名称" rules={[{ required: true, message: '请输入文件名' }]}>
-                <Input placeholder="例如：设备维修手册_v3.2.pdf" />
-              </Form.Item>
+              <Divider titlePlacement="left" plain style={{ margin: '8px 0 16px', fontSize: 13 }}>对象存储连接</Divider>
+              <Row gutter={16}>
+                <Col span={14}>
+                  <Form.Item name="endpoint" label="Endpoint" rules={[{ required: true, message: '请输入 Endpoint' }]}>
+                    <Input placeholder="例如：https://minio.demo.local" />
+                  </Form.Item>
+                </Col>
+                <Col span={10}>
+                  <Form.Item name="region" label="Region" rules={[{ required: true, message: '请输入 Region' }]}>
+                    <Input placeholder="例如：cn-east-1" />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="bucket" label="Bucket" rules={[{ required: true, message: '请输入 Bucket 名称' }]}>
+                    <Input placeholder="例如：ontology-manufacturing-0-0-1" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="pathPrefix" label="路径前缀">
+                    <Input placeholder="例如：故障诊断本体/v1/" />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item name="accessKey" label="Access Key">
+                    <Input placeholder="对象存储访问 Key" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="secretKey" label="Secret Key">
+                    <Input.Password placeholder="对象存储 Secret" />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <div style={{ marginBottom: 16 }}>
+                <Button
+                  icon={<LinkOutlined />}
+                  onClick={() => void handleTest()}
+                  loading={testing}
+                >
+                  测试连接
+                </Button>
+                {testResult && (
+                  <Tag
+                    icon={testResult.success ? <CheckCircleOutlined /> : <ExclamationCircleOutlined />}
+                    color={testResult.success ? 'success' : 'error'}
+                    style={{ marginLeft: 12 }}
+                  >
+                    {testResult.message}
+                  </Tag>
+                )}
+              </div>
             </>
           )}
 
@@ -534,9 +602,23 @@ export default function DataSourcePage() {
             </Descriptions>
 
             <Divider titlePlacement="left" plain style={{ fontSize: 13 }}>连接配置</Divider>
-            <pre className="code-block">
-              {JSON.stringify(detailTarget.connection, null, 2)}
-            </pre>
+            {detailTarget.category === 'structured' ? (
+              <Descriptions column={2} bordered size="small">
+                <Descriptions.Item label="主机">{detailTarget.connection.host || '-'}</Descriptions.Item>
+                <Descriptions.Item label="端口">{detailTarget.connection.port || '-'}</Descriptions.Item>
+                <Descriptions.Item label="数据库">{detailTarget.connection.database || '-'}</Descriptions.Item>
+                <Descriptions.Item label="用户名">{detailTarget.connection.username || '-'}</Descriptions.Item>
+              </Descriptions>
+            ) : (
+              <Descriptions column={2} bordered size="small">
+                <Descriptions.Item label="Endpoint" span={2}>{detailTarget.connection.endpoint || '-'}</Descriptions.Item>
+                <Descriptions.Item label="Bucket">{detailTarget.connection.bucket || '-'}</Descriptions.Item>
+                <Descriptions.Item label="Region">{detailTarget.connection.region || '-'}</Descriptions.Item>
+                <Descriptions.Item label="路径前缀" span={2}>{detailTarget.connection.pathPrefix || '-'}</Descriptions.Item>
+                <Descriptions.Item label="Access Key">{detailTarget.connection.accessKey || '-'}</Descriptions.Item>
+                <Descriptions.Item label="Secret Key">{detailTarget.connection.secretKey ? '已配置' : '-'}</Descriptions.Item>
+              </Descriptions>
+            )}
 
             {detailTarget.category === 'structured' && (
               <>
@@ -551,6 +633,19 @@ export default function DataSourcePage() {
                   <div className="dir-item" style={{ paddingLeft: 40 }}>standardized_data</div>
                   <div className="dir-item" style={{ paddingLeft: 20 }}>analysis/</div>
                   <div className="dir-item" style={{ paddingLeft: 20 }}>documentation/</div>
+                </div>
+              </>
+            )}
+
+            {detailTarget.category === 'unstructured' && (
+              <>
+                <Divider titlePlacement="left" plain style={{ fontSize: 13 }}>对象存储目录</Divider>
+                <div className="dir-tree">
+                  <div className="dir-item">{detailTarget.connection.bucket || detailTarget.name}/</div>
+                  <div className="dir-item" style={{ paddingLeft: 20 }}>{detailTarget.connection.pathPrefix || 'root/'}</div>
+                  <div className="dir-item" style={{ paddingLeft: 40 }}>documents/</div>
+                  <div className="dir-item" style={{ paddingLeft: 40 }}>graph-assets/</div>
+                  <div className="dir-item" style={{ paddingLeft: 40 }}>extraction-output/</div>
                 </div>
               </>
             )}

@@ -10,23 +10,19 @@ export type StructuredType =
   | 'SAP ERP'
   | 'MongoDB'
 
-export type UnstructuredType =
-  | 'CSV'
-  | 'Excel'
-  | 'JSON'
-  | 'XML'
-  | 'PDF'
-  | 'Word'
-  | 'TXT'
+export type ObjectStorageType = 'S3' | 'OSS' | 'MinIO'
 
-export type DataSourceType = StructuredType | UnstructuredType
+export type UnstructuredType = ObjectStorageType
+
+export type DataSourceType = StructuredType | ObjectStorageType
 
 export type SyncFrequency = 'realtime' | '5min' | '15min' | 'hourly' | 'daily' | 'manual'
 
 export type DataSourceStatus = 'Active' | 'Inactive' | 'Error' | 'Syncing'
 
 export const STRUCTURED_TYPES: StructuredType[] = ['MySQL', 'PostgreSQL', 'Oracle', 'SQL Server', 'SAP ERP', 'MongoDB']
-export const UNSTRUCTURED_TYPES: UnstructuredType[] = ['CSV', 'Excel', 'JSON', 'XML', 'PDF', 'Word', 'TXT']
+export const OBJECT_STORAGE_TYPES: ObjectStorageType[] = ['S3', 'OSS', 'MinIO']
+export const UNSTRUCTURED_TYPES: UnstructuredType[] = OBJECT_STORAGE_TYPES
 
 export const SYNC_FREQUENCY_LABELS: Record<SyncFrequency, string> = {
   realtime: '实时',
@@ -56,13 +52,9 @@ export const TYPE_ICONS: Record<string, string> = {
   'SQL Server': '🟦',
   'SAP ERP': '🏢',
   MongoDB: '🍃',
-  CSV: '📄',
-  Excel: '📊',
-  JSON: '📋',
-  XML: '📝',
-  PDF: '📕',
-  Word: '📘',
-  TXT: '📃',
+  S3: '🪣',
+  OSS: '☁️',
+  MinIO: '📦',
 }
 
 export interface DataSourceConnection {
@@ -71,6 +63,12 @@ export interface DataSourceConnection {
   database?: string
   username?: string
   password?: string
+  endpoint?: string
+  bucket?: string
+  region?: string
+  pathPrefix?: string
+  accessKey?: string
+  secretKey?: string
   fileName?: string
   fileSize?: number
   encoding?: string
