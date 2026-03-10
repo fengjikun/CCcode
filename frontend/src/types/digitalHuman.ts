@@ -1,3 +1,5 @@
+import type { SkillIndustry } from './skill'
+
 export type DigitalHumanType =
   | 'fault-repair'
   | 'engineering-design'
@@ -69,6 +71,12 @@ export interface DigitalHuman {
   description?: string
   type: DigitalHumanType
   projectId?: string
+  ontologyCode?: string
+  ontologyName?: string
+  ontologyIndustry?: SkillIndustry
+  ontologyPhase?: string
+  agentScene?: string
+  trainingType?: string
   createdAt: string
   updatedAt: string
 }
