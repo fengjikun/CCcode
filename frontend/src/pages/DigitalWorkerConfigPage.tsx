@@ -298,13 +298,6 @@ export default function DigitalWorkerConfigPage() {
         </Space>
       </div>
 
-      <Alert
-        type="info"
-        showIcon
-        message="管理平台仅承载 AI 员工配置与治理"
-        description="当前详情页已改为配置页，不再承担 chat 交互。对话入口后续建议在门户、工作台或业务端单独落地。"
-      />
-
       <Row gutter={[16, 16]}>
         <Col xs={12} lg={6}>
           <Card size="small">
