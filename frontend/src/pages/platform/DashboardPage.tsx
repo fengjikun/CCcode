@@ -26,14 +26,18 @@ const { Title, Text } = Typography
 /* ───── L1→L7 pipeline stages ───── */
 interface Stage { key: string; label: string; labelZh: string; icon: ReactNode; color: string; count: number }
 
-const stages: Stage[] = [
-  { key: 'L1', label: 'Datasource',    labelZh: '数据源',   icon: <DatabaseOutlined />,   color: '#16a34a', count: 24 },
-  { key: 'L2', label: 'Transform',     labelZh: '数据转换', icon: <SwapOutlined />,       color: '#d97706', count: 156 },
-  { key: 'L3', label: 'Ontology',      labelZh: '本体层',   icon: <ApartmentOutlined />,  color: '#4f46e5', count: 89 },
-  { key: 'L4', label: 'Co-worker',     labelZh: '智能体',   icon: <RobotOutlined />,      color: '#7c3aed', count: 59 },
-  { key: 'L5', label: 'Model Train',   labelZh: '模型训练', icon: <ExperimentOutlined />, color: '#e11d48', count: 6 },
-  { key: 'L6', label: 'Model Gateway', labelZh: '模型网关', icon: <ApiOutlined />,        color: '#ea580c', count: 23 },
-  { key: 'L7', label: 'Workflow Apps',  labelZh: '数字员工', icon: <TeamOutlined />,       color: '#0891b2', count: 15 },
+interface StageTemplate extends Omit<Stage, 'count'> {
+  fallbackCount: number
+}
+
+const stageTemplates: StageTemplate[] = [
+  { key: 'L1', label: 'Datasource', labelZh: '数据源', icon: <DatabaseOutlined />, color: '#16a34a', fallbackCount: 0 },
+  { key: 'L2', label: 'Transform', labelZh: '数据转换', icon: <SwapOutlined />, color: '#d97706', fallbackCount: 156 },
+  { key: 'L3', label: 'Ontology', labelZh: '本体层', icon: <ApartmentOutlined />, color: '#4f46e5', fallbackCount: 0 },
+  { key: 'L4', label: 'workspace', labelZh: '智能体', icon: <RobotOutlined />, color: '#7c3aed', fallbackCount: 59 },
+  { key: 'L5', label: 'Model Train', labelZh: '模型训练', icon: <ExperimentOutlined />, color: '#e11d48', fallbackCount: 6 },
+  { key: 'L6', label: 'Model Gateway', labelZh: '模型网关', icon: <ApiOutlined />, color: '#ea580c', fallbackCount: 23 },
+  { key: 'L7', label: 'Workflow Apps', labelZh: '数字员工', icon: <TeamOutlined />, color: '#0891b2', fallbackCount: 0 },
 ]
 
 /* ───── 活动日志颜色 ───── */
@@ -43,17 +47,24 @@ const levelColor: Record<ActivityEntry['level'], string> = {
 
 export default function DashboardPage() {
   const [activities, setActivities] = useState<ActivityEntry[]>([])
-  const [stats, setStats] = useState<PlatformStats>({ datasources: 0, transformJobs: 0, objectTypes: 0, agents: 0, skills: 0, trainingJobs: 0, deployedModels: 0, digitalWorkers: 0, totalRequests: '', avgLatency: '', uptime: '', activeUsers: 0 })
+  const [stats, setStats] = useState<PlatformStats>({ datasources: 0, transformJobs: 0, objectTypes: 0, ontologyProjects: 0, agents: 0, skills: 0, trainingJobs: 0, deployedModels: 0, digitalWorkers: 0, totalRequests: '', avgLatency: '', uptime: '', activeUsers: 0 })
 
   useEffect(() => {
     getActivityData().then(setActivities)
     getPlatformStats().then(setStats)
   }, [])
 
+  const stages: Stage[] = stageTemplates.map(stage => {
+    if (stage.key === 'L1') return { ...stage, count: stats.datasources }
+    if (stage.key === 'L3') return { ...stage, count: stats.ontologyProjects }
+    if (stage.key === 'L7') return { ...stage, count: stats.digitalWorkers }
+    return { ...stage, count: stage.fallbackCount }
+  })
+
   /* 统计卡片 — 带图标背景 */
   const statCards = [
     { title: '数据源', value: stats.datasources, icon: <DatabaseOutlined />, color: '#16a34a', bg: '#f0fdf4', trend: '+3' },
-    { title: 'Object Types', value: stats.objectTypes, icon: <AppstoreOutlined />, color: '#4f46e5', bg: '#eef2ff', trend: '+12' },
+    { title: '本体项目', value: stats.ontologyProjects, icon: <AppstoreOutlined />, color: '#4f46e5', bg: '#eef2ff', trend: '+12' },
     { title: 'Agent / Skills', value: `${stats.agents} / ${stats.skills}`, icon: <RobotOutlined />, color: '#7c3aed', bg: '#f5f3ff', trend: '+5' },
     { title: '已部署模型', value: stats.deployedModels, icon: <CloudServerOutlined />, color: '#ea580c', bg: '#fff7ed', trend: '+2' },
     { title: '日请求总量', value: stats.totalRequests, icon: <ThunderboltOutlined />, color: '#e11d48', bg: '#fff1f2', trend: '+18%' },

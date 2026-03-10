@@ -10,13 +10,12 @@ import DigitalHumanListPage from './pages/DigitalHumanListPage'
 import DeviceFaultMonitorPage from './pages/DeviceFaultMonitorPage'
 import DICWorkerPage from './pages/platform/DICWorkerPage'
 
-// L4 Co-worker 平台
+// L4 workspace 工作台
 import AgentStudioPage from './pages/platform/AgentStudioPage'
 import AgentLogsPage from './pages/platform/AgentLogsPage'
 import SkillsMarketPage from './pages/platform/SkillsMarketPage'
 
 // L3 Deepology 本体
-import OntologyOverviewPage from './pages/platform/OntologyOverviewPage'
 import ProjectsPage from './pages/ProjectsPage'
 import ProjectWorkspacePage from './pages/ProjectWorkspacePage'
 import ProjectGraphPage from './pages/ProjectGraphPage'
@@ -69,13 +68,12 @@ export default function App() {
         <Route path="/digital-worker/business/:id" element={<DeviceFaultMonitorPage />} />
         <Route path="/digital-worker/dic" element={<DICWorkerPage />} />
 
-        {/* L4 Co-worker 平台 */}
-        <Route path="/coworker/agents" element={<AgentStudioPage />} />
-        <Route path="/coworker/agents/logs" element={<AgentLogsPage />} />
-        <Route path="/coworker/skills" element={<SkillsMarketPage />} />
+        {/* L4 workspace 工作台 */}
+        <Route path="/studio/agents" element={<AgentStudioPage />} />
+        <Route path="/studio/agents/logs" element={<AgentLogsPage />} />
+        <Route path="/studio/skills" element={<SkillsMarketPage />} />
 
         {/* L3 Deepology 本体 */}
-        <Route path="/ontology/overview" element={<OntologyOverviewPage />} />
         <Route path="/ontology/projects" element={<ProjectsPage />} />
         <Route path="/ontology/projects/:projectId" element={<ProjectWorkspacePage />} />
         <Route path="/ontology/projects/:projectId/graph" element={<ProjectGraphPage />} />

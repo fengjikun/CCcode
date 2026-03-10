@@ -1,5 +1,8 @@
 import type { HealthEntry, ActivityEntry } from '../types/dashboard'
+import { listDataSources } from './dataSource'
+import { listDigitalHumans } from './digitalHuman'
 import { ensureMockStore } from './mockStoreClient'
+import { listProjects } from './projectManagement'
 
 const STORE_KEY = 'dashboard'
 
@@ -7,6 +10,7 @@ export interface PlatformStats {
   datasources: number
   transformJobs: number
   objectTypes: number
+  ontologyProjects: number
   agents: number
   skills: number
   trainingJobs: number
@@ -48,6 +52,7 @@ const DEFAULT_STORE: DashboardStore = {
     datasources: 24,
     transformJobs: 156,
     objectTypes: 89,
+    ontologyProjects: 89,
     agents: 12,
     skills: 47,
     trainingJobs: 8,
@@ -76,5 +81,16 @@ export async function getActivityData(): Promise<ActivityEntry[]> {
 
 export async function getPlatformStats(): Promise<PlatformStats> {
   const store = await loadStore()
-  return store.stats
+  const [dataSourcesResult, projectsResult, digitalHumansResult] = await Promise.allSettled([
+    listDataSources(),
+    listProjects(),
+    listDigitalHumans(),
+  ])
+
+  return {
+    ...store.stats,
+    datasources: dataSourcesResult.status === 'fulfilled' ? dataSourcesResult.value.length : store.stats.datasources,
+    ontologyProjects: projectsResult.status === 'fulfilled' ? projectsResult.value.length : store.stats.ontologyProjects,
+    digitalWorkers: digitalHumansResult.status === 'fulfilled' ? digitalHumansResult.value.length : store.stats.digitalWorkers,
+  }
 }

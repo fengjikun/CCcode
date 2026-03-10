@@ -30,4 +30,20 @@ describe('DashboardPage responsive layout regression guard', () => {
     expect(dashboardPageSource).not.toContain('平台健康度监控')
     expect(dashboardPageSource).not.toContain('平台资源一览')
   })
+
+  it('refreshes the L4 pipeline label away from Co-worker', () => {
+    expect(dashboardPageSource).toContain("label: 'workspace'")
+    expect(dashboardPageSource).not.toContain("label: 'Co-worker'")
+  })
+
+  it('uses ontology project wording instead of object types', () => {
+    expect(dashboardPageSource).toContain('本体项目')
+    expect(dashboardPageSource).not.toContain('Object Types')
+  })
+
+  it('does not hardcode the aligned pipeline counts', () => {
+    expect(dashboardPageSource).not.toContain("count: 24")
+    expect(dashboardPageSource).not.toContain("count: 89")
+    expect(dashboardPageSource).not.toContain("count: 15")
+  })
 })
