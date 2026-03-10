@@ -2,6 +2,8 @@
  * L5 训练数据集类型定义
  */
 
+import type { DatasetType, ModelModality } from './modelCenter'
+
 export type DatasetStatus = 'Ready' | 'Building' | 'Failed' | 'Archived'
 
 export type DatasetFormat = 'JSONL' | 'CSV' | 'Parquet'
@@ -9,6 +11,8 @@ export type DatasetFormat = 'JSONL' | 'CSV' | 'Parquet'
 export interface TrainingDataset {
   key: string
   name: string
+  datasetType: DatasetType
+  modality: ModelModality
   source: string
   trainSplit: number
   valSplit: number
@@ -20,6 +24,11 @@ export interface TrainingDataset {
   createdAt: string
   updatedAt: string
   linkedModels: string[]
+  linkedRuns: string[]
+  tokenCount: number
+  imageCount: number
+  qualityScore: number
+  annotationSchema: string[]
   format: DatasetFormat
   promptTemplate: string
   schemaFields: string[]
@@ -42,16 +51,16 @@ export const DATASET_FORMAT_COLORS: Record<DatasetFormat, string> = {
 }
 
 export const SCHEMA_FIELD_OPTIONS = [
-  '设备编号',
-  '设备名称',
-  '运行状态',
-  '故障类型',
-  '温度',
-  '振动值',
-  '压力',
-  '转速',
-  '安装日期',
-  '维护周期',
-  '所属车间',
-  '负责人',
+  'system',
+  'user',
+  'assistant',
+  'image',
+  'question',
+  'answer',
+  'chosen',
+  'rejected',
+  'ocr_text',
+  'grounding',
+  'bbox',
+  'metadata',
 ]

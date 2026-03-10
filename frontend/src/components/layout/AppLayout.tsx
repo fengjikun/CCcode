@@ -28,6 +28,7 @@ import {
   RightOutlined,
 } from '@ant-design/icons'
 import { clearAuthSession, getAuthUser } from '../../auth/session'
+import { MODEL_CENTER_PAGE_LABELS } from '../../types/modelCenter'
 
 const { Sider, Content, Header } = Layout
 
@@ -73,10 +74,10 @@ const menuItems: MenuItem[] = [
     icon: <ExperimentOutlined />,
     label: '模型中心',
     children: [
-      { key: '/model-lab/gateway', icon: <ApiOutlined />, label: '模型网关' },
-      { key: '/model-lab/training', icon: <ExperimentOutlined />, label: '模型训练' },
-      { key: '/model-lab/evaluation', icon: <LineChartOutlined />, label: '模型评估' },
-      { key: '/model-lab/datasets', icon: <FolderOpenOutlined />, label: '训练数据集' },
+      { key: '/model-lab/gateway', icon: <ApiOutlined />, label: MODEL_CENTER_PAGE_LABELS.gateway },
+      { key: '/model-lab/training', icon: <ExperimentOutlined />, label: MODEL_CENTER_PAGE_LABELS.training },
+      { key: '/model-lab/evaluation', icon: <LineChartOutlined />, label: MODEL_CENTER_PAGE_LABELS.evaluation },
+      { key: '/model-lab/datasets', icon: <FolderOpenOutlined />, label: MODEL_CENTER_PAGE_LABELS.datasets },
     ],
   },
   {
@@ -103,10 +104,10 @@ const PAGE_TITLES: Record<string, [string, string]> = {
   '/ontology/projects': ['Deepology', '本体管理'],
   '/ontology/graph': ['Deepology', '图谱检索'],
   '/transform': ['', '数据转换'],
-  '/model-lab/gateway': ['大模型Lab', '模型网关'],
-  '/model-lab/training': ['大模型Lab', '模型训练'],
-  '/model-lab/evaluation': ['大模型Lab', '模型评估'],
-  '/model-lab/datasets': ['大模型Lab', '训练数据集'],
+  '/model-lab/gateway': ['大模型Lab', MODEL_CENTER_PAGE_LABELS.gateway],
+  '/model-lab/training': ['大模型Lab', MODEL_CENTER_PAGE_LABELS.training],
+  '/model-lab/evaluation': ['大模型Lab', MODEL_CENTER_PAGE_LABELS.evaluation],
+  '/model-lab/datasets': ['大模型Lab', MODEL_CENTER_PAGE_LABELS.datasets],
   '/datasource': ['', '数据源管理'],
 }
 

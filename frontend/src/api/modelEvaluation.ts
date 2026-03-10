@@ -1,70 +1,233 @@
 import type { EvalTask, EvalSample, EvalComparison, EvalTaskType } from '../types/modelEvaluation'
 import { delay, rand } from './mockConfig'
 
-const MOCK_TASKS: EvalTask[] = [
-  {
-    key: '1', name: 'eval-purchase-order-v3', modelName: 'purchase-order-classifier', modelVersion: 'v3.2',
-    datasetName: '采购订单测试集-2025Q1', taskType: 'classification', status: 'Completed', progress: 100,
-    accuracy: 95.3, precision: 94.8, recall: 95.7, f1: 95.2,
-    totalSamples: 2000, evalSamples: 2000, duration: '12m 34s', createdBy: '李工', createdAt: '2025-03-08',
-  },
-  {
-    key: '2', name: 'eval-equipment-fault-v2', modelName: 'equipment-fault-predictor', modelVersion: 'v2.1',
-    datasetName: '设备故障分类测试集', taskType: 'classification', status: 'Completed', progress: 100,
-    accuracy: 92.7, precision: 91.5, recall: 93.2, f1: 92.3,
-    totalSamples: 1500, evalSamples: 1500, duration: '8m 45s', createdBy: '张工', createdAt: '2025-03-08',
-  },
-  {
-    key: '3', name: 'eval-sentiment-v1', modelName: 'sentiment-analyzer', modelVersion: 'v1.4',
-    datasetName: '客户评论情感标注集', taskType: 'classification', status: 'Running', progress: 64,
-    accuracy: undefined, precision: undefined, recall: undefined, f1: undefined,
-    totalSamples: 3000, evalSamples: 1920, duration: '6m 12s', createdBy: '赵工', createdAt: '2025-03-09',
-  },
-  {
-    key: '4', name: 'eval-demand-forecast-v4', modelName: 'demand-forecaster', modelVersion: 'v4.0',
-    datasetName: '库存需求回归测试集', taskType: 'generation', status: 'Completed', progress: 100,
-    accuracy: 88.4, precision: 87.9, recall: 88.8, f1: 88.3, bleu: 72.1, rouge: 78.5,
-    totalSamples: 1200, evalSamples: 1200, duration: '5m 20s', createdBy: '王工', createdAt: '2025-03-07',
-  },
-  {
-    key: '5', name: 'eval-churn-v2', modelName: 'churn-predictor', modelVersion: 'v2.0',
-    datasetName: '客户流失预测测试集', taskType: 'classification', status: 'Failed', progress: 37,
-    accuracy: undefined, precision: undefined, recall: undefined, f1: undefined,
-    totalSamples: 1800, evalSamples: 666, duration: '3m 10s', createdBy: '李工', createdAt: '2025-03-09',
-  },
-  {
-    key: '6', name: 'eval-supplier-risk-v1', modelName: 'supplier-risk-scorer', modelVersion: 'v1.2',
-    datasetName: '供应商风险评估测试集', taskType: 'qa', status: 'Pending', progress: 0,
-    totalSamples: 800, evalSamples: 0, duration: '—', createdBy: '王工', createdAt: '2025-03-09',
-  },
-]
-
-const MOCK_SAMPLES: EvalSample[] = [
-  { key: 's1', input: '设备编号: EQ-3021, 振动频率: 45Hz, 温度: 82°C, 运行时长: 12400h', expectedOutput: '轴承磨损', actualOutput: '轴承磨损', isCorrect: true, confidence: 0.96 },
-  { key: 's2', input: '设备编号: EQ-1055, 振动频率: 12Hz, 温度: 35°C, 运行时长: 800h', expectedOutput: '正常', actualOutput: '正常', isCorrect: true, confidence: 0.99 },
-  { key: 's3', input: '设备编号: EQ-2078, 振动频率: 68Hz, 温度: 105°C, 运行时长: 18200h', expectedOutput: '电机过热', actualOutput: '电机过热', isCorrect: true, confidence: 0.93 },
-  { key: 's4', input: '设备编号: EQ-4012, 振动频率: 30Hz, 温度: 72°C, 运行时长: 9600h', expectedOutput: '润滑不足', actualOutput: '轴承磨损', isCorrect: false, confidence: 0.61 },
-  { key: 's5', input: '设备编号: EQ-1190, 振动频率: 55Hz, 温度: 95°C, 运行时长: 15000h', expectedOutput: '齿轮故障', actualOutput: '齿轮故障', isCorrect: true, confidence: 0.88 },
-  { key: 's6', input: '设备编号: EQ-3340, 振动频率: 8Hz, 温度: 28°C, 运行时长: 200h', expectedOutput: '正常', actualOutput: '正常', isCorrect: true, confidence: 0.98 },
-  { key: 's7', input: '设备编号: EQ-2291, 振动频率: 42Hz, 温度: 88°C, 运行时长: 13500h', expectedOutput: '电机过热', actualOutput: '轴承磨损', isCorrect: false, confidence: 0.52 },
-  { key: 's8', input: '设备编号: EQ-5010, 振动频率: 60Hz, 温度: 110°C, 运行时长: 20000h', expectedOutput: '电机过热', actualOutput: '电机过热', isCorrect: true, confidence: 0.95 },
-  { key: 's9', input: '设备编号: EQ-1423, 振动频率: 25Hz, 温度: 65°C, 运行时长: 7200h', expectedOutput: '正常', actualOutput: '润滑不足', isCorrect: false, confidence: 0.48 },
-  { key: 's10', input: '设备编号: EQ-3678, 振动频率: 50Hz, 温度: 92°C, 运行时长: 16800h', expectedOutput: '齿轮故障', actualOutput: '齿轮故障', isCorrect: true, confidence: 0.91 },
-]
-
-const MOCK_COMPARISONS: Record<string, EvalComparison[]> = {
-  'equipment-fault-predictor': [
-    { modelName: 'equipment-fault-predictor', version: 'v1.0', accuracy: 85.2, f1: 84.6, precision: 83.9, recall: 85.3, latency: '45ms', params: '12M' },
-    { modelName: 'equipment-fault-predictor', version: 'v1.5', accuracy: 89.1, f1: 88.7, precision: 88.2, recall: 89.3, latency: '42ms', params: '15M' },
-    { modelName: 'equipment-fault-predictor', version: 'v2.0', accuracy: 91.4, f1: 91.0, precision: 90.5, recall: 91.8, latency: '38ms', params: '18M' },
-    { modelName: 'equipment-fault-predictor', version: 'v2.1', accuracy: 92.7, f1: 92.3, precision: 91.5, recall: 93.2, latency: '36ms', params: '18M' },
-  ],
-  'purchase-order-classifier': [
-    { modelName: 'purchase-order-classifier', version: 'v2.0', accuracy: 90.1, f1: 89.8, precision: 89.5, recall: 90.2, latency: '28ms', params: '8M' },
-    { modelName: 'purchase-order-classifier', version: 'v3.0', accuracy: 93.6, f1: 93.2, precision: 92.8, recall: 93.7, latency: '25ms', params: '10M' },
-    { modelName: 'purchase-order-classifier', version: 'v3.2', accuracy: 95.3, f1: 95.2, precision: 94.8, recall: 95.7, latency: '24ms', params: '10M' },
-  ],
+export function buildDefaultEvalTasks(): EvalTask[] {
+  return [
+    {
+      key: 'eval-1',
+      name: 'eval-factory-copilot-instruction-v2',
+      modelName: 'deepseek-r1-factory-sft',
+      modelVersion: 'v2026.03.10',
+      modelFamily: 'LLM',
+      modality: 'text',
+      datasetType: 'conversation',
+      capability: 'reasoning',
+      datasetName: 'factory_copilot_dialog_sft_v2',
+      taskType: 'instruction-following',
+      status: 'Completed',
+      progress: 100,
+      accuracy: 91.8,
+      precision: 90.9,
+      recall: 92.1,
+      f1: 91.5,
+      passRate: 91.8,
+      winRate: 64.3,
+      hallucinationRate: 3.9,
+      groundedScore: 88.6,
+      totalSamples: 1200,
+      evalSamples: 1200,
+      duration: '14m 21s',
+      createdBy: '模型平台团队',
+      createdAt: '2026-03-10',
+    },
+    {
+      key: 'eval-2',
+      name: 'eval-inspection-grounded-vqa-v3',
+      modelName: 'qwen2.5-vl-inspection-assistant',
+      modelVersion: 'v2026.03.09',
+      modelFamily: 'VL',
+      modality: 'image-text',
+      datasetType: 'vqa',
+      capability: 'vision-language-understanding',
+      datasetName: 'inspection_vqa_v3',
+      taskType: 'grounded-vqa',
+      status: 'Completed',
+      progress: 100,
+      accuracy: 88.4,
+      precision: 87.6,
+      recall: 88.9,
+      f1: 88.1,
+      passRate: 88.4,
+      groundedScore: 90.2,
+      ocrScore: 84.2,
+      totalSamples: 2400,
+      evalSamples: 2400,
+      duration: '18m 02s',
+      createdBy: '模型平台团队',
+      createdAt: '2026-03-10',
+    },
+    {
+      key: 'eval-3',
+      name: 'eval-doc-parser-understanding-v1',
+      modelName: 'qwen-doc-parser-lora',
+      modelVersion: 'v2026.03.08',
+      modelFamily: 'VL',
+      modality: 'image-text',
+      datasetType: 'image-caption',
+      capability: 'document-parsing',
+      datasetName: 'doc_parse_caption_v2',
+      taskType: 'document-understanding',
+      status: 'Running',
+      progress: 57,
+      accuracy: 86.7,
+      precision: 85.5,
+      recall: 87.1,
+      f1: 86.2,
+      groundedScore: 87.3,
+      docParseScore: 89.7,
+      ocrScore: 91.4,
+      totalSamples: 1600,
+      evalSamples: 912,
+      duration: '9m 17s',
+      createdBy: '模型平台团队',
+      createdAt: '2026-03-10',
+    },
+    {
+      key: 'eval-4',
+      name: 'eval-factory-copilot-hallucination-v1',
+      modelName: 'factory-copilot-dpo-alignment',
+      modelVersion: 'v2026.03.07',
+      modelFamily: 'LLM',
+      modality: 'text',
+      datasetType: 'preference',
+      capability: 'chat',
+      datasetName: 'factory_safety_preference_v1',
+      taskType: 'hallucination',
+      status: 'Completed',
+      progress: 100,
+      accuracy: 94.1,
+      precision: 93.4,
+      recall: 94.0,
+      f1: 93.7,
+      passRate: 94.1,
+      winRate: 66.2,
+      hallucinationRate: 2.8,
+      totalSamples: 900,
+      evalSamples: 900,
+      duration: '7m 44s',
+      createdBy: '模型平台团队',
+      createdAt: '2026-03-09',
+    },
+  ]
 }
+
+export function buildDefaultEvalSamples(): EvalSample[] {
+  return [
+    {
+      key: 'sample-1',
+      modelFamily: 'LLM',
+      modality: 'text',
+      prompt: '给出处理空压机高温告警的第一步操作。',
+      response: '先执行停机前安全确认，并检查冷却回路与风扇状态。',
+      judgeVerdict: '通过',
+      humanLabel: 'grounded',
+      input: '给出处理空压机高温告警的第一步操作。',
+      expectedOutput: '先进行安全确认和冷却回路检查。',
+      actualOutput: '先执行停机前安全确认，并检查冷却回路与风扇状态。',
+      isCorrect: true,
+      confidence: 0.95,
+    },
+    {
+      key: 'sample-2',
+      modelFamily: 'VL',
+      modality: 'image-text',
+      prompt: '根据巡检图，说明异常位置。',
+      response: '右上区域控制柜出现 92C 告警，散热风扇状态异常。',
+      judgeVerdict: '通过',
+      humanLabel: 'grounded-vqa',
+      input: 'inspection-case-001.png + 图中异常位置是什么？',
+      expectedOutput: '温度告警出现在右上区域，且风扇停止。',
+      actualOutput: '右上区域控制柜出现 92C 告警，散热风扇状态异常。',
+      isCorrect: true,
+      confidence: 0.91,
+    },
+    {
+      key: 'sample-3',
+      modelFamily: 'VL',
+      modality: 'image-text',
+      prompt: '阅读检修工单图片并抽取故障现象。',
+      response: '伺服驱动过流。',
+      judgeVerdict: '待人工复核',
+      humanLabel: 'doc-parse',
+      input: 'repair-ticket-20260308.jpg + 提取故障现象',
+      expectedOutput: '伺服驱动过流',
+      actualOutput: '伺服驱动过流',
+      isCorrect: true,
+      confidence: 0.87,
+    },
+  ]
+}
+
+export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> {
+  return {
+    'deepseek-r1-factory-sft': [
+      {
+        modelName: 'deepseek-r1-factory-sft',
+        version: 'v2026.02.28',
+        modelFamily: 'LLM',
+        modality: 'text',
+        accuracy: 88.6,
+        f1: 88.0,
+        precision: 87.4,
+        recall: 88.9,
+        passRate: 88.6,
+        winRate: 58.1,
+        hallucinationRate: 5.6,
+        latency: '1.8s',
+        params: '32B',
+      },
+      {
+        modelName: 'deepseek-r1-factory-sft',
+        version: 'v2026.03.10',
+        modelFamily: 'LLM',
+        modality: 'text',
+        accuracy: 91.8,
+        f1: 91.5,
+        precision: 90.9,
+        recall: 92.1,
+        passRate: 91.8,
+        winRate: 64.3,
+        hallucinationRate: 3.9,
+        latency: '1.6s',
+        params: '32B',
+      },
+    ],
+    'qwen2.5-vl-inspection-assistant': [
+      {
+        modelName: 'qwen2.5-vl-inspection-assistant',
+        version: 'v2026.03.03',
+        modelFamily: 'VL',
+        modality: 'image-text',
+        accuracy: 84.7,
+        f1: 84.1,
+        precision: 83.5,
+        recall: 84.8,
+        passRate: 84.7,
+        groundedScore: 86.5,
+        latency: '2.4s',
+        params: '32B',
+      },
+      {
+        modelName: 'qwen2.5-vl-inspection-assistant',
+        version: 'v2026.03.09',
+        modelFamily: 'VL',
+        modality: 'image-text',
+        accuracy: 88.4,
+        f1: 88.1,
+        precision: 87.6,
+        recall: 88.9,
+        passRate: 88.4,
+        groundedScore: 90.2,
+        latency: '2.1s',
+        params: '32B',
+      },
+    ],
+  }
+}
+
+const MOCK_TASKS: EvalTask[] = buildDefaultEvalTasks()
+const MOCK_SAMPLES: EvalSample[] = buildDefaultEvalSamples()
+const MOCK_COMPARISONS: Record<string, EvalComparison[]> = buildDefaultEvalComparisons()
 
 export async function listEvalTasks(): Promise<EvalTask[]> {
   await delay(rand(300, 600))
@@ -73,7 +236,7 @@ export async function listEvalTasks(): Promise<EvalTask[]> {
 
 export async function getEvalDetail(key: string): Promise<EvalTask | undefined> {
   await delay(rand(200, 400))
-  return MOCK_TASKS.find(t => t.key === key)
+  return MOCK_TASKS.find(task => task.key === key)
 }
 
 export async function getEvalSamples(_key: string): Promise<EvalSample[]> {
@@ -83,7 +246,7 @@ export async function getEvalSamples(_key: string): Promise<EvalSample[]> {
 
 export async function getEvalComparisons(modelName: string): Promise<EvalComparison[]> {
   await delay(rand(200, 400))
-  return MOCK_COMPARISONS[modelName] ?? MOCK_COMPARISONS['equipment-fault-predictor']!
+  return MOCK_COMPARISONS[modelName] ?? MOCK_COMPARISONS['deepseek-r1-factory-sft']!
 }
 
 export async function createEvalTask(input: {
@@ -98,6 +261,10 @@ export async function createEvalTask(input: {
   return {
     key: `eval-${Date.now()}`,
     ...input,
+    modelFamily: input.modelName.includes('vl') || input.modelName.includes('doc') ? 'VL' : 'LLM',
+    modality: input.modelName.includes('vl') || input.modelName.includes('doc') ? 'image-text' : 'text',
+    datasetType: input.taskType === 'grounded-vqa' || input.taskType === 'document-understanding' ? 'vqa' : 'conversation',
+    capability: input.taskType === 'grounded-vqa' ? 'vision-language-understanding' : 'chat',
     status: 'Pending',
     progress: 0,
     totalSamples: input.evalSamples,
@@ -112,38 +279,12 @@ export interface ConfusionMatrixData {
   data: number[][]
 }
 
-export async function getConfusionMatrix(key: string): Promise<ConfusionMatrixData> {
+export async function getConfusionMatrix(_key: string): Promise<ConfusionMatrixData> {
   await delay(rand(300, 500))
-  const matrices: Record<string, ConfusionMatrixData> = {
-    '1': {
-      labels: ['常规采购', '紧急采购', '框架协议', '竞价采购'],
-      data: [
-        [312, 5, 2, 1],
-        [3, 289, 4, 2],
-        [1, 3, 305, 0],
-        [2, 1, 0, 278],
-      ],
-    },
-    '2': {
-      labels: ['正常', '轴承磨损', '电机过热', '齿轮故障', '润滑不足'],
-      data: [
-        [285, 3, 1, 0, 2],
-        [5, 268, 2, 3, 8],
-        [1, 4, 290, 1, 0],
-        [0, 2, 1, 275, 1],
-        [2, 12, 0, 1, 234],
-      ],
-    },
-    '4': {
-      labels: ['需求增长', '需求平稳', '需求下降'],
-      data: [
-        [198, 8, 3],
-        [5, 312, 7],
-        [2, 10, 185],
-      ],
-    },
+  return {
+    labels: [],
+    data: [],
   }
-  return matrices[key] ?? matrices['2']!
 }
 
 export interface EvalStats {
@@ -156,14 +297,14 @@ export interface EvalStats {
 
 export async function getEvalStats(): Promise<EvalStats> {
   await delay(rand(200, 400))
-  const completed = MOCK_TASKS.filter(t => t.status === 'Completed')
-  const accuracies = completed.map(t => t.accuracy).filter((v): v is number => v !== undefined)
-  const f1s = completed.map(t => t.f1).filter((v): v is number => v !== undefined)
+  const completed = MOCK_TASKS.filter(task => task.status === 'Completed')
+  const accuracies = completed.map(task => task.passRate ?? task.accuracy).filter((value): value is number => value !== undefined)
+  const f1s = completed.map(task => task.groundedScore ?? task.f1).filter((value): value is number => value !== undefined)
   return {
     totalTasks: MOCK_TASKS.length,
     completed: completed.length,
-    running: MOCK_TASKS.filter(t => t.status === 'Running').length,
-    avgAccuracy: accuracies.length > 0 ? (accuracies.reduce((a, b) => a + b, 0) / accuracies.length).toFixed(1) + '%' : '—',
-    avgF1: f1s.length > 0 ? (f1s.reduce((a, b) => a + b, 0) / f1s.length).toFixed(1) + '%' : '—',
+    running: MOCK_TASKS.filter(task => task.status === 'Running').length,
+    avgAccuracy: accuracies.length > 0 ? `${(accuracies.reduce((sum, value) => sum + value, 0) / accuracies.length).toFixed(1)}%` : '—',
+    avgF1: f1s.length > 0 ? `${(f1s.reduce((sum, value) => sum + value, 0) / f1s.length).toFixed(1)}%` : '—',
   }
 }

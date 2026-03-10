@@ -12,7 +12,6 @@ import {
   Modal,
   Popconfirm,
   Progress,
-  Radio,
   Row,
   Select,
   Space,
@@ -26,9 +25,6 @@ import {
 } from 'antd'
 import {
   CheckCircleOutlined,
-  CloseCircleOutlined,
-  ClockCircleOutlined,
-  DashboardOutlined,
   DeleteOutlined,
   ExperimentOutlined,
   EyeOutlined,
@@ -36,35 +32,39 @@ import {
   LineChartOutlined,
   PlayCircleOutlined,
   PlusOutlined,
-  RocketOutlined,
   SafetyCertificateOutlined,
-  TableOutlined,
   TrophyOutlined,
 } from '@ant-design/icons'
 import {
-  listEvalTasks,
-  getEvalSamples,
-  getEvalComparisons,
-  getConfusionMatrix,
   createEvalTask,
+  getEvalComparisons,
+  getEvalSamples,
   getEvalStats,
+  listEvalTasks,
 } from '../../api/modelEvaluation'
-import type { ConfusionMatrixData, EvalStats } from '../../api/modelEvaluation'
 import { listTrainingProjects } from '../../api/modelTraining'
 import { listDatasets } from '../../api/trainingDataset'
+import ModalHeader from '../../components/shared/ModalHeader'
+import {
+  DATASET_TYPE_LABELS,
+  MODEL_CENTER_PAGE_LABELS,
+  MODEL_FAMILY_LABELS,
+  MODEL_MODALITY_LABELS,
+} from '../../types/modelCenter'
+import type { EvalComparison, EvalSample, EvalStatus, EvalTask, EvalTaskType } from '../../types/modelEvaluation'
+import { EVAL_STATUS_COLORS, EVAL_TASK_TYPE_LABELS } from '../../types/modelEvaluation'
 import type { TrainingProject } from '../../types/modelTraining'
 import type { TrainingDataset } from '../../types/trainingDataset'
-import type { EvalTask, EvalStatus, EvalTaskType, EvalSample, EvalComparison } from '../../types/modelEvaluation'
-import { EVAL_STATUS_COLORS, EVAL_TASK_TYPE_LABELS } from '../../types/modelEvaluation'
-import ModalHeader from '../../components/shared/ModalHeader'
+import type { EvalStats } from '../../api/modelEvaluation'
+import { getPrimaryEvalMetric, summarizeEvalSample } from './modelEvaluation.helpers'
 
 const { Title, Text } = Typography
 
 const STATUS_ICONS: Record<EvalStatus, React.ReactNode> = {
   Running: <PlayCircleOutlined />,
   Completed: <CheckCircleOutlined />,
-  Failed: <CloseCircleOutlined />,
-  Pending: <ClockCircleOutlined />,
+  Failed: <DeleteOutlined />,
+  Pending: <ExperimentOutlined />,
 }
 
 const TASK_TYPE_COLORS: Record<EvalTaskType, string> = {
@@ -72,6 +72,10 @@ const TASK_TYPE_COLORS: Record<EvalTaskType, string> = {
   generation: 'purple',
   extraction: 'cyan',
   qa: 'orange',
+  'instruction-following': 'geekblue',
+  hallucination: 'volcano',
+  'grounded-vqa': 'green',
+  'document-understanding': 'gold',
 }
 
 export default function ModelEvaluationPage() {
@@ -85,22 +89,20 @@ export default function ModelEvaluationPage() {
   const [tasks, setTasks] = useState<EvalTask[]>([])
   const [samples, setSamples] = useState<EvalSample[]>([])
   const [comparisons, setComparisons] = useState<EvalComparison[]>([])
-  const [confusionMatrix, setConfusionMatrix] = useState<ConfusionMatrixData>({ labels: [], data: [] })
   const [trainingProjects, setTrainingProjects] = useState<TrainingProject[]>([])
   const [availableDatasets, setAvailableDatasets] = useState<TrainingDataset[]>([])
 
   useEffect(() => {
-    getEvalStats().then(d => setStats(d))
-    listEvalTasks().then(d => setTasks(d))
-    listTrainingProjects().then(d => setTrainingProjects(d))
-    listDatasets().then(d => setAvailableDatasets(d.filter(ds => ds.status === 'Ready')))
+    getEvalStats().then(setStats)
+    listEvalTasks().then(setTasks)
+    listTrainingProjects().then(setTrainingProjects)
+    listDatasets().then(list => setAvailableDatasets(list.filter(dataset => dataset.status === 'Ready')))
   }, [])
 
   const openDetail = (task: EvalTask) => {
     setSelectedTask(task)
-    getEvalSamples(task.key).then(d => setSamples(d))
-    getEvalComparisons(task.modelName).then(d => setComparisons(d))
-    getConfusionMatrix(task.key).then(d => setConfusionMatrix(d))
+    getEvalSamples(task.key).then(setSamples)
+    getEvalComparisons(task.modelName).then(setComparisons)
     setDrawerOpen(true)
   }
 
@@ -108,87 +110,103 @@ export default function ModelEvaluationPage() {
     try {
       const values = await form.validateFields()
       await createEvalTask(values)
-      message.success('评估任务创建成功')
+      message.success('评测任务创建成功')
       setCreateOpen(false)
       form.resetFields()
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'errorFields' in err) return
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'errorFields' in error) return
     }
   }
 
   const handleDelete = (key: string) => {
-    setTasks(prev => prev.filter(t => t.key !== key))
-    message.success('评估任务已删除')
+    setTasks(current => current.filter(task => task.key !== key))
+    message.success('评测任务已删除')
   }
 
-  /* ---------- 统计卡片 ---------- */
   const statItems = [
-    { title: '评估任务数', value: stats.totalTasks, icon: <ExperimentOutlined />, color: '#4f46e5', bg: '#eef2ff' },
+    { title: '评测任务', value: stats.totalTasks, icon: <ExperimentOutlined />, color: '#4f46e5', bg: '#eef2ff' },
     { title: '已完成', value: stats.completed, icon: <CheckCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
     { title: '运行中', value: stats.running, icon: <PlayCircleOutlined />, color: '#0891b2', bg: '#ecfeff' },
-    { title: '平均准确率', value: stats.avgAccuracy, icon: <DashboardOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
-    { title: '平均 F1', value: stats.avgF1, icon: <SafetyCertificateOutlined />, color: '#d97706', bg: '#fffbeb' },
+    { title: '平均通过率', value: stats.avgAccuracy, icon: <SafetyCertificateOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
+    { title: '平均 Grounded', value: stats.avgF1, icon: <TrophyOutlined />, color: '#d97706', bg: '#fffbeb' },
   ]
 
-  /* ---------- 评估任务表列 ---------- */
   const taskColumns = [
     {
-      title: '任务名称', dataIndex: 'name', key: 'name',
-      render: (v: string) => <Text strong>{v}</Text>,
-    },
-    {
-      title: '模型', key: 'model', width: 200,
-      render: (_: unknown, r: EvalTask) => (
-        <Space size={4}>
-          <Text>{r.modelName}</Text>
-          <Tag color="blue">{r.modelVersion}</Tag>
+      title: '任务',
+      key: 'name',
+      render: (_: unknown, task: EvalTask) => (
+        <Space direction="vertical" size={2}>
+          <Text strong>{task.name}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{task.createdAt}</Text>
         </Space>
       ),
     },
-    { title: '数据集', dataIndex: 'datasetName', key: 'datasetName', ellipsis: true },
     {
-      title: '任务类型', dataIndex: 'taskType', key: 'taskType', width: 80,
-      render: (v: EvalTaskType) => <Tag color={TASK_TYPE_COLORS[v]}>{EVAL_TASK_TYPE_LABELS[v]}</Tag>,
-    },
-    {
-      title: '状态', dataIndex: 'status', key: 'status', width: 110,
-      filters: (['Running', 'Completed', 'Failed', 'Pending'] as EvalStatus[]).map(s => ({ text: s, value: s })),
-      onFilter: (value: unknown, record: EvalTask) => record.status === value,
-      render: (v: EvalStatus) => <Tag icon={STATUS_ICONS[v]} color={EVAL_STATUS_COLORS[v]}>{v}</Tag>,
-    },
-    {
-      title: '进度', dataIndex: 'progress', key: 'progress', width: 120,
-      render: (v: number, r: EvalTask) => (
-        <Progress
-          percent={v}
-          size="small"
-          style={{ width: 90 }}
-          status={r.status === 'Failed' ? 'exception' : r.status === 'Running' ? 'active' : undefined}
-          showInfo={false}
-        />
+      title: '模型',
+      key: 'model',
+      render: (_: unknown, task: EvalTask) => (
+        <Space direction="vertical" size={2}>
+          <Space size={4} wrap>
+            <Tag color={task.modelFamily === 'VL' ? 'magenta' : 'blue'}>{MODEL_FAMILY_LABELS[task.modelFamily]}</Tag>
+            <Tag color={task.modality === 'image-text' ? 'gold' : 'cyan'}>{MODEL_MODALITY_LABELS[task.modality]}</Tag>
+          </Space>
+          <Text>{task.modelName}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{task.modelVersion}</Text>
+        </Space>
       ),
     },
     {
-      title: '准确率', dataIndex: 'accuracy', key: 'accuracy', width: 80,
-      render: (v: number | undefined) => v !== undefined
-        ? <Tag color={v >= 90 ? 'green' : v >= 80 ? 'blue' : 'default'}>{v}%</Tag>
-        : <Text type="secondary">—</Text>,
+      title: '任务类型',
+      key: 'taskType',
+      render: (_: unknown, task: EvalTask) => (
+        <Space direction="vertical" size={2}>
+          <Tag color={TASK_TYPE_COLORS[task.taskType]}>{EVAL_TASK_TYPE_LABELS[task.taskType]}</Tag>
+          <Text type="secondary" style={{ fontSize: 12 }}>{DATASET_TYPE_LABELS[task.datasetType]}</Text>
+        </Space>
+      ),
     },
     {
-      title: 'F1 值', dataIndex: 'f1', key: 'f1', width: 80,
-      render: (v: number | undefined) => v !== undefined
-        ? <Tag color={v >= 90 ? 'green' : 'blue'}>{v}%</Tag>
-        : <Text type="secondary">—</Text>,
+      title: '主指标',
+      key: 'metric',
+      render: (_: unknown, task: EvalTask) => {
+        const metric = getPrimaryEvalMetric(task)
+        return (
+          <Space direction="vertical" size={2}>
+            <Tag color="green">{metric.label}: {metric.value}</Tag>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {task.winRate !== undefined ? `Win ${task.winRate.toFixed(1)}%` : 'Judge based'}
+            </Text>
+          </Space>
+        )
+      },
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 110,
+      filters: (['Running', 'Completed', 'Failed', 'Pending'] as EvalStatus[]).map(status => ({ text: status, value: status })),
+      onFilter: (value: unknown, task: EvalTask) => task.status === value,
+      render: (value: EvalStatus) => <Tag icon={STATUS_ICONS[value]} color={EVAL_STATUS_COLORS[value]}>{value}</Tag>,
+    },
+    {
+      title: '进度',
+      key: 'progress',
+      width: 120,
+      render: (_: unknown, task: EvalTask) => <Progress percent={task.progress} size="small" style={{ width: 90 }} showInfo={false} />,
     },
     { title: '耗时', dataIndex: 'duration', key: 'duration', width: 90 },
     {
-      title: '操作', key: 'action', width: 80,
-      render: (_: unknown, r: EvalTask) => (
+      title: '操作',
+      key: 'action',
+      width: 90,
+      render: (_: unknown, task: EvalTask) => (
         <Space size={4}>
           <Tooltip title="查看详情">
-            <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(r)} />
+            <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(task)} />
           </Tooltip>
-          <Popconfirm title="确定删除此评估任务？" onConfirm={() => handleDelete(r.key)} okText="删除" cancelText="取消">
+          <Popconfirm title="确定删除此评测任务？" onConfirm={() => handleDelete(task.key)}>
             <Button type="link" size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
@@ -196,327 +214,103 @@ export default function ModelEvaluationPage() {
     },
   ]
 
-  /* ---------- 详情 Drawer 内容 ---------- */
   const renderMetricsTab = () => {
     if (!selectedTask) return null
     const metricCards = [
-      { title: 'Accuracy', value: selectedTask.accuracy, suffix: '%' },
-      { title: 'Precision', value: selectedTask.precision, suffix: '%' },
-      { title: 'Recall', value: selectedTask.recall, suffix: '%' },
-      { title: 'F1 Score', value: selectedTask.f1, suffix: '%' },
-      { title: '样本总数', value: selectedTask.totalSamples, suffix: '' },
-      { title: '评估耗时', value: selectedTask.duration, suffix: '' },
+      { title: 'Pass Rate', value: selectedTask.passRate },
+      { title: 'Win Rate', value: selectedTask.winRate },
+      { title: 'Hallucination', value: selectedTask.hallucinationRate },
+      { title: 'Grounded', value: selectedTask.groundedScore },
+      { title: 'OCR', value: selectedTask.ocrScore },
+      { title: 'Doc Parse', value: selectedTask.docParseScore },
     ]
-    const maxVal = confusionMatrix.data.length > 0 ? Math.max(...confusionMatrix.data.flat()) : 1
     return (
-      <div>
-        <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
-          {metricCards.map(m => (
-            <Col span={4} key={m.title}>
-              <Card size="small" className="stat-card card-hover stat-primary">
-                <Statistic
-                  title={m.title}
-                  value={m.value ?? '—'}
-                  suffix={m.value !== undefined && m.suffix ? m.suffix : undefined}
-                />
+      <Space direction="vertical" size={16} style={{ width: '100%' }}>
+        <Row gutter={[12, 12]}>
+          {metricCards.map(card => (
+            <Col span={8} key={card.title}>
+              <Card size="small" className="stat-card card-hover">
+                <Statistic title={card.title} value={card.value ?? '—'} suffix={card.value !== undefined ? '%' : undefined} />
               </Card>
             </Col>
           ))}
         </Row>
-        <Card size="small" title="混淆矩阵" style={{ marginBottom: 16 }}>
-          {confusionMatrix.data.length === 0 ? (
-            <Text type="secondary">暂无混淆矩阵数据</Text>
-          ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 13, textAlign: 'center' }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: '8px 12px', background: '#fafafa', border: '1px solid #f0f0f0' }}>
-                    <Text type="secondary" style={{ fontSize: 11 }}>预测 \ 实际</Text>
-                  </th>
-                  {confusionMatrix.labels.map(l => (
-                    <th key={l} style={{ padding: '8px 12px', background: '#fafafa', border: '1px solid #f0f0f0', fontWeight: 600 }}>{l}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {confusionMatrix.data.map((row, i) => (
-                  <tr key={confusionMatrix.labels[i]}>
-                    <td style={{ padding: '8px 12px', background: '#fafafa', border: '1px solid #f0f0f0', fontWeight: 600 }}>
-                      {confusionMatrix.labels[i]}
-                    </td>
-                    {row.map((val, j) => {
-                      const isDiag = i === j
-                      const intensity = Math.round((val / maxVal) * 100)
-                      const bg = isDiag
-                        ? `rgba(82, 196, 26, ${0.1 + (intensity / 100) * 0.4})`
-                        : val > 5
-                          ? `rgba(255, 77, 79, ${0.08 + (val / maxVal) * 0.3})`
-                          : val > 0
-                            ? 'rgba(255, 77, 79, 0.04)'
-                            : '#fff'
-                      return (
-                        <td key={j} style={{
-                          padding: '8px 12px',
-                          border: '1px solid #f0f0f0',
-                          background: bg,
-                          fontWeight: isDiag ? 700 : 400,
-                          color: isDiag ? '#389e0d' : val > 5 ? '#cf1322' : undefined,
-                        }}>
-                          {val}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          )}
-        </Card>
-      </div>
+        <Descriptions bordered size="small" column={2}>
+          <Descriptions.Item label="模型家族">{MODEL_FAMILY_LABELS[selectedTask.modelFamily]}</Descriptions.Item>
+          <Descriptions.Item label="模态">{MODEL_MODALITY_LABELS[selectedTask.modality]}</Descriptions.Item>
+          <Descriptions.Item label="任务类型">{EVAL_TASK_TYPE_LABELS[selectedTask.taskType]}</Descriptions.Item>
+          <Descriptions.Item label="语料类型">{DATASET_TYPE_LABELS[selectedTask.datasetType]}</Descriptions.Item>
+          <Descriptions.Item label="样本数">{selectedTask.totalSamples}</Descriptions.Item>
+          <Descriptions.Item label="已评样本">{selectedTask.evalSamples}</Descriptions.Item>
+        </Descriptions>
+      </Space>
     )
   }
-
-  const sampleColumns = [
-    {
-      title: '输入', dataIndex: 'input', key: 'input', ellipsis: true, width: 240,
-      render: (v: string) => <Text style={{ fontSize: 12 }}>{v}</Text>,
-    },
-    {
-      title: '预期输出', dataIndex: 'expectedOutput', key: 'expectedOutput', width: 100,
-      render: (v: string) => <Tag>{v}</Tag>,
-    },
-    {
-      title: '实际输出', dataIndex: 'actualOutput', key: 'actualOutput', width: 100,
-      render: (v: string, r: EvalSample) => <Tag color={r.isCorrect ? 'green' : 'red'}>{v}</Tag>,
-    },
-    {
-      title: '是否正确', dataIndex: 'isCorrect', key: 'isCorrect', width: 80,
-      render: (v: boolean) => v
-        ? <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 16 }} />
-        : <CloseCircleOutlined style={{ color: '#ff4d4f', fontSize: 16 }} />,
-    },
-    {
-      title: '置信度', dataIndex: 'confidence', key: 'confidence', width: 130,
-      render: (v: number) => (
-        <Progress
-          percent={Math.round(v * 100)}
-          size="small"
-          style={{ width: 100 }}
-          strokeColor={v >= 0.8 ? '#52c41a' : v >= 0.6 ? '#faad14' : '#ff4d4f'}
-        />
-      ),
-    },
-  ]
 
   const renderSamplesTab = () => (
-    <Table
-      dataSource={samples}
-      columns={sampleColumns}
-      rowKey="key"
-      pagination={false}
-      size="small"
-      rowClassName={(r: EvalSample) => r.isCorrect ? '' : 'row-error-light'}
-      expandable={{
-        expandedRowRender: (r: EvalSample) => (
-          <div style={{ padding: '8px 0' }}>
-            <Text strong>完整输入：</Text>
-            <Text style={{ display: 'block', marginTop: 4 }}>{r.input}</Text>
-            <div style={{ marginTop: 8 }}>
-              <Text strong>预期：</Text> <Tag>{r.expectedOutput}</Tag>
-              <Text strong style={{ marginLeft: 16 }}>实际：</Text> <Tag color={r.isCorrect ? 'green' : 'red'}>{r.actualOutput}</Tag>
-              <Text strong style={{ marginLeft: 16 }}>置信度：</Text> <Text>{(r.confidence * 100).toFixed(1)}%</Text>
-            </div>
-          </div>
-        ),
-      }}
-    />
-  )
-
-  const renderComparisonTab = () => {
-    const metrics: { key: keyof EvalComparison; label: string }[] = [
-      { key: 'accuracy', label: '准确率' },
-      { key: 'f1', label: 'F1' },
-      { key: 'precision', label: 'Precision' },
-      { key: 'recall', label: 'Recall' },
-    ]
-
-    const compColumns = [
-      { title: '版本', dataIndex: 'version', key: 'version', width: 80, render: (v: string) => <Tag color="blue">{v}</Tag> },
-      ...metrics.map(m => ({
-        title: m.label,
-        dataIndex: m.key,
-        key: m.key,
-        width: 90,
-        render: (v: number) => {
-          const best = Math.max(...comparisons.map(c => c[m.key] as number))
-          return <Text strong={v === best} style={{ color: v === best ? '#52c41a' : undefined }}>{v}%</Text>
-        },
-      })),
-      { title: '延迟', dataIndex: 'latency', key: 'latency', width: 80 },
-      { title: '参数量', dataIndex: 'params', key: 'params', width: 80 },
-    ]
-
-    const COLORS = ['#1677ff', '#52c41a', '#faad14', '#722ed1']
-
-    return (
-      <div>
-        <Table dataSource={comparisons} columns={compColumns} rowKey="version" pagination={false} size="small" style={{ marginBottom: 24 }} />
-        <Card size="small" title="指标对比可视化">
-          {metrics.map(m => (
-            <div key={m.key} style={{ marginBottom: 16 }}>
-              <Text strong style={{ display: 'block', marginBottom: 8 }}>{m.label}</Text>
-              {comparisons.map((c, idx) => {
-                const val = c[m.key] as number
-                return (
-                  <div key={c.version} style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
-                    <Text style={{ width: 40, fontSize: 12, textAlign: 'right', marginRight: 8 }}>{c.version}</Text>
-                    <div style={{ flex: 1, background: '#f5f5f5', borderRadius: 4, height: 20, position: 'relative' }}>
-                      <div style={{
-                        width: `${val}%`,
-                        height: '100%',
-                        background: COLORS[idx % COLORS.length],
-                        borderRadius: 4,
-                        transition: 'width 0.3s',
-                      }} />
-                    </div>
-                    <Text style={{ width: 50, fontSize: 12, textAlign: 'right', marginLeft: 8 }}>{val}%</Text>
-                  </div>
-                )
-              })}
-            </div>
-          ))}
-        </Card>
-      </div>
-    )
-  }
-
-  const renderReportTab = () => {
-    if (!selectedTask) return null
-    const passed = (selectedTask.accuracy ?? 0) > 85
-    return (
-      <div>
-        <Card
-          size="small"
-          style={{
-            marginBottom: 16,
-            background: passed ? '#f6ffed' : '#fff2f0',
-            borderColor: passed ? '#b7eb8f' : '#ffccc7',
-          }}
-          styles={{ body: { padding: '12px 16px' } }}
-        >
-          <Space>
-            {passed
-              ? <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 20 }} />
-              : <CloseCircleOutlined style={{ color: '#ff4d4f', fontSize: 20 }} />
-            }
+    <Space direction="vertical" size={12} style={{ width: '100%' }}>
+      {samples.map(sample => (
+        <Card key={sample.key} size="small" title={<Text strong>{summarizeEvalSample(sample)}</Text>}>
+          <Space direction="vertical" size={8} style={{ width: '100%' }}>
             <div>
-              <Text strong style={{ fontSize: 15 }}>
-                {passed ? '评估通过 — 模型质量达标' : '评估未通过 — 建议继续调优'}
-              </Text>
-              <br />
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {passed
-                  ? `模型 ${selectedTask.modelName} ${selectedTask.modelVersion} 在 ${selectedTask.datasetName} 上表现优异，准确率 ${selectedTask.accuracy}%，F1 ${selectedTask.f1}%。`
-                  : `模型 ${selectedTask.modelName} ${selectedTask.modelVersion} 评估未完成或指标未达标，请检查数据集与训练配置。`
-                }
-              </Text>
+              <Text type="secondary">Prompt / Input</Text>
+              <div>{sample.prompt ?? sample.input}</div>
             </div>
+            <div>
+              <Text type="secondary">Expected</Text>
+              <div>{sample.expectedOutput}</div>
+            </div>
+            <div>
+              <Text type="secondary">Response</Text>
+              <div>{sample.response ?? sample.actualOutput}</div>
+            </div>
+            <Space size={8} wrap>
+              <Tag color={sample.isCorrect ? 'green' : 'red'}>{sample.isCorrect ? 'Pass' : 'Fail'}</Tag>
+              <Tag>Confidence {Math.round(sample.confidence * 100)}%</Tag>
+            </Space>
           </Space>
         </Card>
+      ))}
+    </Space>
+  )
 
-        <Descriptions bordered size="small" column={2} style={{ marginBottom: 16 }}>
-          <Descriptions.Item label="任务名称">{selectedTask.name}</Descriptions.Item>
-          <Descriptions.Item label="模型">{selectedTask.modelName} <Tag color="blue">{selectedTask.modelVersion}</Tag></Descriptions.Item>
-          <Descriptions.Item label="数据集">{selectedTask.datasetName}</Descriptions.Item>
-          <Descriptions.Item label="任务类型"><Tag color={TASK_TYPE_COLORS[selectedTask.taskType]}>{EVAL_TASK_TYPE_LABELS[selectedTask.taskType]}</Tag></Descriptions.Item>
-          <Descriptions.Item label="评估样本数">{selectedTask.evalSamples} / {selectedTask.totalSamples}</Descriptions.Item>
-          <Descriptions.Item label="评估耗时">{selectedTask.duration}</Descriptions.Item>
-          <Descriptions.Item label="准确率">{selectedTask.accuracy !== undefined ? `${selectedTask.accuracy}%` : '—'}</Descriptions.Item>
-          <Descriptions.Item label="F1 Score">{selectedTask.f1 !== undefined ? `${selectedTask.f1}%` : '—'}</Descriptions.Item>
-          <Descriptions.Item label="Precision">{selectedTask.precision !== undefined ? `${selectedTask.precision}%` : '—'}</Descriptions.Item>
-          <Descriptions.Item label="Recall">{selectedTask.recall !== undefined ? `${selectedTask.recall}%` : '—'}</Descriptions.Item>
-          <Descriptions.Item label="创建人">{selectedTask.createdBy}</Descriptions.Item>
-          <Descriptions.Item label="创建时间">{selectedTask.createdAt}</Descriptions.Item>
-        </Descriptions>
+  const comparisonColumns = [
+    { title: '版本', dataIndex: 'version', key: 'version', width: 110 },
+    { title: 'Pass Rate', key: 'passRate', render: (_: unknown, row: EvalComparison) => row.passRate !== undefined ? `${row.passRate}%` : '—' },
+    { title: 'Win Rate', key: 'winRate', render: (_: unknown, row: EvalComparison) => row.winRate !== undefined ? `${row.winRate}%` : '—' },
+    { title: 'Grounded', key: 'groundedScore', render: (_: unknown, row: EvalComparison) => row.groundedScore !== undefined ? `${row.groundedScore}%` : '—' },
+    { title: 'Hallucination', key: 'hallucinationRate', render: (_: unknown, row: EvalComparison) => row.hallucinationRate !== undefined ? `${row.hallucinationRate}%` : '—' },
+    { title: '延迟', dataIndex: 'latency', key: 'latency' },
+    { title: '参数量', dataIndex: 'params', key: 'params' },
+  ]
 
-        <Card size="small" title="评估建议" style={{ marginBottom: 16 }}>
-          {passed ? (
-            <div>
-              <Text>
-                综合评估结果，模型 <Text strong>{selectedTask.modelName}</Text> <Tag color="blue">{selectedTask.modelVersion}</Tag> 在各项核心指标上均达到生产部署标准：
-              </Text>
-              <ul style={{ marginTop: 8, paddingLeft: 20 }}>
-                <li>准确率 {selectedTask.accuracy}% 超过阈值（85%），分类效果稳定</li>
-                <li>F1 Score {selectedTask.f1}% 表明精确率与召回率均衡</li>
-                <li>混淆矩阵显示主对角线集中度高，误分类率低</li>
-                <li>样本级置信度分布合理，低置信度样本可用于后续主动学习</li>
-              </ul>
-              <Text strong style={{ color: '#52c41a' }}>建议发布到 Staging 环境进行灰度验证，验证通过后可提升至 Production。</Text>
-            </div>
-          ) : (
-            <div>
-              <Text>
-                模型 <Text strong>{selectedTask.modelName}</Text> <Tag color="blue">{selectedTask.modelVersion}</Tag> 当前评估结果未达到生产部署标准：
-              </Text>
-              <ul style={{ marginTop: 8, paddingLeft: 20 }}>
-                <li>建议检查训练数据质量与标注一致性</li>
-                <li>尝试调整学习率、增大训练轮数或使用数据增强</li>
-                <li>对误分类集中的类别进行定向补充样本</li>
-                <li>可尝试更大规模的预训练模型作为 Base Model</li>
-              </ul>
-              <Text strong style={{ color: '#cf1322' }}>建议继续调优后重新评估，暂不发布。</Text>
-            </div>
-          )}
-        </Card>
-
-        {passed && (
-          <div style={{ textAlign: 'right' }}>
-            <Button
-              type="primary"
-              icon={<RocketOutlined />}
-              size="large"
-              onClick={() => {
-                message.success(`模型 ${selectedTask.modelName} ${selectedTask.modelVersion} 已提交发布流程，即将跳转到模型网关`)
-                setDrawerOpen(false)
-                setTimeout(() => navigate('/model-lab/gateway'), 500)
-              }}
-            >
-              发布模型
-            </Button>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  const drawerTabs = [
-    { key: 'metrics', label: <span><LineChartOutlined /> 评估指标</span>, children: renderMetricsTab() },
-    { key: 'samples', label: <span><TableOutlined /> 样本对比</span>, children: renderSamplesTab() },
-    { key: 'comparison', label: <span><TrophyOutlined /> 版本对比</span>, children: renderComparisonTab() },
-    { key: 'report', label: <span><FileTextOutlined /> 评估报告</span>, children: renderReportTab() },
+  const drawerTabItems = [
+    { key: 'metrics', label: '评测概览', children: renderMetricsTab() },
+    { key: 'samples', label: '样本对比', children: renderSamplesTab() },
+    {
+      key: 'compare',
+      label: '版本比较',
+      children: <Table dataSource={comparisons} columns={comparisonColumns} rowKey="version" pagination={false} size="small" />,
+    },
   ]
 
   return (
     <div className="page-container">
       <Card className="section-card">
         <div className="page-header">
-          <Title level={4}>模型评估</Title>
-          <Text type="secondary">L5 评估中心 — 多维度模型质量评估、样本级对比与版本追踪</Text>
+          <Title level={4}>{MODEL_CENTER_PAGE_LABELS.evaluation}</Title>
+          <Text type="secondary">统一管理指令遵循、幻觉控制、Grounded VQA 与文档理解评测，支持 Judge + 人审双视角</Text>
         </div>
 
         <Row gutter={[14, 14]} style={{ margin: '16px 0 20px' }}>
-          {statItems.map(s => (
-            <Col flex="1" key={s.title}>
+          {statItems.map(item => (
+            <Col span={Math.floor(24 / statItems.length)} key={item.title}>
               <Card size="small" className="stat-card card-hover" styles={{ body: { padding: '16px 18px' } }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div className="stat-icon-wrap" style={{ background: s.bg, color: s.color }}>
-                    {s.icon}
-                  </div>
+                  <div className="stat-icon-wrap" style={{ background: item.bg, color: item.color }}>{item.icon}</div>
                   <div>
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{s.title}</Text>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>{s.value}</div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{item.title}</Text>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: item.color, lineHeight: 1.2 }}>{item.value}</div>
                   </div>
                 </div>
               </Card>
@@ -525,107 +319,114 @@ export default function ModelEvaluationPage() {
         </Row>
 
         <div style={{ marginBottom: 16, textAlign: 'right' }}>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setCreateOpen(true); form.resetFields() }}>
-            新建评估任务
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+            新建评测任务
           </Button>
         </div>
 
         <Table dataSource={tasks} columns={taskColumns} rowKey="key" pagination={false} size="small" />
       </Card>
 
-      {/* 创建弹窗 */}
+      <Drawer
+        title={selectedTask ? selectedTask.name : '评测详情'}
+        open={drawerOpen}
+        onClose={() => {
+          setDrawerOpen(false)
+          setSelectedTask(null)
+        }}
+        width={760}
+        footer={selectedTask ? (
+          <div style={{ textAlign: 'right' }}>
+            <Button type="primary" icon={<LineChartOutlined />} onClick={() => navigate('/model-lab/gateway')}>
+              去推理网关
+            </Button>
+          </div>
+        ) : null}
+      >
+        {selectedTask && (
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                <Text type="secondary">{selectedTask.modelName} / {EVAL_TASK_TYPE_LABELS[selectedTask.taskType]}</Text>
+                <Progress percent={selectedTask.progress} />
+              </Space>
+            </div>
+            <Tabs items={drawerTabItems} />
+          </>
+        )}
+      </Drawer>
+
       <Modal
-        title={<ModalHeader icon={<ExperimentOutlined />} title="新建评估任务" />}
+        title={<ModalHeader icon={<FileTextOutlined />} title="新建评测任务" />}
         open={createOpen}
-        onCancel={() => { setCreateOpen(false); form.resetFields() }}
+        onCancel={() => {
+          setCreateOpen(false)
+          form.resetFields()
+        }}
         onOk={() => void handleCreate()}
         okText="创建"
         cancelText="取消"
-        width={560}
+        width={640}
         destroyOnClose
       >
-        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item label="任务名称" name="name" rules={[{ required: true }]}>
-            <Input placeholder="例如: eval-equipment-fault-v3" />
+        <Form
+          form={form}
+          layout="vertical"
+          style={{ marginTop: 16 }}
+          initialValues={{
+            taskType: 'instruction-following',
+            evalSamples: 500,
+          }}
+        >
+          <Form.Item label="任务名称" name="name" rules={[{ required: true, message: '请输入任务名称' }]}>
+            <Input placeholder="例如: eval-factory-copilot-instruction-v3" />
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="选择模型" name="modelName" rules={[{ required: true }]}>
-                <Select placeholder="选择已注册模型">
-                  {trainingProjects.map(p => (
-                    <Select.Option key={p.key} value={p.name}>{p.name}</Select.Option>
-                  ))}
-                </Select>
+              <Form.Item label="模型" name="modelName" rules={[{ required: true }]}>
+                <Select
+                  options={trainingProjects.map(project => ({
+                    label: project.name,
+                    value: project.name,
+                  }))}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="模型版本" name="modelVersion" rules={[{ required: true }]}>
-                <Select placeholder="选择版本">
-                  <Select.Option value="v1.0">v1.0</Select.Option>
-                  <Select.Option value="v2.0">v2.0</Select.Option>
-                  <Select.Option value="v3.0">v3.0</Select.Option>
-                  <Select.Option value="latest">latest</Select.Option>
-                </Select>
+              <Form.Item label="版本" name="modelVersion" rules={[{ required: true }]}>
+                <Input placeholder="例如: v2026.03.10" />
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item label="评估数据集" name="datasetName" rules={[{ required: true }]}>
-            <Select placeholder="选择数据集">
-              {availableDatasets.map(d => (
-                <Select.Option key={d.key} value={d.name}>{d.name}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
           <Row gutter={16}>
-            <Col span={16}>
+            <Col span={12}>
+              <Form.Item label="评测语料" name="datasetName" rules={[{ required: true }]}>
+                <Select
+                  options={availableDatasets.map(dataset => ({
+                    label: `${dataset.name} (${DATASET_TYPE_LABELS[dataset.datasetType]})`,
+                    value: dataset.name,
+                  }))}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
               <Form.Item label="任务类型" name="taskType" rules={[{ required: true }]}>
-                <Radio.Group>
-                  <Radio value="classification">分类</Radio>
-                  <Radio value="generation">生成</Radio>
-                  <Radio value="extraction">抽取</Radio>
-                  <Radio value="qa">问答</Radio>
-                </Radio.Group>
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item label="评估样本数" name="evalSamples" rules={[{ required: true }]}>
-                <InputNumber min={100} max={10000} step={100} placeholder="1000" style={{ width: '100%' }} />
+                <Select
+                  options={[
+                    'instruction-following',
+                    'hallucination',
+                    'grounded-vqa',
+                    'document-understanding',
+                  ].map(value => ({ label: EVAL_TASK_TYPE_LABELS[value as EvalTaskType], value }))}
+                />
               </Form.Item>
             </Col>
           </Row>
+          <Form.Item label="评测样本数" name="evalSamples" rules={[{ required: true }]}>
+            <InputNumber min={100} max={5000} style={{ width: '100%' }} />
+          </Form.Item>
         </Form>
       </Modal>
-
-      {/* 详情 Drawer */}
-      <Drawer
-        title={
-          selectedTask ? (
-            <Space>
-              <ExperimentOutlined style={{ color: '#1677ff' }} />
-              <span>{selectedTask.name}</span>
-              <Tag color="blue">{selectedTask.modelName} {selectedTask.modelVersion}</Tag>
-              <Tag icon={STATUS_ICONS[selectedTask.status]} color={EVAL_STATUS_COLORS[selectedTask.status]}>
-                {selectedTask.status}
-              </Tag>
-              {selectedTask.status === 'Running' && (
-                <Progress percent={selectedTask.progress} size="small" style={{ width: 80 }} status="active" showInfo={false} />
-              )}
-            </Space>
-          ) : null
-        }
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        width={800}
-        destroyOnClose
-      >
-        <Tabs items={drawerTabs} />
-      </Drawer>
-
-      <style>{`
-        .row-error-light td {
-          background: rgba(255, 77, 79, 0.04) !important;
-        }
-      `}</style>
     </div>
   )
 }
