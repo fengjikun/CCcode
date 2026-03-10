@@ -76,7 +76,9 @@ body {
 
 .page-container {
   max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
+  min-width: 0;
 }
 
 /* ═══ Sidebar ═══ */
@@ -504,6 +506,117 @@ body {
   align-items: center;
   flex-shrink: 0;
   opacity: 0.3;
+}
+
+/* ═══ Dashboard page responsive layout ═══ */
+
+.dashboard-page {
+  min-width: 0;
+}
+
+.dashboard-pipeline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 24px 0 12px;
+}
+
+.dashboard-pipeline-item {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.dashboard-stat-row,
+.dashboard-main-row {
+  min-width: 0;
+}
+
+.dashboard-grid-col {
+  display: flex;
+}
+
+.dashboard-stat-card,
+.dashboard-resource-card,
+.dashboard-main-card {
+  width: 100%;
+}
+
+.dashboard-stat-card .ant-card-body,
+.dashboard-resource-card .ant-card-body {
+  height: 100%;
+}
+
+.dashboard-stat-card-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  height: 100%;
+}
+
+.dashboard-stat-title {
+  line-height: 1.5;
+}
+
+.dashboard-stat-value {
+  word-break: break-word;
+}
+
+@media (max-width: 1279px) {
+  .dashboard-pipeline {
+    justify-content: flex-start;
+    padding-top: 20px;
+  }
+
+  .dashboard-pipeline-item {
+    flex: 1 1 220px;
+  }
+
+  .dashboard-pipeline-item .pipeline-stage {
+    width: 100%;
+    min-width: 0 !important;
+  }
+
+  .dashboard-pipeline-item .pipeline-arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 991px) {
+  .dashboard-hero-card .ant-card-body {
+    padding: 20px !important;
+  }
+
+  .dashboard-stat-card-content {
+    min-height: 108px;
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard-stat-card .ant-card-body,
+  .dashboard-resource-card .ant-card-body {
+    padding: 14px 16px !important;
+  }
+
+  .dashboard-stat-card-content {
+    gap: 12px;
+    min-height: auto;
+  }
+
+  .dashboard-stat-title {
+    margin-bottom: 4px !important;
+  }
+
+  .dashboard-stat-value {
+    font-size: 22px !important;
+  }
+
+  .dashboard-stat-trend {
+    font-size: 10px !important;
+  }
 }
 
 /* ═══ Code blocks ═══ */

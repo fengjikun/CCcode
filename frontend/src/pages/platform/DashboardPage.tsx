@@ -89,24 +89,17 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="page-container">
+    <div className="page-container dashboard-page">
       {/* ── Pipeline flow ── */}
-      <Card className="section-card" styles={{ body: { padding: '24px 28px' } }}>
+      <Card className="section-card dashboard-hero-card" styles={{ body: { padding: '24px 28px' } }}>
         <div className="page-header">
           <Title level={4}>Pipeline Overview</Title>
           <Text type="secondary">端到端 AI 流水线：从数据源接入到智能体应用</Text>
         </div>
 
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 0,
-          overflowX: 'auto',
-          padding: '24px 0 12px',
-        }}>
+        <div className="dashboard-pipeline">
           {stages.map((s, i) => (
-            <div key={s.key} style={{ display: 'flex', alignItems: 'center' }}>
+            <div key={s.key} className="dashboard-pipeline-item">
               <div
                 className="pipeline-stage"
                 style={{
@@ -138,22 +131,22 @@ export default function DashboardPage() {
       </Card>
 
       {/* ── Stat cards — 带图标和趋势 ── */}
-      <Row gutter={[14, 14]} style={{ marginBottom: 16 }}>
+      <Row gutter={[14, 14]} className="dashboard-stat-row" style={{ marginBottom: 16 }}>
         {statCards.map(s => (
-          <Col span={6} key={s.title}>
+          <Col xs={24} sm={12} xl={6} key={s.title} className="dashboard-grid-col">
             <Card
               size="small"
-              className="stat-card card-hover"
+              className="stat-card card-hover dashboard-stat-card"
               styles={{ body: { padding: '16px 18px' } }}
             >
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                <div style={{ flex: 1 }}>
-                  <Text type="secondary" style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 6 }}>{s.title}</Text>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>
+              <div className="dashboard-stat-card-content">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Text className="dashboard-stat-title" type="secondary" style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 6 }}>{s.title}</Text>
+                  <div className="dashboard-stat-value" style={{ fontSize: 26, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>
                     {s.value}
                   </div>
                   {s.trend && (
-                    <Text style={{ fontSize: 11, color: s.trend.startsWith('-') ? '#16a34a' : '#16a34a', marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                    <Text className="dashboard-stat-trend" style={{ fontSize: 11, color: '#16a34a', marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 2 }}>
                       <ArrowUpOutlined style={{ fontSize: 10 }} />
                       {s.trend}
                     </Text>
@@ -175,10 +168,10 @@ export default function DashboardPage() {
       </Row>
 
       {/* ── Health + Activity ── */}
-      <Row gutter={16}>
-        <Col span={16}>
+      <Row gutter={[16, 16]} className="dashboard-main-row">
+        <Col xs={24} xl={16}>
           <Card
-            className="section-card"
+            className="section-card dashboard-main-card"
             title={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{
@@ -198,12 +191,13 @@ export default function DashboardPage() {
               columns={healthColumns}
               pagination={false}
               size="small"
+              scroll={{ x: 720 }}
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} xl={8}>
           <Card
-            className="section-card"
+            className="section-card dashboard-main-card"
             title={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{
@@ -255,9 +249,10 @@ export default function DashboardPage() {
       >
         <Row gutter={[14, 14]}>
           {stages.map(s => (
-            <Col span={6} key={s.key}>
+            <Col xs={24} sm={12} xl={6} key={s.key} className="dashboard-grid-col">
               <Card
                 size="small"
+                className="dashboard-resource-card"
                 hoverable
                 styles={{ body: { padding: '14px 16px' } }}
                 style={{ borderColor: 'transparent' }}
