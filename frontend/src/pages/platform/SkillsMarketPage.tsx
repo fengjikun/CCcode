@@ -655,7 +655,7 @@ export default function SkillsMarketPage() {
         <div className="page-header">
           <Title level={4}>Skills Hub</Title>
           <Text type="secondary">
-            L4 能力资产市场，按本体推荐业务 Skill，并混合展示跨行业复用的通用 Skill。
+            面向业务能力沉淀与复用的 Skill 资产市场，按本体推荐业务 Skill，并混合展示跨行业通用 Skill。
           </Text>
         </div>
 
@@ -958,7 +958,7 @@ export default function SkillsMarketPage() {
             }}
           >
             <ImportOutlined style={{ color: '#7c3aed', marginRight: 6 }} />
-            从 L3 本体项目的 Function 导入能力入口，自动映射为业务 Skill 并补齐基础元数据。
+            从本体项目的 Function 导入能力入口，自动映射为业务 Skill 并补齐基础元数据。
           </div>
           {importFunctions.length === 0 ? (
             <Empty description="所有可用 Function 已导入" />

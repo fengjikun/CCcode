@@ -306,7 +306,7 @@ export default function DataSourcePage() {
     <div className="page-container">
       {/* ===== Header ===== */}
       <Card className="section-card">
-        <PageHeader title="数据源管理" subtitle="L1 数据接入 — 连接并同步企业结构化与非结构化数据，统一数据接入层" />
+        <PageHeader title="数据源管理" subtitle="连接并同步企业结构化与非结构化数据，统一管理全域数据接入" />
         
 
         <StatCards items={[

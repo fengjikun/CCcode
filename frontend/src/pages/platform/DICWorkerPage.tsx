@@ -54,8 +54,8 @@ export default function DICWorkerPage() {
     <div className="page-container">
       <Card className="section-card">
         <div className="page-header">
-          <Title level={4}>业务AI员工空间</Title>
-          <Text type="secondary">L7 内部 AI 数字员工 — 面向数据工程与平台运维的智能化工作助手</Text>
+          <Title level={4}>技术AI员工空间</Title>
+          <Text type="secondary">面向数据工程与平台运维的智能化工作助手，统一查看运行状态、任务表现与专长分布</Text>
         </div>
 
         {/* 统计 */}

@@ -23,21 +23,29 @@ import type { ReactNode } from 'react'
 
 const { Title, Text } = Typography
 
-/* ───── L1→L7 pipeline stages ───── */
-interface Stage { key: string; label: string; labelZh: string; icon: ReactNode; color: string; count: number }
+/* ───── 平台能力阶段 ───── */
+interface Stage {
+  key: string
+  label: string
+  labelZh: string
+  icon: ReactNode
+  color: string
+  count: number
+  summary: string
+}
 
 interface StageTemplate extends Omit<Stage, 'count'> {
   fallbackCount: number
 }
 
 const stageTemplates: StageTemplate[] = [
-  { key: 'L1', label: 'Datasource', labelZh: '数据源', icon: <DatabaseOutlined />, color: '#16a34a', fallbackCount: 0 },
-  { key: 'L2', label: 'Dataset Prep', labelZh: '数据集准备', icon: <FileSearchOutlined />, color: '#d97706', fallbackCount: 0 },
-  { key: 'L3', label: 'Ontology', labelZh: '本体层', icon: <ApartmentOutlined />, color: '#4f46e5', fallbackCount: 0 },
-  { key: 'L4', label: 'workspace', labelZh: '智能体', icon: <RobotOutlined />, color: '#7c3aed', fallbackCount: 59 },
-  { key: 'L5', label: 'Model Train', labelZh: '模型训练', icon: <ExperimentOutlined />, color: '#e11d48', fallbackCount: 6 },
-  { key: 'L6', label: 'Model Gateway', labelZh: '模型网关', icon: <ApiOutlined />, color: '#ea580c', fallbackCount: 23 },
-  { key: 'L7', label: 'Workflow Apps', labelZh: '数字员工', icon: <TeamOutlined />, color: '#0891b2', fallbackCount: 0 },
+  { key: 'datasource', label: 'Datasource', labelZh: '数据接入', icon: <DatabaseOutlined />, color: '#16a34a', fallbackCount: 0, summary: '统一连接企业数据' },
+  { key: 'prep', label: 'Dataset Prep', labelZh: '数据准备', icon: <FileSearchOutlined />, color: '#d97706', fallbackCount: 0, summary: '解析与加工文档数据' },
+  { key: 'ontology', label: 'Ontology', labelZh: '本体建模', icon: <ApartmentOutlined />, color: '#4f46e5', fallbackCount: 0, summary: '沉淀业务语义结构' },
+  { key: 'workspace', label: 'workspace', labelZh: '智能体编排', icon: <RobotOutlined />, color: '#7c3aed', fallbackCount: 59, summary: '组装可执行业务能力' },
+  { key: 'training', label: 'Model Train', labelZh: '模型训练', icon: <ExperimentOutlined />, color: '#e11d48', fallbackCount: 6, summary: '完成训练与评估迭代' },
+  { key: 'gateway', label: 'Model Gateway', labelZh: '模型服务', icon: <ApiOutlined />, color: '#ea580c', fallbackCount: 23, summary: '统一推理与调用入口' },
+  { key: 'application', label: 'Workflow Apps', labelZh: '业务应用', icon: <TeamOutlined />, color: '#0891b2', fallbackCount: 0, summary: '交付数字员工场景' },
 ]
 
 /* ───── 活动日志颜色 ───── */
@@ -55,10 +63,10 @@ export default function DashboardPage() {
   }, [])
 
   const stages: Stage[] = stageTemplates.map(stage => {
-    if (stage.key === 'L1') return { ...stage, count: stats.datasources }
-    if (stage.key === 'L2') return { ...stage, count: stats.transformJobs }
-    if (stage.key === 'L3') return { ...stage, count: stats.ontologyProjects }
-    if (stage.key === 'L7') return { ...stage, count: stats.digitalWorkers }
+    if (stage.key === 'datasource') return { ...stage, count: stats.datasources }
+    if (stage.key === 'prep') return { ...stage, count: stats.transformJobs }
+    if (stage.key === 'ontology') return { ...stage, count: stats.ontologyProjects }
+    if (stage.key === 'application') return { ...stage, count: stats.digitalWorkers }
     return { ...stage, count: stage.fallbackCount }
   })
 
@@ -116,8 +124,8 @@ export default function DashboardPage() {
       {/* ── Pipeline flow ── */}
       <Card className="section-card dashboard-hero-card" styles={{ body: { padding: '24px 28px' } }}>
         <div className="page-header">
-          <Title level={4}>Pipeline Overview</Title>
-          <Text type="secondary">端到端 AI 流水线：从数据源接入到智能体应用</Text>
+          <Title level={4}>平台能力全景</Title>
+          <Text type="secondary">覆盖数据接入、语义建模、智能体编排到业务应用交付的完整闭环</Text>
         </div>
 
         <div className="dashboard-pipeline">
@@ -132,13 +140,12 @@ export default function DashboardPage() {
                 }}
               >
                 <div style={{ fontSize: 24, marginBottom: 8, opacity: 0.9 }}>{s.icon}</div>
-                <div style={{
-                  fontSize: 10, opacity: 0.65, marginBottom: 2, fontWeight: 600,
-                  letterSpacing: '0.08em', textTransform: 'uppercase',
-                }}>{s.key}</div>
                 <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em' }}>{s.label}</div>
                 <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>
                   {s.labelZh} · <span style={{ fontWeight: 600 }}>{s.count}</span>
+                </div>
+                <div style={{ fontSize: 11, opacity: 0.78, marginTop: 6 }}>
+                  {s.summary}
                 </div>
               </div>
               {i < stages.length - 1 && (

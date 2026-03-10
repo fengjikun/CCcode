@@ -357,7 +357,7 @@ export default function TransformPage() {
         } />
       </Form.Item>
       <Form.Item name="inputSources" label="输入文档源" rules={[{ required: true, message: '请选择文档源' }]}>
-        <Select mode="multiple" placeholder="从 L1 非结构化数据源选择" options={dsOptions} />
+        <Select mode="multiple" placeholder="从非结构化数据源选择" options={dsOptions} />
       </Form.Item>
       <Form.Item name="outputDatasets" label="输出数据集">
         <OutputEditor />
@@ -380,7 +380,7 @@ export default function TransformPage() {
     <div className="page-container">
       {/* Pipeline 流程概览 */}
       <Card className="section-card">
-        <PageHeader title="数据集准备" subtitle="L2 数据集准备 — 聚焦 PDF、Word、PPT、Excel、扫描件与图片，完成通用文档解析、版面恢复与训练数据构建" />
+        <PageHeader title="数据集准备" subtitle="聚焦 PDF、Word、PPT、Excel、扫描件与图片，完成文档解析、版面恢复与训练数据构建" />
 
         <StatCards items={[
           { title: '准备任务', value: projects.length, icon: <ForkOutlined />, cls: 'stat-primary' },

@@ -4,7 +4,7 @@
       "health": [
         {
           "key": "1",
-          "component": "L1 数据接入管道",
+          "component": "数据接入管道",
           "status": "Healthy",
           "uptime": "99.97%",
           "qps": 3420,
@@ -13,7 +13,7 @@
         },
         {
           "key": "2",
-          "component": "L2 数据集准备引擎",
+          "component": "数据准备引擎",
           "status": "Healthy",
           "uptime": "99.92%",
           "qps": 1850,
@@ -22,7 +22,7 @@
         },
         {
           "key": "3",
-          "component": "L3 本体语义服务",
+          "component": "本体语义服务",
           "status": "Healthy",
           "uptime": "99.95%",
           "qps": 960,
@@ -31,7 +31,7 @@
         },
         {
           "key": "4",
-          "component": "L4 Agent Runtime",
+          "component": "智能体运行服务",
           "status": "Degraded",
           "uptime": "98.50%",
           "qps": 520,
@@ -40,7 +40,7 @@
         },
         {
           "key": "5",
-          "component": "L5 训练调度器",
+          "component": "模型训练调度器",
           "status": "Healthy",
           "uptime": "99.80%",
           "qps": 45,
@@ -49,7 +49,7 @@
         },
         {
           "key": "6",
-          "component": "L6 模型网关",
+          "component": "模型网关",
           "status": "Healthy",
           "uptime": "99.98%",
           "qps": 15600,
@@ -58,7 +58,7 @@
         },
         {
           "key": "7",
-          "component": "L7 数字员工服务",
+          "component": "数字员工服务",
           "status": "Healthy",
           "uptime": "99.90%",
           "qps": 280,
@@ -103,8 +103,8 @@
           "key": "5",
           "time": "13:45:33",
           "user": "系统",
-          "action": "Agent Runtime 性能降级告警",
-          "target": "L4 服务",
+          "action": "智能体运行服务性能降级告警",
+          "target": "智能体编排模块",
           "level": "warning"
         },
         {
@@ -147,7 +147,7 @@
         "uptime": "99.9%",
         "activeUsers": 36
       },
-      "_v": 2
+      "_v": 3
     },
     "digital-humans": {
       "items": [
