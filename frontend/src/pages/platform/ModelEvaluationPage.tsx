@@ -72,6 +72,10 @@ const TASK_TYPE_COLORS: Record<EvalTaskType, string> = {
   generation: 'purple',
   extraction: 'cyan',
   qa: 'orange',
+  'instruction-following': 'geekblue',
+  hallucination: 'volcano',
+  'grounded-vqa': 'green',
+  'document-understanding': 'gold',
 }
 
 export default function ModelEvaluationPage() {

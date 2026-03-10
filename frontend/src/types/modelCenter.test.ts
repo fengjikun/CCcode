@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import { buildDefaultEvalTasks } from '../api/modelEvaluation'
+import { buildDefaultRegisteredModels, buildDefaultGatewayRoutes } from '../api/modelGateway'
 import { buildDefaultTrainingProjects } from '../api/modelTraining'
 import { buildDefaultTrainingDatasets } from '../api/trainingDataset'
 import {
@@ -56,5 +58,27 @@ describe('modelCenter shared domain vocabulary', () => {
         dataset.sampleData.some(sample => 'messages' in sample || 'chosen' in sample || 'image' in sample),
       ),
     ).toBe(true)
+  })
+
+  it('uses large-model evaluation tasks instead of traditional classifier tasks', () => {
+    const tasks = buildDefaultEvalTasks()
+
+    expect(tasks.some(task => task.taskType === 'instruction-following')).toBe(true)
+    expect(tasks.some(task => task.taskType === 'grounded-vqa')).toBe(true)
+    expect(tasks.map(task => task.modelName)).not.toEqual(
+      expect.arrayContaining(['equipment-fault-predictor', 'demand-forecaster', 'supplier-risk-scorer']),
+    )
+  })
+
+  it('uses unified llm and vl gateway routes instead of predictor endpoints', () => {
+    const models = buildDefaultRegisteredModels()
+    const routes = buildDefaultGatewayRoutes()
+
+    expect(models.some(model => model.modelFamily === 'LLM')).toBe(true)
+    expect(models.some(model => model.modelFamily === 'VL')).toBe(true)
+    expect(models.every(model => (model.contextWindow ?? 0) > 0)).toBe(true)
+    expect(routes.map(route => route.path)).toEqual(
+      expect.arrayContaining(['/chat/completions', '/responses', '/vl/understand', '/doc/parse']),
+    )
   })
 })
