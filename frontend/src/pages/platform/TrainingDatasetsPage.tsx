@@ -4,6 +4,7 @@ import {
   Card,
   Checkbox,
   Col,
+  Descriptions,
   Drawer,
   Form,
   Input,
@@ -11,98 +12,130 @@ import {
   Modal,
   Popconfirm,
   Progress,
-  Radio,
   Row,
   Select,
   Space,
   Table,
-  Tabs,
   Tag,
   Typography,
   message,
 } from 'antd'
 import {
-  DatabaseOutlined,
   BarChartOutlined,
-  PlusOutlined,
-  DeleteOutlined,
-  CheckCircleOutlined,
-  HddOutlined,
-  SearchOutlined,
   BuildOutlined,
+  CheckCircleOutlined,
+  DatabaseOutlined,
+  DeleteOutlined,
+  HddOutlined,
+  PlusOutlined,
+  SearchOutlined,
   SyncOutlined,
 } from '@ant-design/icons'
-import { listDatasets, createDataset, deleteDataset, getDatasetStats, getDatasetDetail, buildDataset, updateBuildProgress, finishBuild } from '../../api/trainingDataset'
-import type { TrainingDataset, DatasetStatus, DatasetFormat } from '../../types/trainingDataset'
-import { DATASET_STATUS_COLORS, DATASET_FORMAT_COLORS, SCHEMA_FIELD_OPTIONS } from '../../types/trainingDataset'
+import {
+  buildDataset,
+  createDataset,
+  deleteDataset,
+  finishBuild,
+  getDatasetDetail,
+  getDatasetStats,
+  listDatasets,
+  updateBuildProgress,
+} from '../../api/trainingDataset'
 import ModalHeader from '../../components/shared/ModalHeader'
+import {
+  DATASET_TYPE_LABELS,
+  MODEL_CENTER_PAGE_LABELS,
+  MODEL_MODALITY_LABELS,
+} from '../../types/modelCenter'
+import type { DatasetFormat, DatasetStatus, TrainingDataset } from '../../types/trainingDataset'
+import {
+  DATASET_STATUS_COLORS,
+  SCHEMA_FIELD_OPTIONS,
+} from '../../types/trainingDataset'
+import { formatDatasetScale, summarizeDatasetSample } from './trainingDatasets.helpers'
 
 const { Title, Text } = Typography
+
+function renderSamplePreview(sample: Record<string, unknown>) {
+  if (Array.isArray(sample.messages)) {
+    return (
+      <Space direction="vertical" size={6} style={{ width: '100%' }}>
+        {(sample.messages as Array<Record<string, unknown>>).map((message, index) => (
+          <Card key={index} size="small" styles={{ body: { padding: 12 } }}>
+            <Text strong>{String(message.role ?? 'unknown')}</Text>
+            <div style={{ marginTop: 6 }}>{String(message.content ?? '')}</div>
+          </Card>
+        ))}
+      </Space>
+    )
+  }
+
+  return (
+    <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: 12 }}>
+      {JSON.stringify(sample, null, 2)}
+    </pre>
+  )
+}
 
 export default function TrainingDatasetsPage() {
   const [datasets, setDatasets] = useState<TrainingDataset[]>([])
   const [search, setSearch] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [form] = Form.useForm()
-  const [selectedFormat, setSelectedFormat] = useState<DatasetFormat>('JSONL')
-
-  // Detail drawer state
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [detailDataset, setDetailDataset] = useState<TrainingDataset | null>(null)
-
   const buildTimersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map())
-
-  const [stats, setStats] = useState({ total: 0, totalRecords: '0' as string, readyCount: 0, buildingCount: 0, totalSize: '0 B' })
+  const [stats, setStats] = useState({ total: 0, totalRecords: '0', readyCount: 0, buildingCount: 0, totalSize: '0 GB' })
 
   const reload = useCallback(async () => {
-    const [ds, st] = await Promise.all([listDatasets(), getDatasetStats()])
-    setDatasets(ds)
-    setStats(st)
+    const [datasetList, datasetStats] = await Promise.all([listDatasets(), getDatasetStats()])
+    setDatasets(datasetList)
+    setStats(datasetStats)
   }, [])
-  useEffect(() => { reload() }, [reload])
 
-  // Clean up build timers on unmount
   useEffect(() => {
+    void reload()
     return () => {
       buildTimersRef.current.forEach(timer => clearInterval(timer))
     }
-  }, [])
+  }, [reload])
 
-  const filtered = datasets.filter(d =>
-    !search || d.name.toLowerCase().includes(search.toLowerCase()) || d.source.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = datasets.filter(dataset => {
+    const query = search.toLowerCase()
+    return !query
+      || dataset.name.toLowerCase().includes(query)
+      || dataset.source.toLowerCase().includes(query)
+      || DATASET_TYPE_LABELS[dataset.datasetType].toLowerCase().includes(query)
+  })
 
   const handleCreate = async () => {
     try {
       const values = await form.validateFields()
       await createDataset(values)
-      message.success('数据集创建成功')
+      message.success('训练语料已创建')
       setCreateOpen(false)
       form.resetFields()
-      setSelectedFormat('JSONL')
       await reload()
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'errorFields' in err) return
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'errorFields' in error) return
       message.error('创建失败')
     }
   }
 
   const handleDelete = async (key: string) => {
     await deleteDataset(key)
-    message.success('数据集已删除')
+    message.success('训练语料已删除')
     await reload()
   }
 
   const handleBuild = async (key: string) => {
-    // Clear any existing timer for this key
     const existing = buildTimersRef.current.get(key)
     if (existing) clearInterval(existing)
 
     await buildDataset(key)
-    message.success('构建任务已启动')
+    message.success('语料构建任务已启动')
     await reload()
 
-    // Simulate build progress
     let progress = 0
     const timer = setInterval(async () => {
       progress += Math.floor(Math.random() * 15) + 10
@@ -111,7 +144,7 @@ export default function TrainingDatasetsPage() {
         clearInterval(timer)
         buildTimersRef.current.delete(key)
         await finishBuild(key)
-        message.success('数据集构建完成')
+        message.success('语料构建完成')
       } else {
         await updateBuildProgress(key, progress)
       }
@@ -123,98 +156,102 @@ export default function TrainingDatasetsPage() {
 
   const handleRowClick = async (record: TrainingDataset) => {
     const detail = await getDatasetDetail(record.key)
-    if (detail) {
-      setDetailDataset(detail)
-      setDrawerOpen(true)
-    }
+    if (!detail) return
+    setDetailDataset(detail)
+    setDrawerOpen(true)
   }
 
-  // Build sample data columns dynamically from the first row
-  const getSampleColumns = (data: Array<Record<string, unknown>>) => {
-    if (data.length === 0) return []
-    return Object.keys(data[0]).map(key => ({
-      title: key,
-      dataIndex: key,
-      key,
-      render: (v: unknown) => {
-        if (v === null || v === undefined || v === '—') return <Text type="secondary">—</Text>
-        if (typeof v === 'number') return <Text>{v}</Text>
-        return <Text>{String(v)}</Text>
-      },
-    }))
-  }
+  const multimodalCount = datasets.filter(dataset => dataset.modality === 'image-text').length
+  const avgQuality = datasets.length > 0
+    ? Math.round(datasets.reduce((sum, dataset) => sum + dataset.qualityScore, 0) / datasets.length)
+    : 0
+
+  const statItems = [
+    { title: '语料包总数', value: stats.total, icon: <DatabaseOutlined />, color: '#4f46e5', bg: '#eef2ff' },
+    { title: '已就绪', value: stats.readyCount, icon: <CheckCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
+    { title: '多模态语料', value: multimodalCount, icon: <BarChartOutlined />, color: '#0891b2', bg: '#ecfeff' },
+    { title: '平均质量分', value: avgQuality || '—', icon: <SyncOutlined spin={stats.buildingCount > 0} />, color: '#d97706', bg: '#fffbeb' },
+    { title: '总存储', value: stats.totalSize, icon: <HddOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
+  ]
 
   const columns = [
     {
-      title: '数据集名称',
-      dataIndex: 'name',
+      title: '语料包',
       key: 'name',
-      render: (v: string) => (
-        <Text strong style={{ cursor: 'pointer', color: '#1677ff' }}>{v}</Text>
+      render: (_: unknown, dataset: TrainingDataset) => (
+        <Space direction="vertical" size={2}>
+          <Text strong style={{ cursor: 'pointer', color: '#1677ff' }}>{dataset.name}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{dataset.source}</Text>
+        </Space>
       ),
     },
-    { title: '来源', dataIndex: 'source', key: 'source', render: (v: string) => <Text code style={{ fontSize: 11 }}>{v}</Text> },
     {
-      title: '格式',
-      dataIndex: 'format',
-      key: 'format',
-      width: 80,
-      render: (v: DatasetFormat) => <Tag color={DATASET_FORMAT_COLORS[v]}>{v}</Tag>,
+      title: '类型 / 模态',
+      key: 'type',
+      render: (_: unknown, dataset: TrainingDataset) => (
+        <Space direction="vertical" size={2}>
+          <Space size={4} wrap>
+            <Tag color="blue">{DATASET_TYPE_LABELS[dataset.datasetType]}</Tag>
+            <Tag color={dataset.modality === 'image-text' ? 'gold' : 'cyan'}>{MODEL_MODALITY_LABELS[dataset.modality]}</Tag>
+          </Space>
+          <Text type="secondary" style={{ fontSize: 12 }}>{dataset.format}</Text>
+        </Space>
+      ),
     },
     {
-      title: 'Train/Val/Test',
-      key: 'split',
-      width: 120,
-      render: (_: unknown, r: TrainingDataset) => `${r.trainSplit}/${r.valSplit}/${r.testSplit}`,
+      title: '规模',
+      key: 'scale',
+      render: (_: unknown, dataset: TrainingDataset) => (
+        <Space direction="vertical" size={2}>
+          <Text>{formatDatasetScale(dataset)}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{dataset.records.toLocaleString()} samples</Text>
+        </Space>
+      ),
     },
     {
-      title: '记录数',
-      dataIndex: 'records',
-      key: 'records',
-      width: 90,
-      sorter: (a: TrainingDataset, b: TrainingDataset) => a.records - b.records,
-      render: (v: number) => v > 0 ? v.toLocaleString() : '—',
+      title: '质量与标注',
+      key: 'quality',
+      render: (_: unknown, dataset: TrainingDataset) => (
+        <Space direction="vertical" size={2}>
+          <Tag color={dataset.qualityScore >= 90 ? 'green' : dataset.qualityScore >= 85 ? 'blue' : 'default'}>
+            Quality {dataset.qualityScore}
+          </Tag>
+          <Text type="secondary" style={{ fontSize: 12 }}>{dataset.annotationSchema.join(' / ')}</Text>
+        </Space>
+      ),
     },
-    { title: '大小', dataIndex: 'size', key: 'size', width: 80 },
-    { title: '版本', dataIndex: 'version', key: 'version', width: 60 },
+    {
+      title: '关联训练',
+      key: 'linked',
+      render: (_: unknown, dataset: TrainingDataset) => (
+        <Space direction="vertical" size={2}>
+          <Text>{dataset.linkedModels.join(', ') || '—'}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{dataset.linkedRuns.join(', ') || '暂无运行'}</Text>
+        </Space>
+      ),
+    },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      filters: ['Ready', 'Building', 'Failed', 'Archived'].map(s => ({ text: s, value: s })),
-      onFilter: (value: unknown, record: TrainingDataset) => record.status === value,
-      render: (v: DatasetStatus) => (
-        <span>
-          <span className={`status-dot ${v === 'Ready' ? 'active' : v === 'Building' ? 'warning' : v === 'Failed' ? 'error' : ''}`} />
-          <Tag color={DATASET_STATUS_COLORS[v]}>{v}</Tag>
-        </span>
-      ),
+      filters: ['Ready', 'Building', 'Failed', 'Archived'].map(status => ({ text: status, value: status })),
+      onFilter: (value: unknown, dataset: TrainingDataset) => dataset.status === value,
+      render: (value: DatasetStatus) => <Tag color={DATASET_STATUS_COLORS[value]}>{value}</Tag>,
     },
-    {
-      title: '关联模型',
-      dataIndex: 'linkedModels',
-      key: 'linkedModels',
-      width: 160,
-      render: (v: string[]) => v.length > 0 ? (
-        <Space size={4} wrap>
-          {v.map(m => <Tag key={m} color="blue" style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>{m}</Tag>)}
-        </Space>
-      ) : <Text type="secondary">—</Text>,
-    },
-    { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 100 },
+    { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 110 },
     {
       title: '操作',
       key: 'action',
       width: 100,
-      render: (_: unknown, record: TrainingDataset) => (
+      render: (_: unknown, dataset: TrainingDataset) => (
         <Space size={4}>
-          {record.status !== 'Ready' && (
-            <Popconfirm title="确认启动构建？" onConfirm={() => handleBuild(record.key)}>
-              <Button type="text" size="small" icon={<BuildOutlined />} title="构建" />
+          {dataset.status !== 'Ready' && (
+            <Popconfirm title="确认启动构建？" onConfirm={() => handleBuild(dataset.key)}>
+              <Button type="text" size="small" icon={<BuildOutlined />} />
             </Popconfirm>
           )}
-          <Popconfirm title="确认删除？" onConfirm={() => handleDelete(record.key)}>
+          <Popconfirm title="确认删除该语料包？" onConfirm={() => handleDelete(dataset.key)}>
             <Button type="text" size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
@@ -222,33 +259,23 @@ export default function TrainingDatasetsPage() {
     },
   ]
 
-  const statItems = [
-    { title: '数据集总数', value: stats.total, icon: <DatabaseOutlined />, color: '#4f46e5', bg: '#eef2ff' },
-    { title: '总记录数', value: stats.totalRecords, icon: <BarChartOutlined />, color: '#0891b2', bg: '#ecfeff' },
-    { title: '已就绪', value: stats.readyCount, icon: <CheckCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
-    { title: '构建中', value: stats.buildingCount, icon: <SyncOutlined spin={stats.buildingCount > 0} />, color: '#d97706', bg: '#fffbeb' },
-    { title: '总存储', value: stats.totalSize, icon: <HddOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
-  ]
-
   return (
     <div className="page-container">
       <Card className="section-card">
         <div className="page-header">
-          <Title level={4}>训练数据集</Title>
-          <Text type="secondary">L5 数据准备 — 基于本体语义层，自动导出、切分与版本管理训练数据</Text>
+          <Title level={4}>{MODEL_CENTER_PAGE_LABELS.datasets}</Title>
+          <Text type="secondary">统一管理指令数据、多轮对话、偏好对和图文问答语料，支撑 LLM / VL 训练与对齐</Text>
         </div>
 
         <Row gutter={[14, 14]} style={{ margin: '16px 0 20px' }}>
-          {statItems.map(s => (
-            <Col span={Math.floor(24 / statItems.length)} key={s.title}>
+          {statItems.map(item => (
+            <Col span={Math.floor(24 / statItems.length)} key={item.title}>
               <Card size="small" className="stat-card card-hover" styles={{ body: { padding: '16px 18px' } }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div className="stat-icon-wrap" style={{ background: s.bg, color: s.color }}>
-                    {s.icon}
-                  </div>
+                  <div className="stat-icon-wrap" style={{ background: item.bg, color: item.color }}>{item.icon}</div>
                   <div>
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{s.title}</Text>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: s.color, lineHeight: 1.2 }}>{s.value}</div>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 2 }}>{item.title}</Text>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: item.color, lineHeight: 1.2 }}>{item.value}</div>
                   </div>
                 </div>
               </Card>
@@ -258,16 +285,14 @@ export default function TrainingDatasetsPage() {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
           <Input
-            placeholder="搜索数据集名称 / 来源"
-            prefix={<SearchOutlined />}
-            allowClear
+            placeholder="搜索语料包 / 来源 / 类型"
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ width: 280 }}
-            size="small"
+            onChange={event => setSearch(event.target.value)}
+            prefix={<SearchOutlined />}
+            style={{ width: 320 }}
           />
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setCreateOpen(true); form.resetFields(); setSelectedFormat('JSONL') }}>
-            新建数据集
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+            新建语料包
           </Button>
         </div>
 
@@ -275,229 +300,149 @@ export default function TrainingDatasetsPage() {
           dataSource={filtered}
           columns={columns}
           rowKey="key"
-          pagination={filtered.length > 10 ? { pageSize: 10 } : false}
           size="small"
-          onRow={(record) => ({
-            onClick: (e) => {
-              // Don't open drawer when clicking action buttons
-              const target = e.target as HTMLElement
-              if (target.closest('.ant-btn') || target.closest('.ant-popover') || target.closest('.ant-popconfirm')) return
-              handleRowClick(record)
-            },
-            style: { cursor: 'pointer' },
+          pagination={false}
+          onRow={record => ({
+            onClick: () => void handleRowClick(record),
           })}
         />
       </Card>
 
-      {/* Create Modal */}
+      <Drawer
+        title={detailDataset ? detailDataset.name : '语料详情'}
+        open={drawerOpen}
+        width={760}
+        onClose={() => {
+          setDrawerOpen(false)
+          setDetailDataset(null)
+        }}
+      >
+        {detailDataset && (
+          <Space direction="vertical" size={16} style={{ width: '100%' }}>
+            <Descriptions bordered size="small" column={2}>
+              <Descriptions.Item label="语料类型">{DATASET_TYPE_LABELS[detailDataset.datasetType]}</Descriptions.Item>
+              <Descriptions.Item label="模态">{MODEL_MODALITY_LABELS[detailDataset.modality]}</Descriptions.Item>
+              <Descriptions.Item label="规模">{formatDatasetScale(detailDataset)}</Descriptions.Item>
+              <Descriptions.Item label="样本数">{detailDataset.records.toLocaleString()}</Descriptions.Item>
+              <Descriptions.Item label="质量评分">{detailDataset.qualityScore}</Descriptions.Item>
+              <Descriptions.Item label="格式">{detailDataset.format}</Descriptions.Item>
+              <Descriptions.Item label="Train / Val / Test">{detailDataset.trainSplit}/{detailDataset.valSplit}/{detailDataset.testSplit}</Descriptions.Item>
+              <Descriptions.Item label="来源">{detailDataset.source}</Descriptions.Item>
+              <Descriptions.Item label="标注 Schema" span={2}>{detailDataset.annotationSchema.join(' / ')}</Descriptions.Item>
+            </Descriptions>
+
+            <Card size="small" title="构建进度">
+              <Progress percent={detailDataset.buildProgress} status={detailDataset.status === 'Building' ? 'active' : undefined} />
+              <div style={{ marginTop: 12 }}>
+                {detailDataset.buildLog.map((line, index) => (
+                  <div key={index}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{line}</Text>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card size="small" title="样本预览">
+              <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                {detailDataset.sampleData.map((sample, index) => (
+                  <Card
+                    key={index}
+                    size="small"
+                    title={<Text strong>{summarizeDatasetSample(sample)}</Text>}
+                    styles={{ body: { background: '#fafafa' } }}
+                  >
+                    {renderSamplePreview(sample)}
+                  </Card>
+                ))}
+              </Space>
+            </Card>
+          </Space>
+        )}
+      </Drawer>
+
       <Modal
-        title={<ModalHeader icon={<DatabaseOutlined />} title="新建数据集" />}
+        title={<ModalHeader icon={<DatabaseOutlined />} title="新建语料包" />}
         open={createOpen}
-        onCancel={() => { setCreateOpen(false); form.resetFields(); setSelectedFormat('JSONL') }}
+        onCancel={() => {
+          setCreateOpen(false)
+          form.resetFields()
+        }}
         onOk={() => void handleCreate()}
         okText="创建"
         cancelText="取消"
-        width={620}
-        destroyOnClose
-      >
-        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="name" label="数据集名称" rules={[{ required: true, message: '请输入数据集名称' }]}>
-            <Input placeholder="例如: equipment_sensors_v1" />
-          </Form.Item>
-          <Form.Item name="source" label="数据来源" rules={[{ required: true, message: '请选择数据来源' }]}>
-            <Select placeholder="选择本体对象">
-              <Select.Option value="ontology://PurchaseOrder/output">ontology://PurchaseOrder/output</Select.Option>
-              <Select.Option value="ontology://Equipment/output">ontology://Equipment/output</Select.Option>
-              <Select.Option value="ontology://Customer/output">ontology://Customer/output</Select.Option>
-              <Select.Option value="ontology://Inventory/output">ontology://Inventory/output</Select.Option>
-              <Select.Option value="ontology://WorkOrder/output">ontology://WorkOrder/output</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="format" label="导出格式" initialValue="JSONL">
-            <Radio.Group onChange={e => setSelectedFormat(e.target.value as DatasetFormat)}>
-              <Radio.Button value="JSONL">JSONL</Radio.Button>
-              <Radio.Button value="CSV">CSV</Radio.Button>
-              <Radio.Button value="Parquet">Parquet</Radio.Button>
-            </Radio.Group>
-          </Form.Item>
-          {selectedFormat === 'JSONL' && (
-            <Form.Item name="promptTemplate" label="Prompt 模板" extra="使用 {{字段名}} 引用 Schema 字段">
-              <Input.TextArea
-                rows={3}
-                placeholder='{"instruction": "分类设备状态", "input": "{{设备名称}} {{故障类型}}", "output": "{{运行状态}}"}'
-                style={{ fontFamily: 'monospace', fontSize: 12 }}
-              />
-            </Form.Item>
-          )}
-          <Form.Item name="schemaFields" label="Schema 字段选择">
-            <Checkbox.Group>
-              <Row>
-                {SCHEMA_FIELD_OPTIONS.map(field => (
-                  <Col span={8} key={field}>
-                    <Checkbox value={field} style={{ marginBottom: 8 }}>{field}</Checkbox>
-                  </Col>
-                ))}
-              </Row>
-            </Checkbox.Group>
-          </Form.Item>
-          <Row gutter={16}>
-            <Col span={8}><Form.Item name="trainSplit" label="Train %" initialValue={70}><InputNumber min={0} max={100} style={{ width: '100%' }} /></Form.Item></Col>
-            <Col span={8}><Form.Item name="valSplit" label="Val %" initialValue={15}><InputNumber min={0} max={100} style={{ width: '100%' }} /></Form.Item></Col>
-            <Col span={8}><Form.Item name="testSplit" label="Test %" initialValue={15}><InputNumber min={0} max={100} style={{ width: '100%' }} /></Form.Item></Col>
-          </Row>
-        </Form>
-      </Modal>
-
-      {/* Detail Drawer */}
-      <Drawer
-        title={
-          detailDataset ? (
-            <Space>
-              <DatabaseOutlined style={{ color: '#1677ff' }} />
-              <span>{detailDataset.name}</span>
-              <Tag color={DATASET_FORMAT_COLORS[detailDataset.format]}>{detailDataset.format}</Tag>
-              <Tag color={DATASET_STATUS_COLORS[detailDataset.status]}>{detailDataset.status}</Tag>
-            </Space>
-          ) : '数据集详情'
-        }
-        open={drawerOpen}
-        onClose={() => { setDrawerOpen(false); setDetailDataset(null) }}
         width={720}
         destroyOnClose
       >
-        {detailDataset && (
-          <div>
-            {/* Basic info */}
-            <Row gutter={[16, 12]} style={{ marginBottom: 20 }}>
-              <Col span={8}>
-                <Text type="secondary">来源</Text>
-                <br />
-                <Text code style={{ fontSize: 11 }}>{detailDataset.source}</Text>
-              </Col>
-              <Col span={8}>
-                <Text type="secondary">版本</Text>
-                <br />
-                <Text strong>{detailDataset.version}</Text>
-              </Col>
-              <Col span={8}>
-                <Text type="secondary">记录数</Text>
-                <br />
-                <Text strong>{detailDataset.records > 0 ? detailDataset.records.toLocaleString() : '—'}</Text>
-              </Col>
-              <Col span={8}>
-                <Text type="secondary">大小</Text>
-                <br />
-                <Text>{detailDataset.size}</Text>
-              </Col>
-              <Col span={8}>
-                <Text type="secondary">切分比例</Text>
-                <br />
-                <Text>{detailDataset.trainSplit}/{detailDataset.valSplit}/{detailDataset.testSplit}</Text>
-              </Col>
-              <Col span={8}>
-                <Text type="secondary">更新时间</Text>
-                <br />
-                <Text>{detailDataset.updatedAt}</Text>
-              </Col>
-            </Row>
-
-            {/* Build progress bar */}
-            {detailDataset.status === 'Building' && (
-              <div style={{ marginBottom: 16 }}>
-                <Text type="secondary">构建进度</Text>
-                <Progress percent={detailDataset.buildProgress} status="active" />
-              </div>
-            )}
-
-            <Tabs
-              defaultActiveKey="preview"
-              items={[
-                {
-                  key: 'preview',
-                  label: '数据预览',
-                  children: detailDataset.sampleData.length > 0 ? (
-                    <Table
-                      dataSource={detailDataset.sampleData.map((row, i) => ({ ...row, _key: i }))}
-                      columns={getSampleColumns(detailDataset.sampleData)}
-                      rowKey="_key"
-                      pagination={false}
-                      size="small"
-                      bordered
-                      scroll={{ x: 'max-content' }}
-                    />
-                  ) : (
-                    <Text type="secondary">暂无预览数据</Text>
-                  ),
-                },
-                {
-                  key: 'schema',
-                  label: 'Schema 字段',
-                  children: (
-                    <div>
-                      {detailDataset.schemaFields.length > 0 ? (
-                        <Space size={[8, 8]} wrap>
-                          {detailDataset.schemaFields.map(field => (
-                            <Tag key={field} color="blue" style={{ fontSize: 13, padding: '4px 12px' }}>{field}</Tag>
-                          ))}
-                        </Space>
-                      ) : (
-                        <Text type="secondary">未选择 Schema 字段</Text>
-                      )}
-                      {detailDataset.promptTemplate && (
-                        <div style={{ marginTop: 16 }}>
-                          <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>Prompt 模板</Text>
-                          <div style={{
-                            background: '#f5f5f5',
-                            borderRadius: 6,
-                            padding: '12px 16px',
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-all',
-                          }}>
-                            {detailDataset.promptTemplate}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  key: 'log',
-                  label: '构建日志',
-                  children: (
-                    <div style={{
-                      background: '#1e1e1e',
-                      borderRadius: 6,
-                      padding: '16px',
-                      maxHeight: 400,
-                      overflowY: 'auto',
-                      fontFamily: "'Courier New', Courier, monospace",
-                      fontSize: 12,
-                      lineHeight: 1.8,
-                    }}>
-                      {detailDataset.buildLog.length > 0 ? (
-                        detailDataset.buildLog.map((line, i) => (
-                          <div key={i} style={{
-                            color: line.includes('✓') ? '#52c41a'
-                              : line.includes('✗') || line.includes('错误') ? '#ff4d4f'
-                              : line.includes('...') ? '#faad14'
-                              : '#d4d4d4',
-                          }}>
-                            {line}
-                          </div>
-                        ))
-                      ) : (
-                        <div style={{ color: '#666' }}>暂无构建日志</div>
-                      )}
-                    </div>
-                  ),
-                },
-              ]}
-            />
-          </div>
-        )}
-      </Drawer>
+        <Form
+          form={form}
+          layout="vertical"
+          style={{ marginTop: 16 }}
+          initialValues={{
+            datasetType: 'conversation',
+            modality: 'text',
+            format: 'JSONL',
+            qualityScore: 85,
+            trainSplit: 80,
+            valSplit: 10,
+            testSplit: 10,
+            annotationSchema: ['system', 'user', 'assistant'],
+          }}
+        >
+          <Form.Item label="语料包名称" name="name" rules={[{ required: true, message: '请输入名称' }]}>
+            <Input placeholder="例如: factory_instruction_corpus_v3" />
+          </Form.Item>
+          <Form.Item label="语料来源" name="source" rules={[{ required: true, message: '请输入来源' }]}>
+            <Input placeholder="例如: corpus://factory-copilot-dialog-sft-v3" />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item label="语料类型" name="datasetType" rules={[{ required: true }]}>
+                <Select options={Object.entries(DATASET_TYPE_LABELS).map(([value, label]) => ({ value, label }))} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="模态" name="modality" rules={[{ required: true }]}>
+                <Select
+                  options={[
+                    { value: 'text', label: MODEL_MODALITY_LABELS.text },
+                    { value: 'image-text', label: MODEL_MODALITY_LABELS['image-text'] },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="格式" name="format" rules={[{ required: true }]}>
+                <Select options={(['JSONL', 'Parquet', 'CSV'] as DatasetFormat[]).map(value => ({ value, label: value }))} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item label="Token 数" name="tokenCount">
+                <InputNumber style={{ width: '100%' }} min={0} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="图像数" name="imageCount">
+                <InputNumber style={{ width: '100%' }} min={0} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="质量评分" name="qualityScore">
+                <InputNumber style={{ width: '100%' }} min={0} max={100} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="annotationSchema" label="标注 Schema">
+            <Checkbox.Group options={SCHEMA_FIELD_OPTIONS} />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={8}><Form.Item label="Train %" name="trainSplit"><InputNumber min={0} max={100} style={{ width: '100%' }} /></Form.Item></Col>
+            <Col span={8}><Form.Item label="Val %" name="valSplit"><InputNumber min={0} max={100} style={{ width: '100%' }} /></Form.Item></Col>
+            <Col span={8}><Form.Item label="Test %" name="testSplit"><InputNumber min={0} max={100} style={{ width: '100%' }} /></Form.Item></Col>
+          </Row>
+        </Form>
+      </Modal>
     </div>
   )
 }
