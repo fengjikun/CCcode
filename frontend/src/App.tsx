@@ -23,6 +23,10 @@ import GraphPage from './pages/GraphPage'
 
 // L2 数据集准备
 import TransformPage from './pages/platform/TransformPage'
+import DataIngestionPage from './pages/platform/DataIngestionPage'
+import DataQualityPage from './pages/platform/DataQualityPage'
+import DataCatalogPage from './pages/platform/DataCatalogPage'
+import DataGovernancePage from './pages/platform/DataGovernancePage'
 
 // L5+L6 大模型 Lab
 import GatewayModelsPage from './pages/platform/GatewayModelsPage'
@@ -82,7 +86,11 @@ export default function App() {
         <Route path="/ontology/graph" element={<GraphPage />} />
 
         {/* L2 数据集准备 */}
+        <Route path="/data-platform/ingestion-jobs" element={<DataIngestionPage />} />
         <Route path="/transform" element={<TransformPage />} />
+        <Route path="/data-platform/quality" element={<DataQualityPage />} />
+        <Route path="/data-platform/catalog" element={<DataCatalogPage />} />
+        <Route path="/data-platform/governance" element={<DataGovernancePage />} />
 
         {/* L5+L6 大模型 Lab */}
         <Route path="/model-lab/gateway" element={<Navigate to="/model-lab/gateway/models" replace />} />

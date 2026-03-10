@@ -21,6 +21,7 @@ import {
   ProjectOutlined,
   LineChartOutlined,
   CloudServerOutlined,
+  SyncOutlined,
   SafetyCertificateOutlined,
   BellOutlined,
   SettingOutlined,
@@ -89,14 +90,17 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    key: '/transform',
-    icon: <FileSearchOutlined />,
-    label: '数据集准备',
-  },
-  {
-    key: '/datasource',
+    key: 'data-platform',
     icon: <DatabaseOutlined />,
-    label: '数据源',
+    label: '数据平台',
+    children: [
+      { key: '/datasource', icon: <DatabaseOutlined />, label: '数据源' },
+      { key: '/data-platform/ingestion-jobs', icon: <SyncOutlined />, label: '数据接入任务' },
+      { key: '/transform', icon: <FileSearchOutlined />, label: '数据集准备' },
+      { key: '/data-platform/quality', icon: <BellOutlined />, label: '数据质量' },
+      { key: '/data-platform/catalog', icon: <SearchOutlined />, label: '数据目录' },
+      { key: '/data-platform/governance', icon: <SafetyCertificateOutlined />, label: '数据治理' },
+    ],
   },
 ]
 
@@ -110,7 +114,11 @@ const PAGE_TITLES: Record<string, [string, string]> = {
   '/studio/skills': ['workspace 工作台', 'Skills Hub'],
   '/ontology/projects': ['Deepology', '本体管理'],
   '/ontology/graph': ['Deepology', '图谱检索'],
-  '/transform': ['', '数据集准备'],
+  '/data-platform/ingestion-jobs': ['数据平台', '数据接入任务'],
+  '/transform': ['数据平台', '数据集准备'],
+  '/data-platform/quality': ['数据平台', '数据质量'],
+  '/data-platform/catalog': ['数据平台', '数据目录'],
+  '/data-platform/governance': ['数据平台', '数据治理'],
   '/model-lab/gateway': ['大模型Lab', MODEL_CENTER_PAGE_LABELS.gateway],
   '/model-lab/gateway/models': [MODEL_CENTER_PAGE_LABELS.gateway, MODEL_GATEWAY_PAGE_LABELS.models],
   '/model-lab/gateway/api-keys': [MODEL_CENTER_PAGE_LABELS.gateway, MODEL_GATEWAY_PAGE_LABELS.apiKeys],
@@ -118,7 +126,7 @@ const PAGE_TITLES: Record<string, [string, string]> = {
   '/model-lab/training': ['大模型Lab', MODEL_CENTER_PAGE_LABELS.training],
   '/model-lab/evaluation': ['大模型Lab', MODEL_CENTER_PAGE_LABELS.evaluation],
   '/model-lab/datasets': ['大模型Lab', MODEL_CENTER_PAGE_LABELS.datasets],
-  '/datasource': ['', '数据源管理'],
+  '/datasource': ['数据平台', '数据源管理'],
 }
 
 function getAllLeafKeys(items: MenuItem[]): string[] {

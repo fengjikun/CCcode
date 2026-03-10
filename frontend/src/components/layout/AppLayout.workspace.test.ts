@@ -20,9 +20,13 @@ describe('AppLayout workspace route refresh', () => {
     expect(appLayoutSource).toContain("'/studio/agents/logs'")
   })
 
-  it('renames the L2 entry to 数据集准备', () => {
-    expect(appLayoutSource).toContain("label: '数据集准备'")
-    expect(appLayoutSource).toContain("'/transform': ['', '数据集准备']")
+  it('groups datasource and dataset prep under 数据平台', () => {
+    expect(appLayoutSource).toContain("key: 'data-platform'")
+    expect(appLayoutSource).toContain("label: '数据平台'")
+    expect(appLayoutSource).toContain("{ key: '/datasource', icon: <DatabaseOutlined />, label: '数据源' }")
+    expect(appLayoutSource).toContain("{ key: '/transform', icon: <FileSearchOutlined />, label: '数据集准备' }")
+    expect(appLayoutSource).toContain("'/transform': ['数据平台', '数据集准备']")
+    expect(appLayoutSource).toContain("'/datasource': ['数据平台', '数据源管理']")
   })
 
   it('uses workspace 工作台 as the page title parent for L4 pages', () => {
