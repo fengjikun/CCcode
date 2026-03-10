@@ -1,4 +1,5 @@
 import { delay, rand } from './mockConfig'
+import { REFRESHED_MODEL_NAMES, getModelDisplayName } from '../types/modelCatalog'
 import type {
   CreateGatewayApiKeyInput,
   DeployConfig,
@@ -66,8 +67,8 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
   return [
     {
       key: 'model-1',
-      name: 'deepexi-factory-copilot-sft',
-      displayName: 'Deepexi Factory Copilot',
+      name: REFRESHED_MODEL_NAMES.reasoning,
+      displayName: getModelDisplayName(REFRESHED_MODEL_NAMES.reasoning),
       modelFamily: 'LLM',
       modality: 'text',
       capability: 'reasoning',
@@ -85,8 +86,8 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
       latencyP50: '1.2s',
       latencyP99: '3.8s',
       lastDeployed: TODAY,
-      description: '工业知识增强问答与流程执行模型。',
-      trainedFrom: 'deepexi-factory-copilot-sft',
+      description: '复用 Deepexi2.0-60B-A14B 底座的工业知识问答与流程推理模型。',
+      trainedFrom: REFRESHED_MODEL_NAMES.reasoning,
       evalAccuracy: '91.8',
       evalF1: '88.6',
       replicas: 6,
@@ -95,8 +96,8 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
     },
     {
       key: 'model-2',
-      name: 'deepexi-vl-inspection-assistant',
-      displayName: 'Deepexi Inspection VL Assistant',
+      name: REFRESHED_MODEL_NAMES.vlInspection,
+      displayName: getModelDisplayName(REFRESHED_MODEL_NAMES.vlInspection),
       modelFamily: 'VL',
       modality: 'image-text',
       capability: 'vision-language-understanding',
@@ -114,8 +115,8 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
       latencyP50: '2.1s',
       latencyP99: '5.9s',
       lastDeployed: '2026-03-09',
-      description: '设备巡检图像问答与 grounded diagnosis 模型。',
-      trainedFrom: 'deepexi-vl-inspection-assistant',
+      description: '面向设备巡检图像理解、异常定位与 grounded diagnosis 的多模态模型。',
+      trainedFrom: REFRESHED_MODEL_NAMES.vlInspection,
       evalAccuracy: '88.4',
       evalF1: '90.2',
       replicas: 3,
@@ -124,8 +125,8 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
     },
     {
       key: 'model-3',
-      name: 'deepexi-doc-parser-lora',
-      displayName: 'Deepexi Doc Parser',
+      name: REFRESHED_MODEL_NAMES.vlDoc,
+      displayName: getModelDisplayName(REFRESHED_MODEL_NAMES.vlDoc),
       modelFamily: 'VL',
       modality: 'image-text',
       capability: 'document-parsing',
@@ -143,8 +144,8 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
       latencyP50: '1.8s',
       latencyP99: '4.2s',
       lastDeployed: '2026-03-08',
-      description: '票据与检修文档解析增强模型。',
-      trainedFrom: 'deepexi-doc-parser-lora',
+      description: '面向票据、工单与检修文档结构化解析的轻量多模态模型。',
+      trainedFrom: REFRESHED_MODEL_NAMES.vlDoc,
       evalAccuracy: '89.7',
       evalF1: '91.4',
       replicas: 2,
@@ -153,8 +154,8 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
     },
     {
       key: 'model-4',
-      name: 'deepexi-factory-copilot-dpo',
-      displayName: 'Deepexi Factory Copilot DPO',
+      name: REFRESHED_MODEL_NAMES.chat,
+      displayName: getModelDisplayName(REFRESHED_MODEL_NAMES.chat),
       modelFamily: 'LLM',
       modality: 'text',
       capability: 'chat',
@@ -172,8 +173,8 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
       latencyP50: '1.0s',
       latencyP99: '3.2s',
       lastDeployed: '2026-03-07',
-      description: '强化拒答边界与事实性回答的对齐模型。',
-      trainedFrom: 'deepexi-factory-copilot-dpo',
+      description: '复用 Deepexi2.0-60B-A14B 底座的通用对话与安全对齐模型。',
+      trainedFrom: REFRESHED_MODEL_NAMES.chat,
       evalAccuracy: '94.1',
       evalF1: '97.2',
       replicas: 5,
@@ -185,10 +186,10 @@ export function buildDefaultRegisteredModels(): RegisteredModel[] {
 
 export function buildDefaultGatewayRoutes(): GatewayRoute[] {
   return [
-    { key: 'route-1', path: '/chat/completions', model: 'deepexi-factory-copilot-dpo', modelFamily: 'LLM', modality: 'text', capability: 'chat', version: 'v2026.03.07', weight: 100, rateLimit: 4000, status: 'Active' },
-    { key: 'route-2', path: '/responses', model: 'deepexi-factory-copilot-sft', modelFamily: 'LLM', modality: 'text', capability: 'reasoning', version: 'v2026.03.10', weight: 100, rateLimit: 4500, status: 'Active' },
-    { key: 'route-3', path: '/vl/understand', model: 'deepexi-vl-inspection-assistant', modelFamily: 'VL', modality: 'image-text', capability: 'vision-language-understanding', version: 'v2026.03.09', weight: 20, rateLimit: 900, status: 'Active' },
-    { key: 'route-4', path: '/doc/parse', model: 'deepexi-doc-parser-lora', modelFamily: 'VL', modality: 'image-text', capability: 'document-parsing', version: 'v2026.03.08', weight: 100, rateLimit: 800, status: 'Active' },
+    { key: 'route-1', path: '/chat/completions', model: REFRESHED_MODEL_NAMES.chat, modelFamily: 'LLM', modality: 'text', capability: 'chat', version: 'v2026.03.07', weight: 100, rateLimit: 4000, status: 'Active' },
+    { key: 'route-2', path: '/responses', model: REFRESHED_MODEL_NAMES.reasoning, modelFamily: 'LLM', modality: 'text', capability: 'reasoning', version: 'v2026.03.10', weight: 100, rateLimit: 4500, status: 'Active' },
+    { key: 'route-3', path: '/vl/understand', model: REFRESHED_MODEL_NAMES.vlInspection, modelFamily: 'VL', modality: 'image-text', capability: 'vision-language-understanding', version: 'v2026.03.09', weight: 20, rateLimit: 900, status: 'Active' },
+    { key: 'route-4', path: '/doc/parse', model: REFRESHED_MODEL_NAMES.vlDoc, modelFamily: 'VL', modality: 'image-text', capability: 'document-parsing', version: 'v2026.03.08', weight: 100, rateLimit: 800, status: 'Active' },
   ]
 }
 
@@ -199,7 +200,7 @@ export function buildDefaultGatewayApiKeys(): GatewayApiKey[] {
       name: '产线 Copilot 生产凭证',
       prefix: 'dx_prod_copilot',
       owner: 'factory.ops',
-      linkedModels: ['deepexi-factory-copilot-dpo', 'deepexi-factory-copilot-sft'],
+      linkedModels: [REFRESHED_MODEL_NAMES.chat, REFRESHED_MODEL_NAMES.reasoning],
       scopes: ['chat:completions', 'responses:create', 'metrics:read'],
       rateLimitRpm: 2400,
       monthlyQuota: 22_000_000,
@@ -215,7 +216,7 @@ export function buildDefaultGatewayApiKeys(): GatewayApiKey[] {
       name: '视觉巡检灰度凭证',
       prefix: 'dx_canary_vl',
       owner: 'inspection.bot',
-      linkedModels: ['deepexi-vl-inspection-assistant'],
+      linkedModels: [REFRESHED_MODEL_NAMES.vlInspection],
       scopes: ['vision:understand', 'metrics:read'],
       rateLimitRpm: 480,
       monthlyQuota: 3_800_000,
@@ -231,7 +232,7 @@ export function buildDefaultGatewayApiKeys(): GatewayApiKey[] {
       name: '文档解析批处理',
       prefix: 'dx_doc_batch',
       owner: 'doc.pipeline',
-      linkedModels: ['deepexi-doc-parser-lora'],
+      linkedModels: [REFRESHED_MODEL_NAMES.vlDoc],
       scopes: ['documents:parse'],
       rateLimitRpm: 300,
       monthlyQuota: 1_500_000,
@@ -246,18 +247,18 @@ export function buildDefaultGatewayApiKeys(): GatewayApiKey[] {
 
 export function buildDefaultGatewayUsageLogs(): GatewayUsageLog[] {
   return [
-    { key: 'log-1', timestamp: '2026-03-10 12:36:44', requestId: 'req_gw_8f30', apiKeyName: '产线 Copilot 生产凭证', model: 'deepexi-factory-copilot-dpo', routePath: '/chat/completions', requester: 'workorder-assistant', status: 'Success', httpStatus: 200, latencyMs: 920, inputTokens: 2980, outputTokens: 620, region: 'cn-sha' },
-    { key: 'log-2', timestamp: '2026-03-10 12:35:19', requestId: 'req_gw_8f2f', apiKeyName: '产线 Copilot 生产凭证', model: 'deepexi-factory-copilot-sft', routePath: '/responses', requester: 'ops-copilot', status: 'Success', httpStatus: 200, latencyMs: 1260, inputTokens: 2140, outputTokens: 508, region: 'cn-sha' },
-    { key: 'log-3', timestamp: '2026-03-10 12:34:21', requestId: 'req_gw_8f2e', apiKeyName: '文档解析批处理', model: 'deepexi-doc-parser-lora', routePath: '/doc/parse', requester: 'doc-batch-worker', status: 'ClientError', httpStatus: 422, latencyMs: 610, inputTokens: 440, outputTokens: 0, region: 'cn-sha', errorMessage: 'Document image too large for current preprocessing policy' },
-    { key: 'log-4', timestamp: '2026-03-10 12:33:16', requestId: 'req_gw_8f2d', apiKeyName: '视觉巡检灰度凭证', model: 'deepexi-vl-inspection-assistant', routePath: '/vl/understand', requester: 'inspection-edge-07', status: 'Success', httpStatus: 200, latencyMs: 2480, inputTokens: 1220, outputTokens: 188, region: 'cn-bj' },
-    { key: 'log-5', timestamp: '2026-03-10 12:28:05', requestId: 'req_gw_8f2c', apiKeyName: '视觉巡检灰度凭证', model: 'deepexi-vl-inspection-assistant', routePath: '/vl/understand', requester: 'inspection-edge-03', status: 'RateLimited', httpStatus: 429, latencyMs: 210, inputTokens: 90, outputTokens: 0, region: 'cn-bj', errorMessage: 'Image understanding RPM quota exceeded on canary route' },
-    { key: 'log-6', timestamp: '2026-03-10 12:24:43', requestId: 'req_gw_8f2b', apiKeyName: '产线 Copilot 生产凭证', model: 'deepexi-factory-copilot-dpo', routePath: '/chat/completions', requester: 'mes-shift-summary', status: 'Success', httpStatus: 200, latencyMs: 1160, inputTokens: 1820, outputTokens: 420, region: 'cn-sha' },
-    { key: 'log-7', timestamp: '2026-03-10 12:19:52', requestId: 'req_gw_8f2a', apiKeyName: '产线 Copilot 生产凭证', model: 'deepexi-factory-copilot-sft', routePath: '/responses', requester: 'ops-copilot', status: 'ServerError', httpStatus: 504, latencyMs: 8010, inputTokens: 3200, outputTokens: 0, region: 'cn-sha', errorMessage: 'Judge reranking path timed out after 8s' },
-    { key: 'log-8', timestamp: '2026-03-10 12:12:16', requestId: 'req_gw_8f29', apiKeyName: '文档解析批处理', model: 'deepexi-doc-parser-lora', routePath: '/doc/parse', requester: 'ticket-importer', status: 'Success', httpStatus: 200, latencyMs: 1740, inputTokens: 680, outputTokens: 236, region: 'cn-sha' },
-    { key: 'log-9', timestamp: '2026-03-10 11:58:31', requestId: 'req_gw_8f28', apiKeyName: '视觉巡检灰度凭证', model: 'deepexi-vl-inspection-assistant', routePath: '/vl/understand', requester: 'inspection-edge-03', status: 'Success', httpStatus: 200, latencyMs: 2210, inputTokens: 1160, outputTokens: 192, region: 'cn-bj' },
-    { key: 'log-10', timestamp: '2026-03-10 11:46:08', requestId: 'req_gw_8f27', apiKeyName: '产线 Copilot 生产凭证', model: 'deepexi-factory-copilot-dpo', routePath: '/chat/completions', requester: 'alarm-triage', status: 'Success', httpStatus: 200, latencyMs: 880, inputTokens: 1460, outputTokens: 388, region: 'cn-sha' },
-    { key: 'log-11', timestamp: '2026-03-10 11:31:44', requestId: 'req_gw_8f26', apiKeyName: '文档解析批处理', model: 'deepexi-doc-parser-lora', routePath: '/doc/parse', requester: 'ticket-importer', status: 'Success', httpStatus: 200, latencyMs: 1680, inputTokens: 710, outputTokens: 244, region: 'cn-sha' },
-    { key: 'log-12', timestamp: '2026-03-10 10:54:22', requestId: 'req_gw_8f25', apiKeyName: '产线 Copilot 生产凭证', model: 'deepexi-factory-copilot-sft', routePath: '/responses', requester: 'knowledge-bot', status: 'Success', httpStatus: 200, latencyMs: 1350, inputTokens: 2240, outputTokens: 540, region: 'cn-sz' },
+    { key: 'log-1', timestamp: '2026-03-10 12:36:44', requestId: 'req_gw_8f30', apiKeyName: '产线 Copilot 生产凭证', model: REFRESHED_MODEL_NAMES.chat, routePath: '/chat/completions', requester: 'workorder-assistant', status: 'Success', httpStatus: 200, latencyMs: 920, inputTokens: 2980, outputTokens: 620, region: 'cn-sha' },
+    { key: 'log-2', timestamp: '2026-03-10 12:35:19', requestId: 'req_gw_8f2f', apiKeyName: '产线 Copilot 生产凭证', model: REFRESHED_MODEL_NAMES.reasoning, routePath: '/responses', requester: 'ops-copilot', status: 'Success', httpStatus: 200, latencyMs: 1260, inputTokens: 2140, outputTokens: 508, region: 'cn-sha' },
+    { key: 'log-3', timestamp: '2026-03-10 12:34:21', requestId: 'req_gw_8f2e', apiKeyName: '文档解析批处理', model: REFRESHED_MODEL_NAMES.vlDoc, routePath: '/doc/parse', requester: 'doc-batch-worker', status: 'ClientError', httpStatus: 422, latencyMs: 610, inputTokens: 440, outputTokens: 0, region: 'cn-sha', errorMessage: 'Document image too large for current preprocessing policy' },
+    { key: 'log-4', timestamp: '2026-03-10 12:33:16', requestId: 'req_gw_8f2d', apiKeyName: '视觉巡检灰度凭证', model: REFRESHED_MODEL_NAMES.vlInspection, routePath: '/vl/understand', requester: 'inspection-edge-07', status: 'Success', httpStatus: 200, latencyMs: 2480, inputTokens: 1220, outputTokens: 188, region: 'cn-bj' },
+    { key: 'log-5', timestamp: '2026-03-10 12:28:05', requestId: 'req_gw_8f2c', apiKeyName: '视觉巡检灰度凭证', model: REFRESHED_MODEL_NAMES.vlInspection, routePath: '/vl/understand', requester: 'inspection-edge-03', status: 'RateLimited', httpStatus: 429, latencyMs: 210, inputTokens: 90, outputTokens: 0, region: 'cn-bj', errorMessage: 'Image understanding RPM quota exceeded on canary route' },
+    { key: 'log-6', timestamp: '2026-03-10 12:24:43', requestId: 'req_gw_8f2b', apiKeyName: '产线 Copilot 生产凭证', model: REFRESHED_MODEL_NAMES.chat, routePath: '/chat/completions', requester: 'mes-shift-summary', status: 'Success', httpStatus: 200, latencyMs: 1160, inputTokens: 1820, outputTokens: 420, region: 'cn-sha' },
+    { key: 'log-7', timestamp: '2026-03-10 12:19:52', requestId: 'req_gw_8f2a', apiKeyName: '产线 Copilot 生产凭证', model: REFRESHED_MODEL_NAMES.reasoning, routePath: '/responses', requester: 'ops-copilot', status: 'ServerError', httpStatus: 504, latencyMs: 8010, inputTokens: 3200, outputTokens: 0, region: 'cn-sha', errorMessage: 'Judge reranking path timed out after 8s' },
+    { key: 'log-8', timestamp: '2026-03-10 12:12:16', requestId: 'req_gw_8f29', apiKeyName: '文档解析批处理', model: REFRESHED_MODEL_NAMES.vlDoc, routePath: '/doc/parse', requester: 'ticket-importer', status: 'Success', httpStatus: 200, latencyMs: 1740, inputTokens: 680, outputTokens: 236, region: 'cn-sha' },
+    { key: 'log-9', timestamp: '2026-03-10 11:58:31', requestId: 'req_gw_8f28', apiKeyName: '视觉巡检灰度凭证', model: REFRESHED_MODEL_NAMES.vlInspection, routePath: '/vl/understand', requester: 'inspection-edge-03', status: 'Success', httpStatus: 200, latencyMs: 2210, inputTokens: 1160, outputTokens: 192, region: 'cn-bj' },
+    { key: 'log-10', timestamp: '2026-03-10 11:46:08', requestId: 'req_gw_8f27', apiKeyName: '产线 Copilot 生产凭证', model: REFRESHED_MODEL_NAMES.chat, routePath: '/chat/completions', requester: 'alarm-triage', status: 'Success', httpStatus: 200, latencyMs: 880, inputTokens: 1460, outputTokens: 388, region: 'cn-sha' },
+    { key: 'log-11', timestamp: '2026-03-10 11:31:44', requestId: 'req_gw_8f26', apiKeyName: '文档解析批处理', model: REFRESHED_MODEL_NAMES.vlDoc, routePath: '/doc/parse', requester: 'ticket-importer', status: 'Success', httpStatus: 200, latencyMs: 1680, inputTokens: 710, outputTokens: 244, region: 'cn-sha' },
+    { key: 'log-12', timestamp: '2026-03-10 10:54:22', requestId: 'req_gw_8f25', apiKeyName: '产线 Copilot 生产凭证', model: REFRESHED_MODEL_NAMES.reasoning, routePath: '/responses', requester: 'knowledge-bot', status: 'Success', httpStatus: 200, latencyMs: 1350, inputTokens: 2240, outputTokens: 540, region: 'cn-sz' },
   ]
 }
 

@@ -35,6 +35,7 @@ import {
 import ModalHeader from '../../components/shared/ModalHeader'
 import PageHeader from '../../components/shared/PageHeader'
 import { MODEL_CENTER_PAGE_LABELS, MODEL_GATEWAY_PAGE_LABELS } from '../../types/modelCenter'
+import { getModelDisplayName } from '../../types/modelCatalog'
 import type { CreateGatewayApiKeyInput, GatewayApiKey, GatewayIssuedSecret, RegisteredModel } from '../../types/modelGateway'
 
 const { Text } = Typography
@@ -131,7 +132,7 @@ export default function GatewayApiKeysPage() {
       key: 'linkedModels',
       render: (value: string[]) => (
         <Space size={[4, 4]} wrap>
-          {value.map(model => <Tag color="blue" key={model}>{model}</Tag>)}
+          {value.map(model => <Tag color="blue" key={model}>{getModelDisplayName(model)}</Tag>)}
         </Space>
       ),
     },
@@ -289,7 +290,7 @@ export default function GatewayApiKeysPage() {
           <Form.Item name="linkedModels" label="绑定模型" rules={[{ required: true, message: '请选择至少一个模型' }]}>
             <Select
               mode="multiple"
-              options={models.map(model => ({ label: model.name, value: model.name }))}
+              options={models.map(model => ({ label: model.displayName, value: model.name }))}
               placeholder="选择可访问模型"
             />
           </Form.Item>

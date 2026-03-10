@@ -45,6 +45,7 @@ import type { GatewayStats, MonitoringStats } from '../../api/modelGateway'
 import type { DeployConfig, GatewayRoute, ModelStage, RegisteredModel } from '../../types/modelGateway'
 import { MODEL_STAGE_COLORS } from '../../types/modelGateway'
 import { MODEL_CENTER_PAGE_LABELS, MODEL_GATEWAY_PAGE_LABELS } from '../../types/modelCenter'
+import { getModelDisplayName } from '../../types/modelCatalog'
 import { formatGatewayQuota, summarizeGatewayCapability } from './modelGateway.helpers'
 
 const { Text } = Typography
@@ -254,7 +255,17 @@ export default function GatewayModelsPage() {
 
   const routeColumns = [
     { title: '能力入口', dataIndex: 'path', key: 'path', render: (value: string) => <Text code>{value}</Text> },
-    { title: '服务', dataIndex: 'model', key: 'model', render: (value: string) => <Text strong>{value}</Text> },
+    {
+      title: '服务',
+      dataIndex: 'model',
+      key: 'model',
+      render: (value: string) => (
+        <Space direction="vertical" size={2}>
+          <Text strong>{getModelDisplayName(value)}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{value}</Text>
+        </Space>
+      ),
+    },
     { title: '能力', key: 'capability', render: (_: unknown, route: GatewayRoute) => summarizeGatewayCapability(route) },
     { title: '版本', dataIndex: 'version', key: 'version', width: 110 },
     { title: '流量权重', dataIndex: 'weight', key: 'weight', width: 100, render: (value: number) => `${value}%` },

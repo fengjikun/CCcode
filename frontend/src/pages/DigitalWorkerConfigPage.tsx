@@ -36,6 +36,7 @@ import { listSkills } from '../api/skillsMarket'
 import type { ProjectDetail, ProjectSummary } from '../types/projectMvp'
 import type { DigitalHuman, DigitalHumanType } from '../types/digitalHuman'
 import { DIGITAL_HUMAN_TYPE_DESCRIPTIONS, DIGITAL_HUMAN_TYPE_LABELS } from '../types/digitalHuman'
+import { SERVICE_MODEL_SELECT_OPTIONS } from '../types/modelCatalog'
 import type { Agent, AgentType } from '../types/agent'
 import { AGENT_TYPE_LABELS } from '../types/agent'
 import type { Skill } from '../types/skill'
@@ -59,13 +60,6 @@ interface ConfigFormValues {
   publishStatus?: DigitalHuman['publishStatus']
   publishChannels?: string[]
 }
-
-const MODEL_OPTIONS = [
-  { value: 'Deepexi-Platform-70B', label: 'Deepexi-Platform-70B' },
-  { value: 'Deepexi-R1-Reasoner', label: 'Deepexi-R1-Reasoner' },
-  { value: 'Deepexi-Industry-60B-Instruct', label: 'Deepexi-Industry-60B-Instruct' },
-  { value: 'Deepexi-General-Agent', label: 'Deepexi-General-Agent' },
-]
 
 const CHANNEL_OPTIONS = [
   { value: '管理平台', label: '管理平台' },
@@ -375,7 +369,7 @@ export default function DigitalWorkerConfigPage() {
               <Row gutter={16}>
                 <Col xs={24} md={12}>
                   <Form.Item label="首选模型" name="preferredModel">
-                    <Select options={MODEL_OPTIONS} placeholder="选择模型" />
+                    <Select options={SERVICE_MODEL_SELECT_OPTIONS} placeholder="选择模型" />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>

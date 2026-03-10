@@ -3,20 +3,18 @@
  */
 
 import type { DatasetType, ModelCapability, ModelFamily, ModelModality, TrainStage } from './modelCenter'
+import type { BaseModelOption } from './modelCatalog'
 
 export type TrainingStatus = 'Running' | 'Completed' | 'Failed' | 'Queued' | 'Stopped'
 export type Framework = 'PyTorch' | 'Transformers'
 export type TrainMethod = TrainStage
-export type BaseModel =
-  | 'Deepexi-R1-Industry-32B'
-  | 'Deepexi-Industry-60B-Instruct'
-  | 'Deepexi-VL-Industry-32B'
-  | 'Deepexi-VL-Document-7B'
+export type BaseModel = BaseModelOption
 
 export interface TrainingJob {
   key: string
   name: string
   projectName: string
+  projectDisplayName: string
   modelFamily: ModelFamily
   modality: ModelModality
   trainStage: TrainStage

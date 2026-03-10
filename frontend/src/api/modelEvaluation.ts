@@ -1,12 +1,13 @@
 import type { EvalTask, EvalSample, EvalComparison, EvalTaskType } from '../types/modelEvaluation'
+import { REFRESHED_MODEL_NAMES } from '../types/modelCatalog'
 import { delay, rand } from './mockConfig'
 
 export function buildDefaultEvalTasks(): EvalTask[] {
   return [
     {
       key: 'eval-1',
-      name: 'eval-factory-copilot-instruction-v2',
-      modelName: 'deepexi-factory-copilot-sft',
+      name: 'eval-deepexi-2.0-reasoning-instruction-v2',
+      modelName: REFRESHED_MODEL_NAMES.reasoning,
       modelVersion: 'v2026.03.10',
       modelFamily: 'LLM',
       modality: 'text',
@@ -32,8 +33,8 @@ export function buildDefaultEvalTasks(): EvalTask[] {
     },
     {
       key: 'eval-2',
-      name: 'eval-inspection-grounded-vqa-v3',
-      modelName: 'deepexi-vl-inspection-assistant',
+      name: 'eval-deepexi-vl-2.0-inspection-grounded-vqa-v3',
+      modelName: REFRESHED_MODEL_NAMES.vlInspection,
       modelVersion: 'v2026.03.09',
       modelFamily: 'VL',
       modality: 'image-text',
@@ -58,8 +59,8 @@ export function buildDefaultEvalTasks(): EvalTask[] {
     },
     {
       key: 'eval-3',
-      name: 'eval-doc-parser-understanding-v1',
-      modelName: 'deepexi-doc-parser-lora',
+      name: 'eval-deepexi-vl-2.0-doc-understanding-v1',
+      modelName: REFRESHED_MODEL_NAMES.vlDoc,
       modelVersion: 'v2026.03.08',
       modelFamily: 'VL',
       modality: 'image-text',
@@ -84,8 +85,8 @@ export function buildDefaultEvalTasks(): EvalTask[] {
     },
     {
       key: 'eval-4',
-      name: 'eval-factory-copilot-hallucination-v1',
-      modelName: 'deepexi-factory-copilot-dpo',
+      name: 'eval-deepexi-2.0-chat-hallucination-v1',
+      modelName: REFRESHED_MODEL_NAMES.chat,
       modelVersion: 'v2026.03.07',
       modelFamily: 'LLM',
       modality: 'text',
@@ -160,9 +161,9 @@ export function buildDefaultEvalSamples(): EvalSample[] {
 
 export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> {
   return {
-    'deepexi-factory-copilot-sft': [
+    [REFRESHED_MODEL_NAMES.reasoning]: [
       {
-        modelName: 'deepexi-factory-copilot-sft',
+        modelName: REFRESHED_MODEL_NAMES.reasoning,
         version: 'v2026.02.28',
         modelFamily: 'LLM',
         modality: 'text',
@@ -174,10 +175,10 @@ export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> 
         winRate: 58.1,
         hallucinationRate: 5.6,
         latency: '1.8s',
-        params: '32B',
+        params: '60B(A14B)',
       },
       {
-        modelName: 'deepexi-factory-copilot-sft',
+        modelName: REFRESHED_MODEL_NAMES.reasoning,
         version: 'v2026.03.10',
         modelFamily: 'LLM',
         modality: 'text',
@@ -189,12 +190,12 @@ export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> 
         winRate: 64.3,
         hallucinationRate: 3.9,
         latency: '1.6s',
-        params: '32B',
+        params: '60B(A14B)',
       },
     ],
-    'deepexi-vl-inspection-assistant': [
+    [REFRESHED_MODEL_NAMES.vlInspection]: [
       {
-        modelName: 'deepexi-vl-inspection-assistant',
+        modelName: REFRESHED_MODEL_NAMES.vlInspection,
         version: 'v2026.03.03',
         modelFamily: 'VL',
         modality: 'image-text',
@@ -208,7 +209,7 @@ export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> 
         params: '32B',
       },
       {
-        modelName: 'deepexi-vl-inspection-assistant',
+        modelName: REFRESHED_MODEL_NAMES.vlInspection,
         version: 'v2026.03.09',
         modelFamily: 'VL',
         modality: 'image-text',
@@ -222,9 +223,9 @@ export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> 
         params: '32B',
       },
     ],
-    'deepexi-doc-parser-lora': [
+    [REFRESHED_MODEL_NAMES.vlDoc]: [
       {
-        modelName: 'deepexi-doc-parser-lora',
+        modelName: REFRESHED_MODEL_NAMES.vlDoc,
         version: 'v2026.03.05',
         modelFamily: 'VL',
         modality: 'image-text',
@@ -237,7 +238,7 @@ export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> 
         params: '7B',
       },
       {
-        modelName: 'deepexi-doc-parser-lora',
+        modelName: REFRESHED_MODEL_NAMES.vlDoc,
         version: 'v2026.03.08',
         modelFamily: 'VL',
         modality: 'image-text',
@@ -250,9 +251,9 @@ export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> 
         params: '7B',
       },
     ],
-    'deepexi-factory-copilot-dpo': [
+    [REFRESHED_MODEL_NAMES.chat]: [
       {
-        modelName: 'deepexi-factory-copilot-dpo',
+        modelName: REFRESHED_MODEL_NAMES.chat,
         version: 'v2026.03.04',
         modelFamily: 'LLM',
         modality: 'text',
@@ -264,10 +265,10 @@ export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> 
         winRate: 61.4,
         hallucinationRate: 3.6,
         latency: '1.2s',
-        params: '72B',
+        params: '60B(A14B)',
       },
       {
-        modelName: 'deepexi-factory-copilot-dpo',
+        modelName: REFRESHED_MODEL_NAMES.chat,
         version: 'v2026.03.07',
         modelFamily: 'LLM',
         modality: 'text',
@@ -279,7 +280,7 @@ export function buildDefaultEvalComparisons(): Record<string, EvalComparison[]> 
         winRate: 66.2,
         hallucinationRate: 2.8,
         latency: '1.0s',
-        params: '72B',
+        params: '60B(A14B)',
       },
     ],
   }
@@ -306,7 +307,7 @@ export async function getEvalSamples(_key: string): Promise<EvalSample[]> {
 
 export async function getEvalComparisons(modelName: string): Promise<EvalComparison[]> {
   await delay(rand(200, 400))
-  return MOCK_COMPARISONS[modelName] ?? MOCK_COMPARISONS['deepexi-factory-copilot-sft']!
+  return MOCK_COMPARISONS[modelName] ?? MOCK_COMPARISONS[REFRESHED_MODEL_NAMES.reasoning]!
 }
 
 export async function createEvalTask(input: {
@@ -324,7 +325,11 @@ export async function createEvalTask(input: {
     modelFamily: input.modelName.includes('vl') || input.modelName.includes('doc') ? 'VL' : 'LLM',
     modality: input.modelName.includes('vl') || input.modelName.includes('doc') ? 'image-text' : 'text',
     datasetType: input.taskType === 'grounded-vqa' || input.taskType === 'document-understanding' ? 'vqa' : 'conversation',
-    capability: input.taskType === 'grounded-vqa' ? 'vision-language-understanding' : 'chat',
+    capability: input.taskType === 'grounded-vqa'
+      ? 'vision-language-understanding'
+      : input.taskType === 'document-understanding'
+        ? 'document-parsing'
+        : 'chat',
     status: 'Pending',
     progress: 0,
     totalSamples: input.evalSamples,

@@ -91,10 +91,21 @@ describe('modelCenter shared domain vocabulary', () => {
     const datasets = buildDefaultTrainingDatasets()
 
     expect(projects.every(project => project.name.includes('deepexi'))).toBe(true)
-    expect(projects.every(project => project.baseModel.startsWith('Deepexi-'))).toBe(true)
+    expect(projects.every(project => project.baseModel.includes('Deepexi'))).toBe(true)
     expect(tasks.every(task => task.modelName.includes('deepexi'))).toBe(true)
     expect(models.every(model => model.name.includes('deepexi'))).toBe(true)
     expect(datasets.every(dataset => dataset.linkedModels.every(model => model.includes('deepexi')))).toBe(true)
+  })
+
+  it('reuses Deepexi2.0-60B-A14B as the shared llm base model', () => {
+    const projects = buildDefaultTrainingProjects()
+    const llmProjects = projects.filter(project => project.modelFamily === 'LLM')
+
+    expect(llmProjects.length).toBeGreaterThan(1)
+    expect(llmProjects.every(project => project.baseModel === 'Deepexi2.0-60B-A14B')).toBe(true)
+    expect(llmProjects.map(project => project.displayName)).toEqual(
+      expect.arrayContaining(['Deepexi 2.0 推理增强', 'Deepexi 2.0 通用对话']),
+    )
   })
 
   it('exposes the renamed model center navigation labels', () => {

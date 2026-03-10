@@ -57,6 +57,7 @@ import {
   MODEL_MODALITY_LABELS,
   TRAIN_STAGE_LABELS,
 } from '../../types/modelCenter'
+import { BASE_MODEL_OPTIONS, BASE_MODEL_SELECT_OPTIONS } from '../../types/modelCatalog'
 import type { TrainingJob, TrainingProject, TrainingStatus, Framework } from '../../types/modelTraining'
 import { FRAMEWORK_COLORS, TRAINING_STATUS_COLORS } from '../../types/modelTraining'
 import type { TrainingDataset } from '../../types/trainingDataset'
@@ -82,13 +83,6 @@ const MODALITY_COLORS = {
   text: 'cyan',
   'image-text': 'gold',
 } as const
-
-const BASE_MODEL_OPTIONS = [
-  'Deepexi-R1-Industry-32B',
-  'Deepexi-Industry-60B-Instruct',
-  'Deepexi-VL-Industry-32B',
-  'Deepexi-VL-Document-7B',
-]
 
 const GPU_OPTIONS = ['2 x A100 80GB', '4 x H100 80GB', '8 x H100 80GB', '8 x A100 80GB']
 
@@ -254,7 +248,8 @@ export default function ModelTrainingPage() {
       key: 'summary',
       render: (_: unknown, record: TrainingJob) => (
         <Space direction="vertical" size={2}>
-          <Text strong>{record.projectName}</Text>
+          <Text strong>{record.projectDisplayName}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{record.projectName}</Text>
           <Space size={4} wrap>
             <Tag color={FAMILY_COLORS[record.modelFamily]}>{MODEL_FAMILY_LABELS[record.modelFamily]}</Tag>
             <Tag color={MODALITY_COLORS[record.modality]}>{MODEL_MODALITY_LABELS[record.modality]}</Tag>
@@ -582,7 +577,7 @@ export default function ModelTrainingPage() {
           layout="vertical"
           style={{ marginTop: 16 }}
           initialValues={{
-            baseModel: 'Deepexi-R1-Industry-32B',
+            baseModel: BASE_MODEL_OPTIONS[0],
             trainMethod: 'sft',
             framework: 'Transformers',
             gpu: '4 x H100 80GB',
@@ -612,7 +607,7 @@ export default function ModelTrainingPage() {
             </Col>
             <Col span={8}>
               <Form.Item label="基座模型" name="baseModel" rules={[{ required: true }]}>
-                <Select options={BASE_MODEL_OPTIONS.map(value => ({ label: value, value }))} />
+                <Select options={BASE_MODEL_SELECT_OPTIONS} />
               </Form.Item>
             </Col>
             <Col span={8}>

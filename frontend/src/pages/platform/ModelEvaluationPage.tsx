@@ -51,6 +51,7 @@ import {
   MODEL_FAMILY_LABELS,
   MODEL_MODALITY_LABELS,
 } from '../../types/modelCenter'
+import { getModelDisplayName } from '../../types/modelCatalog'
 import type { EvalComparison, EvalSample, EvalStatus, EvalTask, EvalTaskType } from '../../types/modelEvaluation'
 import { EVAL_STATUS_COLORS, EVAL_TASK_TYPE_LABELS } from '../../types/modelEvaluation'
 import type { TrainingProject } from '../../types/modelTraining'
@@ -151,7 +152,8 @@ export default function ModelEvaluationPage() {
             <Tag color={task.modelFamily === 'VL' ? 'magenta' : 'blue'}>{MODEL_FAMILY_LABELS[task.modelFamily]}</Tag>
             <Tag color={task.modality === 'image-text' ? 'gold' : 'cyan'}>{MODEL_MODALITY_LABELS[task.modality]}</Tag>
           </Space>
-          <Text>{task.modelName}</Text>
+          <Text>{getModelDisplayName(task.modelName)}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{task.modelName}</Text>
           <Text type="secondary" style={{ fontSize: 12 }}>{task.modelVersion}</Text>
         </Space>
       ),
@@ -347,7 +349,7 @@ export default function ModelEvaluationPage() {
           <>
             <div style={{ marginBottom: 16 }}>
               <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                <Text type="secondary">{selectedTask.modelName} / {EVAL_TASK_TYPE_LABELS[selectedTask.taskType]}</Text>
+                <Text type="secondary">{getModelDisplayName(selectedTask.modelName)} / {EVAL_TASK_TYPE_LABELS[selectedTask.taskType]}</Text>
                 <Progress percent={selectedTask.progress} />
               </Space>
             </div>
@@ -386,7 +388,7 @@ export default function ModelEvaluationPage() {
               <Form.Item label="模型" name="modelName" rules={[{ required: true }]}>
                 <Select
                   options={trainingProjects.map(project => ({
-                    label: project.name,
+                    label: `${project.displayName} (${project.baseModel})`,
                     value: project.name,
                   }))}
                 />

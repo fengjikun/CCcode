@@ -26,6 +26,7 @@ import {
 } from '../../api/modelGateway'
 import PageHeader from '../../components/shared/PageHeader'
 import { MODEL_CENTER_PAGE_LABELS, MODEL_GATEWAY_PAGE_LABELS } from '../../types/modelCenter'
+import { getModelDisplayName } from '../../types/modelCatalog'
 import type { HourlyTraffic, RecentError } from '../../api/modelGateway'
 import type { GatewayApiKey, GatewayUsageLog, GatewayUsageSummary, RegisteredModel } from '../../types/modelGateway'
 
@@ -108,7 +109,18 @@ export default function GatewayUsagePage() {
     { title: '时间', dataIndex: 'timestamp', key: 'timestamp', width: 170 },
     { title: 'Request ID', dataIndex: 'requestId', key: 'requestId', render: (value: string) => <Text code>{value}</Text> },
     { title: '入口', dataIndex: 'routePath', key: 'routePath', render: (value: string) => <Text code>{value}</Text> },
-    { title: '模型', dataIndex: 'model', key: 'model', width: 220 },
+    {
+      title: '模型',
+      dataIndex: 'model',
+      key: 'model',
+      width: 220,
+      render: (value: string) => (
+        <Space direction="vertical" size={2}>
+          <Text>{getModelDisplayName(value)}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{value}</Text>
+        </Space>
+      ),
+    },
     { title: 'API Key', dataIndex: 'apiKeyName', key: 'apiKeyName', width: 180 },
     { title: '调用方', dataIndex: 'requester', key: 'requester', width: 160 },
     {
@@ -229,7 +241,7 @@ export default function GatewayUsagePage() {
                     <Space direction="vertical" size={4} style={{ width: '100%' }}>
                       <Space size={8}>
                         <WarningOutlined style={{ color: '#f59e0b' }} />
-                        <Text strong>{error.model}</Text>
+                        <Text strong>{getModelDisplayName(error.model)}</Text>
                         <Tag>{error.errorCode}</Tag>
                       </Space>
                       <Text type="secondary" style={{ fontSize: 12 }}>{error.time}</Text>
@@ -253,7 +265,7 @@ export default function GatewayUsagePage() {
                 style={{ width: 180 }}
                 value={selectedModel}
                 onChange={value => setSelectedModel(value)}
-                options={models.map(model => ({ label: model.name, value: model.name }))}
+                options={models.map(model => ({ label: model.displayName, value: model.name }))}
               />
               <Select
                 allowClear

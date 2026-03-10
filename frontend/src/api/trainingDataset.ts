@@ -1,4 +1,5 @@
 import type { TrainingDataset } from '../types/trainingDataset'
+import { REFRESHED_MODEL_NAMES } from '../types/modelCatalog'
 import { ensureMockStore, setMockStore } from './mockStoreClient'
 
 const STORE_KEY = 'training-datasets'
@@ -8,10 +9,10 @@ interface DatasetStore {
 }
 
 const LEGACY_MODEL_NAME_MAP: Record<string, string> = {
-  'deepseek-r1-factory-sft': 'deepexi-factory-copilot-sft',
-  'qwen2.5-vl-inspection-assistant': 'deepexi-vl-inspection-assistant',
-  'qwen-doc-parser-lora': 'deepexi-doc-parser-lora',
-  'factory-copilot-dpo-alignment': 'deepexi-factory-copilot-dpo',
+  'deepseek-r1-factory-sft': REFRESHED_MODEL_NAMES.reasoning,
+  'qwen2.5-vl-inspection-assistant': REFRESHED_MODEL_NAMES.vlInspection,
+  'qwen-doc-parser-lora': REFRESHED_MODEL_NAMES.vlDoc,
+  'factory-copilot-dpo-alignment': REFRESHED_MODEL_NAMES.chat,
 }
 
 function normalizeModelReference(modelName: string): string {
@@ -148,8 +149,8 @@ export function buildDefaultTrainingDatasets(): TrainingDataset[] {
       size: '5.6 GB',
       createdAt: '2026-02-18',
       updatedAt: '2026-03-10',
-      linkedModels: ['deepexi-factory-copilot-sft'],
-      linkedRuns: ['deepexi-factory-copilot-sft-run-1'],
+      linkedModels: [REFRESHED_MODEL_NAMES.reasoning],
+      linkedRuns: [`${REFRESHED_MODEL_NAMES.reasoning}-run-1`],
       tokenCount: 148000000,
       imageCount: 0,
       qualityScore: 94,
@@ -176,8 +177,8 @@ export function buildDefaultTrainingDatasets(): TrainingDataset[] {
       size: '1.2 GB',
       createdAt: '2026-03-02',
       updatedAt: '2026-03-09',
-      linkedModels: ['deepexi-factory-copilot-dpo'],
-      linkedRuns: ['deepexi-factory-copilot-dpo-run-4'],
+      linkedModels: [REFRESHED_MODEL_NAMES.chat],
+      linkedRuns: [`${REFRESHED_MODEL_NAMES.chat}-run-4`],
       tokenCount: 42000000,
       imageCount: 0,
       qualityScore: 91,
@@ -204,8 +205,8 @@ export function buildDefaultTrainingDatasets(): TrainingDataset[] {
       size: '9.8 GB',
       createdAt: '2026-02-22',
       updatedAt: '2026-03-10',
-      linkedModels: ['deepexi-vl-inspection-assistant'],
-      linkedRuns: ['deepexi-vl-inspection-assistant-run-2'],
+      linkedModels: [REFRESHED_MODEL_NAMES.vlInspection],
+      linkedRuns: [`${REFRESHED_MODEL_NAMES.vlInspection}-run-2`],
       tokenCount: 32000000,
       imageCount: 48000,
       qualityScore: 89,
@@ -232,7 +233,7 @@ export function buildDefaultTrainingDatasets(): TrainingDataset[] {
       size: '—',
       createdAt: '2026-03-05',
       updatedAt: '2026-03-10',
-      linkedModels: ['deepexi-doc-parser-lora'],
+      linkedModels: [REFRESHED_MODEL_NAMES.vlDoc],
       linkedRuns: [],
       tokenCount: 21000000,
       imageCount: 125000,
