@@ -16,6 +16,7 @@ export default defineConfig(({ command, mode }) => {
       }),
     ],
     server: {
+      allowedHosts: ['oslab.deepexi.com'],
       port: 9002,
       proxy: useMock
         ? undefined
