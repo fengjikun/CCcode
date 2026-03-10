@@ -7,7 +7,7 @@ const mocks: MockMethod[] = [
     method: 'post',
     rawResponse(req, res) {
       this.parseJson().then(body => {
-        if (body.username !== 'admin' || body.password !== 'admin123456') {
+        if (body.username !== 'admin' || body.password !== 'admin20260312') {
           sendJSON(res, 401, { detail: '用户名或密码错误' })
           return
         }
