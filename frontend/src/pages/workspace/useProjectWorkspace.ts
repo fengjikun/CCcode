@@ -39,21 +39,6 @@ export function useProjectWorkspace(projectId: string | undefined) {
     void loadProject()
   }, [loadProject])
 
-  // Poll while any run is active
-  useEffect(() => {
-    if (!projectId || !project) return
-    const hasRunning = project.runs.some(run => run.status === 'RUNNING') || project.aiInsightRun?.status === 'RUNNING'
-    if (!hasRunning) return
-
-    const timer = window.setInterval(() => {
-      void loadProject()
-    }, 2000)
-
-    return () => {
-      window.clearInterval(timer)
-    }
-  }, [loadProject, project, projectId])
-
   // Notify when AI insight run completes/fails
   useEffect(() => {
     const aiInsightRun = project?.aiInsightRun
