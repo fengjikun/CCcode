@@ -50,7 +50,7 @@ export default function GraphPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: 400 }}>
-        <Spin size="large" tip="加载图谱数据..." />
+        <Spin size="large" tip="加载本体数据集..." />
       </div>
     )
   }
@@ -59,7 +59,7 @@ export default function GraphPage() {
     return (
       <Result
         status="error"
-        title="图谱数据加载失败"
+        title="本体数据集加载失败"
         subTitle={error}
         extra={<Button onClick={reload}>重试</Button>}
       />
@@ -70,8 +70,8 @@ export default function GraphPage() {
     return (
       <Result
         status="info"
-        title="暂无图谱数据"
-        subTitle="请先在本体管理中添加数据"
+        title="暂无本体数据集"
+        subTitle="请先在本体管理中补充数据，再进行检索与关联查看"
       />
     )
   }

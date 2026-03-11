@@ -65,7 +65,7 @@ const menuItems: MenuItem[] = [
     label: 'Deepology',
     children: [
       { key: '/ontology/projects', icon: <ProjectOutlined />, label: '本体管理' },
-      { key: '/ontology/graph', icon: <SearchOutlined />, label: '图谱检索' },
+      { key: '/ontology/graph', icon: <SearchOutlined />, label: '本体数据集检索' },
     ],
   },
   {
@@ -109,7 +109,7 @@ const PAGE_TITLES: Record<string, [string, string]> = {
   '/studio/agents/logs': ['workspace 工作台', '智能体日志'],
   '/studio/skills': ['workspace 工作台', 'Skills Hub'],
   '/ontology/projects': ['Deepology', '本体管理'],
-  '/ontology/graph': ['Deepology', '图谱检索'],
+  '/ontology/graph': ['Deepology', '本体数据集检索'],
   '/data-platform/ingestion-jobs': ['数据中心', '数据接入任务'],
   '/transform': ['数据中心', '数据集准备'],
   '/model-lab/gateway': ['大模型Lab', MODEL_CENTER_PAGE_LABELS.gateway],
