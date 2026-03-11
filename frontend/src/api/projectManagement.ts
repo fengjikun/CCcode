@@ -26,7 +26,7 @@ import type {
 import { delay, rand } from './mockConfig'
 
 /** 当默认数据结构变化时递增此值，触发内存种子迁移 */
-const DATA_VERSION = 16
+const DATA_VERSION = 17
 
 interface ProjectStore {
   projects: ProjectDetail[]
@@ -93,6 +93,16 @@ const PROJECT_ENTITY_NAME_POOLS: Record<string, Record<string, string[]>> = {
     Obligation: ['7日内完成交付', '30日内支付尾款', '质保期内4小时响应', '涉密资料不得外传'],
     Counterparty: ['宁德时代采购中心', '比亚迪设备工程部', '上汽大众采购管理部', '立讯精密自动化事业群'],
     FulfillmentEvent: ['样机交付完成', '终验签署完成', '首付款到账', '售后升级响应'],
+  },
+  'proj-1312': {
+    WorkOrder: ['MO-20260311-001', 'MO-20260311-018', 'MO-20260311-032', 'MO-20260311-047'],
+    ProcessStep: ['焊装点焊', '总装拧紧', '涂装烘干', '终检下线'],
+    MachineResource: ['线体A-焊装单元01', '线体B-总装工位12', '涂装炉区HF-03', '终检工位QC-06'],
+    ShiftCalendar: ['白班-2026-03-11', '中班-2026-03-11', '夜班-2026-03-11', '周末加班班次'],
+    OperatorSkill: ['焊装高级操作证', '总装多能工', '涂装炉温调参资格', '终检放行授权'],
+    ConstraintRule: ['插单优先级规则', '换型冻结窗口', '关键设备维护约束', '夜班禁排高风险工序'],
+    SchedulePlan: ['排产计划#2026W11-A', '插单重排计划#20260311-1', '夜班补产计划#20260311-N', '瓶颈工位均衡计划#03'],
+    DispatchTask: ['派工单#A-001', '派工单#A-018', '派工单#B-006', '派工单#N-009'],
   },
 }
 
