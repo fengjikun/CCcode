@@ -26,7 +26,7 @@ import type {
 import { delay, rand } from './mockConfig'
 
 /** 当默认数据结构变化时递增此值，触发内存种子迁移 */
-const DATA_VERSION = 14
+const DATA_VERSION = 16
 
 interface ProjectStore {
   projects: ProjectDetail[]
@@ -73,6 +73,26 @@ const PROJECT_ENTITY_NAME_POOLS: Record<string, Record<string, string[]>> = {
     DataProcessingActivity: ['用户画像营销', '跨境客服工单同步', '员工考勤信息处理', '广告投放归因分析', '海外CRM客户数据同步'],
     ContractClause: ['跨境数据传输条款', '数据留存期限条款', '第三方分包处理条款', '用户授权营销条款', '个人敏感信息处理条款'],
     PenaltyCase: ['某电商App超范围收集处罚案', '某SaaS厂商未履行删除义务处罚案', '某出海业务未完成评估被责令整改', '某广告平台默认勾选授权被处罚案'],
+  },
+  'proj-1523': {
+    Customer: ['宁德时代-华东工厂', '比亚迪-焊装事业部', '上汽大众-总装工厂', '立讯精密-连接器产线', '美的集团-空调事业部'],
+    Account: ['重点战略客户', '区域KA客户', '年度框架客户', '高增长客户'],
+    ContactChannel: ['企业微信', '服务热线', '现场拜访', '邮件订阅', '售后工单系统'],
+    Interaction: ['季度经营回顾会', '新品方案演示', '售后升级沟通', '价格谈判会', '联合创新工作坊'],
+    Opportunity: ['设备预测性维护升级包', '工业视觉质检方案', 'WMS与MES协同改造', '售后备件托管服务'],
+    ServiceTicket: ['SR-202603-001', 'SR-202603-018', 'SR-202603-027', 'SR-202603-043'],
+    PreferenceTag: ['偏好现场驻场支持', '偏好按产线维度报价', '关注售后响应速度', '关注交付稳定性', '关注ROI闭环'],
+    CustomerSegment: ['战略大客户', '增长型客户', '高服务敏感客户', '交叉销售机会客户'],
+  },
+  'proj-1524': {
+    ContractTemplate: ['设备采购主协议', '年度框架采购合同', '售后维保服务协议', '联合研发保密协议'],
+    ContractClause: ['违约赔偿条款', '交付验收条款', '质保与售后条款', '付款与账期条款', '知识产权归属条款'],
+    ComplianceRequirement: ['不得设置单方免责', '必须约定数据保密责任', '关键节点需保留审计痕迹', '高风险条款需法审会签'],
+    RiskScenario: ['逾期交付赔付风险', '验收标准不清风险', '回款账期过长风险', '知识产权归属争议风险'],
+    ApprovalCheckpoint: ['销售经理初审', '法务专员复核', '风控经理复核', '总监级审批'],
+    Obligation: ['7日内完成交付', '30日内支付尾款', '质保期内4小时响应', '涉密资料不得外传'],
+    Counterparty: ['宁德时代采购中心', '比亚迪设备工程部', '上汽大众采购管理部', '立讯精密自动化事业群'],
+    FulfillmentEvent: ['样机交付完成', '终验签署完成', '首付款到账', '售后升级响应'],
   },
 }
 
@@ -1190,6 +1210,797 @@ const LEGAL_REGULATIONS_VERSIONS: OntologyVersion[] = [
   },
 ]
 
+const CUSTOMER_360_PROJECT_ID = 'proj-1523'
+const CUSTOMER_360_PROJECT_NAME = '客户360本体'
+const CUSTOMER_360_UPDATED_AT = '2026-03-11T10:20:00.000Z'
+const CUSTOMER_360_DESCRIPTION =
+  '制造业 · 销售与客户经营领域客户360本体，覆盖客户、集团账户、触达渠道、互动事件、商机、服务工单、偏好标签与客户分层；支持客户洞察、商机推进、售后协同与精准营销。'
+
+const CUSTOMER_360_DOCUMENTS: ProjectDocument[] = [
+  {
+    id: 'doc-c360-001',
+    name: '客户360业务本体模型说明书.docx',
+    fileType: 'docx',
+    size: 214528,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-02T09:00:00.000Z',
+  },
+  {
+    id: 'doc-c360-002',
+    name: 'CRM客户主数据与集团账户映射规范.xlsx',
+    fileType: 'xlsx',
+    size: 245760,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-03T10:30:00.000Z',
+  },
+  {
+    id: 'doc-c360-003',
+    name: '售前触达与商机推进节点定义.md',
+    fileType: 'md',
+    size: 101376,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-04T11:00:00.000Z',
+  },
+  {
+    id: 'doc-c360-004',
+    name: '售后服务工单与满意度回访样本.jsonl',
+    fileType: 'jsonl',
+    size: 68224,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-05T14:20:00.000Z',
+  },
+  {
+    id: 'doc-c360-005',
+    name: '客户标签体系与分层运营规则.xlsx',
+    fileType: 'xlsx',
+    size: 198656,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-06T09:40:00.000Z',
+  },
+  {
+    id: 'doc-c360-006',
+    name: '客户互动时间线与经营例会模板.docx',
+    fileType: 'docx',
+    size: 176128,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-07T15:00:00.000Z',
+  },
+  {
+    id: 'doc-c360-007',
+    name: '客户成功预警指标与流失信号定义.md',
+    fileType: 'md',
+    size: 92768,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-08T13:10:00.000Z',
+  },
+  {
+    id: 'doc-c360-008',
+    name: '交叉销售机会识别训练样本.jsonl',
+    fileType: 'jsonl',
+    size: 74416,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-10T16:00:00.000Z',
+  },
+]
+
+const CUSTOMER_360_DATA_SOURCES: StructuredDataSource[] = [
+  {
+    id: 'ds-c360-001',
+    name: 'CRM客户主数据中心',
+    type: 'POSTGRESQL',
+    host: '10.18.12.21',
+    port: 5432,
+    database: 'crm_customer_center',
+    username: 'crm_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['customer_master', 'account_hierarchy', 'contact_channels'],
+    rowLimit: 180000,
+    syncMode: 'FULL',
+    incrementalColumn: '',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:20:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-02T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:20:00.000Z',
+  },
+  {
+    id: 'ds-c360-002',
+    name: '客户互动事件分析库',
+    type: 'CLICKHOUSE',
+    host: '10.18.12.35',
+    port: 8123,
+    database: 'customer_engagement',
+    username: 'event_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['interaction_events', 'campaign_touchpoints', 'meeting_minutes'],
+    rowLimit: 260000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'event_time',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:28:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-03T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:28:00.000Z',
+  },
+  {
+    id: 'ds-c360-003',
+    name: '服务工单与满意度反馈库',
+    type: 'MYSQL',
+    host: '10.18.12.42',
+    port: 3306,
+    database: 'customer_service',
+    username: 'service_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['service_ticket', 'service_feedback', 'renewal_risk_signal'],
+    rowLimit: 120000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'updated_at',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:35:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-04T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:35:00.000Z',
+  },
+]
+
+const CUSTOMER_360_ENTITY_TYPES: EntityTypeConfig[] = [
+  {
+    id: 'et-c360-001',
+    name: 'Customer',
+    description: '客户主体，可为企业、事业部、工厂或采购组织。',
+    properties: [
+      { id: 'ep-c360-001', name: 'customerCode', displayName: '客户编码', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-c360-002', name: 'customerName', displayName: '客户名称', dataType: 'STRING', required: true, sortOrder: 2 },
+      { id: 'ep-c360-003', name: 'industry', displayName: '行业', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-c360-004', name: 'annualRevenueBand', displayName: '年营收区间', dataType: 'STRING', required: false, sortOrder: 4 },
+      { id: 'ep-c360-005', name: 'healthScore', displayName: '客户健康分', dataType: 'FLOAT', required: false, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-c360-002',
+    name: 'Account',
+    description: '集团账户、区域账户或事业群账户，用于统一经营视图。',
+    properties: [
+      { id: 'ep-c360-011', name: 'accountName', displayName: '账户名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-c360-012', name: 'accountLevel', displayName: '账户级别', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-c360-013', name: 'ownerTeam', displayName: '负责团队', dataType: 'STRING', required: false, sortOrder: 3 },
+    ],
+  },
+  {
+    id: 'et-c360-003',
+    name: 'ContactChannel',
+    description: '客户触达和沟通渠道，例如热线、企业微信、现场拜访。',
+    properties: [
+      { id: 'ep-c360-021', name: 'channelType', displayName: '渠道类型', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-c360-022', name: 'reachability', displayName: '触达状态', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-c360-023', name: 'ownerRole', displayName: '渠道负责人', dataType: 'STRING', required: false, sortOrder: 3 },
+    ],
+  },
+  {
+    id: 'et-c360-004',
+    name: 'Interaction',
+    description: '客户互动事件，包括演示、拜访、回访、投诉沟通等。',
+    properties: [
+      { id: 'ep-c360-031', name: 'interactionType', displayName: '互动类型', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-c360-032', name: 'occurredAt', displayName: '发生时间', dataType: 'DATETIME', required: false, sortOrder: 2 },
+      { id: 'ep-c360-033', name: 'sentiment', displayName: '客户情绪', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-c360-034', name: 'summary', displayName: '互动摘要', dataType: 'TEXT', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-c360-005',
+    name: 'Opportunity',
+    description: '销售商机、续约机会或交叉销售机会。',
+    properties: [
+      { id: 'ep-c360-041', name: 'opportunityName', displayName: '商机名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-c360-042', name: 'stage', displayName: '商机阶段', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-c360-043', name: 'amount', displayName: '预估金额', dataType: 'FLOAT', required: false, sortOrder: 3 },
+      { id: 'ep-c360-044', name: 'expectedCloseDate', displayName: '预计关闭日期', dataType: 'DATE', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-c360-006',
+    name: 'ServiceTicket',
+    description: '客户服务工单、投诉单或升级处理记录。',
+    properties: [
+      { id: 'ep-c360-051', name: 'ticketNo', displayName: '工单号', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-c360-052', name: 'severity', displayName: '严重等级', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-c360-053', name: 'slaStatus', displayName: 'SLA状态', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-c360-054', name: 'csatScore', displayName: '满意度评分', dataType: 'FLOAT', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-c360-007',
+    name: 'PreferenceTag',
+    description: '客户标签和偏好，例如价格敏感、关注交付、偏好驻场支持。',
+    properties: [
+      { id: 'ep-c360-061', name: 'tagName', displayName: '标签名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-c360-062', name: 'tagGroup', displayName: '标签分组', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-c360-063', name: 'confidence', displayName: '置信度', dataType: 'FLOAT', required: false, sortOrder: 3 },
+    ],
+  },
+  {
+    id: 'et-c360-008',
+    name: 'CustomerSegment',
+    description: '客户分层，用于经营策略、资源分配和续约预警。',
+    properties: [
+      { id: 'ep-c360-071', name: 'segmentName', displayName: '分层名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-c360-072', name: 'lifecycleStage', displayName: '生命周期阶段', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-c360-073', name: 'strategy', displayName: '经营策略', dataType: 'TEXT', required: false, sortOrder: 3 },
+    ],
+  },
+]
+
+const CUSTOMER_360_RELATION_TYPES: RelationTypeConfig[] = [
+  { id: 'rt-c360-001', name: 'associated_with_account', domain: 'Customer', range: 'Account', description: '客户归属到统一集团或区域账户。', properties: [] },
+  { id: 'rt-c360-002', name: 'reachable_via', domain: 'Customer', range: 'ContactChannel', description: '客户可通过多种渠道触达。', properties: [] },
+  { id: 'rt-c360-003', name: 'has_interaction', domain: 'Customer', range: 'Interaction', description: '客户在经营过程中产生的互动事件。', properties: [] },
+  { id: 'rt-c360-004', name: 'creates_opportunity', domain: 'Customer', range: 'Opportunity', description: '客户沉淀或触发的商机。', properties: [] },
+  { id: 'rt-c360-005', name: 'submits_ticket', domain: 'Customer', range: 'ServiceTicket', description: '客户提交的服务诉求或投诉工单。', properties: [] },
+  { id: 'rt-c360-006', name: 'tagged_with_preference', domain: 'Customer', range: 'PreferenceTag', description: '客户画像标签和偏好信息。', properties: [] },
+  { id: 'rt-c360-007', name: 'belongs_to_segment', domain: 'Customer', range: 'CustomerSegment', description: '客户所属经营分层。', properties: [] },
+  { id: 'rt-c360-008', name: 'interaction_via_channel', domain: 'Interaction', range: 'ContactChannel', description: '互动发生的触达渠道。', properties: [] },
+  { id: 'rt-c360-009', name: 'promotes_opportunity', domain: 'Interaction', range: 'Opportunity', description: '客户互动推动商机阶段前进。', properties: [] },
+  { id: 'rt-c360-010', name: 'ticket_affects_segment', domain: 'ServiceTicket', range: 'CustomerSegment', description: '服务体验影响客户健康和分层。', properties: [] },
+]
+
+const CUSTOMER_360_SKILLS: SkillConfig[] = [
+  { id: 'sk-c360-001', code: 'data_processing', name: '客户主数据整编', enabled: true, prompt: '统一 CRM、互动事件和服务工单中的客户主数据，构建客户唯一视图', source: 'built_in', tags: ['customer360', 'mdm'] },
+  { id: 'sk-c360-002', code: 'graph_synthesis', name: '客户关系融合', enabled: true, prompt: '融合客户、账户、互动、商机和服务工单，生成客户360经营图谱', source: 'built_in', tags: ['customer360', 'graph'] },
+  { id: 'sk-c360-003', code: 'custom', name: '客户经营策略编排', enabled: true, prompt: '根据客户分层、健康分和偏好标签输出续约、增购和售后协同建议', source: 'built_in', tags: ['customer360', 'playbook'] },
+]
+
+const CUSTOMER_360_AI_INSIGHT_RUN: AiInsightRun = {
+  id: 'ai-c360-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-09T09:20:00.000Z',
+  completedAt: '2026-03-09T09:28:00.000Z',
+  scannedDocumentCount: 8,
+  addedEntityCount: 8,
+  addedRelationCount: 10,
+  addedEntityNames: ['Customer', 'Account', 'ContactChannel', 'Interaction', 'Opportunity', 'ServiceTicket', 'PreferenceTag', 'CustomerSegment'],
+  addedRelationNames: ['associated_with_account', 'reachable_via', 'has_interaction', 'creates_opportunity', 'submits_ticket', 'tagged_with_preference', 'belongs_to_segment', 'interaction_via_channel', 'promotes_opportunity', 'ticket_affects_segment'],
+  warnings: [],
+  stage: '完成',
+  currentDocument: '客户360业务本体模型说明书.docx',
+  logs: [
+    '解析 8 份客户主数据、互动事件、服务工单与分层运营资料',
+    '补齐 Customer、Account、ContactChannel、Interaction、Opportunity、ServiceTicket、PreferenceTag、CustomerSegment 八类经营实体',
+    '形成客户归属、互动演进、服务反馈、偏好标签与分层策略十条关键关系链路',
+  ],
+}
+
+const CUSTOMER_360_RUN: ExtractionRun = {
+  id: 'run-c360-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-09T10:00:00.000Z',
+  completedAt: '2026-03-09T10:14:00.000Z',
+  candidateEntityCount: 76,
+  candidateRelationCount: 58,
+  pendingReviewCount: 0,
+  stage: '完成',
+  currentDocument: '交叉销售机会识别训练样本.jsonl',
+  logs: [
+    '抽取重点客户、集团账户、客户互动、工单回访和增购机会数据',
+    '识别客户经营链路中的高频偏好标签、服务风险信号和交叉销售机会',
+    '生成客户360候选实体 76 个、关系 58 条，用于销售、客户成功和服务协同',
+  ],
+  warnings: [],
+  reviewItems: [
+    { id: 'ri-c360-001', kind: 'ENTITY', title: '宁德时代-华东工厂 (Customer)', evidence: 'CRM客户主数据与集团账户映射规范.xlsx', confidence: 0.99, status: 'APPROVED' },
+    { id: 'ri-c360-002', kind: 'ENTITY', title: '重点战略客户 (Account)', evidence: 'CRM客户主数据与集团账户映射规范.xlsx', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-c360-003', kind: 'ENTITY', title: '企业微信 (ContactChannel)', evidence: '客户互动时间线与经营例会模板.docx', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-c360-004', kind: 'ENTITY', title: '季度经营回顾会 (Interaction)', evidence: '客户互动时间线与经营例会模板.docx', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-c360-005', kind: 'ENTITY', title: '设备预测性维护升级包 (Opportunity)', evidence: '交叉销售机会识别训练样本.jsonl', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-c360-006', kind: 'ENTITY', title: 'SR-202603-001 (ServiceTicket)', evidence: '售后服务工单与满意度回访样本.jsonl', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-c360-007', kind: 'ENTITY', title: '关注售后响应速度 (PreferenceTag)', evidence: '客户标签体系与分层运营规则.xlsx', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-c360-008', kind: 'ENTITY', title: '战略大客户 (CustomerSegment)', evidence: '客户标签体系与分层运营规则.xlsx', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-c360-009', kind: 'RELATION', title: '宁德时代-华东工厂 (Customer) → associated_with_account → 重点战略客户 (Account)', evidence: '客户归属关系', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-c360-010', kind: 'RELATION', title: '宁德时代-华东工厂 (Customer) → reachable_via → 企业微信 (ContactChannel)', evidence: '触达渠道关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-c360-011', kind: 'RELATION', title: '宁德时代-华东工厂 (Customer) → has_interaction → 季度经营回顾会 (Interaction)', evidence: '互动时间线关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-c360-012', kind: 'RELATION', title: '季度经营回顾会 (Interaction) → promotes_opportunity → 设备预测性维护升级包 (Opportunity)', evidence: '商机推进关系', confidence: 0.96, status: 'APPROVED' },
+  ],
+}
+
+const CUSTOMER_360_VERSION: OntologyVersion = {
+  id: 'ver-c360-001',
+  version: 'v1.1',
+  label: '客户360经营洞察图谱',
+  createdAt: '2026-03-09T10:20:00.000Z',
+  sourceRunId: 'run-c360-001',
+  entityCount: 76,
+  relationCount: 58,
+}
+
+const CUSTOMER_360_ACTIONS: ActionDefinition[] = [
+  {
+    id: 'act-c360-001',
+    name: 'refresh_customer_health_score',
+    displayName: '刷新客户健康分',
+    description: '根据近30日互动、工单、回款和商机推进情况重算客户健康分。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-c360-001',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-c360-001","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"customer.timeline.updated\\",\\"window\\":\\"30d\\"}"},{"functionId":"fn-c360-002","order":2,"triggerType":"EVENT","triggerConfig":"{\\"segmentRefresh\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_customer_review","notifyRole":"客户成功经理"}',
+    parametersJson: '[{"name":"customerCode","displayName":"客户编码","dataType":"STRING","required":true},{"name":"interactionCount","displayName":"互动次数","dataType":"INTEGER","required":true},{"name":"openTicketCount","displayName":"未关闭工单数","dataType":"INTEGER","required":true},{"name":"opportunityStageScore","displayName":"商机推进分","dataType":"FLOAT","required":true}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"Customer","conditionJson":"{\\"when\\":\\"customerCode_present\\"}","propertyMappingsJson":"{\\"healthScore\\":\\"calculated_health_score\\"}","sortOrder":1},{"ruleType":"CREATE_LINK","target":"CustomerSegment","conditionJson":"{\\"when\\":\\"segmentRefresh == true\\"}","propertyMappingsJson":"{\\"from\\":\\"$customerCode\\",\\"relation\\":\\"belongs_to_segment\\",\\"to\\":\\"recommended_segment\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"customer_required","condition":"customerCode != \\"\\"","message":"客户编码不能为空"},{"name":"interaction_non_negative","condition":"interactionCount >= 0","message":"互动次数不能为负数"},{"name":"stage_score_range","condition":"opportunityStageScore >= 0 and opportunityStageScore <= 1","message":"商机推进分需在 0 到 1 之间"}]',
+  },
+  {
+    id: 'act-c360-002',
+    name: 'generate_key_account_playbook',
+    displayName: '生成大客户经营策略',
+    description: '结合客户偏好、工单满意度和商机进展，输出下一步经营动作建议。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-c360-008',
+    triggerType: 'MANUAL',
+    triggerConfigJson: '[{"functionId":"fn-c360-003","order":1,"triggerType":"MANUAL","triggerConfig":"{\\"entry\\":\\"workspace.button\\",\\"includeServiceSignals\\":true}"}]',
+    exceptionPolicy: 'SKIP',
+    exceptionConfigJson: '{"retainDraft":true,"fallback":"manual_account_planning","notifyRole":"区域销售总监"}',
+    parametersJson: '[{"name":"customerCode","displayName":"客户编码","dataType":"STRING","required":true},{"name":"segmentName","displayName":"分层名称","dataType":"STRING","required":true},{"name":"renewalRisk","displayName":"续约风险","dataType":"FLOAT","required":true},{"name":"crossSellPotential","displayName":"交叉销售潜力","dataType":"FLOAT","required":true}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"CustomerSegment","conditionJson":"{\\"when\\":\\"renewalRisk >= 0.6\\"}","propertyMappingsJson":"{\\"strategy\\":\\"retention_first\\"}","sortOrder":1},{"ruleType":"CREATE_OBJECT","target":"Interaction","conditionJson":"{\\"when\\":\\"crossSellPotential >= 0.7\\"}","propertyMappingsJson":"{\\"interactionType\\":\\"联合经营复盘\\",\\"summary\\":\\"推荐启动增购推进\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"customer_required","condition":"customerCode != \\"\\"","message":"客户编码不能为空"},{"name":"segment_required","condition":"segmentName != \\"\\"","message":"分层名称不能为空"},{"name":"risk_range","condition":"renewalRisk >= 0 and renewalRisk <= 1","message":"续约风险需在 0 到 1 之间"}]',
+  },
+  {
+    id: 'act-c360-003',
+    name: 'escalate_service_recovery',
+    displayName: '升级服务补救闭环',
+    description: '当工单严重度高或满意度过低时，自动升级客户补救动作并同步客户成功团队。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-c360-006',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-c360-004","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"ticket.closed\\",\\"csatThreshold\\":3.5}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":2,"fallback":"create_manual_recovery_task","notifyRole":"服务交付经理"}',
+    parametersJson: '[{"name":"ticketNo","displayName":"工单号","dataType":"STRING","required":true},{"name":"severity","displayName":"严重等级","dataType":"STRING","required":true},{"name":"csatScore","displayName":"满意度评分","dataType":"FLOAT","required":true},{"name":"customerCode","displayName":"客户编码","dataType":"STRING","required":true}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"ServiceTicket","conditionJson":"{\\"when\\":\\"csatScore < 3.5\\"}","propertyMappingsJson":"{\\"slaStatus\\":\\"RECOVERY_REQUIRED\\"}","sortOrder":1},{"ruleType":"CREATE_LINK","target":"CustomerSegment","conditionJson":"{\\"when\\":\\"severity in [\\\\\\"HIGH\\\\\\",\\\\\\"CRITICAL\\\\\\"]\\"}","propertyMappingsJson":"{\\"from\\":\\"$ticketNo\\",\\"relation\\":\\"ticket_affects_segment\\",\\"to\\":\\"service_sensitive_segment\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"ticket_required","condition":"ticketNo != \\"\\"","message":"工单号不能为空"},{"name":"severity_range","condition":"severity in [\\"LOW\\",\\"MEDIUM\\",\\"HIGH\\",\\"CRITICAL\\"]","message":"严重等级仅支持 LOW/MEDIUM/HIGH/CRITICAL"},{"name":"csat_range","condition":"csatScore >= 0 and csatScore <= 5","message":"满意度评分需在 0 到 5 之间"}]',
+  },
+]
+
+const CUSTOMER_360_FUNCTIONS: FunctionDefinition[] = [
+  {
+    id: 'fn-c360-001',
+    name: '客户健康分计算',
+    description: '根据互动活跃度、服务风险和商机推进分计算客户健康分。',
+    scriptContent: 'def calc_customer_health_score(interaction_count: int, open_ticket_count: int, opportunity_stage_score: float, csat_score: float = 4.5):\n    """计算客户健康分。"""\n    engagement = min(max(interaction_count, 0) * 6, 40)\n    service_penalty = min(max(open_ticket_count, 0) * 8, 30)\n    opportunity = min(max(opportunity_stage_score, 0.0), 1.0) * 20\n    satisfaction = min(max(csat_score, 0.0), 5.0) * 2\n    score = round(max(0, min(100, 40 + engagement + opportunity + satisfaction - service_penalty)), 1)\n    return {"healthScore": score}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-c360-002',
+    name: '客户分层推荐',
+    description: '依据客户健康分、合同金额和互动深度推荐客户分层。',
+    scriptContent: 'def recommend_customer_segment(health_score: float, contract_amount: float, interaction_depth: int):\n    """推荐客户分层。"""\n    if contract_amount >= 5000000 and health_score >= 75:\n        segment = "战略大客户"\n    elif health_score >= 65 and interaction_depth >= 3:\n        segment = "增长型客户"\n    elif health_score < 55:\n        segment = "高服务敏感客户"\n    else:\n        segment = "交叉销售机会客户"\n    return {"segmentName": segment}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-c360-003',
+    name: '大客户经营策略生成',
+    description: '输出客户续约保留、增购推进和高层拜访建议。',
+    scriptContent: 'def build_account_playbook(segment_name: str, renewal_risk: float, cross_sell_potential: float, preference_tags: list[str]):\n    """生成客户经营策略。"""\n    actions = []\n    if renewal_risk >= 0.6:\n        actions.append("优先安排高层续约沟通和服务复盘")\n    if cross_sell_potential >= 0.7:\n        actions.append("发起交叉销售联合方案演示")\n    if "关注售后响应速度" in preference_tags:\n        actions.append("承诺关键工单升级SLA和专属服务群")\n    if not actions:\n        actions.append("维持季度经营回顾并持续观察")\n    return {"playbook": actions[:3]}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-c360-004',
+    name: '服务补救优先级评估',
+    description: '基于工单严重度、满意度和客户分层评估服务补救优先级。',
+    scriptContent: 'def evaluate_service_recovery_priority(severity: str, csat_score: float, segment_name: str):\n    """评估服务补救优先级。"""\n    score = 0\n    if severity in ("HIGH", "CRITICAL"):\n        score += 50\n    if csat_score < 3.5:\n        score += 30\n    if segment_name == "战略大客户":\n        score += 20\n    priority = "P1" if score >= 70 else "P2" if score >= 40 else "P3"\n    return {"priority": priority, "score": score}',
+    status: 'ACTIVE',
+  },
+]
+
+const CONTRACT_CONSTRAINTS_PROJECT_ID = 'proj-1524'
+const CONTRACT_CONSTRAINTS_PROJECT_NAME = '合同约束本体'
+const CONTRACT_CONSTRAINTS_UPDATED_AT = '2026-03-11T10:40:00.000Z'
+const CONTRACT_CONSTRAINTS_DESCRIPTION =
+  '制造业 · 销售与合同治理领域合同约束本体，覆盖合同模板、合同条款、合规要求、风险场景、审批节点、履约义务、交易对手与履约事件；支持法审扫描、合同风控、审批协同与履约预警。'
+
+const CONTRACT_CONSTRAINTS_DOCUMENTS: ProjectDocument[] = [
+  {
+    id: 'doc-cc-001',
+    name: '合同约束本体模型说明书.docx',
+    fileType: 'docx',
+    size: 221184,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-03T09:10:00.000Z',
+  },
+  {
+    id: 'doc-cc-002',
+    name: '设备采购主协议模板与红线条款清单.xlsx',
+    fileType: 'xlsx',
+    size: 248832,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-04T10:20:00.000Z',
+  },
+  {
+    id: 'doc-cc-003',
+    name: '法务合同审查规则与风险分级标准.md',
+    fileType: 'md',
+    size: 98624,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-05T11:00:00.000Z',
+  },
+  {
+    id: 'doc-cc-004',
+    name: '高风险合同条款审查样本.jsonl',
+    fileType: 'jsonl',
+    size: 70312,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-06T14:10:00.000Z',
+  },
+  {
+    id: 'doc-cc-005',
+    name: '审批流节点与会签策略配置.xlsx',
+    fileType: 'xlsx',
+    size: 184320,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-07T09:40:00.000Z',
+  },
+  {
+    id: 'doc-cc-006',
+    name: '履约义务跟踪与违约事件归档模板.docx',
+    fileType: 'docx',
+    size: 169984,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-08T13:30:00.000Z',
+  },
+  {
+    id: 'doc-cc-007',
+    name: '知识产权与保密约束专项审查规则.md',
+    fileType: 'md',
+    size: 90112,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-09T15:00:00.000Z',
+  },
+  {
+    id: 'doc-cc-008',
+    name: '合同履约异常与赔付案例库.jsonl',
+    fileType: 'jsonl',
+    size: 79264,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-10T16:40:00.000Z',
+  },
+]
+
+const CONTRACT_CONSTRAINTS_DATA_SOURCES: StructuredDataSource[] = [
+  {
+    id: 'ds-cc-001',
+    name: '合同主数据中心',
+    type: 'POSTGRESQL',
+    host: '10.18.16.31',
+    port: 5432,
+    database: 'contract_master',
+    username: 'contract_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['contract_header', 'contract_clause', 'counterparty_master'],
+    rowLimit: 150000,
+    syncMode: 'FULL',
+    incrementalColumn: '',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:40:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-03T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:40:00.000Z',
+  },
+  {
+    id: 'ds-cc-002',
+    name: '合同审批与会签工作流库',
+    type: 'MYSQL',
+    host: '10.18.16.37',
+    port: 3306,
+    database: 'contract_workflow',
+    username: 'workflow_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['approval_instance', 'approval_checkpoint', 'legal_review_comment'],
+    rowLimit: 120000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'updated_at',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:46:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-04T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:46:00.000Z',
+  },
+  {
+    id: 'ds-cc-003',
+    name: '履约与违约事件分析库',
+    type: 'CLICKHOUSE',
+    host: '10.18.16.44',
+    port: 8123,
+    database: 'contract_fulfillment',
+    username: 'fulfillment_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['obligation_tracker', 'fulfillment_event', 'breach_event'],
+    rowLimit: 220000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'event_time',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:52:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-05T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:52:00.000Z',
+  },
+]
+
+const CONTRACT_CONSTRAINTS_ENTITY_TYPES: EntityTypeConfig[] = [
+  {
+    id: 'et-cc-001',
+    name: 'ContractTemplate',
+    description: '标准合同模板或具体合同文档。',
+    properties: [
+      { id: 'ep-cc-001', name: 'templateName', displayName: '模板名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-cc-002', name: 'contractType', displayName: '合同类型', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-cc-003', name: 'version', displayName: '版本号', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-cc-004', name: 'status', displayName: '状态', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-cc-002',
+    name: 'ContractClause',
+    description: '合同中的具体条款，包括付款、违约、验收、保密等。',
+    properties: [
+      { id: 'ep-cc-011', name: 'clauseTitle', displayName: '条款标题', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-cc-012', name: 'clauseType', displayName: '条款类型', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-cc-013', name: 'riskLevel', displayName: '风险等级', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-cc-014', name: 'reviewNote', displayName: '审查意见', dataType: 'TEXT', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-cc-003',
+    name: 'ComplianceRequirement',
+    description: '合同签署与履约过程中必须满足的法务或风控要求。',
+    properties: [
+      { id: 'ep-cc-021', name: 'requirementName', displayName: '要求名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-cc-022', name: 'source', displayName: '来源', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-cc-023', name: 'controlType', displayName: '控制方式', dataType: 'STRING', required: false, sortOrder: 3 },
+    ],
+  },
+  {
+    id: 'et-cc-004',
+    name: 'RiskScenario',
+    description: '合同谈判或履约中的典型风险场景。',
+    properties: [
+      { id: 'ep-cc-031', name: 'scenarioName', displayName: '风险场景', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-cc-032', name: 'impactLevel', displayName: '影响等级', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-cc-033', name: 'mitigation', displayName: '缓释建议', dataType: 'TEXT', required: false, sortOrder: 3 },
+    ],
+  },
+  {
+    id: 'et-cc-005',
+    name: 'ApprovalCheckpoint',
+    description: '合同审批流中的节点、会签角色或升级审批点。',
+    properties: [
+      { id: 'ep-cc-041', name: 'checkpointName', displayName: '节点名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-cc-042', name: 'ownerRole', displayName: '负责角色', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-cc-043', name: 'slaHours', displayName: 'SLA时长', dataType: 'INTEGER', required: false, sortOrder: 3 },
+    ],
+  },
+  {
+    id: 'et-cc-006',
+    name: 'Obligation',
+    description: '合同双方约定的关键履约义务。',
+    properties: [
+      { id: 'ep-cc-051', name: 'obligationName', displayName: '义务名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-cc-052', name: 'dueRule', displayName: '履约规则', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-cc-053', name: 'breachCost', displayName: '违约成本', dataType: 'FLOAT', required: false, sortOrder: 3 },
+    ],
+  },
+  {
+    id: 'et-cc-007',
+    name: 'Counterparty',
+    description: '合同相对方，如客户采购中心、事业部或合作方。',
+    properties: [
+      { id: 'ep-cc-061', name: 'counterpartyName', displayName: '相对方名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-cc-062', name: 'counterpartyType', displayName: '相对方类型', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-cc-063', name: 'creditLevel', displayName: '信用等级', dataType: 'STRING', required: false, sortOrder: 3 },
+    ],
+  },
+  {
+    id: 'et-cc-008',
+    name: 'FulfillmentEvent',
+    description: '合同履约过程中的关键事件，如交付、验收、回款、违约。',
+    properties: [
+      { id: 'ep-cc-071', name: 'eventName', displayName: '事件名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-cc-072', name: 'eventTime', displayName: '发生时间', dataType: 'DATETIME', required: false, sortOrder: 2 },
+      { id: 'ep-cc-073', name: 'eventStatus', displayName: '事件状态', dataType: 'STRING', required: false, sortOrder: 3 },
+    ],
+  },
+]
+
+const CONTRACT_CONSTRAINTS_RELATION_TYPES: RelationTypeConfig[] = [
+  { id: 'rt-cc-001', name: 'contains_clause', domain: 'ContractTemplate', range: 'ContractClause', description: '合同模板包含具体条款。', properties: [] },
+  { id: 'rt-cc-002', name: 'requires_compliance', domain: 'ContractClause', range: 'ComplianceRequirement', description: '条款需要满足特定合规要求。', properties: [] },
+  { id: 'rt-cc-003', name: 'triggers_risk', domain: 'ContractClause', range: 'RiskScenario', description: '条款可能触发的风险场景。', properties: [] },
+  { id: 'rt-cc-004', name: 'reviewed_at', domain: 'ContractTemplate', range: 'ApprovalCheckpoint', description: '合同在审批节点进行审查。', properties: [] },
+  { id: 'rt-cc-005', name: 'defines_obligation', domain: 'ContractClause', range: 'Obligation', description: '条款定义的履约义务。', properties: [] },
+  { id: 'rt-cc-006', name: 'signed_with', domain: 'ContractTemplate', range: 'Counterparty', description: '合同模板对应的签约相对方。', properties: [] },
+  { id: 'rt-cc-007', name: 'tracked_by_event', domain: 'Obligation', range: 'FulfillmentEvent', description: '履约义务通过事件进行跟踪。', properties: [] },
+  { id: 'rt-cc-008', name: 'escalates_to', domain: 'RiskScenario', range: 'ApprovalCheckpoint', description: '高风险场景升级到指定审批节点。', properties: [] },
+]
+
+const CONTRACT_CONSTRAINTS_SKILLS: SkillConfig[] = [
+  { id: 'sk-cc-001', code: 'data_processing', name: '合同条款拆解', enabled: true, prompt: '将合同模板、法审意见和履约记录拆解为结构化条款、义务和事件', source: 'built_in', tags: ['contract', 'etl'] },
+  { id: 'sk-cc-002', code: 'graph_synthesis', name: '合同风控图谱融合', enabled: true, prompt: '融合合同、条款、审批流、相对方与履约事件，生成合同约束关系图谱', source: 'built_in', tags: ['contract', 'graph'] },
+  { id: 'sk-cc-003', code: 'custom', name: '法审规则编排', enabled: true, prompt: '依据红线条款、知识产权、交付验收与赔付规则自动输出法审意见', source: 'built_in', tags: ['contract', 'review'] },
+]
+
+const CONTRACT_CONSTRAINTS_AI_INSIGHT_RUN: AiInsightRun = {
+  id: 'ai-cc-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-10T09:30:00.000Z',
+  completedAt: '2026-03-10T09:38:00.000Z',
+  scannedDocumentCount: 8,
+  addedEntityCount: 8,
+  addedRelationCount: 8,
+  addedEntityNames: ['ContractTemplate', 'ContractClause', 'ComplianceRequirement', 'RiskScenario', 'ApprovalCheckpoint', 'Obligation', 'Counterparty', 'FulfillmentEvent'],
+  addedRelationNames: ['contains_clause', 'requires_compliance', 'triggers_risk', 'reviewed_at', 'defines_obligation', 'signed_with', 'tracked_by_event', 'escalates_to'],
+  warnings: [],
+  stage: '完成',
+  currentDocument: '高风险合同条款审查样本.jsonl',
+  logs: [
+    '扫描 8 份合同模板、法审规则、审批策略与履约异常样本',
+    '补齐合同模板、条款、合规要求、风险场景、审批节点、履约义务、交易对手和履约事件八类实体',
+    '建立合同审查、审批协同、履约跟踪和违约升级八条关键关系链路',
+  ],
+}
+
+const CONTRACT_CONSTRAINTS_RUN: ExtractionRun = {
+  id: 'run-cc-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-10T10:00:00.000Z',
+  completedAt: '2026-03-10T10:15:00.000Z',
+  candidateEntityCount: 68,
+  candidateRelationCount: 54,
+  pendingReviewCount: 0,
+  stage: '完成',
+  currentDocument: '合同履约异常与赔付案例库.jsonl',
+  logs: [
+    '抽取设备采购与维保合同中的高风险条款、审批流与履约记录',
+    '识别逾期交付、验收模糊、账期拖长与知识产权争议等合同风险场景',
+    '生成合同约束候选实体 68 个、关系 54 条，支撑法审、审批和履约预警',
+  ],
+  warnings: [],
+  reviewItems: [
+    { id: 'ri-cc-001', kind: 'ENTITY', title: '设备采购主协议 (ContractTemplate)', evidence: '设备采购主协议模板与红线条款清单.xlsx', confidence: 0.99, status: 'APPROVED' },
+    { id: 'ri-cc-002', kind: 'ENTITY', title: '违约赔偿条款 (ContractClause)', evidence: '高风险合同条款审查样本.jsonl', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-cc-003', kind: 'ENTITY', title: '高风险条款需法审会签 (ComplianceRequirement)', evidence: '法务合同审查规则与风险分级标准.md', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-cc-004', kind: 'ENTITY', title: '逾期交付赔付风险 (RiskScenario)', evidence: '合同履约异常与赔付案例库.jsonl', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-cc-005', kind: 'ENTITY', title: '法务专员复核 (ApprovalCheckpoint)', evidence: '审批流节点与会签策略配置.xlsx', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-cc-006', kind: 'ENTITY', title: '7日内完成交付 (Obligation)', evidence: '履约义务跟踪与违约事件归档模板.docx', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-cc-007', kind: 'RELATION', title: '设备采购主协议 (ContractTemplate) → contains_clause → 违约赔偿条款 (ContractClause)', evidence: '合同模板关系', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-cc-008', kind: 'RELATION', title: '违约赔偿条款 (ContractClause) → triggers_risk → 逾期交付赔付风险 (RiskScenario)', evidence: '风险映射关系', confidence: 0.97, status: 'APPROVED' },
+  ],
+}
+
+const CONTRACT_CONSTRAINTS_VERSION: OntologyVersion = {
+  id: 'ver-cc-001',
+  version: 'v1.1',
+  label: '合同审查与履约风控图谱',
+  createdAt: '2026-03-10T10:20:00.000Z',
+  sourceRunId: 'run-cc-001',
+  entityCount: 68,
+  relationCount: 54,
+}
+
+const CONTRACT_CONSTRAINTS_ACTIONS: ActionDefinition[] = [
+  {
+    id: 'act-cc-001',
+    name: 'scan_contract_clause_risk',
+    displayName: '扫描合同条款风险',
+    description: '对合同草案进行条款级风险扫描，识别红线内容和高风险修改点。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-cc-002',
+    triggerType: 'MANUAL',
+    triggerConfigJson: '[{"functionId":"fn-cc-001","order":1,"triggerType":"MANUAL","triggerConfig":"{\\"entry\\":\\"workspace.button\\",\\"includeRedline\\":true}"},{"functionId":"fn-cc-002","order":2,"triggerType":"MANUAL","triggerConfig":"{\\"riskThreshold\\":0.7}"}]',
+    exceptionPolicy: 'SKIP',
+    exceptionConfigJson: '{"retainDraft":true,"fallback":"manual_legal_review","notifyRole":"法务专员"}',
+    parametersJson: '[{"name":"contractTemplateId","displayName":"合同模板ID","dataType":"STRING","required":true},{"name":"clauseText","displayName":"条款文本","dataType":"STRING","required":true},{"name":"counterpartyName","displayName":"相对方名称","dataType":"STRING","required":true}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"ContractClause","conditionJson":"{\\"when\\":\\"contractTemplateId_present\\"}","propertyMappingsJson":"{\\"riskLevel\\":\\"predicted_risk_level\\",\\"reviewNote\\":\\"auto_review_note\\"}","sortOrder":1},{"ruleType":"CREATE_LINK","target":"RiskScenario","conditionJson":"{\\"when\\":\\"predicted_risk_level in [\\\\\\"HIGH\\\\\\",\\\\\\"CRITICAL\\\\\\"]\\"}","propertyMappingsJson":"{\\"from\\":\\"$contractTemplateId\\",\\"relation\\":\\"triggers_risk\\",\\"to\\":\\"predicted_risk_scenario\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"template_required","condition":"contractTemplateId != \\"\\"","message":"合同模板ID不能为空"},{"name":"clause_required","condition":"clauseText != \\"\\"","message":"条款文本不能为空"},{"name":"counterparty_required","condition":"counterpartyName != \\"\\"","message":"相对方名称不能为空"}]',
+  },
+  {
+    id: 'act-cc-002',
+    name: 'launch_contract_approval_flow',
+    displayName: '发起合同审批流',
+    description: '依据合同金额、风险等级和条款类型自动编排审批路径与会签节点。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-cc-005',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-cc-003","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"contract.review.completed\\",\\"includeFinance\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_workflow_assignment","notifyRole":"合同管理员"}',
+    parametersJson: '[{"name":"contractTemplateId","displayName":"合同模板ID","dataType":"STRING","required":true},{"name":"contractAmount","displayName":"合同金额","dataType":"FLOAT","required":true},{"name":"riskLevel","displayName":"风险等级","dataType":"STRING","required":true}]',
+    rulesJson: '[{"ruleType":"CREATE_LINK","target":"ApprovalCheckpoint","conditionJson":"{\\"when\\":\\"riskLevel in [\\\\\\"HIGH\\\\\\",\\\\\\"CRITICAL\\\\\\"]\\"}","propertyMappingsJson":"{\\"from\\":\\"$contractTemplateId\\",\\"relation\\":\\"reviewed_at\\",\\"to\\":\\"escalated_checkpoint\\"}","sortOrder":1}]',
+    validationRulesJson: '[{"name":"template_required","condition":"contractTemplateId != \\"\\"","message":"合同模板ID不能为空"},{"name":"amount_non_negative","condition":"contractAmount >= 0","message":"合同金额不能为负数"},{"name":"risk_range","condition":"riskLevel in [\\"LOW\\",\\"MEDIUM\\",\\"HIGH\\",\\"CRITICAL\\"]","message":"风险等级仅支持 LOW/MEDIUM/HIGH/CRITICAL"}]',
+  },
+  {
+    id: 'act-cc-003',
+    name: 'monitor_contract_breach_signal',
+    displayName: '监控履约违约信号',
+    description: '结合交付、验收、回款和售后事件，自动监测合同履约风险并触发升级。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-cc-008',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-cc-004","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"fulfillment.event.updated\\",\\"window\\":\\"14d\\"}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":2,"fallback":"manual_breach_review","notifyRole":"风控经理"}',
+    parametersJson: '[{"name":"obligationId","displayName":"履约义务ID","dataType":"STRING","required":true},{"name":"eventStatus","displayName":"事件状态","dataType":"STRING","required":true},{"name":"delayDays","displayName":"延期天数","dataType":"INTEGER","required":true}]',
+    rulesJson: '[{"ruleType":"CREATE_LINK","target":"RiskScenario","conditionJson":"{\\"when\\":\\"delayDays > 0\\"}","propertyMappingsJson":"{\\"from\\":\\"$obligationId\\",\\"relation\\":\\"tracked_by_event\\",\\"to\\":\\"breach_event\\"}","sortOrder":1}]',
+    validationRulesJson: '[{"name":"obligation_required","condition":"obligationId != \\"\\"","message":"履约义务ID不能为空"},{"name":"delay_non_negative","condition":"delayDays >= 0","message":"延期天数不能为负数"},{"name":"status_required","condition":"eventStatus != \\"\\"","message":"事件状态不能为空"}]',
+  },
+]
+
+const CONTRACT_CONSTRAINTS_FUNCTIONS: FunctionDefinition[] = [
+  {
+    id: 'fn-cc-001',
+    name: '高风险条款提取',
+    description: '从合同文本中抽取高风险条款和红线表达。',
+    scriptContent: 'def extract_high_risk_clauses(clause_texts: list[str], redline_keywords: list[str]):\n    """提取高风险条款。"""\n    findings = []\n    for text in clause_texts:\n        hits = [keyword for keyword in redline_keywords if keyword in text]\n        if hits:\n            findings.append({"clauseText": text, "matchedKeywords": hits, "riskLevel": "HIGH" if len(hits) >= 2 else "MEDIUM"})\n    return findings',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-cc-002',
+    name: '合同条款风险评分',
+    description: '基于条款类型、红线命中和相对方属性输出风险评分。',
+    scriptContent: 'def score_contract_clause_risk(clause_type: str, redline_hit_count: int, counterparty_credit: str):\n    """计算合同条款风险评分。"""\n    score = 20\n    if clause_type in ("违约", "知识产权", "保密"):\n        score += 25\n    score += min(max(redline_hit_count, 0), 5) * 10\n    if counterparty_credit in ("B", "C"):\n        score += 15\n    return {"riskScore": min(score, 100), "riskLevel": "CRITICAL" if score >= 80 else "HIGH" if score >= 60 else "MEDIUM" if score >= 40 else "LOW"}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-cc-003',
+    name: '审批路径推荐',
+    description: '根据风险等级和合同金额推荐审批路径。',
+    scriptContent: 'def recommend_contract_approval_path(contract_amount: float, risk_level: str):\n    """推荐合同审批路径。"""\n    path = ["销售经理初审"]\n    if risk_level in ("HIGH", "CRITICAL"):\n        path.append("法务专员复核")\n    if contract_amount >= 3000000 or risk_level == "CRITICAL":\n        path.append("风控经理复核")\n    if contract_amount >= 8000000:\n        path.append("总监级审批")\n    return {"approvalPath": path}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-cc-004',
+    name: '违约预警评估',
+    description: '根据履约事件延期和事件状态评估违约预警级别。',
+    scriptContent: 'def evaluate_breach_alert(delay_days: int, event_status: str, obligation_weight: float = 1.0):\n    """评估违约预警级别。"""\n    score = max(delay_days, 0) * 8 * max(obligation_weight, 0.5)\n    if event_status in ("FAILED", "REJECTED"):\n        score += 25\n    level = "P1" if score >= 70 else "P2" if score >= 40 else "P3"\n    return {"alertLevel": level, "score": round(score, 1)}',
+    status: 'ACTIVE',
+  },
+]
+
 const FAULT_DIAGNOSIS_SKILLS: SkillConfig[] = [
   { id: 'sk-fd-001', code: 'fault_graph_loading', name: '图谱加载', enabled: true, prompt: '从 graph.jsonl 加载设备故障诊断本体的节点与关系数据', source: 'built_in', tags: ['graph', 'loading'] },
   { id: 'sk-fd-002', code: 'symptom_matching', name: '现象匹配', enabled: true, prompt: '根据报警码、趋势信号和描述匹配最可能的故障现象与细分特征', source: 'built_in', tags: ['diagnosis', 'matching'] },
@@ -1548,6 +2359,270 @@ function ensureProductReplenishmentSeed(project: ProjectDetail): boolean {
   return changed
 }
 
+function isCustomer360Project(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
+  return project.id === CUSTOMER_360_PROJECT_ID || project.name === CUSTOMER_360_PROJECT_NAME
+}
+
+function ensureCustomer360Seed(project: ProjectDetail): boolean {
+  if (!isCustomer360Project(project)) {
+    return false
+  }
+
+  let changed = false
+
+  if (project.name !== CUSTOMER_360_PROJECT_NAME) {
+    project.name = CUSTOMER_360_PROJECT_NAME
+    changed = true
+  }
+
+  if (project.category !== 'manufacturing') {
+    project.category = 'manufacturing'
+    changed = true
+  }
+
+  if (project.description !== CUSTOMER_360_DESCRIPTION) {
+    project.description = CUSTOMER_360_DESCRIPTION
+    changed = true
+  }
+
+  if ((Date.parse(project.updatedAt || '') || 0) < Date.parse(CUSTOMER_360_UPDATED_AT)) {
+    project.updatedAt = CUSTOMER_360_UPDATED_AT
+    changed = true
+  }
+
+  const cleanedDocuments = removeItemsById(project.documents, ['doc-1.5.23-1', 'doc-1.5.23-2'])
+  if (cleanedDocuments.changed) {
+    project.documents = cleanedDocuments.items
+    changed = true
+  }
+
+  const mergedDocuments = mergeUniqueById(project.documents, cloneProjectData(CUSTOMER_360_DOCUMENTS))
+  if (mergedDocuments.changed) {
+    project.documents = mergedDocuments.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedDataSources = mergeUniqueById(project.dataSources, cloneProjectData(CUSTOMER_360_DATA_SOURCES))
+  if (mergedDataSources.changed) {
+    project.dataSources = mergedDataSources.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const cleanedEntityTypes = removeItemsById(project.schemaConfig.entityTypes, ['et-1.5.23-s', 'et-1.5.23-o'])
+  if (cleanedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = cleanedEntityTypes.items
+    changed = true
+  }
+
+  const mergedEntityTypes = mergeUniqueById(project.schemaConfig.entityTypes, cloneProjectData(CUSTOMER_360_ENTITY_TYPES))
+  if (mergedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = mergedEntityTypes.items
+    changed = true
+  }
+
+  const cleanedRelationTypes = removeItemsById(project.schemaConfig.relationTypes, ['rt-1.5.23-1'])
+  if (cleanedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = cleanedRelationTypes.items
+    changed = true
+  }
+
+  const mergedRelationTypes = mergeUniqueById(project.schemaConfig.relationTypes, cloneProjectData(CUSTOMER_360_RELATION_TYPES))
+  if (mergedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = mergedRelationTypes.items
+    changed = true
+  }
+
+  const mergedSkills = mergeUniqueById(project.schemaConfig.skills, cloneProjectData(CUSTOMER_360_SKILLS))
+  if (mergedSkills.changed) {
+    project.schemaConfig.skills = mergedSkills.items
+    changed = true
+  }
+
+  if (project.schemaConfig.entityScope !== '销售与客户经营场景中的客户、集团账户、触达渠道、互动事件、商机、服务工单、偏好标签与客户分层等核心经营实体') {
+    project.schemaConfig.entityScope = '销售与客户经营场景中的客户、集团账户、触达渠道、互动事件、商机、服务工单、偏好标签与客户分层等核心经营实体'
+    changed = true
+  }
+
+  if (project.schemaConfig.relationScope !== '覆盖客户归属、触达互动、商机推进、服务反馈、偏好标签和客户分层的完整客户360经营关系链路') {
+    project.schemaConfig.relationScope = '覆盖客户归属、触达互动、商机推进、服务反馈、偏好标签和客户分层的完整客户360经营关系链路'
+    changed = true
+  }
+
+  if (project.schemaConfig.updatedAt !== CUSTOMER_360_UPDATED_AT) {
+    project.schemaConfig.updatedAt = CUSTOMER_360_UPDATED_AT
+    changed = true
+  }
+
+  if (!project.aiInsightRun) {
+    project.aiInsightRun = cloneProjectData(CUSTOMER_360_AI_INSIGHT_RUN)
+    changed = true
+  }
+
+  const mergedRuns = mergeUniqueById(project.runs, cloneProjectData([CUSTOMER_360_RUN]))
+  if (mergedRuns.changed) {
+    project.runs = mergedRuns.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedVersions = mergeUniqueById(project.versions, cloneProjectData([CUSTOMER_360_VERSION]))
+  if (mergedVersions.changed) {
+    project.versions = mergedVersions.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedActions = mergeUniqueById(project.actions, cloneProjectData(CUSTOMER_360_ACTIONS))
+  if (mergedActions.changed) {
+    project.actions = mergedActions.items
+    changed = true
+  }
+
+  const mergedFunctions = mergeUniqueById(project.functions, cloneProjectData(CUSTOMER_360_FUNCTIONS))
+  if (mergedFunctions.changed) {
+    project.functions = mergedFunctions.items
+    changed = true
+  }
+
+  const versionExists = project.versions.some(version => version.id === project.currentVersionId)
+  if (!versionExists) {
+    project.currentVersionId = CUSTOMER_360_VERSION.id
+    changed = true
+  }
+
+  return changed
+}
+
+function isContractConstraintsProject(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
+  return project.id === CONTRACT_CONSTRAINTS_PROJECT_ID || project.name === CONTRACT_CONSTRAINTS_PROJECT_NAME
+}
+
+function ensureContractConstraintsSeed(project: ProjectDetail): boolean {
+  if (!isContractConstraintsProject(project)) {
+    return false
+  }
+
+  let changed = false
+
+  if (project.name !== CONTRACT_CONSTRAINTS_PROJECT_NAME) {
+    project.name = CONTRACT_CONSTRAINTS_PROJECT_NAME
+    changed = true
+  }
+
+  if (project.category !== 'manufacturing') {
+    project.category = 'manufacturing'
+    changed = true
+  }
+
+  if (project.description !== CONTRACT_CONSTRAINTS_DESCRIPTION) {
+    project.description = CONTRACT_CONSTRAINTS_DESCRIPTION
+    changed = true
+  }
+
+  if ((Date.parse(project.updatedAt || '') || 0) < Date.parse(CONTRACT_CONSTRAINTS_UPDATED_AT)) {
+    project.updatedAt = CONTRACT_CONSTRAINTS_UPDATED_AT
+    changed = true
+  }
+
+  const cleanedDocuments = removeItemsById(project.documents, ['doc-1.5.24-1', 'doc-1.5.24-2'])
+  if (cleanedDocuments.changed) {
+    project.documents = cleanedDocuments.items
+    changed = true
+  }
+
+  const mergedDocuments = mergeUniqueById(project.documents, cloneProjectData(CONTRACT_CONSTRAINTS_DOCUMENTS))
+  if (mergedDocuments.changed) {
+    project.documents = mergedDocuments.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedDataSources = mergeUniqueById(project.dataSources, cloneProjectData(CONTRACT_CONSTRAINTS_DATA_SOURCES))
+  if (mergedDataSources.changed) {
+    project.dataSources = mergedDataSources.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const cleanedEntityTypes = removeItemsById(project.schemaConfig.entityTypes, ['et-1.5.24-s', 'et-1.5.24-o'])
+  if (cleanedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = cleanedEntityTypes.items
+    changed = true
+  }
+
+  const mergedEntityTypes = mergeUniqueById(project.schemaConfig.entityTypes, cloneProjectData(CONTRACT_CONSTRAINTS_ENTITY_TYPES))
+  if (mergedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = mergedEntityTypes.items
+    changed = true
+  }
+
+  const cleanedRelationTypes = removeItemsById(project.schemaConfig.relationTypes, ['rt-1.5.24-1'])
+  if (cleanedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = cleanedRelationTypes.items
+    changed = true
+  }
+
+  const mergedRelationTypes = mergeUniqueById(project.schemaConfig.relationTypes, cloneProjectData(CONTRACT_CONSTRAINTS_RELATION_TYPES))
+  if (mergedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = mergedRelationTypes.items
+    changed = true
+  }
+
+  const mergedSkills = mergeUniqueById(project.schemaConfig.skills, cloneProjectData(CONTRACT_CONSTRAINTS_SKILLS))
+  if (mergedSkills.changed) {
+    project.schemaConfig.skills = mergedSkills.items
+    changed = true
+  }
+
+  if (project.schemaConfig.entityScope !== '销售与合同治理场景中的合同模板、合同条款、合规要求、风险场景、审批节点、履约义务、交易对手与履约事件等核心法务实体') {
+    project.schemaConfig.entityScope = '销售与合同治理场景中的合同模板、合同条款、合规要求、风险场景、审批节点、履约义务、交易对手与履约事件等核心法务实体'
+    changed = true
+  }
+
+  if (project.schemaConfig.relationScope !== '覆盖合同条款拆解、法审规则、审批协同、风险升级、履约跟踪和违约预警的完整合同约束关系链路') {
+    project.schemaConfig.relationScope = '覆盖合同条款拆解、法审规则、审批协同、风险升级、履约跟踪和违约预警的完整合同约束关系链路'
+    changed = true
+  }
+
+  if (project.schemaConfig.updatedAt !== CONTRACT_CONSTRAINTS_UPDATED_AT) {
+    project.schemaConfig.updatedAt = CONTRACT_CONSTRAINTS_UPDATED_AT
+    changed = true
+  }
+
+  if (!project.aiInsightRun) {
+    project.aiInsightRun = cloneProjectData(CONTRACT_CONSTRAINTS_AI_INSIGHT_RUN)
+    changed = true
+  }
+
+  const mergedRuns = mergeUniqueById(project.runs, cloneProjectData([CONTRACT_CONSTRAINTS_RUN]))
+  if (mergedRuns.changed) {
+    project.runs = mergedRuns.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedVersions = mergeUniqueById(project.versions, cloneProjectData([CONTRACT_CONSTRAINTS_VERSION]))
+  if (mergedVersions.changed) {
+    project.versions = mergedVersions.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedActions = mergeUniqueById(project.actions, cloneProjectData(CONTRACT_CONSTRAINTS_ACTIONS))
+  if (mergedActions.changed) {
+    project.actions = mergedActions.items
+    changed = true
+  }
+
+  const mergedFunctions = mergeUniqueById(project.functions, cloneProjectData(CONTRACT_CONSTRAINTS_FUNCTIONS))
+  if (mergedFunctions.changed) {
+    project.functions = mergedFunctions.items
+    changed = true
+  }
+
+  const versionExists = project.versions.some(version => version.id === project.currentVersionId)
+  if (!versionExists) {
+    project.currentVersionId = CONTRACT_CONSTRAINTS_VERSION.id
+    changed = true
+  }
+
+  return changed
+}
+
 function isLegalRegulationsProject(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
   return project.id === LEGAL_REGULATIONS_PROJECT_ID || project.name === LEGAL_REGULATIONS_PROJECT_NAME
 }
@@ -1837,6 +2912,12 @@ function normalizeStore(store: ProjectStore): boolean {
       changed = true
     }
     if (ensureProductReplenishmentSeed(project)) {
+      changed = true
+    }
+    if (ensureCustomer360Seed(project)) {
+      changed = true
+    }
+    if (ensureContractConstraintsSeed(project)) {
       changed = true
     }
     if (ensureLegalRegulationsSeed(project)) {
@@ -2244,10 +3325,29 @@ function cloneProjectData<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
-const PINNED_PROJECT_ORDER = ['故障诊断本体', '商品补货本体'] as const
+export const FEATURED_PROJECT_ORDER = [
+  '故障诊断本体',
+  '商品补货本体',
+  '客户360本体',
+  '合同约束本体',
+  '任务调度本体',
+  '库存风险本体',
+  '供应商画像本体',
+  '会员画像本体',
+  '全渠道库存本体',
+  '品类架构本体',
+  '疾病诊断本体(ICD-11)',
+  '临床路径(CP)本体',
+  '医疗设备孪生本体',
+  '电子病历质控本体',
+  '路网拓扑本体',
+  '订单履约本体',
+  '组织架构与职能本体',
+  '法律法规库本体',
+] as const
 
 function getPinnedProjectRank(project: Pick<ProjectDetail, 'name'>): number {
-  const index = PINNED_PROJECT_ORDER.indexOf(project.name as (typeof PINNED_PROJECT_ORDER)[number])
+  const index = FEATURED_PROJECT_ORDER.indexOf(project.name as (typeof FEATURED_PROJECT_ORDER)[number])
   return index >= 0 ? index : Number.POSITIVE_INFINITY
 }
 

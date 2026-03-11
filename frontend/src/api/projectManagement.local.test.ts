@@ -5,6 +5,7 @@ import {
   batchUpdateRunReviewItems,
   createProject,
   createProjectFunction,
+  FEATURED_PROJECT_ORDER,
   getVersionItems,
   deleteProject,
   getProjectFunctionInputTemplate,
@@ -60,6 +61,12 @@ describe('projectManagement local mock store', () => {
     expect(projects[1]?.name).toBe('商品补货本体')
   })
 
+  it('curates the first 18 ontology cards with common business ontologies across industries', async () => {
+    const projects = await listProjects()
+
+    expect(projects.slice(0, 18).map(project => project.name)).toEqual(FEATURED_PROJECT_ORDER)
+  })
+
   it('seeds 8D fault diagnosis documents and ontology mock data into the pinned project', async () => {
     const detail = await getProjectDetail('proj-001')
 
@@ -95,6 +102,52 @@ describe('projectManagement local mock store', () => {
     expect(detail.versions.find((item) => item.id === 'ver-rp-001')?.entityCount).toBe(90)
     expect(detail.versions.find((item) => item.id === 'ver-rp-001')?.relationCount).toBe(70)
     expect(detail.currentVersionId).toBe('ver-rp-001')
+  })
+
+  it('seeds customer 360 demo data with complete ontology assets', async () => {
+    const detail = await getProjectDetail('proj-1523')
+
+    expect(detail.name).toBe('客户360本体')
+    expect(detail.documents.some((item) => item.name.includes('客户360业务本体模型说明书'))).toBe(true)
+    expect(detail.documents.some((item) => item.name.includes('交叉销售机会识别训练样本'))).toBe(true)
+    expect(detail.documents).toHaveLength(8)
+    expect(detail.dataSources).toHaveLength(3)
+    expect(detail.aiInsightRun?.id).toBe('ai-c360-001')
+    expect(detail.aiInsightRun?.scannedDocumentCount).toBe(8)
+    expect(detail.schemaConfig.entityTypes.some((item) => item.name === 'Customer')).toBe(true)
+    expect(detail.schemaConfig.entityTypes.some((item) => item.name === 'ServiceTicket')).toBe(true)
+    expect(detail.schemaConfig.relationTypes.some((item) => item.name === 'promotes_opportunity')).toBe(true)
+    expect(detail.schemaConfig.skills.some((item) => item.id === 'sk-c360-003')).toBe(true)
+    expect(detail.actions.some((item) => item.id === 'act-c360-002')).toBe(true)
+    expect(detail.functions.some((item) => item.id === 'fn-c360-004')).toBe(true)
+    expect(detail.runs.find((item) => item.id === 'run-c360-001')?.candidateEntityCount).toBe(76)
+    expect(detail.runs.find((item) => item.id === 'run-c360-001')?.candidateRelationCount).toBe(58)
+    expect(detail.versions.find((item) => item.id === 'ver-c360-001')?.entityCount).toBe(76)
+    expect(detail.versions.find((item) => item.id === 'ver-c360-001')?.relationCount).toBe(58)
+    expect(detail.currentVersionId).toBe('ver-c360-001')
+  })
+
+  it('seeds contract constraints demo data with complete ontology assets', async () => {
+    const detail = await getProjectDetail('proj-1524')
+
+    expect(detail.name).toBe('合同约束本体')
+    expect(detail.documents.some((item) => item.name.includes('合同约束本体模型说明书'))).toBe(true)
+    expect(detail.documents.some((item) => item.name.includes('合同履约异常与赔付案例库'))).toBe(true)
+    expect(detail.documents).toHaveLength(8)
+    expect(detail.dataSources).toHaveLength(3)
+    expect(detail.aiInsightRun?.id).toBe('ai-cc-001')
+    expect(detail.aiInsightRun?.scannedDocumentCount).toBe(8)
+    expect(detail.schemaConfig.entityTypes.some((item) => item.name === 'ContractTemplate')).toBe(true)
+    expect(detail.schemaConfig.entityTypes.some((item) => item.name === 'FulfillmentEvent')).toBe(true)
+    expect(detail.schemaConfig.relationTypes.some((item) => item.name === 'tracked_by_event')).toBe(true)
+    expect(detail.schemaConfig.skills.some((item) => item.id === 'sk-cc-003')).toBe(true)
+    expect(detail.actions.some((item) => item.id === 'act-cc-002')).toBe(true)
+    expect(detail.functions.some((item) => item.id === 'fn-cc-004')).toBe(true)
+    expect(detail.runs.find((item) => item.id === 'run-cc-001')?.candidateEntityCount).toBe(68)
+    expect(detail.runs.find((item) => item.id === 'run-cc-001')?.candidateRelationCount).toBe(54)
+    expect(detail.versions.find((item) => item.id === 'ver-cc-001')?.entityCount).toBe(68)
+    expect(detail.versions.find((item) => item.id === 'ver-cc-001')?.relationCount).toBe(54)
+    expect(detail.currentVersionId).toBe('ver-cc-001')
   })
 
   it('seeds legal regulations demo data with richer documents and versions', async () => {
