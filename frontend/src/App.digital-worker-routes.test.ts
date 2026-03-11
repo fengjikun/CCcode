@@ -20,6 +20,6 @@ describe('App digital worker routes', () => {
   })
 
   it('uses digital worker breadcrumbs for the technical AI worker config page', () => {
-    expect(appLayoutSource).toContain("if (pathname.match(/^\\/digital-worker\\/dic\\/.+$/)) return ['数字员工应用', '技术AI员工配置']")
+    expect(appLayoutSource).toContain("if (pathname.match(/^\\/digital-worker\\/dic\\/.+$/)) return ['AI员工应用', '技术AI员工配置']")
   })
 })

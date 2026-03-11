@@ -42,7 +42,7 @@ export default function DICWorkerPage() {
   )
 
   const statItems = [
-    { title: '数字员工总数', value: stats.total, icon: <TeamOutlined />, color: '#4f46e5', bg: '#eef2ff' },
+    { title: 'AI员工总数', value: stats.total, icon: <TeamOutlined />, color: '#4f46e5', bg: '#eef2ff' },
     { title: '在线', value: stats.online, icon: <CheckCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
     { title: '忙碌中', value: stats.busy, icon: <SyncOutlined />, color: '#0891b2', bg: '#ecfeff' },
     { title: '今日任务', value: stats.totalTasksToday, icon: <ThunderboltOutlined />, color: '#d97706', bg: '#fffbeb' },

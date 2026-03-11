@@ -5,7 +5,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
 
-// L7 数字员工应用
+// L7 AI员工应用
 import DigitalHumanListPage from './pages/DigitalHumanListPage'
 import DigitalWorkerConfigPage from './pages/DigitalWorkerConfigPage'
 import DICWorkerConfigPage from './pages/DICWorkerConfigPage'
@@ -68,7 +68,7 @@ export default function App() {
         {/* 总览 */}
         <Route path="/dashboard" element={<DashboardPage />} />
 
-        {/* L7 数字员工应用 */}
+        {/* L7 AI员工应用 */}
         <Route path="/digital-worker/business" element={<DigitalHumanListPage />} />
         <Route path="/digital-worker/business/:id" element={<DigitalWorkerConfigPage />} />
         <Route path="/digital-worker/dic" element={<DICWorkerPage />} />

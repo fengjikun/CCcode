@@ -45,7 +45,7 @@ const stageTemplates: StageTemplate[] = [
   { key: 'workspace', label: 'workspace', labelZh: '智能体编排', icon: <RobotOutlined />, color: '#7c3aed', fallbackCount: 59, summary: '组装可执行业务能力' },
   { key: 'training', label: 'Model Train', labelZh: '模型训练', icon: <ExperimentOutlined />, color: '#e11d48', fallbackCount: 6, summary: '完成训练与评估迭代' },
   { key: 'gateway', label: 'Model Gateway', labelZh: '模型服务', icon: <ApiOutlined />, color: '#ea580c', fallbackCount: 23, summary: '统一推理与调用入口' },
-  { key: 'application', label: 'Workflow Apps', labelZh: '业务应用', icon: <TeamOutlined />, color: '#0891b2', fallbackCount: 0, summary: '交付数字员工场景' },
+  { key: 'application', label: 'Workflow Apps', labelZh: '业务应用', icon: <TeamOutlined />, color: '#0891b2', fallbackCount: 0, summary: '交付AI员工场景' },
 ]
 
 /* ───── 活动日志颜色 ───── */
@@ -83,7 +83,7 @@ export default function DashboardPage() {
   ]
 
   const businessMetrics = [
-    { title: '已上线数字员工', value: stats.digitalWorkers, note: '覆盖设备、采购、客服等核心流程', accent: '#0891b2', bg: '#ecfeff' },
+    { title: '已上线AI员工', value: stats.digitalWorkers, note: '覆盖设备、采购、客服等核心流程', accent: '#0891b2', bg: '#ecfeff' },
     { title: '活跃业务场景', value: '8', note: '跨制造、供应链、共享服务中心落地', accent: '#7c3aed', bg: '#f5f3ff' },
     { title: '近 7 日智能体会话', value: '18.6K', note: `较上周 +${stats.activeUsers}% 协作触达`, accent: '#ea580c', bg: '#fff7ed' },
     { title: '自动完成率', value: '82%', note: '高频流程已形成稳定自动闭环', accent: '#16a34a', bg: '#f0fdf4' },

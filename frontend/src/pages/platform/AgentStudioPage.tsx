@@ -361,7 +361,7 @@ export default function AgentStudioPage() {
   const [publishTarget, setPublishTarget] = useState<Agent | null>(null)
   const [publishing, setPublishing] = useState(false)
 
-  // 已发布数字员工数（缓存到 state，避免 JSX 中直接调用 localStorage）
+  // 已发布AI员工数（缓存到 state，避免 JSX 中直接调用 localStorage）
   const [digitalHumanCount, setDigitalHumanCount] = useState(0)
 
   const reload = useCallback(async () => {
@@ -463,7 +463,7 @@ export default function AgentStudioPage() {
     setDetailOpen(true)
   }
 
-  /* 发布为数字员工 */
+  /* 发布为AI员工 */
   const openPublish = (agent: Agent) => {
     setPublishTarget(agent)
     setPublishOpen(true)
@@ -475,7 +475,7 @@ export default function AgentStudioPage() {
     try {
       // 更新 agent 状态为 Active
       await updateAgent(publishTarget.id, { status: 'Active' })
-      // 创建数字员工
+      // 创建AI员工
       const dh = await createDigitalHuman({
         name: publishTarget.name,
         type: inferDigitalHumanType(publishTarget),
@@ -491,10 +491,10 @@ export default function AgentStudioPage() {
         preferredModel: publishTarget.model,
         systemPrompt: publishTarget.systemPrompt,
       })
-      message.success('发布成功！已创建数字员工')
+      message.success('发布成功！已创建AI员工')
       setPublishOpen(false)
       await reload()
-      // 跳转到数字员工页面
+      // 跳转到AI员工页面
       navigate(`/digital-worker/business/${dh.id}`)
     } catch {
       message.error('发布失败')
@@ -649,7 +649,7 @@ export default function AgentStudioPage() {
         <ActionColumn actions={[
           { key: 'view', icon: <EyeOutlined />, tooltip: '详情', onClick: () => openDetail(record) },
           { key: 'edit', icon: <EditOutlined />, tooltip: '编辑', onClick: () => openEdit(record) },
-          { key: 'publish', icon: <RocketOutlined />, tooltip: '发布为数字员工', style: { color: '#52c41a' }, onClick: () => openPublish(record) },
+          { key: 'publish', icon: <RocketOutlined />, tooltip: '发布为AI员工', style: { color: '#52c41a' }, onClick: () => openPublish(record) },
           { key: 'delete', icon: <DeleteOutlined />, tooltip: '删除', danger: true, confirm: '确认删除该智能体？', onClick: () => handleDelete(record.id) },
         ]} />
       ),
@@ -665,7 +665,7 @@ export default function AgentStudioPage() {
           { title: '智能体总数', value: list.length, icon: <RobotOutlined />, cls: 'stat-primary' },
           { title: '运行中', value: list.filter(a => a.status === 'Active').length, icon: <CheckCircleOutlined />, cls: 'stat-success' },
           { title: '可用 Skills', value: skills.filter(s => s.status === 'Active').length, icon: <ThunderboltOutlined />, cls: 'stat-warning' },
-          { title: '已发布数字员工', value: digitalHumanCount, icon: <TeamOutlined />, cls: 'stat-info' },
+          { title: '已发布AI员工', value: digitalHumanCount, icon: <TeamOutlined />, cls: 'stat-info' },
         ]} />
 
         {/* 类型说明 */}
@@ -891,7 +891,7 @@ export default function AgentStudioPage() {
             <Button onClick={() => setDetailOpen(false)}>关闭</Button>
             {detailTarget && (
               <Button type="primary" icon={<RocketOutlined />} onClick={() => { setDetailOpen(false); openPublish(detailTarget) }}>
-                发布为数字员工
+                发布为AI员工
               </Button>
             )}
           </Space>
@@ -993,9 +993,9 @@ export default function AgentStudioPage() {
         )}
       </Modal>
 
-      {/* ===== 发布为数字员工弹窗 ===== */}
+      {/* ===== 发布为AI员工弹窗 ===== */}
       <Modal
-        title={<ModalHeader icon={<RocketOutlined />} title="发布为数字员工" color="#52c41a" />}
+        title={<ModalHeader icon={<RocketOutlined />} title="发布为AI员工" color="#52c41a" />}
         open={publishOpen}
         onCancel={() => setPublishOpen(false)}
         onOk={handlePublish}
@@ -1042,7 +1042,7 @@ export default function AgentStudioPage() {
             <div style={{ marginTop: 16, padding: '12px 16px', background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 6 }}>
               <Text style={{ fontSize: 13 }}>
                 <SendOutlined style={{ color: '#faad14', marginRight: 6 }} />
-                发布后将自动创建数字员工实例，智能体状态更新为 Active，可在「数字员工」页面查看和使用。
+                发布后将自动创建AI员工实例，智能体状态更新为 Active，可在「AI员工」页面查看和使用。
               </Text>
             </div>
           </div>

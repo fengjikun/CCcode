@@ -103,8 +103,8 @@ const menuItems: MenuItem[] = [
 // Flat lookup: route path → [parent label, page title]
 const PAGE_TITLES: Record<string, [string, string]> = {
   '/dashboard': ['', '总览'],
-  '/digital-worker/business': ['数字员工应用', '业务AI员工空间'],
-  '/digital-worker/dic': ['数字员工应用', '技术AI员工空间'],
+  '/digital-worker/business': ['AI员工应用', '业务AI员工空间'],
+  '/digital-worker/dic': ['AI员工应用', '技术AI员工空间'],
   '/studio/agents': ['workspace 工作台', '智能体编排'],
   '/studio/agents/logs': ['workspace 工作台', '智能体日志'],
   '/studio/skills': ['workspace 工作台', 'Skills Hub'],
@@ -150,8 +150,8 @@ function findSelectedKey(pathname: string): string {
 function findPageInfo(pathname: string): [string, string] {
   if (pathname.match(/^\/ontology\/projects\/.+\/graph$/)) return ['Deepology', '本体数据集审核']
   if (pathname.match(/^\/ontology\/projects\/.+$/)) return ['Deepology', '本体工作台']
-  if (pathname.match(/^\/digital-worker\/business\/.+$/)) return ['数字员工应用', 'AI员工配置']
-  if (pathname.match(/^\/digital-worker\/dic\/.+$/)) return ['数字员工应用', '技术AI员工配置']
+  if (pathname.match(/^\/digital-worker\/business\/.+$/)) return ['AI员工应用', 'AI员工配置']
+  if (pathname.match(/^\/digital-worker\/dic\/.+$/)) return ['AI员工应用', '技术AI员工配置']
   return PAGE_TITLES[pathname] || ['', '']
 }
 

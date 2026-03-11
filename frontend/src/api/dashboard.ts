@@ -39,7 +39,7 @@ const DEFAULT_STORE: DashboardStore = {
     { key: '4', component: '智能体运行服务', status: 'Degraded', uptime: '98.50%', qps: 520, latency: '210ms', lastCheck: '3 分钟前' },
     { key: '5', component: '模型训练调度器', status: 'Healthy', uptime: '99.80%', qps: 45, latency: '85ms', lastCheck: '5 分钟前' },
     { key: '6', component: '模型网关', status: 'Healthy', uptime: '99.98%', qps: 15600, latency: '45ms', lastCheck: '30 秒前' },
-    { key: '7', component: '数字员工服务', status: 'Healthy', uptime: '99.90%', qps: 280, latency: '120ms', lastCheck: '2 分钟前' },
+    { key: '7', component: 'AI员工服务', status: 'Healthy', uptime: '99.90%', qps: 280, latency: '120ms', lastCheck: '2 分钟前' },
   ],
   activity: [
     { key: '1', time: '14:32:22', user: 'Equipment Agent', action: '执行故障诊断', target: '设备 #DV-8921', level: 'info' },

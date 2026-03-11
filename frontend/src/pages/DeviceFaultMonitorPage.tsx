@@ -239,7 +239,7 @@ export default function DeviceFaultMonitorPage() {
       {/* 面包屑 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/digital-worker/business')} size="small">
-          数字员工列表
+          AI员工列表
         </Button>
         <span style={{ color: '#d9d9d9' }}>/</span>
         <RobotOutlined style={{ color: '#fa8c16' }} />

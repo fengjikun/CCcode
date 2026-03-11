@@ -364,7 +364,7 @@ export default function ProjectsPage() {
             </Title>
             <Paragraph style={{ color: '#94a8d0', marginBottom: 18, lineHeight: 1.8, fontSize: 14, maxWidth: 520 }}>
               基于 <span style={{ color: '#a5b4fc' }}>Object / Property / Link / Action / Function</span> 五元语义模型，
-              为每个领域构建专属知识图谱，驱动 AI 数字员工的精准理解与决策。
+              为每个领域构建专属知识图谱，驱动 AI AI员工的精准理解与决策。
             </Paragraph>
             <Space size={12}>
               <Button
