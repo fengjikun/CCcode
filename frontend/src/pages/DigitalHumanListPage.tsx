@@ -501,7 +501,6 @@ export default function DigitalHumanListPage() {
               <Space>
                 <TeamOutlined />
                 <span>数字员工入口列表</span>
-                <Tag color="blue">{visibleHumans.length}</Tag>
               </Space>
             )}
           >
@@ -518,10 +517,10 @@ export default function DigitalHumanListPage() {
                         <Card
                           hoverable
                           style={{ height: '100%', borderRadius: 16 }}
-                          bodyStyle={{ padding: 18 }}
+                          bodyStyle={{ padding: 18, height: '100%', display: 'flex', flexDirection: 'column' }}
                           onClick={() => navigate(`/digital-worker/business/${dh.id}`)}
                         >
-                          <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                               <Space align="start" size={10}>
                                 <div
@@ -565,10 +564,7 @@ export default function DigitalHumanListPage() {
                               </Text>
                             )}
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                              <Text type="secondary" style={{ fontSize: 12 }}>
-                                更新时间：{new Date(dh.updatedAt).toLocaleDateString('zh-CN')}
-                              </Text>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginTop: 'auto' }}>
                               <Space wrap>
                                 {dh.projectId && (
                                   <Button
@@ -608,7 +604,7 @@ export default function DigitalHumanListPage() {
                                 </Popconfirm>
                               </Space>
                             </div>
-                          </Space>
+                          </div>
                         </Card>
                       </Col>
                     )
