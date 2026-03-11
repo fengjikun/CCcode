@@ -162,12 +162,6 @@ export default function DataIngestionPage() {
       width: 160,
     },
     {
-      title: '处理量',
-      dataIndex: 'recordCountLabel',
-      key: 'recordCountLabel',
-      width: 100,
-    },
-    {
       title: '源端位置',
       dataIndex: 'targetLabel',
       key: 'targetLabel',

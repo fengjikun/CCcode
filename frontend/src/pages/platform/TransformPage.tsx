@@ -313,13 +313,6 @@ export default function TransformPage() {
       ),
     },
     {
-      title: '产出记录',
-      dataIndex: 'records',
-      key: 'records',
-      width: 100,
-      render: (value: number) => formatRecordCount(value ?? 0),
-    },
-    {
       title: '耗时',
       dataIndex: 'duration',
       key: 'duration',
