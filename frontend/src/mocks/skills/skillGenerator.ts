@@ -294,8 +294,8 @@ function buildBusinessVariantSkill(
 
   return {
     id: `skill-biz-plus-${codeSlug}-${variantIndex + 1}-${template.id.replace(/^g-/, '')}`,
-    name: `${template.name}-${codeSlug}-${variantIndex + 1}`,
-    displayName: `${ontology.name}${template.displayName}${variantIndex > 0 ? ` ${variantIndex + 1}` : ''}`,
+    name: `${template.name}-${codeSlug}`,
+    displayName: `${ontology.name}${template.displayName}`,
     category: inferBusinessCategory(ontology),
     status: 'Active',
     description: `基于「${ontology.name}」沉淀的业务变体 Skill，围绕 ${ontology.agentScene} 提供 ${template.displayName} 能力。`,

@@ -89,6 +89,9 @@ function needsLegacyUpgrade(store: Partial<SkillsMarketStore>): boolean {
   const businessSkillCount = skills.filter((skill) => skill.marketType === 'business').length
   const hasBusinessSkills = skills.some((skill) => skill.marketType === 'business')
   const hasBusinessVariantSkills = skills.some((skill) => skill.id.startsWith('skill-biz-plus-'))
+  const hasLegacyVariantDisplayNames = skills.some(
+    (skill) => skill.id.startsWith('skill-biz-plus-') && / \d+$/.test(skill.displayName),
+  )
   const ontologyCoverage = new Set(skills.flatMap((skill) => skill.sourceOntologyCodes)).size
   const faultDiagnosisSkill = skills.find((skill) => skill.id === 'skill-biz-0-0-1')
   const faultDiagnosisNeedsRefresh = !faultDiagnosisSkill
@@ -97,6 +100,7 @@ function needsLegacyUpgrade(store: Partial<SkillsMarketStore>): boolean {
   return !store.ontologySkillMappings?.length
     || !hasBusinessSkills
     || !hasBusinessVariantSkills
+    || hasLegacyVariantDisplayNames
     || businessSkillCount < DEFAULT_STORE.insightStats.businessSkills
     || ontologyCoverage < ONTOLOGY_CATALOG.length
     || faultDiagnosisNeedsRefresh

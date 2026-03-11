@@ -33,4 +33,12 @@ describe('skillGenerator market model', () => {
     expect(skill?.instructions).toContain('根因候选生成')
     expect(skill?.instructions).toContain('## 输出格式')
   })
+
+  it('does not append numeric suffixes to generated business variant display names', () => {
+    const store = buildDefaultSkillsMarketStore()
+
+    expect(
+      store.skills.some((skill) => skill.id.startsWith('skill-biz-plus-') && / \d+$/.test(skill.displayName)),
+    ).toBe(false)
+  })
 })

@@ -365,7 +365,7 @@ export default function DigitalHumanListPage() {
         title={(
           <Space>
             <FilterOutlined style={{ color: '#1677ff' }} />
-            <span>业务员工导航</span>
+            <span>业务AI员工空间</span>
             <Text type="secondary" style={{ fontSize: 12 }}>按行业与业务场景切换数字员工入口</Text>
           </Space>
         )}

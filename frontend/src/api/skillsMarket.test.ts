@@ -109,4 +109,47 @@ describe('skillsMarket defaults', () => {
     expect(skills.some((skill) => skill.marketType === 'business')).toBe(true)
     expect(skills.some((skill) => skill.id.startsWith('skill-biz-plus-'))).toBe(true)
   })
+
+  it('refreshes persisted generated variant skills that still carry numeric display-name suffixes', async () => {
+    storeValue = {
+      ...structuredClone((await import('../mocks/skills/skillGenerator')).buildDefaultSkillsMarketStore()),
+      skills: [
+        {
+          id: 'skill-biz-plus-demo-2-root-cause',
+          name: 'root-cause-analysis-pilot-demo-2',
+          displayName: '预测需求本体根因分析助手 2',
+          category: 'data-analysis',
+          status: 'Active',
+          description: '旧版错误命名',
+          instructions: '# Legacy',
+          templates: [],
+          scripts: [],
+          tags: [],
+          installs: 1,
+          marketType: 'business',
+          industry: 'general',
+          phase: '计划',
+          featured: false,
+          recommendedScore: 80,
+          usageCount: 1,
+          successRate: 98.5,
+          avgLatencyMs: 500,
+          sourceOntologyCodes: ['0.0.2'],
+          sourceOntologyNames: ['预测需求本体'],
+          recommendedFor: [],
+          capabilities: [],
+          coverageLevel: 'enhanced',
+          recommendationReason: '旧版错误命名',
+          author: 'DeepexiOS',
+          createdAt: '2026-03-10T09:00:00.000Z',
+          updatedAt: '2026-03-10T09:00:00.000Z',
+        },
+      ],
+    }
+
+    const { listSkills } = await import('./skillsMarket')
+    const skills = await listSkills()
+
+    expect(skills.some((skill) => skill.id.startsWith('skill-biz-plus-') && / \d+$/.test(skill.displayName))).toBe(false)
+  })
 })

@@ -103,7 +103,7 @@ const menuItems: MenuItem[] = [
 // Flat lookup: route path → [parent label, page title]
 const PAGE_TITLES: Record<string, [string, string]> = {
   '/dashboard': ['', '总览'],
-  '/digital-worker/business': ['数字员工应用', '业务数字员工空间'],
+  '/digital-worker/business': ['数字员工应用', '业务AI员工空间'],
   '/digital-worker/dic': ['数字员工应用', '技术AI员工空间'],
   '/studio/agents': ['workspace 工作台', '智能体编排'],
   '/studio/agents/logs': ['workspace 工作台', '智能体日志'],

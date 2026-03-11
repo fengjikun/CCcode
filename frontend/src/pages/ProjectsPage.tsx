@@ -42,7 +42,7 @@ import {
   ThunderboltOutlined,
   ToolOutlined,
 } from '@ant-design/icons'
-import { createProject, deleteProject, listProjects, updateProject } from '../api/projectManagement'
+import { createProject, deleteProject, FEATURED_PROJECT_ORDER, listProjects, updateProject } from '../api/projectManagement'
 import ModalHeader from '../components/shared/ModalHeader'
 import type { ProjectSummary } from '../types/projectMvp'
 
@@ -89,10 +89,8 @@ interface ProjectForm {
 }
 
 const TAB_ALL = '__all__'
-const PINNED_PROJECT_ORDER = ['故障诊断本体', '商品补货本体'] as const
-
 function getPinnedProjectRank(project: Pick<ProjectSummary, 'name'>): number {
-  const index = PINNED_PROJECT_ORDER.indexOf(project.name as (typeof PINNED_PROJECT_ORDER)[number])
+  const index = FEATURED_PROJECT_ORDER.indexOf(project.name as (typeof FEATURED_PROJECT_ORDER)[number])
   return index >= 0 ? index : Number.POSITIVE_INFINITY
 }
 
@@ -384,14 +382,6 @@ export default function ProjectsPage() {
               }}>
                 <DatabaseOutlined style={{ color: '#a5b4fc', fontSize: 14 }} />
                 <Text style={{ color: '#a5b4fc', fontSize: 13 }}>{totalProjects} 个本体</Text>
-              </div>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                background: 'rgba(34,211,238,0.10)', border: '1px solid rgba(34,211,238,0.3)',
-                borderRadius: 8, padding: '6px 14px',
-              }}>
-                <FileTextOutlined style={{ color: '#67e8f9', fontSize: 14 }} />
-                <Text style={{ color: '#67e8f9', fontSize: 13 }}>{totalDocs} 份文档</Text>
               </div>
             </Space>
           </Col>
