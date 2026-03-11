@@ -8,7 +8,6 @@ import {
   ExperimentOutlined,
   ApiOutlined,
   TeamOutlined,
-  CloudServerOutlined,
   ThunderboltOutlined,
   DashboardOutlined,
   AppstoreOutlined,
@@ -67,7 +66,6 @@ export default function DashboardPage() {
     { title: '数据源', value: stats.datasources, icon: <DatabaseOutlined />, color: '#16a34a', bg: '#f0fdf4', trend: '+3' },
     { title: '本体项目', value: stats.ontologyProjects, icon: <AppstoreOutlined />, color: '#4f46e5', bg: '#eef2ff', trend: '+12' },
     { title: 'Agent / Skills', value: `${stats.agents} / ${stats.skills}`, icon: <RobotOutlined />, color: '#7c3aed', bg: '#f5f3ff', trend: '+5' },
-    { title: '已部署模型', value: stats.deployedModels, icon: <CloudServerOutlined />, color: '#ea580c', bg: '#fff7ed', trend: '+2' },
     { title: '日请求总量', value: stats.totalRequests, icon: <ThunderboltOutlined />, color: '#e11d48', bg: '#fff1f2', trend: '+18%' },
     { title: '平均延迟', value: stats.avgLatency, icon: <DashboardOutlined />, color: '#0891b2', bg: '#ecfeff', trend: '-5ms' },
   ]
@@ -151,7 +149,7 @@ export default function DashboardPage() {
       </Card>
 
       {/* ── Stat cards — 带图标和趋势 ── */}
-      <Row gutter={[14, 14]} className="dashboard-stat-row" style={{ marginBottom: 16 }}>
+      <Row justify="center" gutter={[14, 14]} className="dashboard-stat-row" style={{ marginBottom: 16 }}>
         {statCards.map(s => (
           <Col xs={24} sm={12} lg={8} xl={4} key={s.title} className="dashboard-grid-col">
             <Card
