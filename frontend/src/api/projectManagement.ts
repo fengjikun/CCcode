@@ -535,7 +535,7 @@ const PRODUCT_REPLENISHMENT_LEGACY_NAME = '补货策略本体'
 const PRODUCT_REPLENISHMENT_PROJECT_NAME = '商品补货本体'
 const PRODUCT_REPLENISHMENT_UPDATED_AT = '2026-03-10T09:30:00.000Z'
 const PRODUCT_REPLENISHMENT_DESCRIPTION =
-  '零售业 · 城市单品补货执行本体，覆盖商品、门店、仓库、销售订单、库存、尺码模型、补货计划与采购调拨单；支持依据近2周日均销量、目标满足天数和仓库可用库存自动生成专业配货方案。'
+  '零售业 · 商品补货与配货执行本体，统一商品、门店、库存、需求与补货计划等核心语义，支撑门店补货、区域调拨、尺码优化与库存周转提升。'
 
 const PRODUCT_REPLENISHMENT_DOCUMENTS: ProjectDocument[] = [
   {
@@ -1264,7 +1264,7 @@ const CUSTOMER_360_PROJECT_ID = 'proj-1523'
 const CUSTOMER_360_PROJECT_NAME = '客户360本体'
 const CUSTOMER_360_UPDATED_AT = '2026-03-11T10:20:00.000Z'
 const CUSTOMER_360_DESCRIPTION =
-  '制造业 · 销售与客户经营领域客户360本体，覆盖客户、集团账户、触达渠道、互动事件、商机、服务工单、偏好标签与客户分层；支持客户洞察、商机推进、售后协同与精准营销。'
+  '制造业 · 客户经营本体，统一客户主数据、互动记录、商机、服务与标签分层等经营语义，支撑客户洞察、商机协同、服务闭环与精准运营。'
 
 const CUSTOMER_360_DOCUMENTS: ProjectDocument[] = [
   {
@@ -1664,7 +1664,7 @@ const TASK_SCHEDULING_PROJECT_ID = 'proj-1312'
 const TASK_SCHEDULING_PROJECT_NAME = '任务调度本体'
 const TASK_SCHEDULING_UPDATED_AT = '2026-03-11T11:20:00.000Z'
 const TASK_SCHEDULING_DESCRIPTION =
-  '制造业 · 生产执行与动态排产领域任务调度本体，覆盖工单、工序、设备资源、班次日历、人员技能、约束规则、排程计划与派工任务；支持插单重排、瓶颈设备均衡、班次匹配和派工下发。'
+  '制造业 · 生产调度本体，统一工单、工序、资源、班次与约束规则等排产语义，支撑动态排产、插单重排、瓶颈平衡与派工执行。'
 
 const TASK_SCHEDULING_DOCUMENTS: ProjectDocument[] = [
   {
@@ -2106,7 +2106,7 @@ const OMNICHANNEL_INVENTORY_PROJECT_ID = 'proj-2421'
 const OMNICHANNEL_INVENTORY_PROJECT_NAME = '全渠道库存本体'
 const OMNICHANNEL_INVENTORY_UPDATED_AT = '2026-03-11T12:05:00.000Z'
 const OMNICHANNEL_INVENTORY_DESCRIPTION =
-  '零售业 · 门店与运营领域全渠道库存本体，覆盖商品SKU、履约节点、库存快照、渠道订单、库存预占、调拨任务、履约策略与履约决策；支持跨仓跨店库存可视、O2O履约分配、同城调拨与缺货兜底决策。'
+  '零售业 · 全渠道库存与履约本体，统一库存、订单、预占、履约节点与调拨策略等核心语义，支撑跨仓跨店可视、O2O履约分配、同城调拨与缺货兜底。'
 
 const OMNICHANNEL_INVENTORY_DOCUMENTS: ProjectDocument[] = [
   {
@@ -2605,7 +2605,7 @@ const MEMBER_PROFILE_PROJECT_ID = 'proj-2522'
 const MEMBER_PROFILE_PROJECT_NAME = '会员画像本体'
 const MEMBER_PROFILE_UPDATED_AT = '2026-03-11T11:45:00.000Z'
 const MEMBER_PROFILE_DESCRIPTION =
-  '零售业 · 营销与CRM领域会员画像本体，覆盖会员、会员等级、触达渠道、消费事件、偏好标签、券资产、生命周期分层与营销任务；支持精准人群圈选、权益编排、复购促进与流失预警。'
+  '零售业 · 会员经营本体，整合会员属性、消费行为、偏好标签、权益资产与生命周期分层，支撑人群洞察、精准触达、复购提升与流失预警。'
 
 const MEMBER_PROFILE_DOCUMENTS: ProjectDocument[] = [
   {
@@ -3076,7 +3076,7 @@ const SUPPLIER_PROFILE_PROJECT_ID = 'proj-1416'
 const SUPPLIER_PROFILE_PROJECT_NAME = '供应商画像本体'
 const SUPPLIER_PROFILE_UPDATED_AT = '2026-03-11T11:05:00.000Z'
 const SUPPLIER_PROFILE_DESCRIPTION =
-  '制造业 · 供应链与采购协同领域供应商画像本体，覆盖供应商、供货物料、服务工厂、交付表现、质量事件、财务风险、合规资质与供应商分层；支持供应商评级、采购份额调整、风险预警与供方治理。'
+  '制造业 · 供应商治理本体，统一供方资质、交付、质量、财务与风险表现等关键语义，支撑供应商分层、绩效评估、风险预警与采购协同。'
 
 const SUPPLIER_PROFILE_DOCUMENTS: ProjectDocument[] = [
   {
@@ -3518,7 +3518,7 @@ const INVENTORY_RISK_PROJECT_ID = 'proj-1418'
 const INVENTORY_RISK_PROJECT_NAME = '库存风险本体'
 const INVENTORY_RISK_UPDATED_AT = '2026-03-11T11:30:00.000Z'
 const INVENTORY_RISK_DESCRIPTION =
-  '制造业 · 供应链与库存治理领域库存风险本体，覆盖物料、仓库、工厂需求、库存快照、风险信号、安全库存策略、补货建议与供应商选项；支持缺货预警、超储识别、补货建议和供方分摊决策。'
+  '制造业 · 库存治理本体，整合物料、库存水位、需求、风险信号与补货策略等核心语义，支撑缺料预警、超储识别、补货决策与供应保障。'
 
 const INVENTORY_RISK_DOCUMENTS: ProjectDocument[] = [
   {
@@ -3924,7 +3924,7 @@ const CONTRACT_CONSTRAINTS_PROJECT_ID = 'proj-1524'
 const CONTRACT_CONSTRAINTS_PROJECT_NAME = '合同约束本体'
 const CONTRACT_CONSTRAINTS_UPDATED_AT = '2026-03-11T10:40:00.000Z'
 const CONTRACT_CONSTRAINTS_DESCRIPTION =
-  '制造业 · 销售与合同治理领域合同约束本体，覆盖合同模板、合同条款、合规要求、风险场景、审批节点、履约义务、交易对手与履约事件；支持法审扫描、合同风控、审批协同与履约预警。'
+  '制造业 · 合同治理本体，沉淀合同模板、条款约束、审批节点与履约义务等关键语义，支撑法务审查、风险识别、流程协同与履约预警。'
 
 const CONTRACT_CONSTRAINTS_DOCUMENTS: ProjectDocument[] = [
   {
@@ -5908,6 +5908,11 @@ function normalizeStore(store: ProjectStore): boolean {
     if (ensureLegalRegulationsSeed(project)) {
       changed = true
     }
+    const featuredDescription = FEATURED_LIST_DESCRIPTION_OVERRIDES[project.name]
+    if (featuredDescription && project.description !== featuredDescription) {
+      project.description = featuredDescription
+      changed = true
+    }
     for (const run of project.runs) {
       if (normalizeRun(project, run, () => `ri-${++store.idSeq}`)) {
         changed = true
@@ -5929,7 +5934,7 @@ export type OntologyDef = [string, string, string, string, string, string, strin
 
 export const ONTOLOGY_DEFS: OntologyDef[] = [
   // ── 00 故障诊断本体（排第一）──
-  ['0.0.1', '故障诊断本体', 'manufacturing', '生产', '(故障现象:主轴温升异常) -[caused_by]-> (主轴轴承早期剥落)', '故障诊断Agent：根据状态监测与报警现象自动定位根因并生成排查路径', '分析类', 8500],
+  ['0.0.1', '故障诊断本体', 'manufacturing', '生产', '(故障现象:主轴温升异常) -[caused_by]-> (主轴轴承早期剥落)', '故障诊断Agent：结合设备状态、报警信号与维修知识，快速定位故障根因并生成标准化排查路径', '分析类', 8500],
   // ── 01 制造行业（29 个）──
   ['1.1.1', '需求规范本体', 'manufacturing', '研发', '(静音需求) -[量化为]-> (声压值<40dB)', '需求冲突检测Agent：自动发现设计指标间的物理矛盾', '分析类', 6200],
   ['1.1.2', 'FBS功能结构本体', 'manufacturing', '研发', '(减速功能) -[实现于]-> (斜齿轮组)', '方案生成Agent：根据功能描述自动检索历史拓扑结构', '分析类', 6200],
@@ -5978,7 +5983,7 @@ export const ONTOLOGY_DEFS: OntologyDef[] = [
   ['2.3.15', '末端运力本体', 'retail', '仓储与物流', '(骑手A) -[当前负载]-> (5单)', '即时配送调度Agent：在高峰期平衡配送时长与骑手收益，优化路线', '执行类', 7500],
   ['2.4.16', '货架图谱本体', 'retail', '门店与运营', '(货架A层) -[关联商品]-> (薯片+可乐)', '货架优化Agent：利用关联购买数据，建议能够提升连带率的陈列布局', '决策类', 7000],
   ['2.4.17', '客流行为本体', 'retail', '门店与运营', '(消费者甲) -[停留时长]-> (美妆区/15分钟)', '门店热力Agent：识别高流量死角，调整动线引导', '分析类', 7600],
-  ['2.4.18', '商品补货本体', 'retail', '门店与运营', '(商品SKU:Nike Air Max 270) -[生成补货计划]-> (门店调拨单/14天满足)', '城市单品补货Agent：结合销量流速、库存水位与尺码模型自动生成门店调拨方案', '执行类', 12600],
+  ['2.4.18', '商品补货本体', 'retail', '门店与运营', '(商品SKU:Nike Air Max 270) -[生成补货计划]-> (门店调拨单/14天满足)', '商品补货Agent：结合销量趋势、库存水位与尺码结构，智能生成门店补货与调拨方案', '执行类', 12600],
   ['2.4.19', '设备能耗本体', 'retail', '门店与运营', '(门店空调) -[运行策略]-> (节能模式/26℃)', '绿色门店Agent：根据进店人数实时调节灯光与温控系统', '执行类', 5000],
   ['2.4.20', '店员排班本体', 'retail', '门店与运营', '(店员A) -[擅长领域]-> (导购/美妆)', '弹性排班Agent：预测客流波峰，自动生成跨店调拨的人力计划', '执行类', 4800],
   ['2.4.21', '全渠道库存本体', 'retail', '门店与运营', '(线上订单) -[支持自提]-> (门店B)', 'O2O履约Agent：根据库存距离和成本，决定从仓库发货还是门店自提', '决策类', 5300],
@@ -6044,6 +6049,19 @@ export const ONTOLOGY_DEFS: OntologyDef[] = [
   ['5.6.12', '法律法规库本体', 'general', '风险与合规', '(欧盟GDPR) -[约束]-> (用户隐私存储)', '法务审查Agent：自动扫描业务合同，识别潜在的法律违规条款', '治理类', 4000],
 ]
 
+const FEATURED_LIST_DESCRIPTION_OVERRIDES: Partial<Record<string, string>> = {
+  '故障诊断本体': '制造业 · 设备运维与故障治理本体，构建设备、故障现象、诊断信号、根因与处置方案的标准语义链路，支撑故障定位、排查指引、维修决策与知识复用。',
+  '商品补货本体': '零售业 · 商品补货与配货执行本体，统一商品、门店、库存、需求与补货计划等核心语义，支撑门店补货、区域调拨、尺码优化与库存周转提升。',
+  '客户360本体': '制造业 · 客户经营本体，统一客户主数据、互动记录、商机、服务与标签分层等经营语义，支撑客户洞察、商机协同、服务闭环与精准运营。',
+  '合同约束本体': '制造业 · 合同治理本体，沉淀合同模板、条款约束、审批节点与履约义务等关键语义，支撑法务审查、风险识别、流程协同与履约预警。',
+  '任务调度本体': '制造业 · 生产调度本体，统一工单、工序、资源、班次与约束规则等排产语义，支撑动态排产、插单重排、瓶颈平衡与派工执行。',
+  '库存风险本体': '制造业 · 库存治理本体，整合物料、库存水位、需求、风险信号与补货策略等核心语义，支撑缺料预警、超储识别、补货决策与供应保障。',
+  '供应商画像本体': '制造业 · 供应商治理本体，统一供方资质、交付、质量、财务与风险表现等关键语义，支撑供应商分层、绩效评估、风险预警与采购协同。',
+  '会员画像本体': '零售业 · 会员经营本体，整合会员属性、消费行为、偏好标签、权益资产与生命周期分层，支撑人群洞察、精准触达、复购提升与流失预警。',
+  '全渠道库存本体': '零售业 · 全渠道库存与履约本体，统一库存、订单、预占、履约节点与调拨策略等核心语义，支撑跨仓跨店可视、O2O履约分配、同城调拨与缺货兜底。',
+  '品类架构本体': '零售业 · 商品分类与选品规划本体，统一品类层级、商品归属与规划口径，支撑选品分析、类目治理、上新决策与经营结构优化。',
+}
+
 /** 从三元组样本中提取 Subject / Predicate / Object */
 function parseTriple(triple: string): { subject: string; predicate: string; object: string } {
   const m = triple.match(/\(([^)]+)\)\s*-\[([^\]]+)\]->\s*\(([^)]+)\)/)
@@ -6074,7 +6092,9 @@ function generateProject(def: OntologyDef, idx: number): ProjectDetail {
     id: `proj-${code.replace(/\./g, '')}`,
     name,
     category: industry,
-    description: `${industryLabel} · ${phase}领域本体 | ${triple} | Agent场景：${agentScene} | 训练方向：${trainingType} | 数据量：${dataCount.toLocaleString()} 条`,
+    description:
+      FEATURED_LIST_DESCRIPTION_OVERRIDES[name]
+      || `${industryLabel} · ${phase}领域本体 | ${triple} | Agent场景：${agentScene} | 训练方向：${trainingType} | 数据量：${dataCount.toLocaleString()} 条`,
     createdAt,
     updatedAt,
     documents: [
