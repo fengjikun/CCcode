@@ -52,9 +52,7 @@ import type { Agent } from '../../types/agent'
 import {
   AGENT_TYPES,
   AGENT_TYPE_COLORS,
-  AGENT_TYPE_DESCRIPTIONS,
   AGENT_TYPE_ICONS,
-  AGENT_TYPE_LABELS,
   AGENT_STATUS_COLORS,
 } from '../../types/agent'
 import type { AgentType } from '../../types/agent'
@@ -77,6 +75,79 @@ interface CreateForm {
   systemPrompt: string
   model: string
 }
+
+const BUSINESS_AGENT_TYPE_ORDER: AgentType[] = ['Analytical', 'Support', 'Operational']
+
+const BUSINESS_AGENT_TYPE_LABELS: Record<AgentType, string> = {
+  Analytical: '分析类',
+  Support: '决策类',
+  Operational: '执行类',
+}
+
+const BUSINESS_AGENT_TYPE_DESCRIPTIONS: Record<AgentType, string> = {
+  Analytical: '负责故障识别、异常归因、根因定位和趋势研判，先把问题看清楚。',
+  Support: '负责维修策略推荐、优先级判断、资源调度和处置方案选择，决定怎么处理。',
+  Operational: '负责工单下发、备件申请、现场指引、结果回填和闭环追踪，把动作真正执行下去。',
+}
+
+const BUSINESS_AGENT_TYPE_EXAMPLES: Record<AgentType, string> = {
+  Analytical: '示例：告警归并、根因分析、健康度评估',
+  Support: '示例：维修决策、派单决策、停机影响评估',
+  Operational: '示例：工单执行、备件协调、复盘闭环',
+}
+
+interface FaultDiagnosisAgentBlueprint {
+  name: string
+  type: AgentType
+  summary: string
+  deliverable: string
+  suggestedSkills: string[]
+}
+
+const FAULT_DIAGNOSIS_AGENT_BLUEPRINTS: FaultDiagnosisAgentBlueprint[] = [
+  {
+    name: '故障告警分析智能体',
+    type: 'Analytical',
+    summary: '汇聚设备告警、传感器波动、历史维修记录，做异常识别与告警去重。',
+    deliverable: '输出异常事件清单、故障等级、初步影响范围。',
+    suggestedSkills: ['时序数据分析', '告警聚类', '异常检测'],
+  },
+  {
+    name: '根因诊断智能体',
+    type: 'Analytical',
+    summary: '结合知识图谱、故障树和历史案例，对故障链路进行根因定位。',
+    deliverable: '输出候选根因、证据链、置信度排序。',
+    suggestedSkills: ['RCA 诊断', '知识检索', '案例匹配'],
+  },
+  {
+    name: '维修决策智能体',
+    type: 'Support',
+    summary: '基于故障等级、停机损失、备件库存和班组能力给出处置建议。',
+    deliverable: '输出维修策略、处理时限、是否停机、是否升级专家介入。',
+    suggestedSkills: ['风险评估', '维修策略推荐', '优先级判定'],
+  },
+  {
+    name: '派工协同智能体',
+    type: 'Support',
+    summary: '根据区域、工种、班次和 SLA 选择最合适的执行班组。',
+    deliverable: '输出派单对象、到场时限、协同部门清单。',
+    suggestedSkills: ['资源调度', 'SLA 判断', '人员匹配'],
+  },
+  {
+    name: '现场处置执行智能体',
+    type: 'Operational',
+    summary: '把诊断结论转成可执行工单和标准化作业步骤，推动现场闭环。',
+    deliverable: '输出工单、作业步骤、点检项、回填模板。',
+    suggestedSkills: ['工单生成', 'SOP 执行', '移动填报'],
+  },
+  {
+    name: '备件与复盘闭环智能体',
+    type: 'Operational',
+    summary: '联动库存、采购和维修结果，完成备件补齐与故障复盘沉淀。',
+    deliverable: '输出备件申请、复盘报告、知识库更新建议。',
+    suggestedSkills: ['库存联动', '报告生成', '知识沉淀'],
+  },
+]
 
 function inferDigitalHumanType(agent: Agent): DigitalHumanType {
   const text = `${agent.name} ${agent.ontologyName ?? ''} ${agent.description ?? ''}`
@@ -210,7 +281,7 @@ function OrchestrationView({ agents, skills }: { agents: Agent[]; skills: Skill[
                 <div style={{ fontWeight: 600, fontSize: 13 }}>{agent.name}</div>
                 <div style={{ fontSize: 11, color: '#94a3b8' }}>
                   <Tag color={AGENT_TYPE_COLORS[agent.type]} style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px', marginRight: 4 }}>
-                    {AGENT_TYPE_LABELS[agent.type]}
+                    {BUSINESS_AGENT_TYPE_LABELS[agent.type]}
                   </Tag>
                   {agent.model} · {agent.skillIds.length} Skills
                 </div>
@@ -525,7 +596,7 @@ export default function AgentStudioPage() {
       dataIndex: 'type',
       key: 'type',
       width: 100,
-      render: (v: AgentType) => <Tag color={AGENT_TYPE_COLORS[v]}>{AGENT_TYPE_ICONS[v]} {AGENT_TYPE_LABELS[v]}</Tag>,
+      render: (v: AgentType) => <Tag color={AGENT_TYPE_COLORS[v]}>{AGENT_TYPE_ICONS[v]} {BUSINESS_AGENT_TYPE_LABELS[v]}</Tag>,
     },
     {
       title: '绑定 Skills',
@@ -588,7 +659,7 @@ export default function AgentStudioPage() {
   return (
     <div className="page-container">
       <Card className="section-card">
-        <PageHeader title="智能体编排" subtitle="查看和维护 AI 智能体的静态编排配置，绑定 Skills 展示业务协同流程" />
+        <PageHeader title="智能体编排" subtitle="按故障诊断业务链路配置分析、决策、执行型智能体，形成从识别到闭环的协同流程" />
 
         <StatCards items={[
           { title: '智能体总数', value: list.length, icon: <RobotOutlined />, cls: 'stat-primary' },
@@ -599,15 +670,18 @@ export default function AgentStudioPage() {
 
         {/* 类型说明 */}
         <Row gutter={12} style={{ marginBottom: 20 }}>
-          {AGENT_TYPES.map(t => (
+          {BUSINESS_AGENT_TYPE_ORDER.map(t => (
             <Col span={8} key={t}>
               <Card size="small" style={{ background: '#fafafa' }} styles={{ body: { padding: '12px 16px' } }}>
                 <Space align="start">
                   <span style={{ fontSize: 22 }}>{AGENT_TYPE_ICONS[t]}</span>
                   <div>
-                    <Tag color={AGENT_TYPE_COLORS[t]} style={{ marginBottom: 4 }}>{AGENT_TYPE_LABELS[t]}</Tag>
+                    <Tag color={AGENT_TYPE_COLORS[t]} style={{ marginBottom: 4 }}>{BUSINESS_AGENT_TYPE_LABELS[t]}</Tag>
                     <Text type="secondary" style={{ fontSize: 12, display: 'block', lineHeight: 1.6 }}>
-                      {AGENT_TYPE_DESCRIPTIONS[t]}
+                      {BUSINESS_AGENT_TYPE_DESCRIPTIONS[t]}
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 4 }}>
+                      {BUSINESS_AGENT_TYPE_EXAMPLES[t]}
                     </Text>
                   </div>
                 </Space>
@@ -615,6 +689,51 @@ export default function AgentStudioPage() {
             </Col>
           ))}
         </Row>
+
+        <Card
+          size="small"
+          style={{ marginBottom: 20, background: 'linear-gradient(135deg, #f8fffb 0%, #eef6ff 100%)', borderColor: '#d6e4ff' }}
+          styles={{ body: { padding: 16 } }}
+        >
+          <div style={{ marginBottom: 12 }}>
+            <Text strong style={{ fontSize: 15 }}>故障诊断推荐智能体</Text>
+            <br />
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              建议至少按“分析诊断 → 决策处置 → 执行闭环”三层建设，先把关键职责拆清楚，再决定绑定哪些 Skills。
+            </Text>
+          </div>
+          <Row gutter={[12, 12]}>
+            {FAULT_DIAGNOSIS_AGENT_BLUEPRINTS.map(item => (
+              <Col xs={24} md={12} xl={8} key={item.name}>
+                <Card size="small" style={{ height: '100%', borderColor: '#e5e7eb' }}>
+                  <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                    <Space>
+                      <span style={{ fontSize: 20 }}>{AGENT_TYPE_ICONS[item.type]}</span>
+                      <div>
+                        <Text strong>{item.name}</Text>
+                        <br />
+                        <Tag color={AGENT_TYPE_COLORS[item.type]} style={{ marginTop: 4 }}>
+                          {BUSINESS_AGENT_TYPE_LABELS[item.type]}
+                        </Tag>
+                      </div>
+                    </Space>
+                    <Text type="secondary" style={{ fontSize: 12, lineHeight: 1.7 }}>
+                      {item.summary}
+                    </Text>
+                    <div style={{ padding: '8px 10px', background: '#fafafa', borderRadius: 6 }}>
+                      <Text style={{ fontSize: 12 }}>{item.deliverable}</Text>
+                    </div>
+                    <Space size={4} wrap>
+                      {item.suggestedSkills.map(skill => (
+                        <Tag key={skill} style={{ fontSize: 11, marginInlineEnd: 0 }}>{skill}</Tag>
+                      ))}
+                    </Space>
+                  </Space>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </Card>
 
         {/* 工具栏 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -689,7 +808,7 @@ export default function AgentStudioPage() {
                 <Select
                   options={AGENT_TYPES.map(t => ({
                     value: t,
-                    label: `${AGENT_TYPE_ICONS[t]} ${AGENT_TYPE_LABELS[t]}`,
+                    label: `${AGENT_TYPE_ICONS[t]} ${BUSINESS_AGENT_TYPE_LABELS[t]}`,
                   }))}
                 />
               </Form.Item>
@@ -737,7 +856,7 @@ export default function AgentStudioPage() {
             </Col>
             <Col span={12}>
               <Form.Item name="type" label="智能体类型">
-                <Select disabled options={AGENT_TYPES.map(t => ({ value: t, label: `${AGENT_TYPE_ICONS[t]} ${AGENT_TYPE_LABELS[t]}` }))} />
+                <Select disabled options={AGENT_TYPES.map(t => ({ value: t, label: `${AGENT_TYPE_ICONS[t]} ${BUSINESS_AGENT_TYPE_LABELS[t]}` }))} />
               </Form.Item>
             </Col>
           </Row>
@@ -786,7 +905,7 @@ export default function AgentStudioPage() {
               <span style={{ fontSize: 40 }}>{AGENT_TYPE_ICONS[detailTarget.type]}</span>
               <Title level={4} style={{ margin: '8px 0 4px' }}>{detailTarget.name}</Title>
               <Space>
-                <Tag color={AGENT_TYPE_COLORS[detailTarget.type]}>{AGENT_TYPE_LABELS[detailTarget.type]}</Tag>
+                <Tag color={AGENT_TYPE_COLORS[detailTarget.type]}>{BUSINESS_AGENT_TYPE_LABELS[detailTarget.type]}</Tag>
                 <Tag color={AGENT_STATUS_COLORS[detailTarget.status]}>{detailTarget.status}</Tag>
                 <Tag>{detailTarget.version}</Tag>
                 <Tag color="geekblue">{detailTarget.model}</Tag>
@@ -902,7 +1021,7 @@ export default function AgentStudioPage() {
             </Card>
             <Descriptions column={1} size="small" bordered>
               <Descriptions.Item label="智能体类型">
-                <Tag color={AGENT_TYPE_COLORS[publishTarget.type]}>{AGENT_TYPE_LABELS[publishTarget.type]}</Tag>
+                <Tag color={AGENT_TYPE_COLORS[publishTarget.type]}>{BUSINESS_AGENT_TYPE_LABELS[publishTarget.type]}</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="推理模型">
                 <Tag color="geekblue">{publishTarget.model}</Tag>
