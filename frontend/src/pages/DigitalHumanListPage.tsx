@@ -41,7 +41,6 @@ import {
 import { ONTOLOGY_CATALOG, type OntologyCatalogEntry } from '../mocks/skills/ontologyCatalog'
 import type { DigitalHuman, DigitalHumanType } from '../types/digitalHuman'
 import {
-  DIGITAL_HUMAN_TYPE_COLORS,
   DIGITAL_HUMAN_TYPE_ICONS,
   DIGITAL_HUMAN_TYPE_LABELS,
 } from '../types/digitalHuman'
@@ -178,13 +177,11 @@ function getHumanVisual(dh: DigitalHuman) {
   if (industry) {
     return {
       icon: INDUSTRY_META[industry].icon,
-      tagColor: INDUSTRY_META[industry].accent,
       label: SKILL_INDUSTRY_LABELS[industry],
     }
   }
   return {
     icon: DIGITAL_HUMAN_TYPE_ICONS[dh.type],
-    tagColor: DIGITAL_HUMAN_TYPE_COLORS[dh.type],
     label: DIGITAL_HUMAN_TYPE_LABELS[dh.type],
   }
 }
@@ -515,6 +512,7 @@ export default function DigitalHumanListPage() {
                 <Row gutter={[14, 14]}>
                   {pagedHumans.map(dh => {
                     const visual = getHumanVisual(dh)
+                    const metaItems = [visual.label, dh.ontologyPhase, dh.trainingType].filter(Boolean)
                     return (
                       <Col key={dh.id} xs={24} md={12} xl={8}>
                         <Card
@@ -541,13 +539,11 @@ export default function DigitalHumanListPage() {
                                 </div>
                                 <div>
                                   <Text strong style={{ display: 'block', fontSize: 15 }}>{dh.name}</Text>
-                                  <Space wrap size={[6, 6]} style={{ marginTop: 6 }}>
-                                    <Tag color={visual.tagColor}>{visual.label}</Tag>
-                                    {dh.ontologyPhase && <Tag>{dh.ontologyPhase}</Tag>}
-                                    {dh.trainingType && (
-                                      <Tag color={TRAINING_TYPE_COLORS[dh.trainingType] || 'blue'}>{dh.trainingType}</Tag>
-                                    )}
-                                  </Space>
+                                  {metaItems.length > 0 && (
+                                    <Text type="secondary" style={{ display: 'block', marginTop: 6, fontSize: 12 }}>
+                                      {metaItems.join(' · ')}
+                                    </Text>
+                                  )}
                                 </div>
                               </Space>
                             </div>
