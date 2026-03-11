@@ -136,7 +136,7 @@ function toProjectId(code: string) {
 
 function buildSuggestedName(entry: OntologyCatalogEntry) {
   const base = entry.name.replace(/本体(\([^)]*\))?/, '').replace(/\s+/g, '').trim()
-  return `${base || entry.phase}数字员工`
+  return `${base || entry.phase}AI员工`
 }
 
 function buildSuggestedDescription(entry: OntologyCatalogEntry) {
@@ -211,7 +211,7 @@ export default function DigitalHumanListPage() {
       .then(items => {
         setList(items)
       })
-      .catch(() => message.error('数字员工加载失败'))
+      .catch(() => message.error('AI员工加载失败'))
   }, [])
 
   useEffect(() => {
@@ -258,7 +258,7 @@ export default function DigitalHumanListPage() {
         agentScene: entry.agentScene,
         trainingType: entry.trainingType,
       })
-      message.success('数字员工创建成功')
+      message.success('AI员工创建成功')
       setCreateOpen(false)
       form.resetFields()
       reload()
@@ -273,7 +273,7 @@ export default function DigitalHumanListPage() {
 
   const handleDelete = async (id: string) => {
     await deleteDigitalHuman(id)
-    message.success('数字员工已删除')
+    message.success('AI员工已删除')
     reload()
   }
 
@@ -366,7 +366,7 @@ export default function DigitalHumanListPage() {
           <Space>
             <FilterOutlined style={{ color: '#1677ff' }} />
             <span>业务AI员工空间</span>
-            <Text type="secondary" style={{ fontSize: 12 }}>按行业与业务场景切换数字员工入口</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>按行业与业务场景切换AI员工入口</Text>
           </Space>
         )}
       >
@@ -505,7 +505,7 @@ export default function DigitalHumanListPage() {
             )}
           >
             {pagedHumans.length === 0 ? (
-              <Empty description="当前筛选条件下没有匹配的数字员工" />
+              <Empty description="当前筛选条件下没有匹配的AI员工" />
             ) : (
               <>
                 <Row gutter={[14, 14]}>
@@ -588,7 +588,7 @@ export default function DigitalHumanListPage() {
                                   编辑
                                 </Button>
                                 <Popconfirm
-                                  title="确认删除该数字员工？"
+                                  title="确认删除该AI员工？"
                                   description="此操作不可恢复。"
                                   onConfirm={() => handleDelete(dh.id)}
                                   onPopupClick={(event) => event.stopPropagation()}
@@ -629,7 +629,7 @@ export default function DigitalHumanListPage() {
         title={(
           <Space>
             <NodeIndexOutlined style={{ color: '#1677ff' }} />
-            从本体模板创建数字员工
+            从本体模板创建AI员工
           </Space>
         )}
         open={createOpen}
@@ -660,10 +660,10 @@ export default function DigitalHumanListPage() {
             />
           </Form.Item>
           <Form.Item name="name" label="员工名称" rules={[{ required: true, message: '请输入名称' }]}>
-            <Input placeholder="例如：故障诊断数字员工" maxLength={64} />
+            <Input placeholder="例如：故障诊断AI员工" maxLength={64} />
           </Form.Item>
           <Form.Item name="description" label="职责描述">
-            <Input.TextArea rows={4} placeholder="可选，描述该数字员工的工作职责与专长" maxLength={300} />
+            <Input.TextArea rows={4} placeholder="可选，描述该AI员工的工作职责与专长" maxLength={300} />
           </Form.Item>
           {selectedOntology && (
             <div style={{ background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 12, padding: 12 }}>
@@ -691,7 +691,7 @@ export default function DigitalHumanListPage() {
         title={(
           <Space>
             <EditOutlined style={{ color: '#1677ff' }} />
-            编辑数字员工
+            编辑AI员工
           </Space>
         )}
         open={editOpen}
@@ -722,7 +722,7 @@ export default function DigitalHumanListPage() {
             <Input placeholder="例如：供应链运营专员" maxLength={64} />
           </Form.Item>
           <Form.Item name="description" label="职责描述">
-            <Input.TextArea rows={3} placeholder="可选，描述该数字员工的工作职责与专长" maxLength={300} />
+            <Input.TextArea rows={3} placeholder="可选，描述该AI员工的工作职责与专长" maxLength={300} />
           </Form.Item>
         </Form>
       </Modal>
