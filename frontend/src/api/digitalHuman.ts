@@ -6,7 +6,7 @@ import { DIGITAL_HUMAN_TYPE_DESCRIPTIONS } from '../types/digitalHuman'
 import { ensureMockStore, setMockStore } from './mockStoreClient'
 
 const STORE_KEY = 'digital-humans'
-const SEED_VERSION = 5
+const SEED_VERSION = 7
 const PINNED_DIGITAL_HUMAN_IDS = ['dh-default-device-fault', 'dh-default-replenishment'] as const
 const RECOMMENDED_FRONT_DIGITAL_HUMAN_IDS = [
   'dh-default-device-fault',
@@ -80,7 +80,7 @@ const SEED_SPECS: SeedSpec[] = [
     code: '0.0.1',
     name: '设备运维诊断专员',
     type: 'fault-repair',
-    description: '帮助设备负责人判断故障优先级、维修策略和资源投入，平衡停机损失、维修效率与产线稳定性。',
+    description: '围绕设备故障本体、告警实体与维修关系，帮助设备负责人识别停机风险、定位根因并编排检修策略，兼顾产线连续性、备件成本与复机时效。',
     targetUsers: '设备工程师、维修班组、产线班长、运维主管',
     serviceBoundary: '围绕故障诊断本体，负责告警解读、原因分析和维修建议，不直接下发停机、复位或参数改写指令。',
     systemPrompt: '你是设备运维诊断专员。基于故障诊断本体、设备台账、告警码和维修记录输出结论。先说明故障等级、可能根因和判断依据，再给出排查步骤、备件建议和是否需要升级工单。',
@@ -91,7 +91,7 @@ const SEED_SPECS: SeedSpec[] = [
     code: '2.4.18',
     name: '店货匹配运营决策专员',
     type: 'store-matching',
-    description: '帮助商品与营运负责人判断补货、调拨和库存分配策略，平衡有货率、周转效率与库存风险。',
+    description: '基于门店商品补货本体、库存关系与需求规则，帮助商品与营运负责人制定补货、调拨和配货策略，兼顾有货率、周转效率与滞销风险。',
     targetUsers: '商品运营、门店督导、补货计划员、区域营运经理',
     serviceBoundary: '围绕商品补货本体，负责给出补货与调拨建议、优先级和影响分析，不直接改写 ERP 订单或库存主数据。',
     systemPrompt: '你是店货匹配运营决策专员。基于商品补货本体、门店销量、库存、活动和供应约束生成补货建议。先判断缺货或积压风险，再输出补货量、调拨来源、执行优先级和业务依据。',
@@ -103,7 +103,7 @@ const SEED_SPECS: SeedSpec[] = [
     code: '1.2.7',
     name: '制造资源匹配专员',
     type: 'process-optimization',
-    description: '帮助制造负责人判断资源如何分配和替代，平衡设备利用、产能约束与订单兑现压力。',
+    description: '围绕制造资源能力本体、工艺路径实体与替代关系，帮助制造负责人完成设备、工装与班次资源匹配，兼顾瓶颈缓解、产能兑现与资源利用率。',
     targetUsers: '工艺工程师、计划调度员、制造经理',
     serviceBoundary: '围绕制造资源能力本体，负责资源筛选、可行性分析和替代建议，不直接变更 MES 派工结果。',
     systemPrompt: '你是制造资源匹配专员。请依据工艺要求、设备能力、产能负荷和班次约束，先判断资源是否可用，再给出推荐设备、替代资源、瓶颈说明和排产注意事项。',
@@ -114,7 +114,7 @@ const SEED_SPECS: SeedSpec[] = [
     code: '1.3.12',
     name: '生产排产调度专员',
     type: 'process-optimization',
-    description: '帮助生产管理者判断排产取舍和协同优先级，平衡交付承诺、换线成本、产能利用与现场稳定。',
+    description: '基于生产排产本体、订单物料设备关系和约束规则，帮助生产管理者制定排产取舍与协同优先级，兼顾交付承诺、换线成本与产能稳定。',
     targetUsers: '计划调度员、车间主任、生产经理',
     serviceBoundary: '围绕生产排产本体，负责排产建议和冲突分析，不直接下发生产控制或自动改写正式计划单。',
     systemPrompt: '你是生产排产调度专员。基于订单承诺、物料齐套、设备负荷和换线成本生成排产建议。先说明约束冲突，再给出排产顺序、影响范围和建议动作。',
@@ -136,7 +136,7 @@ const SEED_SPECS: SeedSpec[] = [
     code: '1.6.27',
     name: '维修作业指引专员',
     type: 'fault-repair',
-    description: '帮助维修负责人判断检修步骤、风险控制和人员安排，平衡作业安全、维修质量与复机时效。',
+    description: '依托维修作业本体、步骤实体与安全规则，帮助维修负责人生成检修路径、工序衔接和人员协同方案，兼顾作业安全、维修质量与复机窗口。',
     targetUsers: '现场维修工、设备工程师、班组长',
     serviceBoundary: '围绕维修作业知识本体，负责输出 SOP、注意事项和经验提示，不替代现场点检签字与安全确认。',
     systemPrompt: '你是维修作业指引专员。收到故障现象后，先给出安全隔离要求，再输出排查顺序、所需工具、关键参数检查点和复机确认项。',
@@ -147,7 +147,7 @@ const SEED_SPECS: SeedSpec[] = [
     code: '2.1.1',
     name: '选品规划分析专员',
     type: 'store-matching',
-    description: '帮助商品负责人判断该上什么、砍什么、推什么，平衡销售增长、品类结构与库存健康。',
+    description: '基于选品规划本体、品类实体、价格带关系与生命周期规则，帮助商品负责人判断引入、淘汰和主推策略，兼顾销售增长、品类结构与库存健康。',
     targetUsers: '品类经理、商品运营、采购负责人',
     serviceBoundary: '围绕选品与规划本体，负责选品分析和组合建议，不直接替代采购定标或商品主数据发布。',
     systemPrompt: '你是选品规划分析专员。基于品类结构、门店定位、销售表现和价格带缺口，先判断品类机会，再给出建议引入、保留、淘汰和上新节奏。',
@@ -169,7 +169,7 @@ const SEED_SPECS: SeedSpec[] = [
     code: '2.3.12',
     name: '临期库存处置专员',
     type: 'store-matching',
-    description: '帮助商品与门店负责人判断清货节奏、折扣力度和调拨策略，平衡报损控制、毛利空间与库存释放。',
+    description: '围绕库存处置本体、商品生命周期实体、门店库存关系与折价规则，帮助商品与门店负责人制定清货、调拨和促销节奏，兼顾报损控制、毛利保护与库存释放。',
     targetUsers: '商品运营、门店店长、库存经理',
     serviceBoundary: '围绕库存处置本体，负责清货策略和优先级建议，不直接下发改价或报损指令。',
     systemPrompt: '你是临期库存处置专员。请根据保质期、库存深度、动销速度和毛利约束，先判断处置紧急度，再给出折扣、调拨、捆绑销售和报损建议。',
@@ -191,7 +191,7 @@ const SEED_SPECS: SeedSpec[] = [
     code: '2.4.16',
     name: '门店货架优化专员',
     type: 'store-matching',
-    description: '帮助门店与商品负责人判断货架资源投向，平衡坪效、动销表现与重点商品曝光。',
+    description: '围绕货架陈列本体、货位实体、客流关系与动销规则，帮助门店与商品负责人优化陈列资源分配，兼顾坪效提升、重点商品曝光与连带销售。',
     targetUsers: '门店督导、陈列专员、商品运营',
     serviceBoundary: '围绕货架陈列本体，负责陈列优化建议和销售影响分析，不直接替代门店最终执行确认。',
     systemPrompt: '你是门店货架优化专员。请结合货架热区、客流、关联购买和库存结构，先识别低效陈列，再给出调整位、端架建议和预期收益。',
@@ -202,7 +202,7 @@ const SEED_SPECS: SeedSpec[] = [
     code: '2.4.20',
     name: '门店排班协同专员',
     type: 'store-matching',
-    description: '帮助门店管理者判断班次怎么排、人手怎么配，平衡服务质量、人效成本与现场执行稳定性。',
+    description: '基于门店排班本体、岗位技能实体、工时关系与合规规则，帮助门店管理者编排班次和用工结构，兼顾服务体验、人效成本与高峰时段稳定。',
     targetUsers: '店长、区域督导、人效运营',
     serviceBoundary: '围绕门店排班本体，负责班次编排和用工建议，不直接触发考勤或薪资系统写入。',
     systemPrompt: '你是门店排班协同专员。请根据客流预测、岗位技能、工时规则和请假信息，先识别缺班与冗余，再输出排班方案、支援建议和风险提示。',
@@ -213,7 +213,7 @@ const SEED_SPECS: SeedSpec[] = [
     code: '2.5.22',
     name: '会员运营增长专员',
     type: 'operation-decision',
-    description: '帮助增长负责人判断资源该投向哪些会员和动作，平衡拉新、复购、客单贡献与投入产出。',
+    description: '基于会员运营本体、人群标签实体、触达关系与转化规则，帮助增长负责人设计分层运营和资源投放策略，兼顾拉新效率、复购提升与投入产出。',
     targetUsers: '会员运营、私域运营、增长负责人',
     serviceBoundary: '围绕会员运营本体，负责圈选策略、触达建议和效果分析，不直接代替营销审批或批量外呼执行。',
     systemPrompt: '你是会员运营增长专员。请基于会员标签、生命周期、消费行为和活动效果，先判断增长机会，再输出人群策略、触达动作、预算优先级和预期目标。',
@@ -336,13 +336,13 @@ const OWNER_BY_TYPE: Record<DigitalHumanType, string> = {
 
 const PUBLISH_STATUS_BY_TYPE: Record<DigitalHumanType, DigitalHumanPublishStatus> = {
   'fault-repair': 'published',
-  'engineering-design': 'testing',
-  'process-optimization': 'testing',
-  'bom-analysis': 'testing',
-  'operation-decision': 'testing',
-  'store-matching': 'testing',
-  'data-ops': 'draft',
-  'tax-planning': 'draft',
+  'engineering-design': 'published',
+  'process-optimization': 'published',
+  'bom-analysis': 'published',
+  'operation-decision': 'published',
+  'store-matching': 'published',
+  'data-ops': 'published',
+  'tax-planning': 'published',
 }
 
 function defaultTargetUsers(dh: Pick<DigitalHuman, 'type' | 'ontologyPhase'>): string {
@@ -385,7 +385,7 @@ function withDigitalHumanDefaults(input: DigitalHuman): DigitalHuman {
     systemPrompt: input.systemPrompt ?? defaultSystemPrompt(input),
     targetUsers: input.targetUsers ?? defaultTargetUsers(input),
     serviceBoundary: input.serviceBoundary ?? defaultServiceBoundary(input),
-    handoffTarget: input.handoffTarget ?? '统一门户 Chat 端（待接入）',
+    handoffTarget: input.handoffTarget ?? '统一门户 Chat 端',
     publishStatus: input.publishStatus ?? PUBLISH_STATUS_BY_TYPE[input.type],
     publishChannels: input.publishChannels ?? DEFAULT_CHANNELS,
   }
@@ -528,10 +528,16 @@ function upgradeSeededItem(existing: DigitalHuman, seeded: DigitalHuman): Digita
       targetUsers: seeded.targetUsers,
       serviceBoundary: seeded.serviceBoundary,
       systemPrompt: seeded.systemPrompt,
+      publishStatus: seeded.publishStatus,
+      publishChannels: seeded.publishChannels,
     })
   }
 
-  return upgraded
+  return withDigitalHumanDefaults({
+    ...upgraded,
+    publishStatus: seeded.publishStatus,
+    publishChannels: seeded.publishChannels,
+  })
 }
 
 async function loadStore(): Promise<DHStore> {

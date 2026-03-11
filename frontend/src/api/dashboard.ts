@@ -19,7 +19,9 @@ export interface PlatformStats {
   objectTypes: number
   ontologyProjects: number
   agents: number
+  activeAgents: number
   skills: number
+  activeSkills: number
   trainingJobs: number
   deployedModels: number
   digitalWorkers: number
@@ -62,7 +64,9 @@ const DEFAULT_STORE: DashboardStore = {
     objectTypes: 89,
     ontologyProjects: 89,
     agents: 12,
+    activeAgents: 10,
     skills: 47,
+    activeSkills: 42,
     trainingJobs: 8,
     deployedModels: 23,
     digitalWorkers: 15,
@@ -133,7 +137,13 @@ export async function getPlatformStats(): Promise<PlatformStats> {
             ? dicWorkersResult.value.length
             : store.stats.digitalWorkers,
     agents: agentsResult.status === 'fulfilled' ? agentsResult.value.length : store.stats.agents,
+    activeAgents: agentsResult.status === 'fulfilled'
+      ? agentsResult.value.filter(agent => agent.status === 'Active').length
+      : store.stats.activeAgents,
     skills: skillsResult.status === 'fulfilled' ? skillsResult.value.length : store.stats.skills,
+    activeSkills: skillsResult.status === 'fulfilled'
+      ? skillsResult.value.filter(skill => skill.status === 'Active').length
+      : store.stats.activeSkills,
     trainingJobs: trainingJobsResult.status === 'fulfilled' ? trainingJobsResult.value.length : store.stats.trainingJobs,
     deployedModels: modelsResult.status === 'fulfilled'
       ? modelsResult.value.filter(model => model.stage !== 'Archived').length

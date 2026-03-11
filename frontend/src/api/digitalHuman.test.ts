@@ -79,6 +79,7 @@ describe('digitalHuman defaults', () => {
       'dh-default-regulation-review',
       'dh-default-dynamic-pricing',
     ])
+    expect(items.slice(0, 20).every(item => item.publishStatus === 'published')).toBe(true)
   })
 
   it('upgrades legacy pinned AI workers to the latest ontology and agent bindings', async () => {
@@ -124,6 +125,8 @@ describe('digitalHuman defaults', () => {
     expect(items[1]?.ontologyCode).toBe('2.4.18')
     expect(items[1]?.ontologyName).toBe('商品补货本体')
     expect(items[1]?.linkedAgentIds).toEqual(['ag-002', 'ag-009', 'ag-007'])
+    expect(items[0]?.publishStatus).toBe('published')
+    expect(items[1]?.publishStatus).toBe('published')
   })
 
   it('refreshes seeded content for recommended business AI workers', async () => {
@@ -148,6 +151,7 @@ describe('digitalHuman defaults', () => {
           updatedAt: '2024-01-01T00:00:00.000Z',
           linkedAgentIds: [],
           linkedSkillIds: [],
+          publishStatus: 'draft',
         },
       ],
     }
@@ -157,10 +161,11 @@ describe('digitalHuman defaults', () => {
     const items = await listDigitalHumans()
     const scheduling = items.find(item => item.id === 'dh-default-production-scheduling')
 
-    expect(scheduling?.description).toBe('帮助生产管理者判断排产取舍和协同优先级，平衡交付承诺、换线成本、产能利用与现场稳定。')
+    expect(scheduling?.description).toBe('基于生产排产本体、订单物料设备关系和约束规则，帮助生产管理者制定排产取舍与协同优先级，兼顾交付承诺、换线成本与产能稳定。')
     expect(scheduling?.linkedAgentIds).toEqual(['ag-003', 'ag-005', 'ag-004'])
     expect(scheduling?.targetUsers).toBe('计划调度员、车间主任、生产经理')
     expect(scheduling?.serviceBoundary).toContain('负责排产建议和冲突分析')
     expect(scheduling?.systemPrompt).toContain('你是生产排产调度专员')
+    expect(scheduling?.publishStatus).toBe('published')
   })
 })

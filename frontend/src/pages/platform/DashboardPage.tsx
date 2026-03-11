@@ -44,7 +44,23 @@ const stageTemplates: StageTemplate[] = [
 ]
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<PlatformStats>({ datasources: 0, transformJobs: 0, objectTypes: 0, ontologyProjects: 0, agents: 0, skills: 0, trainingJobs: 0, deployedModels: 0, digitalWorkers: 0, totalRequests: '', avgLatency: '', uptime: '', activeUsers: 0 })
+  const [stats, setStats] = useState<PlatformStats>({
+    datasources: 0,
+    transformJobs: 0,
+    objectTypes: 0,
+    ontologyProjects: 0,
+    agents: 0,
+    activeAgents: 0,
+    skills: 0,
+    activeSkills: 0,
+    trainingJobs: 0,
+    deployedModels: 0,
+    digitalWorkers: 0,
+    totalRequests: '',
+    avgLatency: '',
+    uptime: '',
+    activeUsers: 0,
+  })
 
   useEffect(() => {
     getPlatformStats().then(setStats)
@@ -65,7 +81,7 @@ export default function DashboardPage() {
   const statCards = [
     { title: '数据源', value: stats.datasources, icon: <DatabaseOutlined />, color: '#16a34a', bg: '#f0fdf4', trend: '+3' },
     { title: '本体项目', value: stats.ontologyProjects, icon: <AppstoreOutlined />, color: '#4f46e5', bg: '#eef2ff', trend: '+12' },
-    { title: 'Agent / Skills', value: `${stats.agents} / ${stats.skills}`, icon: <RobotOutlined />, color: '#7c3aed', bg: '#f5f3ff', trend: '+5' },
+    { title: '运行中 Agent / 可用 Skills', value: `${stats.activeAgents} / ${stats.activeSkills}`, icon: <RobotOutlined />, color: '#7c3aed', bg: '#f5f3ff', trend: '+5' },
     { title: '日请求总量', value: stats.totalRequests, icon: <ThunderboltOutlined />, color: '#e11d48', bg: '#fff1f2', trend: '+18%' },
     { title: '平均延迟', value: stats.avgLatency, icon: <DashboardOutlined />, color: '#0891b2', bg: '#ecfeff', trend: '-5ms' },
   ]

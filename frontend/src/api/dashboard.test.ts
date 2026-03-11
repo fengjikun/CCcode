@@ -31,11 +31,20 @@ vi.mock('./dicWorker', () => ({
 }))
 
 vi.mock('./agentStudio', () => ({
-  listAgents: vi.fn(async () => [{ id: 'ag-1' }, { id: 'ag-2' }, { id: 'ag-3' }]),
+  listAgents: vi.fn(async () => [
+    { id: 'ag-1', status: 'Active' },
+    { id: 'ag-2', status: 'Testing' },
+    { id: 'ag-3', status: 'Active' },
+  ]),
 }))
 
 vi.mock('./skillsMarket', () => ({
-  listSkills: vi.fn(async () => [{ id: 'sk-1' }, { id: 'sk-2' }, { id: 'sk-3' }, { id: 'sk-4' }]),
+  listSkills: vi.fn(async () => [
+    { id: 'sk-1', status: 'Active' },
+    { id: 'sk-2', status: 'Draft' },
+    { id: 'sk-3', status: 'Disabled' },
+    { id: 'sk-4', status: 'Active' },
+  ]),
 }))
 
 vi.mock('./modelTraining', () => ({
@@ -74,7 +83,9 @@ describe('dashboard stats aggregation', () => {
       transformJobs: 4,
       digitalWorkers: 3,
       agents: 3,
+      activeAgents: 2,
       skills: 4,
+      activeSkills: 2,
       trainingJobs: 5,
       deployedModels: 2,
       avgLatency: '1.3s',
