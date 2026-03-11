@@ -25,7 +25,7 @@ describe('digitalHuman defaults', () => {
     const items = await listDigitalHumans()
 
     expect(items[0]?.id).toBe('dh-default-device-fault')
-    expect(items[0]?.name).toBe('设备故障诊断智能体')
+    expect(items[0]?.name).toBe('设备运维诊断专员')
     expect(items[0]?.linkedAgentIds).toEqual(['ag-001'])
     expect(items[0]?.linkedSkillIds).toEqual([
       'skill-biz-0-0-1',
@@ -35,7 +35,7 @@ describe('digitalHuman defaults', () => {
     ])
 
     expect(items[1]?.id).toBe('dh-default-replenishment')
-    expect(items[1]?.name).toBe('商品补货智能体')
+    expect(items[1]?.name).toBe('店货匹配运营决策专员')
     expect(items[1]?.ontologyCode).toBe('2.4.18')
     expect(items[1]?.linkedAgentIds).toEqual(['ag-002'])
     expect(items[1]?.linkedSkillIds).toEqual([
@@ -79,11 +79,11 @@ describe('digitalHuman defaults', () => {
 
     const items = await listDigitalHumans()
 
-    expect(items[0]?.name).toBe('设备故障诊断智能体')
-    expect(items[0]?.systemPrompt).toContain('设备故障诊断智能体')
+    expect(items[0]?.name).toBe('设备运维诊断专员')
+    expect(items[0]?.systemPrompt).toContain('设备运维诊断专员')
     expect(items[0]?.linkedAgentIds).toEqual(['ag-001'])
 
-    expect(items[1]?.name).toBe('商品补货智能体')
+    expect(items[1]?.name).toBe('店货匹配运营决策专员')
     expect(items[1]?.type).toBe('store-matching')
     expect(items[1]?.projectId).toBe('proj-2418')
     expect(items[1]?.ontologyCode).toBe('2.4.18')

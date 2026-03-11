@@ -35,7 +35,7 @@ describe('dataSource source-data seeding', () => {
     expect(OBJECT_STORAGE_TYPES).toEqual(['S3', 'OSS', 'MinIO'])
   })
 
-  it('seeds fault-diagnosis oriented source datasets', async () => {
+  it('seeds fault-diagnosis and replenishment source datasets', async () => {
     const list = await listDataSources()
     const databaseCount = list.filter((item) => item.category === 'structured').length
     const objectStorageCount = list.filter((item) => item.category === 'unstructured').length
@@ -46,6 +46,9 @@ describe('dataSource source-data seeding', () => {
     expect(list.some((item) => item.name.includes('故障工单'))).toBe(true)
     expect(list.some((item) => item.name.includes('PLC 运行日志'))).toBe(true)
     expect(list.some((item) => item.name.includes('机台原始日志文件库'))).toBe(true)
+    expect(list.some((item) => item.name.includes('销售订单事实库'))).toBe(true)
+    expect(list.some((item) => item.name.includes('库存与在途快照库'))).toBe(true)
+    expect(list.some((item) => item.name.includes('商品补货业务说明文档库'))).toBe(true)
     expect(list.some((item) => item.description?.includes('源数据'))).toBe(true)
   })
 
@@ -108,7 +111,7 @@ describe('dataSource source-data seeding', () => {
         updatedAt: '2025-03-10T08:00:00.000Z',
       },
     ]
-    mockStore._v = 6
+    mockStore._v = 7
 
     const list = await listDataSources()
 
@@ -116,7 +119,7 @@ describe('dataSource source-data seeding', () => {
     expect(list[0]?.id).toBe('ds-custom-001')
     expect(list[0]?.name).toBe('企业主数据湖')
     expect(mockStore.items).toHaveLength(1)
-    expect(mockStore._v).toBe(6)
+    expect(mockStore._v).toBe(7)
   })
 
   it('creates an object storage datasource with bucket connection fields', async () => {

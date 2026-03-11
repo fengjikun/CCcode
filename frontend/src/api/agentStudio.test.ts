@@ -24,8 +24,8 @@ describe('agentStudio defaults', () => {
 
     const agents = await listAgents()
 
-    expect(agents.some((agent) => agent.name === '设备故障诊断智能体')).toBe(true)
-    expect(agents.some((agent) => agent.name === '商品补货智能体')).toBe(true)
+    expect(agents.some((agent) => agent.name === '设备运维诊断专员')).toBe(true)
+    expect(agents.some((agent) => agent.name === '店货匹配运营决策专员')).toBe(true)
 
     const faultAgent = agents.find((agent) => agent.id === 'ag-001')
     const replenishmentAgent = agents.find((agent) => agent.id === 'ag-002')
@@ -67,10 +67,10 @@ describe('agentStudio defaults', () => {
     const replenishmentAgent = agents.find((agent) => agent.id === 'ag-002')
 
     expect(agents).toHaveLength(2)
-    expect(upgradedFaultAgent?.name).toBe('设备故障诊断智能体')
+    expect(upgradedFaultAgent?.name).toBe('设备运维诊断专员')
     expect(upgradedFaultAgent?.ontologyName).toBe('故障诊断本体')
     expect(upgradedFaultAgent?.contextSummary).toContain('故障诊断本体')
-    expect(upgradedFaultAgent?.systemPrompt).toContain('设备故障诊断智能体')
+    expect(upgradedFaultAgent?.systemPrompt).toContain('设备运维诊断专员')
     expect(upgradedFaultAgent?.systemPrompt).toContain('故障诊断本体')
     expect(upgradedFaultAgent?.skillIds).toEqual([
       'skill-biz-0-0-1',
@@ -79,7 +79,7 @@ describe('agentStudio defaults', () => {
       'g-work-order',
     ])
 
-    expect(replenishmentAgent?.name).toBe('商品补货智能体')
+    expect(replenishmentAgent?.name).toBe('店货匹配运营决策专员')
     expect(replenishmentAgent?.ontologyName).toBe('商品补货本体')
     expect(replenishmentAgent?.skillIds).toContain('g-workflow-orchestration')
   })

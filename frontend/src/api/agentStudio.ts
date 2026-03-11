@@ -101,7 +101,7 @@ export const DEFAULT_AGENTS: Agent[] = [
   buildSeedAgent({
     id: 'ag-001',
     code: '0.0.1',
-    name: '设备故障诊断智能体',
+    name: '设备运维诊断专员',
     type: 'Operational',
     status: 'Active',
     version: 'v2.0.0',
@@ -157,7 +157,7 @@ export const DEFAULT_AGENTS: Agent[] = [
   buildSeedAgent({
     id: 'ag-002',
     code: '2.4.18',
-    name: '商品补货智能体',
+    name: '店货匹配运营决策专员',
     type: 'Operational',
     status: 'Active',
     version: 'v1.0.0',

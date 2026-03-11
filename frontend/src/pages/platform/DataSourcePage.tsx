@@ -89,54 +89,82 @@ const DS_STATUS_DOT: Record<string, 'active' | 'warning' | 'error'> = {
   Active: 'active', Syncing: 'active', Inactive: 'warning', Error: 'error',
 }
 
+function containsAnyKeyword(text: string, keywords: string[]): boolean {
+  return keywords.some(keyword => text.includes(keyword))
+}
+
 function getStructuredSourcePreview(dataSource: DataSource): string[] {
   const name = dataSource.name
-  if (name.includes('工单')) {
+  if (containsAnyKeyword(name, ['工单'])) {
     return ['ods_fault_work_order', 'ods_fault_dispatch_log', 'ods_fault_repair_feedback', 'dim_fault_code']
   }
-  if (name.includes('台账')) {
+  if (containsAnyKeyword(name, ['台账'])) {
     return ['dim_equipment_asset', 'dim_production_line', 'dim_workshop_location', 'dim_maintenance_level']
   }
-  if (name.includes('告警')) {
+  if (containsAnyKeyword(name, ['告警'])) {
     return ['fact_alarm_event', 'fact_alarm_ack', 'fact_alarm_recover', 'dim_alarm_rule']
   }
-  if (name.includes('PLC')) {
+  if (containsAnyKeyword(name, ['PLC'])) {
     return ['plc_event_log', 'plc_state_snapshot', 'plc_error_code_log', 'plc_recipe_switch_log']
   }
-  if (name.includes('传感器')) {
+  if (containsAnyKeyword(name, ['传感器'])) {
     return ['ts_vibration_signal', 'ts_temperature_signal', 'ts_current_signal', 'ts_pressure_signal']
   }
-  if (name.includes('维修履历')) {
+  if (containsAnyKeyword(name, ['维修履历'])) {
     return ['fact_maintenance_case', 'fact_root_cause', 'fact_repair_action', 'fact_downtime_loss']
   }
-  if (name.includes('点检')) {
+  if (containsAnyKeyword(name, ['点检'])) {
     return ['fact_inspection_task', 'fact_inspection_item', 'fact_inspection_abnormal', 'fact_inspection_attachment']
   }
-  if (name.includes('备件')) {
+  if (containsAnyKeyword(name, ['备件'])) {
     return ['dim_spare_part', 'fact_inventory_balance', 'fact_pick_ticket', 'fact_purchase_requisition']
   }
-  if (name.includes('交接班')) {
+  if (containsAnyKeyword(name, ['交接班'])) {
     return ['shift_handover_record', 'shift_exception_note', 'shift_operation_summary', 'shift_followup_item']
+  }
+  if (containsAnyKeyword(name, ['销售订单', '零售 ERP', 'ERP 销售'])) {
+    return ['fact_store_sales_order', 'fact_store_sales_order_line', 'agg_store_sku_sales_14d', 'dim_sales_channel']
+  }
+  if (containsAnyKeyword(name, ['库存', '在途', 'WMS'])) {
+    return ['fact_warehouse_inventory_snapshot', 'fact_store_inventory_snapshot', 'fact_in_transit_stock', 'dim_inventory_owner']
+  }
+  if (containsAnyKeyword(name, ['商品主数据', '尺码'])) {
+    return ['dim_product_sku', 'dim_product_lifecycle', 'dim_size_profile', 'dim_store_grade_strategy']
+  }
+  if (containsAnyKeyword(name, ['补货计划', '调拨'])) {
+    return ['fact_replenishment_plan', 'fact_replenishment_allocation', 'fact_transfer_order', 'dim_replenishment_policy']
   }
   return ['source_table_01', 'source_table_02', 'source_table_03']
 }
 
 function getUnstructuredSourcePreview(dataSource: DataSource): string[] {
   const name = dataSource.name
-  if (name.includes('日志')) {
+  if (containsAnyKeyword(name, ['日志'])) {
     return ['2026/03/11/CNC-01/error.log', '2026/03/11/SMT-07/runtime.csv', '2026/03/11/press-02/raw.zip']
   }
-  if (name.includes('波形')) {
+  if (containsAnyKeyword(name, ['波形'])) {
     return ['bearing/A01/2026-03-11-0800.json', 'motor/M02/2026-03-11-0815.wav', 'spindle/S09/fft/2026-03-11.csv']
   }
-  if (name.includes('热像')) {
+  if (containsAnyKeyword(name, ['热像'])) {
     return ['line-3/oven-02/thermal_001.jpg', 'line-7/motor-11/thermal_002.jpg', 'exceptions/hotspot_20260311.png']
   }
-  if (name.includes('手册')) {
+  if (containsAnyKeyword(name, ['手册'])) {
     return ['cnc/maintenance-sop-v4.pdf', 'compressor/fault-code-manual.docx', 'inspection/checklist-standard.xlsx']
   }
-  if (name.includes('复盘')) {
+  if (containsAnyKeyword(name, ['复盘'])) {
     return ['2026/Q1/8d-report-press-02.pdf', '2026/Q1/rca-bearing-failure.pptx', 'expert-review/meeting-minutes-0310.docx']
+  }
+  if (containsAnyKeyword(name, ['规则', '尺码'])) {
+    return ['rules/size-curve/nike-air-max-270.md', 'rules/golden-size-protection.xlsx', 'rules/store-priority/huadong-a-tier.csv']
+  }
+  if (containsAnyKeyword(name, ['业务说明', '策略文档', '补货说明'])) {
+    return ['docs/replenishment/data-specification.docx', 'docs/replenishment/policy-thresholds.md', 'docs/replenishment/wms-erp-field-mapping.xlsx']
+  }
+  if (containsAnyKeyword(name, ['调拨单', '执行样本'])) {
+    return ['orders/2026W10/transfer-order-001.json', 'orders/2026W10/transfer-order-002.json', 'orders/templates/transfer-order-payload.json']
+  }
+  if (containsAnyKeyword(name, ['复盘报告', '运营周报'])) {
+    return ['reviews/2026W10/replenishment-review.docx', 'reviews/2026W10/store-gap-summary.xlsx', 'reviews/2026W10/size-coverage-analysis.pptx']
   }
   return ['source/file-01', 'source/file-02', 'source/file-03']
 }
@@ -352,7 +380,7 @@ export default function DataSourcePage() {
     <div className="page-container">
       {/* ===== Header ===== */}
       <Card className="section-card">
-        <PageHeader title="数据源管理" subtitle="围绕故障诊断统一管理源数据接入，覆盖工单、告警、日志、时序信号、维修记录与知识文档" />
+        <PageHeader title="数据源管理" subtitle="统一管理故障诊断与商品补货源数据接入，覆盖工单、告警、时序信号、销售订单、库存快照、尺码规则与业务文档" />
         
 
 
@@ -441,7 +469,7 @@ export default function DataSourcePage() {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="name" label="数据源名称" rules={[{ required: true, message: '请输入名称' }]}>
-                <Input placeholder="例如：故障工单主表 / PLC 运行日志" maxLength={64} />
+                <Input placeholder="例如：故障工单主表 / 零售 ERP 销售订单事实库" maxLength={64} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -476,7 +504,7 @@ export default function DataSourcePage() {
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item name="database" label="数据库名" rules={[{ required: true, message: '请输入数据库名' }]}>
-                    <Input placeholder="例如：fault_workorder_ods" />
+                    <Input placeholder="例如：fault_workorder_ods / retail_sales_dw" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
@@ -528,12 +556,12 @@ export default function DataSourcePage() {
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item name="bucket" label="Bucket" rules={[{ required: true, message: '请输入 Bucket 名称' }]}>
-                    <Input placeholder="例如：fault-machine-log-raw" />
+                    <Input placeholder="例如：fault-machine-log-raw / retail-replenishment-docs" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item name="pathPrefix" label="路径前缀">
-                    <Input placeholder="例如：machines/raw-logs/" />
+                    <Input placeholder="例如：machines/raw-logs/ / replenishment/rules/" />
                   </Form.Item>
                 </Col>
               </Row>
@@ -577,7 +605,7 @@ export default function DataSourcePage() {
             />
           </Form.Item>
           <Form.Item name="description" label="描述">
-            <Input.TextArea rows={2} placeholder="可选，说明该源数据用于告警分析、根因诊断还是维修闭环" maxLength={200} />
+            <Input.TextArea rows={2} placeholder="可选，说明该源数据用于根因诊断、补货测算、尺码分配或调拨执行" maxLength={200} />
           </Form.Item>
         </Form>
       </Modal>
