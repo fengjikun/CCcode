@@ -215,6 +215,15 @@
       "status": "DRAFT",
       "scriptType": "PYTHON",
       "scriptContent": "def decide_recovery_readiness(vibration_rms, spindle_temp_rise, test_cut_passed):\n    passed = vibration_rms <= 2.8 and spindle_temp_rise <= 18 and test_cut_passed\n    return {\n        \"ready\": passed,\n        \"decision\": \"PASS\" if passed else \"RECHECK\",\n        \"nextAction\": \"close_work_order\" if passed else \"reopen_diagnostic_flow\"\n    }"
+    },
+    {
+      "id": 6,
+      "name": "故障综合诊断",
+      "displayName": "故障综合诊断",
+      "description": "融合传感器时序数据、历史工单和知识图谱，输出综合诊断报告，包含置信度评分、可能根因排序和推荐处置方案。",
+      "status": "ACTIVE",
+      "scriptType": "PYTHON",
+      "scriptContent": "def diagnose_fault_comprehensive(equipment_id, alarm_codes, sensor_data, history_window_days=30):\n    \"\"\"综合多源数据输出故障诊断报告。\"\"\"\n    # 1. 从知识图谱检索匹配的故障现象\n    phenomena = graph.query(\n        f\"MATCH (e:Equipment {{id: '{equipment_id}'}})-[:has_phenomenon]->(p:Phenomenon) \"\n        f\"WHERE p.alarmCode IN {alarm_codes} RETURN p\"\n    )\n    # 2. 结合传感器数据计算异常指标\n    anomaly_scores = {\n        k: (v - baseline[k]) / baseline[k]\n        for k, v in sensor_data.items()\n        if k in baseline\n    }\n    # 3. 对每个候选现象评估置信度\n    candidates = []\n    for p in phenomena:\n        causes = graph.query(\n            f\"MATCH (p:Phenomenon {{id: '{p.id}'}})<-[:caused_by]-(c:Cause) RETURN c\"\n        )\n        confidence = compute_confidence(p, anomaly_scores, causes, history_window_days)\n        candidates.append({\"phenomenon\": p.name, \"causes\": [c.name for c in causes], \"confidence\": confidence})\n    candidates.sort(key=lambda x: x[\"confidence\"], reverse=True)\n    top = candidates[0] if candidates else None\n    return {\n        \"equipmentId\": equipment_id,\n        \"diagnosisTime\": now_iso(),\n        \"topCause\": top[\"causes\"][0] if top and top[\"causes\"] else None,\n        \"confidence\": top[\"confidence\"] if top else 0.0,\n        \"candidates\": candidates[:3],\n        \"recommendedAction\": fetch_solution(top[\"causes\"][0]) if top and top[\"causes\"] else \"人工介入\"\n    }"
     }
   ],
   "idSeq": 1000

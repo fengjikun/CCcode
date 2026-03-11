@@ -508,6 +508,7 @@ def delete_link(link_id: int):
 
 @router.get("/functions")
 def list_functions():
+    ontology_store.reload_if_changed()
     return ontology_store.data.get("functions", [])
 
 
