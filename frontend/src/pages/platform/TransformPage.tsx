@@ -298,7 +298,10 @@ export default function TransformPage() {
       dataIndex: 'records',
       key: 'records',
       width: 100,
-      render: (v: number) => v > 10000 ? `${(v / 10000).toFixed(1)}万` : v.toLocaleString(),
+      render: (v: number) => {
+        const n = v ?? 0
+        return n > 10000 ? `${(n / 10000).toFixed(1)}万` : n.toLocaleString()
+      },
     },
     {
       title: '耗时',
