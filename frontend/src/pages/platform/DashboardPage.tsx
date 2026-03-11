@@ -66,6 +66,9 @@ export default function DashboardPage() {
     if (stage.key === 'datasource') return { ...stage, count: stats.datasources }
     if (stage.key === 'prep') return { ...stage, count: stats.transformJobs }
     if (stage.key === 'ontology') return { ...stage, count: stats.ontologyProjects }
+    if (stage.key === 'workspace') return { ...stage, count: stats.agents }
+    if (stage.key === 'training') return { ...stage, count: stats.trainingJobs }
+    if (stage.key === 'gateway') return { ...stage, count: stats.deployedModels }
     if (stage.key === 'application') return { ...stage, count: stats.digitalWorkers }
     return { ...stage, count: stage.fallbackCount }
   })

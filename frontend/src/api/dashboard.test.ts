@@ -26,6 +26,35 @@ vi.mock('./digitalHuman', () => ({
   listDigitalHumans: vi.fn(async () => [{ id: 'dh-1' }]),
 }))
 
+vi.mock('./agentStudio', () => ({
+  listAgents: vi.fn(async () => [{ id: 'ag-1' }, { id: 'ag-2' }, { id: 'ag-3' }]),
+}))
+
+vi.mock('./skillsMarket', () => ({
+  listSkills: vi.fn(async () => [{ id: 'sk-1' }, { id: 'sk-2' }, { id: 'sk-3' }, { id: 'sk-4' }]),
+}))
+
+vi.mock('./modelTraining', () => ({
+  listTrainingJobs: vi.fn(async () => [{ key: 'job-1' }, { key: 'job-2' }, { key: 'job-3' }, { key: 'job-4' }, { key: 'job-5' }]),
+}))
+
+vi.mock('./modelGateway', () => ({
+  listModels: vi.fn(async () => [
+    { key: 'model-1', stage: 'Production' },
+    { key: 'model-2', stage: 'Canary' },
+    { key: 'model-3', stage: 'Archived' },
+  ]),
+  getGatewayStats: vi.fn(async () => ({
+    deployedModels: 2,
+    totalQps: '8.0K',
+    avgLatency: '1.3s',
+    availability: '99.95%',
+    productionCount: 1,
+    canaryCount: 1,
+    stagingCount: 0,
+  })),
+}))
+
 describe('dashboard stats aggregation', () => {
   beforeEach(() => {
     storeValue = undefined
@@ -40,6 +69,12 @@ describe('dashboard stats aggregation', () => {
       datasources: 2,
       transformJobs: 4,
       digitalWorkers: 1,
+      agents: 3,
+      skills: 4,
+      trainingJobs: 5,
+      deployedModels: 2,
+      avgLatency: '1.3s',
+      uptime: '99.95%',
     })
     expect(stats).toHaveProperty('ontologyProjects', 3)
   })

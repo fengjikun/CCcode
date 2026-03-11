@@ -552,7 +552,7 @@ export default function DigitalHumanListPage() {
                                   <Text strong style={{ display: 'block', fontSize: 15 }}>{dh.name}</Text>
                                   {metaItems.length > 0 && (
                                     <Text type="secondary" style={{ display: 'block', marginTop: 6, fontSize: 12 }}>
-                                      {metaItems.join(' · ')}
+                                      {metaItems[0]}
                                     </Text>
                                   )}
                                 </div>

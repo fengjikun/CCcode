@@ -1,12 +1,16 @@
 import type { HealthEntry, ActivityEntry } from '../types/dashboard'
+import { listAgents } from './agentStudio'
 import { listDataSources } from './dataSource'
 import { listDigitalHumans } from './digitalHuman'
+import { listModels, getGatewayStats } from './modelGateway'
 import { ensureMockStore, setMockStore } from './mockStoreClient'
 import { listProjects } from './projectManagement'
+import { listSkills } from './skillsMarket'
+import { listTrainingJobs } from './modelTraining'
 import { listTransforms } from './transform'
 
 const STORE_KEY = 'dashboard'
-const DATA_VERSION = 3
+const DATA_VERSION = 4
 
 export interface PlatformStats {
   datasources: number
@@ -90,11 +94,26 @@ export async function getActivityData(): Promise<ActivityEntry[]> {
 
 export async function getPlatformStats(): Promise<PlatformStats> {
   const store = await loadStore()
-  const [dataSourcesResult, projectsResult, transformResult, digitalHumansResult] = await Promise.allSettled([
+  const [
+    dataSourcesResult,
+    projectsResult,
+    transformResult,
+    digitalHumansResult,
+    agentsResult,
+    skillsResult,
+    trainingJobsResult,
+    modelsResult,
+    gatewayStatsResult,
+  ] = await Promise.allSettled([
     listDataSources(),
     listProjects(),
     listTransforms(),
     listDigitalHumans(),
+    listAgents(),
+    listSkills(),
+    listTrainingJobs(),
+    listModels(),
+    getGatewayStats(),
   ])
 
   return {
@@ -103,5 +122,13 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     ontologyProjects: projectsResult.status === 'fulfilled' ? projectsResult.value.length : store.stats.ontologyProjects,
     transformJobs: transformResult.status === 'fulfilled' ? transformResult.value.length : store.stats.transformJobs,
     digitalWorkers: digitalHumansResult.status === 'fulfilled' ? digitalHumansResult.value.length : store.stats.digitalWorkers,
+    agents: agentsResult.status === 'fulfilled' ? agentsResult.value.length : store.stats.agents,
+    skills: skillsResult.status === 'fulfilled' ? skillsResult.value.length : store.stats.skills,
+    trainingJobs: trainingJobsResult.status === 'fulfilled' ? trainingJobsResult.value.length : store.stats.trainingJobs,
+    deployedModels: modelsResult.status === 'fulfilled'
+      ? modelsResult.value.filter(model => model.stage !== 'Archived').length
+      : store.stats.deployedModels,
+    avgLatency: gatewayStatsResult.status === 'fulfilled' ? gatewayStatsResult.value.avgLatency : store.stats.avgLatency,
+    uptime: gatewayStatsResult.status === 'fulfilled' ? gatewayStatsResult.value.availability : store.stats.uptime,
   }
 }
