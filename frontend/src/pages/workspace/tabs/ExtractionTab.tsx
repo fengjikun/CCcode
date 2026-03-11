@@ -82,7 +82,7 @@ export default function ExtractionTab({
       width: 100,
       render: (_value, record) => (
         <Button size="small" onClick={() => navigate(`/ontology/projects/${project.id}/graph?versionId=${record.id}`)}>
-          图谱
+          数据集
         </Button>
       ),
     },
@@ -101,13 +101,15 @@ export default function ExtractionTab({
       <Card>
         <Space style={{ justifyContent: 'space-between', width: '100%' }} wrap>
           <div>
-            <Title level={5} style={{ marginBottom: 6 }}>抽取任务</Title>
-            <Text type="secondary">基于当前启用文档 + 启用数据源 + 当前配置执行抽取。审核与筛选已迁移到图谱页。</Text>
+            <Title level={5} style={{ marginBottom: 6 }}>本体数据集</Title>
+            <Text type="secondary">
+              基于当前启用文档、启用数据源和本体定义生成本体数据集。审核、筛选与关联查看统一在数据集审核页处理。
+            </Text>
           </div>
           <Space>
             {selectedRun && (
               <Button onClick={() => navigate(`/ontology/projects/${project.id}/graph?runId=${selectedRun.id}`)}>
-                进入图谱审核
+                进入数据集审核
               </Button>
             )}
             <Button
@@ -199,22 +201,22 @@ export default function ExtractionTab({
         )}
       </Card>
 
-      <Card title="发布本体版本">
+      <Card title="发布本体数据集版本">
         {selectedRun ? (
           <Space direction="vertical" style={{ width: '100%' }}>
             <Alert
               type="info"
               showIcon
               message="版本发布说明"
-              description="发布时会固化当前 run 的审核结果，动作与函数可据此挂载版本。"
+              description="发布时会固化当前抽取任务的审核结果，生成可供动作与函数挂载的本体数据集版本。"
             />
             <Space style={{ justifyContent: 'space-between', width: '100%' }} wrap>
               <Text type="secondary">
-                当前任务：{selectedRun.id}，状态：{selectedRun.status}，待审核：{selectedRun.pendingReviewCount}
+                当前抽取任务：{selectedRun.id}，状态：{selectedRun.status}，待审核：{selectedRun.pendingReviewCount}
               </Text>
               <Space>
                 <Button onClick={() => navigate(`/ontology/projects/${project.id}/graph?runId=${selectedRun.id}`)}>
-                  查看图谱
+                  查看数据集
                 </Button>
                 <Button
                   type="primary"
@@ -231,12 +233,12 @@ export default function ExtractionTab({
               size="small"
               columns={versionColumns}
               dataSource={projectVersions}
-              locale={{ emptyText: '暂无已发布版本' }}
+              locale={{ emptyText: '暂无已发布的数据集版本' }}
               pagination={{ pageSize: 5 }}
             />
           </Space>
         ) : (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="请先执行抽取任务" />
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="请先执行抽取，生成本体数据集候选内容" />
         )}
       </Card>
 

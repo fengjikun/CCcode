@@ -72,7 +72,7 @@ export default function GraphSidebar({
       >
         <Input
           prefix={<SearchOutlined style={{ color: '#bbb', fontSize: 13 }} />}
-          placeholder="搜索节点..."
+          placeholder="搜索关联节点..."
           allowClear
           size="small"
           onChange={(e) => onSearch(e.target.value)}
@@ -202,14 +202,14 @@ export default function GraphSidebar({
               onChange={(e) => onToggleEdgeLabels(e.target.checked)}
               style={{ marginInlineEnd: 0 }}
             />
-            <span style={{ color: '#333' }}>显示边标签</span>
+            <span style={{ color: '#333' }}>显示连线标签</span>
           </label>
         </div>
 
         {/* Statistics summary */}
         {stats && (
           <div>
-            <SectionTitle>图谱统计</SectionTitle>
+            <SectionTitle>数据集统计</SectionTitle>
             <div
               style={{
                 background: '#fff',
@@ -239,7 +239,7 @@ export default function GraphSidebar({
                   padding: '8px 10px',
                 }}
               >
-                <span style={{ color: '#666', fontSize: 12 }}>关系总数</span>
+                <span style={{ color: '#666', fontSize: 12 }}>连线总数</span>
                 <span style={{ fontWeight: 700, color: '#1a1a1a', fontSize: 14 }}>{stats.edgeCount}</span>
               </div>
             </div>

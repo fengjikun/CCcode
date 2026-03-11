@@ -148,7 +148,7 @@ function findSelectedKey(pathname: string): string {
 }
 
 function findPageInfo(pathname: string): [string, string] {
-  if (pathname.match(/^\/ontology\/projects\/.+\/graph$/)) return ['Deepology', '本体图谱展示']
+  if (pathname.match(/^\/ontology\/projects\/.+\/graph$/)) return ['Deepology', '本体数据集审核']
   if (pathname.match(/^\/ontology\/projects\/.+$/)) return ['Deepology', '本体工作台']
   if (pathname.match(/^\/digital-worker\/business\/.+$/)) return ['数字员工应用', 'AI员工配置']
   if (pathname.match(/^\/digital-worker\/dic\/.+$/)) return ['数字员工应用', '技术AI员工配置']

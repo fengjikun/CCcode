@@ -77,9 +77,9 @@ function graphStats(data: GraphData): GraphStats {
 }
 
 function reviewStatusTag(status: ReviewStatus) {
-  if (status === 'APPROVED') return <Tag color="success">APPROVED</Tag>
-  if (status === 'REJECTED') return <Tag color="error">REJECTED</Tag>
-  return <Tag color="warning">PENDING</Tag>
+  if (status === 'APPROVED') return <Tag color="success">已通过</Tag>
+  if (status === 'REJECTED') return <Tag color="error">已驳回</Tag>
+  return <Tag color="warning">待审核</Tag>
 }
 
 export default function ProjectGraphPage() {
@@ -133,7 +133,7 @@ export default function ProjectGraphPage() {
         setSelectedSource(undefined)
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '加载本体图谱失败'
+      const msg = err instanceof Error ? err.message : '加载本体数据集失败'
       setError(msg)
     } finally {
       setLoading(false)
@@ -147,11 +147,11 @@ export default function ProjectGraphPage() {
   const sourceOptions = useMemo(() => {
     if (!project) return []
     const versionOptions = project.versions.map(version => ({
-      label: `版本 ${version.version} · ${version.label}`,
+      label: `数据集版本 ${version.version} · ${version.label}`,
       value: `version:${version.id}`,
     }))
     const runOptions = project.runs.map(run => ({
-      label: `任务 ${new Date(run.createdAt).toLocaleString()} (${run.status})`,
+      label: `抽取任务 ${new Date(run.createdAt).toLocaleString()} (${run.status})`,
       value: `run:${run.id}`,
     }))
     return [...versionOptions, ...runOptions]
@@ -282,9 +282,9 @@ export default function ProjectGraphPage() {
       title: '类型',
       dataIndex: 'kind',
       width: 100,
-      render: (value: ReviewItem['kind']) => <Tag>{value}</Tag>,
+      render: (value: ReviewItem['kind']) => <Tag>{value === 'ENTITY' ? '实体' : '关系'}</Tag>,
     },
-    { title: '候选项', dataIndex: 'title', width: 280 },
+    { title: '数据集条目', dataIndex: 'title', width: 280 },
     {
       title: '置信度',
       dataIndex: 'confidence',
@@ -299,7 +299,7 @@ export default function ProjectGraphPage() {
       render: (value: ReviewStatus) => reviewStatusTag(value),
     },
     {
-      title: '审核',
+      title: '处理',
       key: 'action',
       width: 180,
       render: (_value, record: ReviewItem) => (
@@ -376,7 +376,7 @@ export default function ProjectGraphPage() {
   if (loading || versionItemsLoading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 420 }}>
-        <Spin size="large" tip="加载本体图谱..." />
+        <Spin size="large" tip="加载本体数据集..." />
       </div>
     )
   }
@@ -412,13 +412,13 @@ export default function ProjectGraphPage() {
             <Text type="secondary">本体：{project.name}</Text>
           </Space>
 
-          <Title level={5} style={{ margin: 0 }}>抽取结果图谱展示</Title>
-          <Text type="secondary">支持按版本/任务切换数据源，支持状态、关系、节点类型和关键词过滤。</Text>
+          <Title level={5} style={{ margin: 0 }}>本体数据集审核</Title>
+          <Text type="secondary">支持按数据集版本或抽取任务切换来源，并按审核状态、关系类型、节点类型和关键词过滤查看。</Text>
 
           <Space wrap>
             <Select
               style={{ minWidth: 420 }}
-              placeholder="选择版本或任务"
+              placeholder="选择数据集版本或抽取任务"
               value={selectedSource}
               options={sourceOptions}
               onChange={handleSourceChange}
@@ -428,12 +428,12 @@ export default function ProjectGraphPage() {
               style={{ minWidth: 260 }}
               value={allowedStatuses}
               options={[
-                { label: 'APPROVED', value: 'APPROVED' },
-                { label: 'PENDING', value: 'PENDING' },
-                { label: 'REJECTED', value: 'REJECTED' },
+                { label: '已通过', value: 'APPROVED' },
+                { label: '待审核', value: 'PENDING' },
+                { label: '已驳回', value: 'REJECTED' },
               ]}
               onChange={values => setAllowedStatuses(values)}
-              placeholder="审核状态过滤"
+              placeholder="按审核状态过滤"
             />
             <Select<string[]>
               mode="multiple"
@@ -442,7 +442,7 @@ export default function ProjectGraphPage() {
               value={selectedRelations}
               options={relationOptions}
               onChange={values => setSelectedRelations(values)}
-              placeholder="关系过滤"
+              placeholder="按关系类型过滤"
             />
             <Space>
               <Switch
@@ -450,49 +450,49 @@ export default function ProjectGraphPage() {
                 disabled={sourceIsVersion}
                 onChange={checked => setPendingOnly(checked)}
               />
-              <Text type="secondary">只看待审核</Text>
+              <Text type="secondary">仅看待审核</Text>
             </Space>
           </Space>
         </Space>
       </Card>
 
       {!selectedRun ? (
-        <Result status="info" title="暂无可展示数据" subTitle="请先在本体中完成抽取任务或发布版本" />
+        <Result status="info" title="暂无可展示的本体数据集" subTitle="请先完成抽取任务，或先发布一个数据集版本" />
       ) : (
         <>
-          <Card title="任务与审核">
+          <Card title="数据集概览与审核">
             <Space direction="vertical" style={{ width: '100%' }} size={12}>
               <Space wrap>
                 {sourceIsVersion ? (
                   <>
-                    <Tag color="success">版本视图</Tag>
-                    <Tag color="blue">实体 {versionItems.filter(i => i.kind === 'ENTITY').length}</Tag>
-                    <Tag color="purple">关系 {versionItems.filter(i => i.kind === 'RELATION').length}</Tag>
+                    <Tag color="success">数据集版本视图</Tag>
+                    <Tag color="blue">实体记录 {versionItems.filter(i => i.kind === 'ENTITY').length}</Tag>
+                    <Tag color="purple">关系记录 {versionItems.filter(i => i.kind === 'RELATION').length}</Tag>
                   </>
                 ) : (
                   <>
                     <Tag color={selectedRun.status === 'COMPLETED' ? 'success' : selectedRun.status === 'FAILED' ? 'error' : 'processing'}>
-                      任务状态: {selectedRun.status}
+                      抽取任务: {selectedRun.status}
                     </Tag>
                     <Tag color="blue">候选实体 {selectedRun.candidateEntityCount}</Tag>
                     <Tag color="purple">候选关系 {selectedRun.candidateRelationCount}</Tag>
                     <Tag color="orange">待审核 {selectedRun.pendingReviewCount}</Tag>
                   </>
                 )}
-                <Tag color="geekblue">列表实体 {filteredEntityCount}</Tag>
-                <Tag color="magenta">列表关系 {filteredRelationCount}</Tag>
-                <Tag color="cyan">图谱节点 {graphData.nodes.length}</Tag>
-                <Tag color="lime">图谱边 {graphData.links.length}</Tag>
+                <Tag color="geekblue">当前实体 {filteredEntityCount}</Tag>
+                <Tag color="magenta">当前关系 {filteredRelationCount}</Tag>
+                <Tag color="cyan">关联节点 {graphData.nodes.length}</Tag>
+                <Tag color="lime">关系连线 {graphData.links.length}</Tag>
               </Space>
               <Text type="secondary">
-                任务摘要中的候选实体/关系是 run 的统计值；当前列表与底部图谱都基于审核记录过滤结果，图谱会把关系转成边，并对同名同类型实体去重。
+                候选实体和候选关系来自抽取任务统计；当前列表与下方关联视图都基于过滤后的审核记录构建，并会对同名同类型实体去重。
               </Text>
               {sourceIsVersion && (
                 <Alert
                   type="info"
                   showIcon
-                  message="当前是版本视图（只读）"
-                  description="如需执行审核，请切换到某个抽取任务（run）视图。"
+                  message="当前为数据集版本视图（只读）"
+                  description="如需处理待审核记录，请切换到某个抽取任务视图。"
                 />
               )}
               <Space wrap>
@@ -501,7 +501,7 @@ export default function ProjectGraphPage() {
                   style={{ width: 320 }}
                   value={reviewKeyword}
                   onChange={event => setReviewKeyword(event.target.value)}
-                  placeholder="按候选项或证据搜索审核记录"
+                  placeholder="按条目名称或证据搜索数据集记录"
                 />
                 {!sourceIsVersion && (
                   <>
@@ -527,7 +527,7 @@ export default function ProjectGraphPage() {
                     <Text type="secondary">已勾选 {selectedReviewItemIds.length} 条</Text>
                   </>
                 )}
-                <Text type="secondary">当前列表：{filteredReviewItems.length} 条</Text>
+                <Text type="secondary">当前记录：{filteredReviewItems.length} 条</Text>
               </Space>
               <Table<ReviewItem>
                 rowKey="id"
@@ -549,8 +549,8 @@ export default function ProjectGraphPage() {
               <Alert
                 type="warning"
                 showIcon
-                message="当前过滤条件下无图谱数据"
-                description="你可以放宽状态过滤或清空关系过滤后重试。"
+                message="当前过滤条件下无可展示的本体数据集"
+                description="可以放宽审核状态、关系类型或关键词过滤后重试。"
               />
             </Card>
           ) : (
