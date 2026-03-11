@@ -46,6 +46,8 @@ export default function DataIngestionPage() {
   const [statusFilter, setStatusFilter] = useState<DataSourceStatus | 'all'>('all')
   const [sourceTypeFilter, setSourceTypeFilter] = useState<'structured' | 'unstructured' | 'all'>('all')
   const [keyword, setKeyword] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const reload = useCallback(() => {
     listDataSources().then(setDataSources)
@@ -70,6 +72,30 @@ export default function DataIngestionPage() {
       job.targetLabel,
     ].some(value => value.toLowerCase().includes(normalizedKeyword))
   }), [jobs, keyword, sourceTypeFilter, statusFilter])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [keyword, sourceTypeFilter, statusFilter])
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredJobs.length / pageSize))
+    if (currentPage > maxPage) {
+      setCurrentPage(maxPage)
+    }
+  }, [currentPage, filteredJobs.length, pageSize])
+
+  const pagination = useMemo<NonNullable<TableProps<IngestionJobView>['pagination']>>(() => ({
+    current: currentPage,
+    pageSize,
+    hideOnSinglePage: true,
+    showSizeChanger: filteredJobs.length > 10,
+    pageSizeOptions: ['10', '20', '50'],
+    showTotal: total => `共 ${total} 条`,
+    onChange: (page, nextPageSize) => {
+      setCurrentPage(page)
+      setPageSize(nextPageSize)
+    },
+  }), [currentPage, filteredJobs.length, pageSize])
 
   const stats = [
     { title: '任务总数', value: jobs.length, icon: <SyncOutlined />, cls: 'stat-primary' },
@@ -141,7 +167,7 @@ export default function DataIngestionPage() {
   return (
     <div className="page-container">
       <Card className="section-card">
-        <PageHeader title="数据接入任务" subtitle="统一查看静态采集任务、同步状态样本与最近结果" />
+        <PageHeader title="数据接入任务" subtitle="统一查看采集任务、同步状态样本与最近结果" />
 
         <StatCards items={stats} />
 
@@ -193,7 +219,7 @@ export default function DataIngestionPage() {
                 size="small"
                 columns={columns}
                 dataSource={filteredJobs}
-                pagination={false}
+                pagination={pagination}
                 locale={{ emptyText: '暂无匹配的接入任务，先到数据源管理中配置数据源' }}
               />
             </Card>
