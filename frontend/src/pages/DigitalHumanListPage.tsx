@@ -38,12 +38,14 @@ import {
   listDigitalHumans,
   updateDigitalHuman,
 } from '../api/digitalHuman'
+import { listAgents } from '../api/agentStudio'
 import { ONTOLOGY_CATALOG, type OntologyCatalogEntry } from '../mocks/skills/ontologyCatalog'
 import type { DigitalHuman, DigitalHumanType } from '../types/digitalHuman'
 import {
   DIGITAL_HUMAN_TYPE_ICONS,
   DIGITAL_HUMAN_TYPE_LABELS,
 } from '../types/digitalHuman'
+import type { Agent } from '../types/agent'
 import type { SkillIndustry } from '../types/skill'
 import { SKILL_INDUSTRY_LABELS } from '../types/skill'
 
@@ -188,6 +190,7 @@ function getHumanVisual(dh: DigitalHuman) {
 
 export default function DigitalHumanListPage() {
   const [list, setList] = useState<DigitalHuman[]>([])
+  const [agents, setAgents] = useState<Agent[]>([])
   const [filters, setFilters] = useState<FilterState>({
     industry: ALL_INDUSTRIES,
     phase: ALL_PHASES,
@@ -207,12 +210,18 @@ export default function DigitalHumanListPage() {
   const navigate = useNavigate()
 
   const reload = useCallback(() => {
-    listDigitalHumans()
-      .then(items => {
+    Promise.all([listDigitalHumans(), listAgents()])
+      .then(([items, agentItems]) => {
         setList(items)
+        setAgents(agentItems)
       })
       .catch(() => message.error('AI员工加载失败'))
   }, [])
+
+  const agentNameMap = useMemo(
+    () => new Map(agents.map(agent => [agent.id, agent.name])),
+    [agents],
+  )
 
   useEffect(() => {
     reload()
@@ -512,11 +521,14 @@ export default function DigitalHumanListPage() {
                   {pagedHumans.map(dh => {
                     const visual = getHumanVisual(dh)
                     const metaItems = [visual.label, dh.ontologyPhase, dh.trainingType].filter(Boolean)
+                    const linkedAgentNames = (dh.linkedAgentIds ?? [])
+                      .map(id => agentNameMap.get(id))
+                      .filter((name): name is string => Boolean(name))
                     return (
                       <Col key={dh.id} xs={24} md={12} xl={8}>
                         <Card
                           hoverable
-                          style={{ height: '100%', borderRadius: 16 }}
+                          style={{ height: '100%', borderRadius: 16, overflow: 'hidden' }}
                           bodyStyle={{ padding: 18, height: '100%', display: 'flex', flexDirection: 'column' }}
                           onClick={() => navigate(`/digital-worker/business/${dh.id}`)}
                         >
@@ -558,12 +570,37 @@ export default function DigitalHumanListPage() {
                               {dh.description || '暂无职责描述'}
                             </Paragraph>
 
-                            {dh.agentScene && (
-                              <Text type="secondary" style={{ fontSize: 12 }}>
-                                {dh.agentScene}
-                              </Text>
+                            {linkedAgentNames.length > 0 && (
+                              <div
+                                style={{
+                                  background: 'linear-gradient(135deg, #f8fafc 0%, #eef6ff 100%)',
+                                  border: '1px solid #dbeafe',
+                                  borderRadius: 12,
+                                  padding: 12,
+                                }}
+                              >
+                                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
+                                  Agent
+                                </Text>
+                                <Space size={[6, 6]} wrap>
+                                  {linkedAgentNames.map(name => (
+                                    <Tag
+                                      key={name}
+                                      style={{
+                                        marginInlineEnd: 0,
+                                        borderRadius: 999,
+                                        paddingInline: 10,
+                                        background: '#fff',
+                                        borderColor: '#bfdbfe',
+                                        color: '#1d4ed8',
+                                      }}
+                                    >
+                                      {name}
+                                    </Tag>
+                                  ))}
+                                </Space>
+                              </div>
                             )}
-
                             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginTop: 'auto' }}>
                               <Space wrap>
                                 {dh.projectId && (

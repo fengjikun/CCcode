@@ -26,23 +26,58 @@ describe('digitalHuman defaults', () => {
 
     expect(items[0]?.id).toBe('dh-default-device-fault')
     expect(items[0]?.name).toBe('设备运维诊断专员')
-    expect(items[0]?.linkedAgentIds).toEqual(['ag-001'])
+    expect(items[0]?.linkedAgentIds).toEqual(['ag-001', 'ag-006', 'ag-003'])
     expect(items[0]?.linkedSkillIds).toEqual([
       'skill-biz-0-0-1',
       'g-root-cause',
       'g-knowledge-retrieval',
       'g-work-order',
+      'skill-biz-1-6-27',
+      'g-document-parsing',
+      'g-conversation-qa',
+      'skill-biz-1-3-12',
+      'g-resource-scheduling',
+      'g-workflow-orchestration',
+      'g-decision-support',
     ])
 
     expect(items[1]?.id).toBe('dh-default-replenishment')
     expect(items[1]?.name).toBe('店货匹配运营决策专员')
     expect(items[1]?.ontologyCode).toBe('2.4.18')
-    expect(items[1]?.linkedAgentIds).toEqual(['ag-002'])
+    expect(items[1]?.linkedAgentIds).toEqual(['ag-002', 'ag-009', 'ag-007'])
     expect(items[1]?.linkedSkillIds).toEqual([
       'skill-biz-2-4-18',
       'g-workflow-orchestration',
       'g-decision-support',
       'g-work-order',
+      'skill-biz-2-3-12',
+      'g-alert-notification',
+      'skill-biz-2-5-22',
+      'g-recommendation',
+      'g-report-generation',
+    ])
+
+    expect(items.slice(0, 20).map(item => item.id)).toEqual([
+      'dh-default-device-fault',
+      'dh-default-replenishment',
+      'dh-default-repair-guide',
+      'dh-default-production-scheduling',
+      'dh-default-resource-matching',
+      'dh-default-product-planning',
+      'dh-default-shelf-optimization',
+      'dh-default-staff-scheduling',
+      'dh-default-clearance',
+      'dh-default-member-growth',
+      'dh-default-shopping-guide',
+      'dh-default-traceability',
+      'dh-default-delivery-dispatch',
+      'dh-default-fulfillment',
+      'dh-default-contract-risk',
+      'dh-default-cashflow',
+      'dh-default-root-insight',
+      'dh-default-talent-matching',
+      'dh-default-regulation-review',
+      'dh-default-dynamic-pricing',
     ])
   })
 
@@ -81,13 +116,51 @@ describe('digitalHuman defaults', () => {
 
     expect(items[0]?.name).toBe('设备运维诊断专员')
     expect(items[0]?.systemPrompt).toContain('设备运维诊断专员')
-    expect(items[0]?.linkedAgentIds).toEqual(['ag-001'])
+    expect(items[0]?.linkedAgentIds).toEqual(['ag-001', 'ag-006', 'ag-003'])
 
     expect(items[1]?.name).toBe('店货匹配运营决策专员')
     expect(items[1]?.type).toBe('store-matching')
     expect(items[1]?.projectId).toBe('proj-2418')
     expect(items[1]?.ontologyCode).toBe('2.4.18')
     expect(items[1]?.ontologyName).toBe('商品补货本体')
-    expect(items[1]?.linkedAgentIds).toEqual(['ag-002'])
+    expect(items[1]?.linkedAgentIds).toEqual(['ag-002', 'ag-009', 'ag-007'])
+  })
+
+  it('refreshes seeded content for recommended business AI workers', async () => {
+    storeValue = {
+      items: [
+        {
+          id: 'dh-default-production-scheduling',
+          name: '生产排产调度专员',
+          type: 'process-optimization',
+          description: '旧版排产描述',
+          targetUsers: '旧目标用户',
+          serviceBoundary: '旧服务边界',
+          systemPrompt: '旧提示词',
+          projectId: 'proj-1312',
+          ontologyCode: '1.3.12',
+          ontologyName: '生产排产本体',
+          ontologyIndustry: 'manufacturing',
+          ontologyPhase: '生产',
+          agentScene: '排产 Agent',
+          trainingType: '执行类',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+          linkedAgentIds: [],
+          linkedSkillIds: [],
+        },
+      ],
+    }
+
+    const { listDigitalHumans } = await import('./digitalHuman')
+
+    const items = await listDigitalHumans()
+    const scheduling = items.find(item => item.id === 'dh-default-production-scheduling')
+
+    expect(scheduling?.description).toBe('帮助生产管理者判断排产取舍和协同优先级，平衡交付承诺、换线成本、产能利用与现场稳定。')
+    expect(scheduling?.linkedAgentIds).toEqual(['ag-003', 'ag-005', 'ag-004'])
+    expect(scheduling?.targetUsers).toBe('计划调度员、车间主任、生产经理')
+    expect(scheduling?.serviceBoundary).toContain('负责排产建议和冲突分析')
+    expect(scheduling?.systemPrompt).toContain('你是生产排产调度专员')
   })
 })
