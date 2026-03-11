@@ -24,7 +24,6 @@ import {
   AppstoreOutlined,
   BranchesOutlined,
   BulbOutlined,
-  ClockCircleOutlined,
   DatabaseOutlined,
   DeleteOutlined,
   EditOutlined,
@@ -320,11 +319,7 @@ export default function ProjectsPage() {
             </div>
 
             {/* Footer */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text type="secondary" style={{ fontSize: 11 }}>
-                <ClockCircleOutlined style={{ marginRight: 4 }} />
-                {new Date(project.updatedAt).toLocaleDateString('zh-CN')}
-              </Text>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
               <Space size={0}>
                 <Tooltip title="编辑">
                   <Button type="text" size="small" icon={<EditOutlined />} onClick={e => openEdit(project, e)} style={{ color: '#5e6687' }} />
