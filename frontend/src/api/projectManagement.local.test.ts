@@ -97,6 +97,26 @@ describe('projectManagement local mock store', () => {
     expect(detail.currentVersionId).toBe('ver-rp-001')
   })
 
+  it('seeds legal regulations demo data with richer documents and versions', async () => {
+    const detail = await getProjectDetail('proj-5612')
+
+    expect(detail.name).toBe('法律法规库本体')
+    expect(detail.documents.some((item) => item.name.includes('个人信息保护法适用条款'))).toBe(true)
+    expect(detail.documents.some((item) => item.name.includes('SaaS主协议与数据处理协议审查样本'))).toBe(true)
+    expect(detail.documents).toHaveLength(8)
+    expect(detail.aiInsightRun?.id).toBe('ai-lr-001')
+    expect(detail.schemaConfig.entityTypes.some((item) => item.name === 'ComplianceObligation')).toBe(true)
+    expect(detail.schemaConfig.entityTypes.some((item) => item.name === 'ContractClause')).toBe(true)
+    expect(detail.schemaConfig.relationTypes.some((item) => item.name === 'constrains_clause')).toBe(true)
+    expect(detail.schemaConfig.skills.some((item) => item.id === 'sk-lr-003')).toBe(true)
+    expect(detail.runs.find((item) => item.id === 'run-lr-002')?.candidateEntityCount).toBe(52)
+    expect(detail.runs.find((item) => item.id === 'run-lr-002')?.candidateRelationCount).toBe(44)
+    expect(detail.versions).toHaveLength(2)
+    expect(detail.versions.find((item) => item.id === 'ver-lr-002')?.entityCount).toBe(52)
+    expect(detail.versions.find((item) => item.id === 'ver-lr-002')?.relationCount).toBe(44)
+    expect(detail.currentVersionId).toBe('ver-lr-002')
+  })
+
   it('keeps pinned projects ahead of newer projects in the configured order', async () => {
     const created = await createProject('最新测试本体', '用于验证置顶排序', 'general')
     await updateProject(created.id, '最新测试本体', '再次更新时间', 'general')

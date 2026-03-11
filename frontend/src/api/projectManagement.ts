@@ -26,7 +26,7 @@ import type {
 import { delay, rand } from './mockConfig'
 
 /** 当默认数据结构变化时递增此值，触发内存种子迁移 */
-const DATA_VERSION = 13
+const DATA_VERSION = 14
 
 interface ProjectStore {
   projects: ProjectDetail[]
@@ -65,6 +65,14 @@ const PROJECT_ENTITY_NAME_POOLS: Record<string, Record<string, string[]>> = {
     SizeProfile: ['女鞋标准尺码曲线', '男鞋标准尺码曲线', '旗舰店黄金尺码曲线'],
     ReplenishmentPlan: ['上海城市单品补货计划#001', '上海区域Nike Air Max 270补货计划', '门店14天覆盖补货计划'],
     PurchaseOrder: ['PO-SH-20260310-001', 'PO-SH-20260310-002', 'PO-SH-20260310-003'],
+  },
+  'proj-5612': {
+    Regulation: ['个人信息保护法', '数据安全法', '欧盟GDPR', '网络安全法', '标准合同条款(SCC)'],
+    Regulator: ['国家网信办', '欧盟数据保护委员会', '市场监管总局', '工业和信息化部'],
+    ComplianceObligation: ['取得单独同意', '开展个人信息保护影响评估', '建立最小必要处理机制', '保留审计日志', '设置跨境传输评估门槛'],
+    DataProcessingActivity: ['用户画像营销', '跨境客服工单同步', '员工考勤信息处理', '广告投放归因分析', '海外CRM客户数据同步'],
+    ContractClause: ['跨境数据传输条款', '数据留存期限条款', '第三方分包处理条款', '用户授权营销条款', '个人敏感信息处理条款'],
+    PenaltyCase: ['某电商App超范围收集处罚案', '某SaaS厂商未履行删除义务处罚案', '某出海业务未完成评估被责令整改', '某广告平台默认勾选授权被处罚案'],
   },
 }
 
@@ -917,6 +925,271 @@ const PRODUCT_REPLENISHMENT_FUNCTIONS: FunctionDefinition[] = [
   },
 ]
 
+const LEGAL_REGULATIONS_PROJECT_ID = 'proj-5612'
+const LEGAL_REGULATIONS_PROJECT_NAME = '法律法规库本体'
+const LEGAL_REGULATIONS_UPDATED_AT = '2026-03-11T09:20:00.000Z'
+const LEGAL_REGULATIONS_DESCRIPTION =
+  '通用业务 · 风险与合规领域法律法规知识库本体，覆盖法律法规、监管机构、合规义务、数据处理活动、合同条款、处罚案例与跨境传输要求；支持合同审查、隐私合规评估与政策适配。'
+
+const LEGAL_REGULATIONS_DOCUMENTS: ProjectDocument[] = [
+  {
+    id: 'doc-lr-001',
+    name: '个人信息保护法适用条款与企业责任清单.docx',
+    fileType: 'docx',
+    size: 186240,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-03T09:00:00.000Z',
+  },
+  {
+    id: 'doc-lr-002',
+    name: '数据安全法与重要数据分类分级映射说明.xlsx',
+    fileType: 'xlsx',
+    size: 228416,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-03T14:30:00.000Z',
+  },
+  {
+    id: 'doc-lr-003',
+    name: '欧盟GDPR核心义务与跨境传输约束.md',
+    fileType: 'md',
+    size: 96420,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-04T10:15:00.000Z',
+  },
+  {
+    id: 'doc-lr-004',
+    name: '网络安全法与等保2.0合规检查清单.xlsx',
+    fileType: 'xlsx',
+    size: 204800,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-05T11:20:00.000Z',
+  },
+  {
+    id: 'doc-lr-005',
+    name: '标准合同条款(SCC)与出境评估要点.md',
+    fileType: 'md',
+    size: 88576,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-06T09:40:00.000Z',
+  },
+  {
+    id: 'doc-lr-006',
+    name: 'SaaS主协议与数据处理协议审查样本.jsonl',
+    fileType: 'jsonl',
+    size: 64218,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-07T15:10:00.000Z',
+  },
+  {
+    id: 'doc-lr-007',
+    name: '广告法与用户授权营销限制案例库.docx',
+    fileType: 'docx',
+    size: 143360,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-08T13:00:00.000Z',
+  },
+  {
+    id: 'doc-lr-008',
+    name: '监管处罚案例与高频违规条款复盘.xlsx',
+    fileType: 'xlsx',
+    size: 196608,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-10T16:20:00.000Z',
+  },
+]
+
+const LEGAL_REGULATIONS_ENTITY_TYPES: EntityTypeConfig[] = [
+  {
+    id: 'et-lr-001',
+    name: 'Regulation',
+    description: '法律、行政法规、部门规章或行业监管制度等规范性文件。',
+    properties: [
+      { id: 'ep-lr-001', name: 'name', displayName: '法规名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-lr-002', name: 'jurisdiction', displayName: '适用法域', dataType: 'STRING', required: true, sortOrder: 2 },
+      { id: 'ep-lr-003', name: 'effectiveDate', displayName: '生效日期', dataType: 'DATE', required: false, sortOrder: 3 },
+      { id: 'ep-lr-004', name: 'topic', displayName: '主题领域', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-lr-002',
+    name: 'Regulator',
+    description: '监管机构或发布解释、处罚决定的主管部门。',
+    properties: [
+      { id: 'ep-lr-011', name: 'name', displayName: '机构名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-lr-012', name: 'region', displayName: '监管区域', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-lr-013', name: 'authorityType', displayName: '监管类型', dataType: 'STRING', required: false, sortOrder: 3 },
+    ],
+  },
+  {
+    id: 'et-lr-003',
+    name: 'ComplianceObligation',
+    description: '法规对企业提出的具体义务，如告知同意、最小必要、审计留痕等。',
+    properties: [
+      { id: 'ep-lr-021', name: 'title', displayName: '义务名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-lr-022', name: 'riskLevel', displayName: '风险等级', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-lr-023', name: 'controlPoint', displayName: '控制点', dataType: 'TEXT', required: false, sortOrder: 3 },
+      { id: 'ep-lr-024', name: 'articleRef', displayName: '条款引用', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-lr-004',
+    name: 'DataProcessingActivity',
+    description: '企业中的数据处理活动，如营销画像、跨境同步、客服工单处理等。',
+    properties: [
+      { id: 'ep-lr-031', name: 'name', displayName: '活动名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-lr-032', name: 'dataCategory', displayName: '数据类别', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-lr-033', name: 'crossBorder', displayName: '是否跨境', dataType: 'BOOLEAN', required: false, sortOrder: 3 },
+      { id: 'ep-lr-034', name: 'purpose', displayName: '处理目的', dataType: 'TEXT', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-lr-005',
+    name: 'ContractClause',
+    description: '合同、隐私政策、数据处理协议中的关键条款。',
+    properties: [
+      { id: 'ep-lr-041', name: 'clauseTitle', displayName: '条款标题', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-lr-042', name: 'clauseType', displayName: '条款类型', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-lr-043', name: 'reviewStatus', displayName: '审查状态', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-lr-044', name: 'riskNote', displayName: '风险说明', dataType: 'TEXT', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-lr-006',
+    name: 'PenaltyCase',
+    description: '监管处罚、责令整改或公开通报案例。',
+    properties: [
+      { id: 'ep-lr-051', name: 'caseTitle', displayName: '案例标题', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-lr-052', name: 'decisionDate', displayName: '处罚日期', dataType: 'DATE', required: false, sortOrder: 2 },
+      { id: 'ep-lr-053', name: 'penaltyResult', displayName: '处罚结果', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-lr-054', name: 'amount', displayName: '处罚金额', dataType: 'FLOAT', required: false, sortOrder: 4 },
+    ],
+  },
+]
+
+const LEGAL_REGULATIONS_RELATION_TYPES: RelationTypeConfig[] = [
+  { id: 'rt-lr-001', name: 'issued_by', domain: 'Regulation', range: 'Regulator', description: '法规由特定监管机构发布或解释。', properties: [] },
+  { id: 'rt-lr-002', name: 'imposes_obligation', domain: 'Regulation', range: 'ComplianceObligation', description: '法规定义企业需满足的义务要求。', properties: [] },
+  { id: 'rt-lr-003', name: 'governs_activity', domain: 'ComplianceObligation', range: 'DataProcessingActivity', description: '合规义务约束对应的数据处理活动。', properties: [] },
+  { id: 'rt-lr-004', name: 'constrains_clause', domain: 'Regulation', range: 'ContractClause', description: '法规约束合同和政策条款的写法。', properties: [] },
+  { id: 'rt-lr-005', name: 'requires_clause', domain: 'ComplianceObligation', range: 'ContractClause', description: '合规义务要求在合同中明确体现。', properties: [] },
+  { id: 'rt-lr-006', name: 'violated_in', domain: 'ComplianceObligation', range: 'PenaltyCase', description: '处罚案例反映特定义务被违反。', properties: [] },
+]
+
+const LEGAL_REGULATIONS_SKILLS: SkillConfig[] = [
+  { id: 'sk-lr-001', code: 'data_processing', name: '法规条款归档', enabled: true, prompt: '将法律法规、处罚案例和制度文本清洗为法规-条款-义务结构化视图', source: 'built_in', tags: ['legal', 'etl', 'compliance'] },
+  { id: 'sk-lr-002', code: 'graph_synthesis', name: '合规知识融合', enabled: true, prompt: '融合监管机构、法规条款、义务要求、数据处理活动和合同条款，形成可审查图谱', source: 'built_in', tags: ['legal', 'graph'] },
+  { id: 'sk-lr-003', code: 'custom', name: '合同风险审查编排', enabled: true, prompt: '针对 SaaS 主协议、DPA 和隐私政策自动识别高风险条款和缺失义务', source: 'built_in', tags: ['contract', 'review'] },
+]
+
+const LEGAL_REGULATIONS_AI_INSIGHT_RUN: AiInsightRun = {
+  id: 'ai-lr-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-10T09:00:00.000Z',
+  completedAt: '2026-03-10T09:08:00.000Z',
+  scannedDocumentCount: 8,
+  addedEntityCount: 6,
+  addedRelationCount: 6,
+  addedEntityNames: ['Regulation', 'Regulator', 'ComplianceObligation', 'DataProcessingActivity', 'ContractClause', 'PenaltyCase'],
+  addedRelationNames: ['issued_by', 'imposes_obligation', 'governs_activity', 'constrains_clause', 'requires_clause', 'violated_in'],
+  warnings: [],
+  stage: '完成',
+  currentDocument: 'SaaS主协议与数据处理协议审查样本.jsonl',
+  logs: [
+    '扫描 8 份法规条款、制度说明、处罚案例和合同审查样本',
+    '补齐 Regulation、Regulator、ComplianceObligation、DataProcessingActivity、ContractClause、PenaltyCase 六类法务合规实体',
+    '建立法规发布、义务约束、处理活动适用、合同审查和处罚追溯六条关键关系链路',
+  ],
+}
+
+const LEGAL_REGULATIONS_RUNS: ExtractionRun[] = [
+  {
+    id: 'run-lr-001',
+    status: 'COMPLETED',
+    progress: 100,
+    createdAt: '2026-03-07T10:00:00.000Z',
+    completedAt: '2026-03-07T10:09:00.000Z',
+    candidateEntityCount: 38,
+    candidateRelationCount: 29,
+    pendingReviewCount: 0,
+    stage: '完成',
+    currentDocument: '个人信息保护法适用条款与企业责任清单.docx',
+    logs: [
+      '抽取国内隐私与数据安全法规、监管机构及基础义务要求',
+      '识别法规实体 18 个、监管机构 6 个、义务和处理活动实体 14 个',
+      '形成法规到义务、义务到处理活动的基础合规链路',
+    ],
+    warnings: [],
+    reviewItems: [
+      { id: 'ri-lr-001', kind: 'ENTITY', title: '个人信息保护法 (Regulation)', evidence: '个人信息保护法适用条款与企业责任清单.docx', confidence: 0.99, status: 'APPROVED' },
+      { id: 'ri-lr-002', kind: 'ENTITY', title: '国家网信办 (Regulator)', evidence: '个人信息保护法适用条款与企业责任清单.docx', confidence: 0.98, status: 'APPROVED' },
+      { id: 'ri-lr-003', kind: 'ENTITY', title: '取得单独同意 (ComplianceObligation)', evidence: '个人信息保护法适用条款与企业责任清单.docx', confidence: 0.98, status: 'APPROVED' },
+      { id: 'ri-lr-004', kind: 'ENTITY', title: '用户画像营销 (DataProcessingActivity)', evidence: '欧盟GDPR核心义务与跨境传输约束.md', confidence: 0.97, status: 'APPROVED' },
+      { id: 'ri-lr-005', kind: 'RELATION', title: '个人信息保护法 (Regulation) → imposes_obligation → 取得单独同意 (ComplianceObligation)', evidence: '法规条款关系', confidence: 0.98, status: 'APPROVED' },
+      { id: 'ri-lr-006', kind: 'RELATION', title: '取得单独同意 (ComplianceObligation) → governs_activity → 用户画像营销 (DataProcessingActivity)', evidence: '法规条款关系', confidence: 0.97, status: 'APPROVED' },
+    ],
+  },
+  {
+    id: 'run-lr-002',
+    status: 'COMPLETED',
+    progress: 100,
+    createdAt: '2026-03-10T10:00:00.000Z',
+    completedAt: '2026-03-10T10:12:00.000Z',
+    candidateEntityCount: 52,
+    candidateRelationCount: 44,
+    pendingReviewCount: 0,
+    stage: '完成',
+    currentDocument: 'SaaS主协议与数据处理协议审查样本.jsonl',
+    logs: [
+      '在基础法规图谱上增量抽取 SaaS 合同、DPA、SCC 及监管处罚案例',
+      '识别跨境传输、数据留存、第三方分包和营销授权四类高风险合同条款',
+      '生成法律法规库候选实体 52 个、关系 44 条，支撑合同审查和跨境合规评估',
+    ],
+    warnings: [],
+    reviewItems: [
+      { id: 'ri-lr-101', kind: 'ENTITY', title: '欧盟GDPR (Regulation)', evidence: '欧盟GDPR核心义务与跨境传输约束.md', confidence: 0.99, status: 'APPROVED' },
+      { id: 'ri-lr-102', kind: 'ENTITY', title: '标准合同条款(SCC) (Regulation)', evidence: '标准合同条款(SCC)与出境评估要点.md', confidence: 0.98, status: 'APPROVED' },
+      { id: 'ri-lr-103', kind: 'ENTITY', title: '开展个人信息保护影响评估 (ComplianceObligation)', evidence: 'SaaS主协议与数据处理协议审查样本.jsonl', confidence: 0.97, status: 'APPROVED' },
+      { id: 'ri-lr-104', kind: 'ENTITY', title: '跨境客服工单同步 (DataProcessingActivity)', evidence: 'SaaS主协议与数据处理协议审查样本.jsonl', confidence: 0.97, status: 'APPROVED' },
+      { id: 'ri-lr-105', kind: 'ENTITY', title: '跨境数据传输条款 (ContractClause)', evidence: 'SaaS主协议与数据处理协议审查样本.jsonl', confidence: 0.98, status: 'APPROVED' },
+      { id: 'ri-lr-106', kind: 'ENTITY', title: '某出海业务未完成评估被责令整改 (PenaltyCase)', evidence: '监管处罚案例与高频违规条款复盘.xlsx', confidence: 0.96, status: 'APPROVED' },
+      { id: 'ri-lr-107', kind: 'RELATION', title: '欧盟GDPR (Regulation) → imposes_obligation → 开展个人信息保护影响评估 (ComplianceObligation)', evidence: '法规条款关系', confidence: 0.98, status: 'APPROVED' },
+      { id: 'ri-lr-108', kind: 'RELATION', title: '开展个人信息保护影响评估 (ComplianceObligation) → governs_activity → 跨境客服工单同步 (DataProcessingActivity)', evidence: '法规条款关系', confidence: 0.97, status: 'APPROVED' },
+      { id: 'ri-lr-109', kind: 'RELATION', title: '标准合同条款(SCC) (Regulation) → constrains_clause → 跨境数据传输条款 (ContractClause)', evidence: '合同条款关系', confidence: 0.97, status: 'APPROVED' },
+      { id: 'ri-lr-110', kind: 'RELATION', title: '开展个人信息保护影响评估 (ComplianceObligation) → violated_in → 某出海业务未完成评估被责令整改 (PenaltyCase)', evidence: '处罚案例关系', confidence: 0.96, status: 'APPROVED' },
+    ],
+  },
+]
+
+const LEGAL_REGULATIONS_VERSIONS: OntologyVersion[] = [
+  {
+    id: 'ver-lr-001',
+    version: 'v1.0',
+    label: '基础法规义务图谱',
+    createdAt: '2026-03-07T10:15:00.000Z',
+    sourceRunId: 'run-lr-001',
+    entityCount: 38,
+    relationCount: 29,
+  },
+  {
+    id: 'ver-lr-002',
+    version: 'v1.1',
+    label: '合同审查与跨境合规增强版',
+    createdAt: '2026-03-10T10:20:00.000Z',
+    sourceRunId: 'run-lr-002',
+    entityCount: 52,
+    relationCount: 44,
+  },
+]
+
 const FAULT_DIAGNOSIS_SKILLS: SkillConfig[] = [
   { id: 'sk-fd-001', code: 'fault_graph_loading', name: '图谱加载', enabled: true, prompt: '从 graph.jsonl 加载设备故障诊断本体的节点与关系数据', source: 'built_in', tags: ['graph', 'loading'] },
   { id: 'sk-fd-002', code: 'symptom_matching', name: '现象匹配', enabled: true, prompt: '根据报警码、趋势信号和描述匹配最可能的故障现象与细分特征', source: 'built_in', tags: ['diagnosis', 'matching'] },
@@ -1275,6 +1548,120 @@ function ensureProductReplenishmentSeed(project: ProjectDetail): boolean {
   return changed
 }
 
+function isLegalRegulationsProject(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
+  return project.id === LEGAL_REGULATIONS_PROJECT_ID || project.name === LEGAL_REGULATIONS_PROJECT_NAME
+}
+
+function ensureLegalRegulationsSeed(project: ProjectDetail): boolean {
+  if (!isLegalRegulationsProject(project)) {
+    return false
+  }
+
+  let changed = false
+
+  if (project.name !== LEGAL_REGULATIONS_PROJECT_NAME) {
+    project.name = LEGAL_REGULATIONS_PROJECT_NAME
+    changed = true
+  }
+
+  if (project.category !== 'general') {
+    project.category = 'general'
+    changed = true
+  }
+
+  if (project.description !== LEGAL_REGULATIONS_DESCRIPTION) {
+    project.description = LEGAL_REGULATIONS_DESCRIPTION
+    changed = true
+  }
+
+  if ((Date.parse(project.updatedAt || '') || 0) < Date.parse(LEGAL_REGULATIONS_UPDATED_AT)) {
+    project.updatedAt = LEGAL_REGULATIONS_UPDATED_AT
+    changed = true
+  }
+
+  const cleanedDocuments = removeItemsById(project.documents, ['doc-5.6.12-1', 'doc-5.6.12-2'])
+  if (cleanedDocuments.changed) {
+    project.documents = cleanedDocuments.items
+    changed = true
+  }
+
+  const mergedDocuments = mergeUniqueById(project.documents, cloneProjectData(LEGAL_REGULATIONS_DOCUMENTS))
+  if (mergedDocuments.changed) {
+    project.documents = mergedDocuments.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const cleanedEntityTypes = removeItemsById(project.schemaConfig.entityTypes, ['et-5.6.12-s', 'et-5.6.12-o'])
+  if (cleanedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = cleanedEntityTypes.items
+    changed = true
+  }
+
+  const mergedEntityTypes = mergeUniqueById(project.schemaConfig.entityTypes, cloneProjectData(LEGAL_REGULATIONS_ENTITY_TYPES))
+  if (mergedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = mergedEntityTypes.items
+    changed = true
+  }
+
+  const cleanedRelationTypes = removeItemsById(project.schemaConfig.relationTypes, ['rt-5.6.12-1'])
+  if (cleanedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = cleanedRelationTypes.items
+    changed = true
+  }
+
+  const mergedRelationTypes = mergeUniqueById(project.schemaConfig.relationTypes, cloneProjectData(LEGAL_REGULATIONS_RELATION_TYPES))
+  if (mergedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = mergedRelationTypes.items
+    changed = true
+  }
+
+  const mergedSkills = mergeUniqueById(project.schemaConfig.skills, cloneProjectData(LEGAL_REGULATIONS_SKILLS))
+  if (mergedSkills.changed) {
+    project.schemaConfig.skills = mergedSkills.items
+    changed = true
+  }
+
+  if (project.schemaConfig.entityScope !== '风险与合规场景中的法律法规、监管机构、合规义务、数据处理活动、合同条款与处罚案例等核心法务实体') {
+    project.schemaConfig.entityScope = '风险与合规场景中的法律法规、监管机构、合规义务、数据处理活动、合同条款与处罚案例等核心法务实体'
+    changed = true
+  }
+
+  if (project.schemaConfig.relationScope !== '覆盖法规发布、法规义务约束、数据处理活动适用、合同条款审查与处罚追溯的完整合规关系链路') {
+    project.schemaConfig.relationScope = '覆盖法规发布、法规义务约束、数据处理活动适用、合同条款审查与处罚追溯的完整合规关系链路'
+    changed = true
+  }
+
+  if (project.schemaConfig.updatedAt !== LEGAL_REGULATIONS_UPDATED_AT) {
+    project.schemaConfig.updatedAt = LEGAL_REGULATIONS_UPDATED_AT
+    changed = true
+  }
+
+  if (!project.aiInsightRun) {
+    project.aiInsightRun = cloneProjectData(LEGAL_REGULATIONS_AI_INSIGHT_RUN)
+    changed = true
+  }
+
+  const mergedRuns = mergeUniqueById(project.runs, cloneProjectData(LEGAL_REGULATIONS_RUNS))
+  if (mergedRuns.changed) {
+    project.runs = mergedRuns.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedVersions = mergeUniqueById(project.versions, cloneProjectData(LEGAL_REGULATIONS_VERSIONS))
+  if (mergedVersions.changed) {
+    project.versions = mergedVersions.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const versionExists = project.versions.some(version => version.id === project.currentVersionId)
+  if (!versionExists) {
+    project.currentVersionId = 'ver-lr-002'
+    changed = true
+  }
+
+  return changed
+}
+
 function deterministicConfidence(base: number, index: number, floor: number): number {
   return Number(Math.max(floor, base - (index % 12) * 0.01).toFixed(2))
 }
@@ -1450,6 +1837,9 @@ function normalizeStore(store: ProjectStore): boolean {
       changed = true
     }
     if (ensureProductReplenishmentSeed(project)) {
+      changed = true
+    }
+    if (ensureLegalRegulationsSeed(project)) {
       changed = true
     }
     for (const run of project.runs) {
