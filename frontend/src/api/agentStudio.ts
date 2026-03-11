@@ -4,7 +4,7 @@ import { normalizeServiceModelName } from '../types/modelCatalog'
 import { ensureMockStore, setMockStore } from './mockStoreClient'
 
 const STORE_KEY = 'agent-studio'
-const SEED_VERSION = 3
+const SEED_VERSION = 4
 const DEFAULT_TIMESTAMP = '2026-03-10T09:00:00.000Z'
 
 interface AgentStore {
@@ -97,6 +97,7 @@ function buildSeedAgent(spec: SeedSpec): Agent {
 }
 
 export const DEFAULT_AGENTS: Agent[] = [
+  // ── 制造·生产 ──
   buildSeedAgent({
     id: 'ag-001',
     code: '0.0.1',
@@ -109,6 +110,51 @@ export const DEFAULT_AGENTS: Agent[] = [
     skillIds: [buildBusinessSkillId('0.0.1'), 'g-root-cause', 'g-knowledge-retrieval', 'g-work-order'],
   }),
   buildSeedAgent({
+    id: 'ag-003',
+    code: '1.3.12',
+    name: '动态排产智能体',
+    type: 'Operational',
+    status: 'Active',
+    version: 'v1.2.0',
+    description: '遇到插单或设备异常时，自动重算全局最优开工排序，减少停产损失。',
+    model: 'Deepexi-R1-Reasoner',
+    skillIds: [buildBusinessSkillId('1.3.12'), 'g-resource-scheduling', 'g-workflow-orchestration', 'g-decision-support'],
+  }),
+  buildSeedAgent({
+    id: 'ag-004',
+    code: '1.3.13',
+    name: '质量溯源智能体',
+    type: 'Analytical',
+    status: 'Active',
+    version: 'v1.0.0',
+    description: '利用知识图谱反向追踪次品产生的具体工序与因素，输出质量归因报告。',
+    model: 'Deepexi-Industry-60B-Instruct',
+    skillIds: [buildBusinessSkillId('1.3.13'), 'g-root-cause', 'g-traceability', 'g-report-generation'],
+  }),
+  buildSeedAgent({
+    id: 'ag-005',
+    code: '1.4.18',
+    name: '库存自动补货智能体',
+    type: 'Operational',
+    status: 'Active',
+    version: 'v1.1.0',
+    description: '物料跌破安全库存阈值时，自动生成多供应商采购订单，保障产线连续性。',
+    model: 'Deepexi-R1-Reasoner',
+    skillIds: [buildBusinessSkillId('1.4.18'), 'g-workflow-orchestration', 'g-alert-notification', 'g-work-order'],
+  }),
+  buildSeedAgent({
+    id: 'ag-006',
+    code: '1.6.27',
+    name: '维修指引智能体',
+    type: 'Support',
+    status: 'Active',
+    version: 'v1.0.0',
+    description: '结合维护SOP本体，自动为现场工人生成可视化的分步维修作业指导书。',
+    model: 'Deepexi-Industry-60B-Instruct',
+    skillIds: [buildBusinessSkillId('1.6.27'), 'g-knowledge-retrieval', 'g-document-parsing', 'g-conversation-qa'],
+  }),
+  // ── 零售 ──
+  buildSeedAgent({
     id: 'ag-002',
     code: '2.4.18',
     name: '商品补货智能体',
@@ -118,6 +164,96 @@ export const DEFAULT_AGENTS: Agent[] = [
     description: '基于商品补货本体，结合销量流速、库存水位与尺码分布生成门店补货与调拨方案。',
     model: 'Deepexi-R1-Reasoner',
     skillIds: [buildBusinessSkillId('2.4.18'), 'g-workflow-orchestration', 'g-decision-support', 'g-work-order'],
+  }),
+  buildSeedAgent({
+    id: 'ag-007',
+    code: '2.5.22',
+    name: '精准营销推送智能体',
+    type: 'Operational',
+    status: 'Active',
+    version: 'v1.0.0',
+    description: '基于会员画像本体，针对不同消费标签的用户自动生成个性化优惠推送内容。',
+    model: 'Deepexi-Industry-60B-Instruct',
+    skillIds: [buildBusinessSkillId('2.5.22'), 'g-recommendation', 'g-decision-support', 'g-report-generation'],
+  }),
+  buildSeedAgent({
+    id: 'ag-008',
+    code: '2.5.24',
+    name: '舆情响应智能体',
+    type: 'Operational',
+    status: 'Testing',
+    version: 'v0.8.0',
+    description: '识别情感极性为负面的客户评论，自动触发补偿策略并安排人工介入。',
+    model: 'Deepexi-R1-Reasoner',
+    skillIds: [buildBusinessSkillId('2.5.24'), 'g-alert-notification', 'g-workflow-orchestration', 'g-work-order'],
+  }),
+  buildSeedAgent({
+    id: 'ag-009',
+    code: '2.3.12',
+    name: '临期清货智能体',
+    type: 'Operational',
+    status: 'Active',
+    version: 'v1.0.0',
+    description: '自动识别临期库存并向POS端下发折扣指令，加速陈旧库存周转，降低损耗率。',
+    model: 'Deepexi-R1-Reasoner',
+    skillIds: [buildBusinessSkillId('2.3.12'), 'g-decision-support', 'g-alert-notification', 'g-workflow-orchestration'],
+  }),
+  // ── 医疗 ──
+  buildSeedAgent({
+    id: 'ag-010',
+    code: '3.1.1',
+    name: '预诊分诊智能体',
+    type: 'Analytical',
+    status: 'Active',
+    version: 'v1.3.0',
+    description: '根据患者主诉，结合ICD-11诊断本体自动推荐挂号科室与紧急程度优先级。',
+    model: 'Deepexi-Industry-60B-Instruct',
+    skillIds: [buildBusinessSkillId('3.1.1'), 'g-risk-scoring', 'g-decision-support', 'g-conversation-qa'],
+  }),
+  buildSeedAgent({
+    id: 'ag-011',
+    code: '3.1.3',
+    name: '用药安全检查智能体',
+    type: 'Support',
+    status: 'Active',
+    version: 'v2.1.0',
+    description: '医生开方时自动扫描处方内药物的交互禁忌三元组，输出冲突预警与替代建议。',
+    model: 'Deepexi-Industry-60B-Instruct',
+    skillIds: [buildBusinessSkillId('3.1.3'), 'g-compliance-review', 'g-risk-scoring', 'g-knowledge-retrieval'],
+  }),
+  buildSeedAgent({
+    id: 'ag-012',
+    code: '3.2.9',
+    name: '医疗设备主动维保智能体',
+    type: 'Operational',
+    status: 'Testing',
+    version: 'v0.9.0',
+    description: '在大型医疗设备（MRI/CT等）故障前，根据传感器三元组主动触发预防性维保工单。',
+    model: 'Deepexi-R1-Reasoner',
+    skillIds: [buildBusinessSkillId('3.2.9'), 'g-root-cause', 'g-alert-notification', 'g-work-order'],
+  }),
+  // ── 交通 ──
+  buildSeedAgent({
+    id: 'ag-013',
+    code: '4.2.5',
+    name: '车辆能耗优化智能体',
+    type: 'Operational',
+    status: 'Active',
+    version: 'v1.0.0',
+    description: '实时监控货车工况本体，干预驾驶策略或自动驾驶参数，降低非必要油耗。',
+    model: 'Deepexi-R1-Reasoner',
+    skillIds: [buildBusinessSkillId('4.2.5'), 'g-kpi-attribution', 'g-decision-support', 'g-report-generation'],
+  }),
+  buildSeedAgent({
+    id: 'ag-014',
+    code: '4.4.11',
+    name: '物流时效督办智能体',
+    type: 'Operational',
+    status: 'Active',
+    version: 'v1.1.0',
+    description: '预测运输单延误风险，自动触发加急转单或多式联运切换，保障履约时效。',
+    model: 'Deepexi-R1-Reasoner',
+    skillIds: [buildBusinessSkillId('4.4.11'), 'g-workflow-orchestration', 'g-alert-notification', 'g-work-order'],
   }),
 ]
 
