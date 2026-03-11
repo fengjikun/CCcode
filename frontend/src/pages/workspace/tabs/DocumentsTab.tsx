@@ -52,10 +52,10 @@ export default function DocumentsTab({
         }
         await uploadProjectDocument(projectId, file)
       }
-      message.success('文档上传完成')
+      message.success('文档导入完成')
       loadProject()
     } catch (error: unknown) {
-      message.error(getErrorMessage(error, '上传文档失败'))
+      message.error(getErrorMessage(error, '导入文档失败'))
     } finally {
       setUploadingDocs(false)
       event.target.value = ''
@@ -280,7 +280,7 @@ export default function DocumentsTab({
                 loading={uploadingDocs}
                 onClick={() => fileInputRef.current?.click()}
               >
-                上传文档
+                导入文档
               </Button>
             </div>
           </Space>
@@ -303,7 +303,7 @@ export default function DocumentsTab({
         )}
         extra={(
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreateDataSourceModal}>
-            新增数据源
+            导入数据源
           </Button>
         )}
       >
