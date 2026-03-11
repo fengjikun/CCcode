@@ -1,6 +1,7 @@
 import type { HealthEntry, ActivityEntry } from '../types/dashboard'
 import { listAgents } from './agentStudio'
 import { listDataSources } from './dataSource'
+import { listDICWorkers } from './dicWorker'
 import { listDigitalHumans } from './digitalHuman'
 import { listModels, getGatewayStats } from './modelGateway'
 import { ensureMockStore, setMockStore } from './mockStoreClient'
@@ -99,6 +100,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     projectsResult,
     transformResult,
     digitalHumansResult,
+    dicWorkersResult,
     agentsResult,
     skillsResult,
     trainingJobsResult,
@@ -109,6 +111,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     listProjects(),
     listTransforms(),
     listDigitalHumans(),
+    listDICWorkers(),
     listAgents(),
     listSkills(),
     listTrainingJobs(),
@@ -121,7 +124,14 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     datasources: dataSourcesResult.status === 'fulfilled' ? dataSourcesResult.value.length : store.stats.datasources,
     ontologyProjects: projectsResult.status === 'fulfilled' ? projectsResult.value.length : store.stats.ontologyProjects,
     transformJobs: transformResult.status === 'fulfilled' ? transformResult.value.length : store.stats.transformJobs,
-    digitalWorkers: digitalHumansResult.status === 'fulfilled' ? digitalHumansResult.value.length : store.stats.digitalWorkers,
+    digitalWorkers:
+      digitalHumansResult.status === 'fulfilled' && dicWorkersResult.status === 'fulfilled'
+        ? digitalHumansResult.value.length + dicWorkersResult.value.length
+        : digitalHumansResult.status === 'fulfilled'
+          ? digitalHumansResult.value.length
+          : dicWorkersResult.status === 'fulfilled'
+            ? dicWorkersResult.value.length
+            : store.stats.digitalWorkers,
     agents: agentsResult.status === 'fulfilled' ? agentsResult.value.length : store.stats.agents,
     skills: skillsResult.status === 'fulfilled' ? skillsResult.value.length : store.stats.skills,
     trainingJobs: trainingJobsResult.status === 'fulfilled' ? trainingJobsResult.value.length : store.stats.trainingJobs,

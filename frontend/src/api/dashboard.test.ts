@@ -26,6 +26,10 @@ vi.mock('./digitalHuman', () => ({
   listDigitalHumans: vi.fn(async () => [{ id: 'dh-1' }]),
 }))
 
+vi.mock('./dicWorker', () => ({
+  listDICWorkers: vi.fn(async () => [{ id: 'dic-1' }, { id: 'dic-2' }]),
+}))
+
 vi.mock('./agentStudio', () => ({
   listAgents: vi.fn(async () => [{ id: 'ag-1' }, { id: 'ag-2' }, { id: 'ag-3' }]),
 }))
@@ -68,7 +72,7 @@ describe('dashboard stats aggregation', () => {
     expect(stats).toMatchObject({
       datasources: 2,
       transformJobs: 4,
-      digitalWorkers: 1,
+      digitalWorkers: 3,
       agents: 3,
       skills: 4,
       trainingJobs: 5,
