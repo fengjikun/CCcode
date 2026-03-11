@@ -32,7 +32,6 @@ import {
 import {
   deployModel,
   getGatewayStats,
-  getMonitoringStats,
   listModels,
   listRoutes,
   promoteModel,
@@ -41,7 +40,7 @@ import {
 } from '../../api/modelGateway'
 import ModalHeader from '../../components/shared/ModalHeader'
 import PageHeader from '../../components/shared/PageHeader'
-import type { GatewayStats, MonitoringStats } from '../../api/modelGateway'
+import type { GatewayStats } from '../../api/modelGateway'
 import type { DeployConfig, GatewayRoute, ModelStage, RegisteredModel } from '../../types/modelGateway'
 import { MODEL_STAGE_COLORS } from '../../types/modelGateway'
 import { MODEL_CENTER_PAGE_LABELS, MODEL_GATEWAY_PAGE_LABELS } from '../../types/modelCenter'
@@ -73,12 +72,6 @@ export default function GatewayModelsPage() {
     canaryCount: 0,
     stagingCount: 0,
   })
-  const [monitorStats, setMonitorStats] = useState<MonitoringStats>({
-    todayRequests: 0,
-    successRate: '—',
-    avgLatency: '—',
-    p99Latency: '—',
-  })
   const [models, setModels] = useState<RegisteredModel[]>([])
   const [routes, setRoutes] = useState<GatewayRoute[]>([])
   const [deployModalOpen, setDeployModalOpen] = useState(false)
@@ -90,7 +83,6 @@ export default function GatewayModelsPage() {
 
   const loadData = () => {
     void getGatewayStats().then(setStats)
-    void getMonitoringStats().then(setMonitorStats)
     void listModels().then(setModels)
     void listRoutes().then(setRoutes)
   }
@@ -191,13 +183,6 @@ export default function GatewayModelsPage() {
           <Text type="secondary" style={{ fontSize: 12 }}>{record.supportsImageInput ? '支持图片输入' : '仅文本输入'}</Text>
         </Space>
       ),
-    },
-    {
-      title: '阶段',
-      dataIndex: 'stage',
-      key: 'stage',
-      width: 110,
-      render: (value: ModelStage) => <Tag color={MODEL_STAGE_COLORS[value]}>{value}</Tag>,
     },
     {
       title: '延迟',
@@ -308,35 +293,9 @@ export default function GatewayModelsPage() {
         </Row>
 
         <Row gutter={[16, 16]}>
-          <Col span={16}>
+          <Col span={24}>
             <Card size="small" title="服务注册表">
               <Table dataSource={models} columns={modelColumns} rowKey="key" pagination={false} size="small" />
-            </Card>
-          </Col>
-          <Col span={8}>
-            <Card size="small" title="运行基线" style={{ marginBottom: 16 }}>
-              <Descriptions bordered size="small" column={1}>
-                <Descriptions.Item label="今日请求">{monitorStats.todayRequests.toLocaleString()}</Descriptions.Item>
-                <Descriptions.Item label="成功率">{monitorStats.successRate}</Descriptions.Item>
-                <Descriptions.Item label="平均延迟">{monitorStats.avgLatency}</Descriptions.Item>
-                <Descriptions.Item label="P99 延迟">{monitorStats.p99Latency}</Descriptions.Item>
-              </Descriptions>
-            </Card>
-            <Card size="small" title="发布策略">
-              <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                <div>
-                  <Text strong>1. Staging</Text>
-                  <div><Text type="secondary">验证新模型参数、资源规格与路由映射。</Text></div>
-                </div>
-                <div>
-                  <Text strong>2. Canary</Text>
-                  <div><Text type="secondary">逐步放量，默认从 10% 流量开始。</Text></div>
-                </div>
-                <div>
-                  <Text strong>3. Production</Text>
-                  <div><Text type="secondary">全量生效并纳入网关 SLA 监控。</Text></div>
-                </div>
-              </Space>
             </Card>
           </Col>
         </Row>
