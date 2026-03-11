@@ -112,6 +112,33 @@ ONTOLOGY_DEFS / 完整 seed 常量
 4. `DATA_VERSION + 1`
 5. 补或更新测试
 
+如果你只是想把这些已补齐本体的文档列表变多，不改 schema、动作、函数，可按下面的最小改法：
+
+1. 只改该本体对应的 `XXX_DOCUMENTS`
+2. 新增文档对象时保证：
+   - `id` 唯一，不要复用旧文档 `id`
+   - `name` 唯一，避免前端看起来像重复文档
+   - `uploadedAt` 合理，列表会按时间倒序展示
+   - `status / enabled / fileType / size` 填完整
+3. 如果该本体写死了 `XXX_AI_INSIGHT_RUN.scannedDocumentCount`，同步改成新的文档数量
+4. 如果测试里断言了 `documents.length` 或 `aiInsightRun.scannedDocumentCount`，同步更新测试
+5. `DATA_VERSION + 1`
+
+这类“只增文档数量”的场景通常不需要改：
+
+- `ONTOLOGY_DEFS`
+- `DATA_SOURCES`
+- `ENTITY_TYPES`
+- `RELATION_TYPES`
+- `ACTIONS`
+- `FUNCTIONS`
+- `ensureXxxSeed()` 的合并逻辑
+
+除非：
+
+- 你还想删旧文档，这时要同步检查 `removeItemsById(...)`
+- 你新增文档后希望 AI 洞察 / 抽取 run 的日志和统计也更真实，这时再补 `XXX_AI_INSIGHT_RUN` 或 `XXX_RUN`
+
 ---
 
 ### 场景 B：新增一个目录里已有、但工作台还是默认模板的本体
@@ -125,7 +152,7 @@ ONTOLOGY_DEFS / 完整 seed 常量
 5. `DATA_VERSION + 1`
 6. 增加测试
 
-当前“全渠道库存本体”属于这种模式；“会员画像本体”已经按这条路径补齐为完整 seed，可直接作为零售 CRM 场景参考。
+当前“全渠道库存本体”和“会员画像本体”都已经按这条路径补齐为完整 seed，可分别作为零售履约场景和零售 CRM 场景参考。
 
 ---
 
@@ -524,7 +551,7 @@ const OMNICHANNEL_INVENTORY_FUNCTIONS: FunctionDefinition[] = [...]
 
 然后把两者合并成“全渠道库存 + 履约决策”这一条更完整的零售链路。
 
-其中“任务调度本体”和“会员画像本体”都是最近按当前模式补齐的标准案例。
+其中“任务调度本体”“全渠道库存本体”和“会员画像本体”都是最近按当前模式补齐的标准案例。
 
 ---
 
@@ -558,6 +585,16 @@ const OMNICHANNEL_INVENTORY_FUNCTIONS: FunctionDefinition[] = [...]
 - 检查 `normalizeStore()` 里是否已接入 `ensureXxxSeed()`
 - `DATA_VERSION + 1`
 - 补或更新 `projectManagement.local.test.ts`
+- 运行测试
+
+### 只增加文档数量
+
+- 找到该本体对应的 `XXX_DOCUMENTS`
+- 追加新的 `ProjectDocument`
+- 确认新增文档 `id / name / uploadedAt` 唯一且合理
+- 如有固定统计，更新 `XXX_AI_INSIGHT_RUN.scannedDocumentCount`
+- 更新 `projectManagement.local.test.ts` 里的 `documents.length` 与相关文档名断言
+- `DATA_VERSION + 1`
 - 运行测试
 
 ---

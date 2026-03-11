@@ -26,7 +26,7 @@ import type {
 import { delay, rand } from './mockConfig'
 
 /** 当默认数据结构变化时递增此值，触发内存种子迁移 */
-const DATA_VERSION = 20
+const DATA_VERSION = 23
 
 interface ProjectStore {
   projects: ProjectDetail[]
@@ -65,6 +65,16 @@ const PROJECT_ENTITY_NAME_POOLS: Record<string, Record<string, string[]>> = {
     SizeProfile: ['女鞋标准尺码曲线', '男鞋标准尺码曲线', '旗舰店黄金尺码曲线'],
     ReplenishmentPlan: ['上海城市单品补货计划#001', '上海区域Nike Air Max 270补货计划', '门店14天覆盖补货计划'],
     PurchaseOrder: ['PO-SH-20260310-001', 'PO-SH-20260310-002', 'PO-SH-20260310-003'],
+  },
+  'proj-2421': {
+    ProductSku: ['Nike Air Max 270-黑色-42', 'Belle云感通勤鞋-米白-37', 'Adidas Samba OG-白绿-38', 'On Cloudmonster-灰橙-41'],
+    FulfillmentNode: ['华东上海闵行中心仓', '上海南京东路旗舰店', '上海五角场万达店', '前置仓-静安寺商圈', '退货翻新中心-青浦'],
+    InventorySnapshot: ['库存快照-闵行仓-2026-03-11', '库存快照-南京东路店-2026-03-11', '库存快照-五角场店-2026-03-11', '库存快照-前置仓-2026-03-11'],
+    ChannelOrder: ['订单#O2O-20260311-001', '订单#APP-20260311-028', '订单#小程序-20260311-043', '订单#门店云店-20260311-065'],
+    Reservation: ['预占单#RSV-20260311-001', '预占单#RSV-20260311-014', '预占单#RSV-20260311-029', '预占单#RSV-20260311-051'],
+    TransferTask: ['调拨任务#TF-20260311-001', '调拨任务#TF-20260311-009', '同城补货任务#TF-20260311-015', '门店返仓任务#TF-20260311-021'],
+    FulfillmentPolicy: ['门店优先自提策略', '同城2小时达策略', '缺货跨店履约策略', '滞销库存优先出清策略'],
+    FulfillmentDecision: ['履约决策#FD-20260311-001', '履约决策#FD-20260311-012', '履约决策#FD-20260311-020', '履约决策#FD-20260311-033'],
   },
   'proj-2522': {
     Member: ['会员ID:U100238', '会员ID:U100562', '会员ID:U100879', '会员ID:U101024', '会员ID:U101388'],
@@ -2092,6 +2102,505 @@ const TASK_SCHEDULING_FUNCTIONS: FunctionDefinition[] = [
   },
 ]
 
+const OMNICHANNEL_INVENTORY_PROJECT_ID = 'proj-2421'
+const OMNICHANNEL_INVENTORY_PROJECT_NAME = '全渠道库存本体'
+const OMNICHANNEL_INVENTORY_UPDATED_AT = '2026-03-11T12:05:00.000Z'
+const OMNICHANNEL_INVENTORY_DESCRIPTION =
+  '零售业 · 门店与运营领域全渠道库存本体，覆盖商品SKU、履约节点、库存快照、渠道订单、库存预占、调拨任务、履约策略与履约决策；支持跨仓跨店库存可视、O2O履约分配、同城调拨与缺货兜底决策。'
+
+const OMNICHANNEL_INVENTORY_DOCUMENTS: ProjectDocument[] = [
+  {
+    id: 'doc-oci-001',
+    name: '全渠道库存本体模型说明书.docx',
+    fileType: 'docx',
+    size: 224256,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-03T09:05:00.000Z',
+  },
+  {
+    id: 'doc-oci-002',
+    name: 'OMS订单履约路由与库存口径.xlsx',
+    fileType: 'xlsx',
+    size: 259072,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-04T10:10:00.000Z',
+  },
+  {
+    id: 'doc-oci-003',
+    name: '门店仓-前置仓库存同步规则.md',
+    fileType: 'md',
+    size: 100352,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-05T10:55:00.000Z',
+  },
+  {
+    id: 'doc-oci-004',
+    name: '同城调拨与缺货兜底样本.jsonl',
+    fileType: 'jsonl',
+    size: 74240,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-06T14:05:00.000Z',
+  },
+  {
+    id: 'doc-oci-005',
+    name: 'BOPIS自提SLA与门店履约规则.xlsx',
+    fileType: 'xlsx',
+    size: 212992,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-07T09:30:00.000Z',
+  },
+  {
+    id: 'doc-oci-006',
+    name: '库存预占释放与超卖回滚SOP.docx',
+    fileType: 'docx',
+    size: 185344,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-08T13:10:00.000Z',
+  },
+  {
+    id: 'doc-oci-007',
+    name: '全渠道库存健康看板指标说明.md',
+    fileType: 'md',
+    size: 92160,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-09T15:00:00.000Z',
+  },
+  {
+    id: 'doc-oci-008',
+    name: '履约分单决策训练样本.jsonl',
+    fileType: 'jsonl',
+    size: 76800,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T08:58:00.000Z',
+  },
+  {
+    id: 'doc-oci-009',
+    name: '跨店库存共享与锁库优先级规则.xlsx',
+    fileType: 'xlsx',
+    size: 198656,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T15:10:00.000Z',
+  },
+  {
+    id: 'doc-oci-010',
+    name: '门店自提超时释放与补单处理案例.md',
+    fileType: 'md',
+    size: 86400,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T16:00:00.000Z',
+  },
+  {
+    id: 'doc-oci-011',
+    name: '同城急送节点容量与波峰阈值配置.xlsx',
+    fileType: 'xlsx',
+    size: 189440,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T16:25:00.000Z',
+  },
+  {
+    id: 'doc-oci-012',
+    name: '前置仓缺货回退至中心仓策略说明.md',
+    fileType: 'md',
+    size: 84224,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T16:40:00.000Z',
+  },
+  {
+    id: 'doc-oci-013',
+    name: '门店店发包装能力与截单时间清单.xlsx',
+    fileType: 'xlsx',
+    size: 176128,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T17:00:00.000Z',
+  },
+  {
+    id: 'doc-oci-014',
+    name: '超卖补偿券自动发放规则.jsonl',
+    fileType: 'jsonl',
+    size: 71296,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T17:18:00.000Z',
+  },
+  {
+    id: 'doc-oci-015',
+    name: '履约节点成本模型与线路报价表.xlsx',
+    fileType: 'xlsx',
+    size: 208896,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T17:35:00.000Z',
+  },
+  {
+    id: 'doc-oci-016',
+    name: '门店缺货替代推荐与拆单案例库.md',
+    fileType: 'md',
+    size: 90112,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T17:48:00.000Z',
+  },
+  {
+    id: 'doc-oci-017',
+    name: '区域波次调拨日历与优先级矩阵.xlsx',
+    fileType: 'xlsx',
+    size: 195584,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T18:05:00.000Z',
+  },
+  {
+    id: 'doc-oci-018',
+    name: 'BOPIS到店提醒与核销异常排查手册.docx',
+    fileType: 'docx',
+    size: 166912,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T18:20:00.000Z',
+  },
+]
+
+const OMNICHANNEL_INVENTORY_DATA_SOURCES: StructuredDataSource[] = [
+  {
+    id: 'ds-oci-001',
+    name: 'OMS订单与履约中心',
+    type: 'POSTGRESQL',
+    host: '10.24.18.20',
+    port: 5432,
+    database: 'retail_oms_center',
+    username: 'oms_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['sales_order', 'order_fulfillment_plan', 'reservation_record'],
+    rowLimit: 260000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'updated_at',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:12:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-03T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:12:00.000Z',
+  },
+  {
+    id: 'ds-oci-002',
+    name: '门店仓与前置仓库存事件仓',
+    type: 'CLICKHOUSE',
+    host: '10.24.18.34',
+    port: 8123,
+    database: 'retail_inventory_event',
+    username: 'inv_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['inventory_snapshot', 'store_stock_delta', 'transfer_execution_log'],
+    rowLimit: 360000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'event_time',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:20:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-04T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:20:00.000Z',
+  },
+  {
+    id: 'ds-oci-003',
+    name: '履约规则与SLA策略库',
+    type: 'MYSQL',
+    host: '10.24.18.46',
+    port: 3306,
+    database: 'retail_fulfillment_rule',
+    username: 'rule_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['fulfillment_policy', 'bopis_sla_rule', 'node_capacity_snapshot'],
+    rowLimit: 120000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'updated_at',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:29:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-05T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:29:00.000Z',
+  },
+]
+
+const OMNICHANNEL_INVENTORY_ENTITY_TYPES: EntityTypeConfig[] = [
+  {
+    id: 'et-oci-001',
+    name: 'ProductSku',
+    description: '全渠道统一管理的商品 SKU。',
+    properties: [
+      { id: 'ep-oci-001', name: 'skuCode', displayName: 'SKU编码', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-oci-002', name: 'productName', displayName: '商品名称', dataType: 'STRING', required: true, sortOrder: 2 },
+      { id: 'ep-oci-003', name: 'category', displayName: '品类', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-oci-004', name: 'season', displayName: '季节', dataType: 'STRING', required: false, sortOrder: 4 },
+      { id: 'ep-oci-005', name: 'sizeColor', displayName: '尺码颜色', dataType: 'STRING', required: false, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-oci-002',
+    name: 'FulfillmentNode',
+    description: '可承担履约的仓库、门店、前置仓或返修中心。',
+    properties: [
+      { id: 'ep-oci-011', name: 'nodeCode', displayName: '节点编码', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-oci-012', name: 'nodeType', displayName: '节点类型', dataType: 'STRING', required: true, sortOrder: 2 },
+      { id: 'ep-oci-013', name: 'city', displayName: '城市', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-oci-014', name: 'pickupSupported', displayName: '支持自提', dataType: 'BOOLEAN', required: false, sortOrder: 4 },
+      { id: 'ep-oci-015', name: 'sameDaySupported', displayName: '支持当日达', dataType: 'BOOLEAN', required: false, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-oci-003',
+    name: 'InventorySnapshot',
+    description: '节点级库存快照，记录现存、可售和锁定库存。',
+    properties: [
+      { id: 'ep-oci-021', name: 'snapshotTime', displayName: '快照时间', dataType: 'DATETIME', required: true, sortOrder: 1 },
+      { id: 'ep-oci-022', name: 'onHandQty', displayName: '现存数量', dataType: 'FLOAT', required: true, sortOrder: 2 },
+      { id: 'ep-oci-023', name: 'sellableQty', displayName: '可售数量', dataType: 'FLOAT', required: false, sortOrder: 3 },
+      { id: 'ep-oci-024', name: 'reservedQty', displayName: '锁定数量', dataType: 'FLOAT', required: false, sortOrder: 4 },
+      { id: 'ep-oci-025', name: 'accuracyScore', displayName: '库存准确率', dataType: 'FLOAT', required: false, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-oci-004',
+    name: 'ChannelOrder',
+    description: '来自 App、小程序、门店云店等渠道的订单。',
+    properties: [
+      { id: 'ep-oci-031', name: 'orderNo', displayName: '订单号', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-oci-032', name: 'channel', displayName: '订单渠道', dataType: 'STRING', required: true, sortOrder: 2 },
+      { id: 'ep-oci-033', name: 'deliveryMode', displayName: '履约方式', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-oci-034', name: 'promisedHours', displayName: '承诺时效(小时)', dataType: 'INTEGER', required: false, sortOrder: 4 },
+      { id: 'ep-oci-035', name: 'customerRegion', displayName: '客户区域', dataType: 'STRING', required: false, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-oci-005',
+    name: 'Reservation',
+    description: '订单对库存的预占和释放记录。',
+    properties: [
+      { id: 'ep-oci-041', name: 'reservationNo', displayName: '预占单号', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-oci-042', name: 'reservedQty', displayName: '预占数量', dataType: 'FLOAT', required: true, sortOrder: 2 },
+      { id: 'ep-oci-043', name: 'status', displayName: '状态', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-oci-044', name: 'expiresAt', displayName: '失效时间', dataType: 'DATETIME', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-oci-006',
+    name: 'TransferTask',
+    description: '门店、仓库之间的补货、调拨或返仓任务。',
+    properties: [
+      { id: 'ep-oci-051', name: 'taskNo', displayName: '任务号', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-oci-052', name: 'taskType', displayName: '任务类型', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-oci-053', name: 'plannedQty', displayName: '计划数量', dataType: 'FLOAT', required: false, sortOrder: 3 },
+      { id: 'ep-oci-054', name: 'etaHours', displayName: '预计到达时效', dataType: 'INTEGER', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-oci-007',
+    name: 'FulfillmentPolicy',
+    description: '履约分单、库存兜底和 SLA 约束规则。',
+    properties: [
+      { id: 'ep-oci-061', name: 'policyName', displayName: '策略名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-oci-062', name: 'policyType', displayName: '策略类型', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-oci-063', name: 'priority', displayName: '优先级', dataType: 'INTEGER', required: false, sortOrder: 3 },
+      { id: 'ep-oci-064', name: 'costWeight', displayName: '成本权重', dataType: 'FLOAT', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-oci-008',
+    name: 'FulfillmentDecision',
+    description: '订单级履约决策结果，明确从哪个节点履约和是否需要调拨。',
+    properties: [
+      { id: 'ep-oci-071', name: 'decisionNo', displayName: '决策号', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-oci-072', name: 'decisionType', displayName: '决策类型', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-oci-073', name: 'expectedCost', displayName: '预计成本', dataType: 'FLOAT', required: false, sortOrder: 3 },
+      { id: 'ep-oci-074', name: 'promisedArrival', displayName: '承诺送达', dataType: 'DATETIME', required: false, sortOrder: 4 },
+      { id: 'ep-oci-075', name: 'decisionReason', displayName: '决策原因', dataType: 'TEXT', required: false, sortOrder: 5 },
+    ],
+  },
+]
+
+const OMNICHANNEL_INVENTORY_RELATION_TYPES: RelationTypeConfig[] = [
+  { id: 'rt-oci-001', name: 'stocked_at_node', domain: 'ProductSku', range: 'FulfillmentNode', description: 'SKU 在履约节点的库存归属。', properties: [] },
+  { id: 'rt-oci-002', name: 'tracked_by_snapshot', domain: 'ProductSku', range: 'InventorySnapshot', description: 'SKU 的库存快照记录。', properties: [] },
+  { id: 'rt-oci-003', name: 'ordered_as', domain: 'ChannelOrder', range: 'ProductSku', description: '订单关联的商品 SKU。', properties: [] },
+  { id: 'rt-oci-004', name: 'reserves_inventory', domain: 'ChannelOrder', range: 'Reservation', description: '订单触发的库存预占记录。', properties: [] },
+  { id: 'rt-oci-005', name: 'reservation_on_node', domain: 'Reservation', range: 'FulfillmentNode', description: '预占发生的库存节点。', properties: [] },
+  { id: 'rt-oci-006', name: 'fulfilled_by_node', domain: 'FulfillmentDecision', range: 'FulfillmentNode', description: '履约决策选择的执行节点。', properties: [] },
+  { id: 'rt-oci-007', name: 'decision_for_order', domain: 'FulfillmentDecision', range: 'ChannelOrder', description: '履约决策对应的订单。', properties: [] },
+  { id: 'rt-oci-008', name: 'guided_by_policy', domain: 'FulfillmentDecision', range: 'FulfillmentPolicy', description: '履约决策依据的策略规则。', properties: [] },
+  { id: 'rt-oci-009', name: 'triggers_transfer_task', domain: 'FulfillmentDecision', range: 'TransferTask', description: '履约决策触发的调拨任务。', properties: [] },
+  { id: 'rt-oci-010', name: 'moves_between_nodes', domain: 'TransferTask', range: 'FulfillmentNode', description: '调拨任务涉及的节点流转。', properties: [] },
+]
+
+const OMNICHANNEL_INVENTORY_SKILLS: SkillConfig[] = [
+  { id: 'sk-oci-001', code: 'data_processing', name: '全渠道库存整编', enabled: true, prompt: '统一 OMS、门店仓、前置仓和调拨日志，形成可售库存与履约节点视图', source: 'built_in', tags: ['retail', 'inventory'] },
+  { id: 'sk-oci-002', code: 'graph_synthesis', name: '履约决策图谱融合', enabled: true, prompt: '融合 SKU、节点、订单、预占、调拨、策略和履约决策，形成全渠道库存图谱', source: 'built_in', tags: ['retail', 'fulfillment'] },
+  { id: 'sk-oci-003', code: 'custom', name: '分单与调拨编排', enabled: true, prompt: '根据库存、节点时效和履约策略推荐分单节点与调拨方案', source: 'built_in', tags: ['retail', 'decision'] },
+]
+
+const OMNICHANNEL_INVENTORY_AI_INSIGHT_RUN: AiInsightRun = {
+  id: 'ai-oci-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-10T09:15:00.000Z',
+  completedAt: '2026-03-10T09:23:00.000Z',
+  scannedDocumentCount: 18,
+  addedEntityCount: 8,
+  addedRelationCount: 10,
+  addedEntityNames: ['ProductSku', 'FulfillmentNode', 'InventorySnapshot', 'ChannelOrder', 'Reservation', 'TransferTask', 'FulfillmentPolicy', 'FulfillmentDecision'],
+  addedRelationNames: ['stocked_at_node', 'tracked_by_snapshot', 'ordered_as', 'reserves_inventory', 'reservation_on_node', 'fulfilled_by_node', 'decision_for_order', 'guided_by_policy', 'triggers_transfer_task', 'moves_between_nodes'],
+  warnings: [],
+  stage: '完成',
+  currentDocument: '全渠道库存本体模型说明书.docx',
+  logs: [
+    '解析 8 份 OMS 履约、库存同步、BOPIS 规则和调拨策略资料',
+    '补齐 ProductSku、FulfillmentNode、InventorySnapshot、ChannelOrder、Reservation、TransferTask、FulfillmentPolicy、FulfillmentDecision 八类核心实体',
+    '形成库存归属、订单预占、履约分单、调拨联动和策略约束十条关键关系链路',
+  ],
+}
+
+const OMNICHANNEL_INVENTORY_RUN: ExtractionRun = {
+  id: 'run-oci-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-10T10:00:00.000Z',
+  completedAt: '2026-03-10T10:13:00.000Z',
+  candidateEntityCount: 80,
+  candidateRelationCount: 66,
+  pendingReviewCount: 0,
+  stage: '完成',
+  currentDocument: '履约分单决策训练样本.jsonl',
+  logs: [
+    '抽取全渠道订单、节点库存、预占释放、门店自提和同城调拨样本',
+    '识别超卖回滚、缺货跨店履约、滞销门店优先出清和同城2小时达等高频决策模式',
+    '形成全渠道库存候选实体 80 个、关系 66 条，支撑库存可视、分单履约和调拨协同',
+  ],
+  warnings: [],
+  reviewItems: [
+    { id: 'ri-oci-001', kind: 'ENTITY', title: 'Nike Air Max 270-黑色-42 (ProductSku)', evidence: 'OMS订单履约路由与库存口径.xlsx', confidence: 0.99, status: 'APPROVED' },
+    { id: 'ri-oci-002', kind: 'ENTITY', title: '上海南京东路旗舰店 (FulfillmentNode)', evidence: '门店仓-前置仓库存同步规则.md', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-oci-003', kind: 'ENTITY', title: '库存快照-南京东路店-2026-03-11 (InventorySnapshot)', evidence: '全渠道库存健康看板指标说明.md', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-oci-004', kind: 'ENTITY', title: '订单#O2O-20260311-001 (ChannelOrder)', evidence: '履约分单决策训练样本.jsonl', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-oci-005', kind: 'ENTITY', title: '预占单#RSV-20260311-001 (Reservation)', evidence: '库存预占释放与超卖回滚SOP.docx', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-oci-006', kind: 'ENTITY', title: '调拨任务#TF-20260311-001 (TransferTask)', evidence: '同城调拨与缺货兜底样本.jsonl', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-oci-007', kind: 'ENTITY', title: '门店优先自提策略 (FulfillmentPolicy)', evidence: 'BOPIS自提SLA与门店履约规则.xlsx', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-oci-008', kind: 'ENTITY', title: '履约决策#FD-20260311-001 (FulfillmentDecision)', evidence: '履约分单决策训练样本.jsonl', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-oci-009', kind: 'RELATION', title: 'Nike Air Max 270-黑色-42 (ProductSku) → stocked_at_node → 上海南京东路旗舰店 (FulfillmentNode)', evidence: '库存归属关系', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-oci-010', kind: 'RELATION', title: '订单#O2O-20260311-001 (ChannelOrder) → reserves_inventory → 预占单#RSV-20260311-001 (Reservation)', evidence: '预占关联关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-oci-011', kind: 'RELATION', title: '履约决策#FD-20260311-001 (FulfillmentDecision) → fulfilled_by_node → 上海南京东路旗舰店 (FulfillmentNode)', evidence: '分单关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-oci-012', kind: 'RELATION', title: '履约决策#FD-20260311-001 (FulfillmentDecision) → guided_by_policy → 门店优先自提策略 (FulfillmentPolicy)', evidence: '策略关系', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-oci-013', kind: 'RELATION', title: '履约决策#FD-20260311-001 (FulfillmentDecision) → triggers_transfer_task → 调拨任务#TF-20260311-001 (TransferTask)', evidence: '调拨触发关系', confidence: 0.96, status: 'APPROVED' },
+  ],
+}
+
+const OMNICHANNEL_INVENTORY_VERSION: OntologyVersion = {
+  id: 'ver-oci-001',
+  version: 'v1.1',
+  label: '全渠道库存与履约决策图谱',
+  createdAt: '2026-03-10T10:20:00.000Z',
+  sourceRunId: 'run-oci-001',
+  entityCount: 80,
+  relationCount: 66,
+}
+
+const OMNICHANNEL_INVENTORY_ACTIONS: ActionDefinition[] = [
+  {
+    id: 'act-oci-001',
+    name: 'refresh_sellable_inventory',
+    displayName: '刷新可售库存',
+    description: '根据现存库存、锁定库存和门店可售规则刷新节点可售库存。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-oci-003',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-oci-001","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"inventory.snapshot.ingested\\"}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_inventory_recheck","notifyRole":"渠道库存经理"}',
+    parametersJson: '[{"name":"snapshotId","displayName":"快照ID","dataType":"STRING","required":true},{"name":"onHandQty","displayName":"现存数量","dataType":"FLOAT","required":true},{"name":"reservedQty","displayName":"锁定数量","dataType":"FLOAT","required":true},{"name":"safetyBufferQty","displayName":"安全缓冲量","dataType":"FLOAT","required":true}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"InventorySnapshot","conditionJson":"{\\"when\\":\\"snapshotId_present\\"}","propertyMappingsJson":"{\\"sellableQty\\":\\"sellable_qty\\"}","sortOrder":1}]',
+    validationRulesJson: '[{"name":"snapshot_required","condition":"snapshotId != \\"\\"","message":"快照ID不能为空"},{"name":"qty_non_negative","condition":"onHandQty >= 0 and reservedQty >= 0 and safetyBufferQty >= 0","message":"库存数量不能为负数"}]',
+  },
+  {
+    id: 'act-oci-002',
+    name: 'decide_order_fulfillment',
+    displayName: '生成履约分单决策',
+    description: '基于节点库存、距离、SLA 和成本生成订单履约分单结果。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-oci-008',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-oci-002","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"order.created\\",\\"includeStorePickup\\":true}"},{"functionId":"fn-oci-003","order":2,"triggerType":"EVENT","triggerConfig":"{\\"allowTransferFallback\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_fulfillment_assignment","notifyRole":"OMS运营经理"}',
+    parametersJson: '[{"name":"orderNo","displayName":"订单号","dataType":"STRING","required":true},{"name":"promisedHours","displayName":"承诺时效","dataType":"INTEGER","required":true},{"name":"distanceKm","displayName":"距离公里数","dataType":"FLOAT","required":true},{"name":"deliveryMode","displayName":"履约方式","dataType":"STRING","required":true}]',
+    rulesJson: '[{"ruleType":"CREATE_OBJECT","target":"FulfillmentDecision","conditionJson":"{\\"when\\":\\"orderNo_present\\"}","propertyMappingsJson":"{\\"decisionType\\":\\"recommended_decision_type\\",\\"decisionReason\\":\\"decision_reason\\"}","sortOrder":1},{"ruleType":"CREATE_LINK","target":"ChannelOrder","conditionJson":"{\\"when\\":\\"orderNo_present\\"}","propertyMappingsJson":"{\\"from\\":\\"generated_decision_no\\",\\"relation\\":\\"decision_for_order\\",\\"to\\":\\"$orderNo\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"order_required","condition":"orderNo != \\"\\"","message":"订单号不能为空"},{"name":"hours_positive","condition":"promisedHours > 0","message":"承诺时效必须大于 0"},{"name":"distance_non_negative","condition":"distanceKm >= 0","message":"距离不能为负数"}]',
+  },
+  {
+    id: 'act-oci-003',
+    name: 'launch_transfer_task',
+    displayName: '发起库存调拨任务',
+    description: '当首选履约节点缺货时，自动生成跨店或跨仓调拨任务。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-oci-006',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-oci-003","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"fulfillment.decision.created\\",\\"requireShortage\\":true}"},{"functionId":"fn-oci-004","order":2,"triggerType":"EVENT","triggerConfig":"{\\"splitByNodeCapacity\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_transfer_dispatch","notifyRole":"调拨计划员"}',
+    parametersJson: '[{"name":"decisionNo","displayName":"决策号","dataType":"STRING","required":true},{"name":"shortageQty","displayName":"缺口数量","dataType":"FLOAT","required":true},{"name":"targetNode","displayName":"目标节点","dataType":"STRING","required":true},{"name":"etaHours","displayName":"预计时效","dataType":"INTEGER","required":true}]',
+    rulesJson: '[{"ruleType":"CREATE_OBJECT","target":"TransferTask","conditionJson":"{\\"when\\":\\"shortageQty > 0\\"}","propertyMappingsJson":"{\\"plannedQty\\":\\"transfer_qty\\",\\"etaHours\\":\\"$etaHours\\",\\"taskType\\":\\"replenishment_transfer\\"}","sortOrder":1}]',
+    validationRulesJson: '[{"name":"decision_required","condition":"decisionNo != \\"\\"","message":"决策号不能为空"},{"name":"shortage_positive","condition":"shortageQty >= 0","message":"缺口数量不能为负数"},{"name":"eta_positive","condition":"etaHours > 0","message":"预计时效必须大于 0"}]',
+  },
+]
+
+const OMNICHANNEL_INVENTORY_FUNCTIONS: FunctionDefinition[] = [
+  {
+    id: 'fn-oci-001',
+    name: '可售库存计算',
+    description: '根据现存、锁定和安全缓冲量计算节点可售库存。',
+    scriptContent: 'def calc_sellable_inventory(on_hand_qty: float, reserved_qty: float, safety_buffer_qty: float):\n    """计算可售库存。"""\n    sellable = max(on_hand_qty - reserved_qty - safety_buffer_qty, 0)\n    return {"sellableQty": round(sellable, 1)}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-oci-002',
+    name: '履约节点评分',
+    description: '综合距离、时效、库存余量和履约成本对候选节点打分。',
+    scriptContent: 'def score_fulfillment_node(distance_km: float, promised_hours: int, sellable_qty: float, logistics_cost: float, pickup_supported: bool = False):\n    """评估候选履约节点。"""\n    distance_score = max(0, 30 - min(distance_km, 30))\n    sla_score = 25 if promised_hours <= 4 else 18 if promised_hours <= 24 else 10\n    inventory_score = min(max(sellable_qty, 0), 20)\n    cost_score = max(0, 20 - min(logistics_cost, 20))\n    pickup_bonus = 6 if pickup_supported else 0\n    total = round(min(100, distance_score + sla_score + inventory_score + cost_score + pickup_bonus), 1)\n    return {"nodeScore": total}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-oci-003',
+    name: '履约方案推荐',
+    description: '根据节点评分和缺口数量推荐直发、自提或调拨履约方案。',
+    scriptContent: 'def recommend_fulfillment_plan(best_node_score: float, shortage_qty: float, delivery_mode: str, transfer_eta_hours: int = 0):\n    """推荐履约方案。"""\n    if shortage_qty <= 0 and best_node_score >= 60:\n        decision = "direct_fulfillment"\n    elif delivery_mode == "PICKUP" and best_node_score >= 50:\n        decision = "store_pickup"\n    elif transfer_eta_hours <= 8:\n        decision = "transfer_fallback"\n    else:\n        decision = "backorder_review"\n    return {"recommendedDecisionType": decision, "decisionReason": f"score={best_node_score}, shortage={shortage_qty}"}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-oci-004',
+    name: '调拨数量拆分',
+    description: '根据各节点可用库存和容量上限拆分调拨数量。',
+    scriptContent: 'def split_transfer_qty(shortage_qty: float, source_nodes: list[dict]):\n    """拆分调拨数量。"""\n    remain = max(shortage_qty, 0)\n    allocations = []\n    for node in sorted(source_nodes, key=lambda item: -item.get("sellableQty", 0)):\n        available = max(node.get("sellableQty", 0), 0)\n        qty = min(remain, available)\n        if qty > 0:\n            allocations.append({"nodeCode": node.get("nodeCode"), "qty": round(qty, 1)})\n            remain -= qty\n        if remain <= 0:\n            break\n    return {"allocations": allocations, "remainQty": round(remain, 1)}',
+    status: 'ACTIVE',
+  },
+]
+
 const MEMBER_PROFILE_PROJECT_ID = 'proj-2522'
 const MEMBER_PROFILE_PROJECT_NAME = '会员画像本体'
 const MEMBER_PROFILE_UPDATED_AT = '2026-03-11T11:45:00.000Z'
@@ -2170,6 +2679,69 @@ const MEMBER_PROFILE_DOCUMENTS: ProjectDocument[] = [
     status: 'READY',
     enabled: true,
     uploadedAt: '2026-03-11T09:05:00.000Z',
+  },
+  {
+    id: 'doc-mp-009',
+    name: '会员券包投放与领取漏斗周报.xlsx',
+    fileType: 'xlsx',
+    size: 194560,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T15:20:00.000Z',
+  },
+  {
+    id: 'doc-mp-010',
+    name: '高价值会员召回话术与A/B实验记录.md',
+    fileType: 'md',
+    size: 83200,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T16:10:00.000Z',
+  },
+  {
+    id: 'doc-mp-011',
+    name: '会员复购周期与品类偏好迁移分析.xlsx',
+    fileType: 'xlsx',
+    size: 186368,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T16:25:00.000Z',
+  },
+  {
+    id: 'doc-mp-012',
+    name: '企微导购一对一唤醒脚本库.docx',
+    fileType: 'docx',
+    size: 158720,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T16:45:00.000Z',
+  },
+  {
+    id: 'doc-mp-013',
+    name: '沉睡会员召回失败原因复盘.md',
+    fileType: 'md',
+    size: 80448,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T17:05:00.000Z',
+  },
+  {
+    id: 'doc-mp-014',
+    name: '会员等级升级触发条件与权益映射清单.xlsx',
+    fileType: 'xlsx',
+    size: 177152,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T17:22:00.000Z',
+  },
+  {
+    id: 'doc-mp-015',
+    name: '会员标签更新延迟与补偿任务案例.jsonl',
+    fileType: 'jsonl',
+    size: 68864,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T17:40:00.000Z',
   },
 ]
 
@@ -2362,7 +2934,7 @@ const MEMBER_PROFILE_AI_INSIGHT_RUN: AiInsightRun = {
   progress: 100,
   createdAt: '2026-03-10T09:20:00.000Z',
   completedAt: '2026-03-10T09:28:00.000Z',
-  scannedDocumentCount: 8,
+  scannedDocumentCount: 15,
   addedEntityCount: 8,
   addedRelationCount: 10,
   addedEntityNames: ['Member', 'MembershipTier', 'ChannelTouchpoint', 'ConsumptionEvent', 'PreferenceTag', 'CouponAsset', 'LifeCycleSegment', 'CampaignTask'],
@@ -2579,6 +3151,42 @@ const SUPPLIER_PROFILE_DOCUMENTS: ProjectDocument[] = [
     enabled: true,
     uploadedAt: '2026-03-11T08:50:00.000Z',
   },
+  {
+    id: 'doc-sp-009',
+    name: '备选供应商切换与产能爬坡评估.xlsx',
+    fileType: 'xlsx',
+    size: 203776,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T15:00:00.000Z',
+  },
+  {
+    id: 'doc-sp-010',
+    name: '供应商整改闭环追踪与复审纪要.md',
+    fileType: 'md',
+    size: 85120,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T15:50:00.000Z',
+  },
+  {
+    id: 'doc-sp-011',
+    name: '供应商季度审厂问题闭环统计.xlsx',
+    fileType: 'xlsx',
+    size: 181248,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T16:20:00.000Z',
+  },
+  {
+    id: 'doc-sp-012',
+    name: '关键物料双供切换演练记录.md',
+    fileType: 'md',
+    size: 79872,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T16:45:00.000Z',
+  },
 ]
 
 const SUPPLIER_PROFILE_DATA_SOURCES: StructuredDataSource[] = [
@@ -2768,7 +3376,7 @@ const SUPPLIER_PROFILE_AI_INSIGHT_RUN: AiInsightRun = {
   progress: 100,
   createdAt: '2026-03-10T09:10:00.000Z',
   completedAt: '2026-03-10T09:18:00.000Z',
-  scannedDocumentCount: 8,
+  scannedDocumentCount: 12,
   addedEntityCount: 8,
   addedRelationCount: 10,
   addedEntityNames: ['Supplier', 'MaterialCategory', 'Plant', 'DeliveryPerformance', 'QualityIssue', 'FinancialRisk', 'ComplianceCertificate', 'SupplierSegment'],
@@ -4201,6 +4809,10 @@ function isTaskSchedulingProject(project: Pick<ProjectDetail, 'id' | 'name'>): b
   return project.id === TASK_SCHEDULING_PROJECT_ID || project.name === TASK_SCHEDULING_PROJECT_NAME
 }
 
+function isOmnichannelInventoryProject(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
+  return project.id === OMNICHANNEL_INVENTORY_PROJECT_ID || project.name === OMNICHANNEL_INVENTORY_PROJECT_NAME
+}
+
 function isMemberProfileProject(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
   return project.id === MEMBER_PROFILE_PROJECT_ID || project.name === MEMBER_PROFILE_PROJECT_NAME
 }
@@ -4335,6 +4947,134 @@ function ensureTaskSchedulingSeed(project: ProjectDetail): boolean {
   const versionExists = project.versions.some(version => version.id === project.currentVersionId)
   if (!versionExists) {
     project.currentVersionId = TASK_SCHEDULING_VERSION.id
+    changed = true
+  }
+
+  return changed
+}
+
+function ensureOmnichannelInventorySeed(project: ProjectDetail): boolean {
+  if (!isOmnichannelInventoryProject(project)) {
+    return false
+  }
+
+  let changed = false
+
+  if (project.name !== OMNICHANNEL_INVENTORY_PROJECT_NAME) {
+    project.name = OMNICHANNEL_INVENTORY_PROJECT_NAME
+    changed = true
+  }
+
+  if (project.category !== 'retail') {
+    project.category = 'retail'
+    changed = true
+  }
+
+  if (project.description !== OMNICHANNEL_INVENTORY_DESCRIPTION) {
+    project.description = OMNICHANNEL_INVENTORY_DESCRIPTION
+    changed = true
+  }
+
+  if ((Date.parse(project.updatedAt || '') || 0) < Date.parse(OMNICHANNEL_INVENTORY_UPDATED_AT)) {
+    project.updatedAt = OMNICHANNEL_INVENTORY_UPDATED_AT
+    changed = true
+  }
+
+  const cleanedDocuments = removeItemsById(project.documents, ['doc-2.4.21-1', 'doc-2.4.21-2'])
+  if (cleanedDocuments.changed) {
+    project.documents = cleanedDocuments.items
+    changed = true
+  }
+
+  const mergedDocuments = mergeUniqueById(project.documents, cloneProjectData(OMNICHANNEL_INVENTORY_DOCUMENTS))
+  if (mergedDocuments.changed) {
+    project.documents = mergedDocuments.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedDataSources = mergeUniqueById(project.dataSources, cloneProjectData(OMNICHANNEL_INVENTORY_DATA_SOURCES))
+  if (mergedDataSources.changed) {
+    project.dataSources = mergedDataSources.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const cleanedEntityTypes = removeItemsById(project.schemaConfig.entityTypes, ['et-2.4.21-s', 'et-2.4.21-o'])
+  if (cleanedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = cleanedEntityTypes.items
+    changed = true
+  }
+
+  const mergedEntityTypes = mergeUniqueById(project.schemaConfig.entityTypes, cloneProjectData(OMNICHANNEL_INVENTORY_ENTITY_TYPES))
+  if (mergedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = mergedEntityTypes.items
+    changed = true
+  }
+
+  const cleanedRelationTypes = removeItemsById(project.schemaConfig.relationTypes, ['rt-2.4.21-1'])
+  if (cleanedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = cleanedRelationTypes.items
+    changed = true
+  }
+
+  const mergedRelationTypes = mergeUniqueById(project.schemaConfig.relationTypes, cloneProjectData(OMNICHANNEL_INVENTORY_RELATION_TYPES))
+  if (mergedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = mergedRelationTypes.items
+    changed = true
+  }
+
+  const mergedSkills = mergeUniqueById(project.schemaConfig.skills, cloneProjectData(OMNICHANNEL_INVENTORY_SKILLS))
+  if (mergedSkills.changed) {
+    project.schemaConfig.skills = mergedSkills.items
+    changed = true
+  }
+
+  if (project.schemaConfig.entityScope !== '零售门店与履约运营场景中的商品SKU、履约节点、库存快照、渠道订单、库存预占、调拨任务、履约策略与履约决策等核心库存协同实体') {
+    project.schemaConfig.entityScope = '零售门店与履约运营场景中的商品SKU、履约节点、库存快照、渠道订单、库存预占、调拨任务、履约策略与履约决策等核心库存协同实体'
+    changed = true
+  }
+
+  if (project.schemaConfig.relationScope !== '覆盖节点库存、订单预占、履约分单、策略约束、跨店跨仓调拨和缺货兜底决策的完整全渠道库存运营关系链路') {
+    project.schemaConfig.relationScope = '覆盖节点库存、订单预占、履约分单、策略约束、跨店跨仓调拨和缺货兜底决策的完整全渠道库存运营关系链路'
+    changed = true
+  }
+
+  if (project.schemaConfig.updatedAt !== OMNICHANNEL_INVENTORY_UPDATED_AT) {
+    project.schemaConfig.updatedAt = OMNICHANNEL_INVENTORY_UPDATED_AT
+    changed = true
+  }
+
+  if (!project.aiInsightRun) {
+    project.aiInsightRun = cloneProjectData(OMNICHANNEL_INVENTORY_AI_INSIGHT_RUN)
+    changed = true
+  }
+
+  const mergedRuns = mergeUniqueById(project.runs, cloneProjectData([OMNICHANNEL_INVENTORY_RUN]))
+  if (mergedRuns.changed) {
+    project.runs = mergedRuns.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedVersions = mergeUniqueById(project.versions, cloneProjectData([OMNICHANNEL_INVENTORY_VERSION]))
+  if (mergedVersions.changed) {
+    project.versions = mergedVersions.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedActions = mergeUniqueById(project.actions, cloneProjectData(OMNICHANNEL_INVENTORY_ACTIONS))
+  if (mergedActions.changed) {
+    project.actions = mergedActions.items
+    changed = true
+  }
+
+  const mergedFunctions = mergeUniqueById(project.functions, cloneProjectData(OMNICHANNEL_INVENTORY_FUNCTIONS))
+  if (mergedFunctions.changed) {
+    project.functions = mergedFunctions.items
+    changed = true
+  }
+
+  const versionExists = project.versions.some(version => version.id === project.currentVersionId)
+  if (!versionExists) {
+    project.currentVersionId = OMNICHANNEL_INVENTORY_VERSION.id
     changed = true
   }
 
@@ -5148,6 +5888,9 @@ function normalizeStore(store: ProjectStore): boolean {
       changed = true
     }
     if (ensureTaskSchedulingSeed(project)) {
+      changed = true
+    }
+    if (ensureOmnichannelInventorySeed(project)) {
       changed = true
     }
     if (ensureMemberProfileSeed(project)) {
