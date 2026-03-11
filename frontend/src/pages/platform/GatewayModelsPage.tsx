@@ -188,10 +188,7 @@ export default function GatewayModelsPage() {
       title: '延迟',
       key: 'latency',
       render: (_: unknown, record: RegisteredModel) => (
-        <Space direction="vertical" size={2}>
-          <Text>{record.latencyP50} / {record.latencyP99}</Text>
-          <Text type="secondary" style={{ fontSize: 12 }}>{record.gpuType} x {record.replicas}</Text>
-        </Space>
+        <Text>{record.latencyP50} / {record.latencyP99}</Text>
       ),
     },
     {
