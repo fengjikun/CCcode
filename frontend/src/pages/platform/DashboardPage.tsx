@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, Col, Row, Tag, Timeline, Typography } from 'antd'
+import { Card, Col, Row, Tag, Typography } from 'antd'
 import {
   DatabaseOutlined,
   FileSearchOutlined,
@@ -11,14 +11,10 @@ import {
   CloudServerOutlined,
   ThunderboltOutlined,
   DashboardOutlined,
-  SafetyCertificateOutlined,
-  ClockCircleOutlined,
-  UserOutlined,
   AppstoreOutlined,
   ArrowUpOutlined,
 } from '@ant-design/icons'
-import { getActivityData, getPlatformStats, type PlatformStats } from '../../api/dashboard'
-import type { ActivityEntry } from '../../types/dashboard'
+import { getPlatformStats, type PlatformStats } from '../../api/dashboard'
 import type { ReactNode } from 'react'
 
 const { Title, Text } = Typography
@@ -48,17 +44,10 @@ const stageTemplates: StageTemplate[] = [
   { key: 'application', label: 'Workflow Apps', labelZh: '业务应用', icon: <TeamOutlined />, color: '#0891b2', fallbackCount: 0, summary: '交付AI员工场景' },
 ]
 
-/* ───── 活动日志颜色 ───── */
-const levelColor: Record<ActivityEntry['level'], string> = {
-  info: 'blue', success: 'green', warning: 'orange', error: 'red',
-}
-
 export default function DashboardPage() {
-  const [activities, setActivities] = useState<ActivityEntry[]>([])
   const [stats, setStats] = useState<PlatformStats>({ datasources: 0, transformJobs: 0, objectTypes: 0, ontologyProjects: 0, agents: 0, skills: 0, trainingJobs: 0, deployedModels: 0, digitalWorkers: 0, totalRequests: '', avgLatency: '', uptime: '', activeUsers: 0 })
 
   useEffect(() => {
-    getActivityData().then(setActivities)
     getPlatformStats().then(setStats)
   }, [])
 
@@ -81,14 +70,12 @@ export default function DashboardPage() {
     { title: '已部署模型', value: stats.deployedModels, icon: <CloudServerOutlined />, color: '#ea580c', bg: '#fff7ed', trend: '+2' },
     { title: '日请求总量', value: stats.totalRequests, icon: <ThunderboltOutlined />, color: '#e11d48', bg: '#fff1f2', trend: '+18%' },
     { title: '平均延迟', value: stats.avgLatency, icon: <DashboardOutlined />, color: '#0891b2', bg: '#ecfeff', trend: '-5ms' },
-    { title: '平台可用率', value: stats.uptime, icon: <SafetyCertificateOutlined />, color: '#16a34a', bg: '#f0fdf4' },
-    { title: '活跃用户', value: stats.activeUsers, icon: <UserOutlined />, color: '#d97706', bg: '#fffbeb', trend: '+8' },
   ]
 
   const businessMetrics = [
     { title: '已上线AI员工', value: stats.digitalWorkers, note: '覆盖设备、采购、客服等核心流程', accent: '#0891b2', bg: '#ecfeff' },
     { title: '活跃业务场景', value: '8', note: '跨制造、供应链、共享服务中心落地', accent: '#7c3aed', bg: '#f5f3ff' },
-    { title: '近 7 日智能体会话', value: '18.6K', note: `较上周 +${stats.activeUsers}% 协作触达`, accent: '#ea580c', bg: '#fff7ed' },
+    { title: '近 7 日智能体会话', value: '18.6K', note: '核心场景协作触达持续增长', accent: '#ea580c', bg: '#fff7ed' },
     { title: '自动完成率', value: '82%', note: '高频流程已形成稳定自动闭环', accent: '#16a34a', bg: '#f0fdf4' },
   ]
 
@@ -166,7 +153,7 @@ export default function DashboardPage() {
       {/* ── Stat cards — 带图标和趋势 ── */}
       <Row gutter={[14, 14]} className="dashboard-stat-row" style={{ marginBottom: 16 }}>
         {statCards.map(s => (
-          <Col xs={24} sm={12} xl={6} key={s.title} className="dashboard-grid-col">
+          <Col xs={24} sm={12} lg={8} xl={4} key={s.title} className="dashboard-grid-col">
             <Card
               size="small"
               className="stat-card card-hover dashboard-stat-card"
@@ -200,9 +187,9 @@ export default function DashboardPage() {
         ))}
       </Row>
 
-      {/* ── Business outcomes + Activity ── */}
+      {/* ── Business outcomes ── */}
       <Row gutter={[16, 16]} className="dashboard-main-row">
-        <Col xs={24} xl={16}>
+        <Col span={24}>
           <Card
             className="section-card dashboard-main-card"
             title={
@@ -249,39 +236,6 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
-          </Card>
-        </Col>
-        <Col xs={24} xl={8}>
-          <Card
-            className="section-card dashboard-main-card"
-            title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{
-                  width: 28, height: 28, borderRadius: 8,
-                  background: '#eef2ff', color: '#4f46e5',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 14,
-                }}>
-                  <ClockCircleOutlined />
-                </div>
-                <span style={{ fontWeight: 600 }}>活动样本</span>
-              </div>
-            }
-          >
-            <Timeline
-              items={activities.map(a => ({
-                color: levelColor[a.level],
-                children: (
-                  <div style={{ fontSize: 12 }}>
-                    <Text type="secondary" style={{ fontFamily: 'monospace', marginRight: 8, fontSize: 11 }}>{a.time}</Text>
-                    <Tag color={levelColor[a.level]} style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px', borderRadius: 4 }}>{a.user}</Tag>
-                    <br />
-                    <span style={{ color: '#1a1f36' }}>{a.action}</span>
-                    <Text type="secondary" style={{ marginLeft: 4, fontSize: 11 }}>{a.target}</Text>
-                  </div>
-                ),
-              }))}
-            />
           </Card>
         </Col>
       </Row>

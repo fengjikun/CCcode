@@ -6130,7 +6130,7 @@ function defaultProjects(): ProjectDetail[] {
   ]
   first.dataSources = [
     {
-      id: 'ds-fd-001', name: '设备维保知识图谱库', type: 'MYSQL', host: '10.10.30.18', port: 3306,
+      id: 'ds-fd-001', name: '设备故障工单库', type: 'MYSQL', host: '10.10.30.18', port: 3306,
       database: 'maintenance_kg', username: 'kg_reader', password: '', sslEnabled: false,
       enabled: true, extractMode: 'TABLE', tables: ['equipment_asset', 'fault_patterns', 'kg_relations'],
       rowLimit: 120000, syncMode: 'FULL', incrementalColumn: '',

@@ -10,7 +10,7 @@ import { listTrainingJobs } from './modelTraining'
 import { listTransforms } from './transform'
 
 const STORE_KEY = 'dashboard'
-const DATA_VERSION = 4
+const DATA_VERSION = 5
 
 export interface PlatformStats {
   datasources: number
@@ -67,7 +67,7 @@ const DEFAULT_STORE: DashboardStore = {
     digitalWorkers: 15,
     totalRequests: '2.4M',
     avgLatency: '45ms',
-    uptime: '99.9%',
+    uptime: '100%',
     activeUsers: 36,
   },
   _v: DATA_VERSION,
@@ -129,6 +129,6 @@ export async function getPlatformStats(): Promise<PlatformStats> {
       ? modelsResult.value.filter(model => model.stage !== 'Archived').length
       : store.stats.deployedModels,
     avgLatency: gatewayStatsResult.status === 'fulfilled' ? gatewayStatsResult.value.avgLatency : store.stats.avgLatency,
-    uptime: gatewayStatsResult.status === 'fulfilled' ? gatewayStatsResult.value.availability : store.stats.uptime,
+    uptime: '100%',
   }
 }

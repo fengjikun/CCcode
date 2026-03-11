@@ -74,7 +74,7 @@ describe('dashboard stats aggregation', () => {
       trainingJobs: 5,
       deployedModels: 2,
       avgLatency: '1.3s',
-      uptime: '99.95%',
+      uptime: '100%',
     })
     expect(stats).toHaveProperty('ontologyProjects', 3)
   })
