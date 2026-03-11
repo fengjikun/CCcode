@@ -67,6 +67,25 @@ describe('projectManagement local mock store', () => {
     expect(projects.slice(0, 18).map(project => project.name)).toEqual(FEATURED_PROJECT_ORDER)
   })
 
+  it('expands version history for the first 10 pinned ontologies to 3-8 versions', async () => {
+    const projects = await listProjects()
+    const firstTen = await Promise.all(projects.slice(0, 10).map(project => getProjectDetail(project.id)))
+
+    firstTen.forEach((detail) => {
+      expect(detail.versions.length).toBeGreaterThanOrEqual(3)
+      expect(detail.versions.length).toBeLessThanOrEqual(8)
+      expect(detail.currentVersionId).toBeTruthy()
+      expect(detail.versions.some(version => version.id === detail.currentVersionId)).toBe(true)
+    })
+
+    const categoryProject = firstTen.find(detail => detail.name === '品类架构本体')
+    expect(categoryProject?.versions).toHaveLength(3)
+    expect(categoryProject?.runs).toHaveLength(3)
+
+    const versionItems = await getVersionItems(categoryProject!.id, categoryProject!.versions[0]!.id)
+    expect(versionItems.length).toBeGreaterThan(0)
+  })
+
   it('seeds 8D fault diagnosis documents and ontology mock data into the pinned project', async () => {
     const detail = await getProjectDetail('proj-001')
 

@@ -24,7 +24,7 @@ describe('agentStudio defaults', () => {
 
     const agents = await listAgents()
 
-    expect(agents.some((agent) => agent.name === '设备运维诊断专员')).toBe(true)
+    expect(agents.some((agent) => agent.name === '设备运维诊断智能体')).toBe(true)
     expect(agents.some((agent) => agent.name === '店货匹配运营决策专员')).toBe(true)
 
     const faultAgent = agents.find((agent) => agent.id === 'ag-001')
@@ -67,10 +67,10 @@ describe('agentStudio defaults', () => {
     const replenishmentAgent = agents.find((agent) => agent.id === 'ag-002')
 
     expect(agents).toHaveLength(2)
-    expect(upgradedFaultAgent?.name).toBe('设备运维诊断专员')
+    expect(upgradedFaultAgent?.name).toBe('设备运维诊断智能体')
     expect(upgradedFaultAgent?.ontologyName).toBe('故障诊断本体')
     expect(upgradedFaultAgent?.contextSummary).toContain('故障诊断本体')
-    expect(upgradedFaultAgent?.systemPrompt).toContain('设备运维诊断专员')
+    expect(upgradedFaultAgent?.systemPrompt).toContain('设备运维诊断智能体')
     expect(upgradedFaultAgent?.systemPrompt).toContain('故障诊断本体')
     expect(upgradedFaultAgent?.skillIds).toEqual([
       'skill-biz-0-0-1',

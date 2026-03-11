@@ -155,7 +155,7 @@ function generateMockReply(
     steps: [
       { title: '理解问题', content: `正在分析您的问题...\n已关联设备上下文：${deviceName}\n当前设备状态：${deviceContext?.status ?? '未知'}` },
     ],
-    reply: `您好！我是设备运维诊断专员。\n\n当前 ${deviceName} 的状态：\n- **故障类型**：${faultType}\n- **描述**：${deviceContext?.description ?? '暂无详细描述'}\n- **运行时长**：${deviceContext?.runningHours?.toLocaleString() ?? '—'} 小时\n\n我可以帮您：\n1. 🔍 **故障诊断分析** — 分析根因与影响范围\n2. 🔧 **生成维修工单** — 制定修复方案与备件清单\n3. 📊 **查看历史记录** — 检索同类故障与维修历史\n\n请问您需要哪方面的帮助？`,
+    reply: `您好！我是设备运维诊断智能体。\n\n当前 ${deviceName} 的状态：\n- **故障类型**：${faultType}\n- **描述**：${deviceContext?.description ?? '暂无详细描述'}\n- **运行时长**：${deviceContext?.runningHours?.toLocaleString() ?? '—'} 小时\n\n我可以帮您：\n1. 🔍 **故障诊断分析** — 分析根因与影响范围\n2. 🔧 **生成维修工单** — 制定修复方案与备件清单\n3. 📊 **查看历史记录** — 检索同类故障与维修历史\n\n请问您需要哪方面的帮助？`,
   }
 }
 

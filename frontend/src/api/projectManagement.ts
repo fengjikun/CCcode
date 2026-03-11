@@ -26,7 +26,7 @@ import type {
 import { delay, rand } from './mockConfig'
 
 /** 当默认数据结构变化时递增此值，触发内存种子迁移 */
-const DATA_VERSION = 23
+const DATA_VERSION = 24
 
 interface ProjectStore {
   projects: ProjectDetail[]
@@ -5869,6 +5869,137 @@ function normalizeRun(project: ProjectDetail, run: ExtractionRun, createId: () =
   return changed
 }
 
+function ensureFeaturedProjectVersionHistory(project: ProjectDetail): boolean {
+  const targetCount = FEATURED_PROJECT_VERSION_TARGETS[project.name]
+  if (!targetCount) {
+    return false
+  }
+
+  let changed = false
+  const existingVersionIds = new Set(project.versions.map(item => item.id))
+  const existingRunIds = new Set(project.runs.map(item => item.id))
+  const sortedVersions = [...project.versions].sort(byIsoDesc)
+  const latestVersion = sortedVersions[0]
+  const labelStem = project.name.replace(/本体/g, '').trim()
+  const baseEntityCount = latestVersion?.entityCount ?? Math.max(project.schemaConfig.entityTypes.length * 10, 24)
+  const baseRelationCount = latestVersion?.relationCount ?? Math.max(project.schemaConfig.relationTypes.length * 8, 12)
+  const minEntityCount = Math.max(project.schemaConfig.entityTypes.length * 3, 12)
+  const minRelationCount = Math.max(project.schemaConfig.relationTypes.length * 2, 6)
+  const entityStep = Math.max(2, Math.round(baseEntityCount / (targetCount + 4)))
+  const relationStep = Math.max(1, Math.round(baseRelationCount / (targetCount + 5)))
+  const existingVersionNumbers = new Set<number>()
+
+  sortedVersions.forEach((version) => {
+    const parsed = Number(version.version.replace(/^v/, ''))
+    if (Number.isFinite(parsed)) {
+      existingVersionNumbers.add(Number(parsed.toFixed(1)))
+    }
+  })
+
+  const latestVersionNumber = sortedVersions.length > 0
+    ? Math.max(...Array.from(existingVersionNumbers))
+    : 1.1
+  const missingCount = Math.max(0, targetCount - sortedVersions.length)
+  const oldestReferenceTime = sortedVersions.length > 0
+    ? Math.min(...sortedVersions.map(version => Date.parse(version.createdAt || '') || 0).filter(time => time > 0))
+    : (Date.parse(project.updatedAt || project.createdAt || '') || Date.parse('2026-03-01T09:00:00.000Z'))
+  const newRuns: ExtractionRun[] = []
+  const newVersions: OntologyVersion[] = []
+
+  if (missingCount > 0) {
+    const syntheticVersionNumbers: number[] = []
+    if (sortedVersions.length > 0) {
+      let cursor = latestVersionNumber - 0.1
+      while (syntheticVersionNumbers.length < missingCount) {
+        const rounded = Number(cursor.toFixed(1))
+        if (rounded > 0 && !existingVersionNumbers.has(rounded)) {
+          syntheticVersionNumbers.unshift(rounded)
+          existingVersionNumbers.add(rounded)
+        }
+        cursor -= 0.1
+      }
+    } else {
+      const start = 1.1 - (targetCount - 1) * 0.1
+      for (let index = 0; index < missingCount; index += 1) {
+        syntheticVersionNumbers.push(Number((start + index * 0.1).toFixed(1)))
+      }
+    }
+
+    syntheticVersionNumbers.forEach((versionNumber, index) => {
+      const safeVersion = versionNumber.toFixed(1).replace('.', '-')
+      const runId = `run-${project.id}-hist-${safeVersion}`
+      const versionId = `ver-${project.id}-hist-${safeVersion}`
+      if (existingRunIds.has(runId) || existingVersionIds.has(versionId)) {
+        return
+      }
+
+      const createdAt = new Date(oldestReferenceTime - (missingCount - index) * 1000 * 60 * 60 * 24 * 14).toISOString()
+      const completedAt = new Date(Date.parse(createdAt) + 1000 * 60 * 8).toISOString()
+      const distanceFromLatest = sortedVersions.length > 0
+        ? missingCount - index
+        : missingCount - index - 1
+      const entityCount = Math.max(minEntityCount, baseEntityCount - entityStep * distanceFromLatest)
+      const relationCount = Math.max(minRelationCount, baseRelationCount - relationStep * distanceFromLatest)
+      const stageLabel = FEATURED_VERSION_HISTORY_LABELS[Math.min(index, FEATURED_VERSION_HISTORY_LABELS.length - 1)]
+
+      newRuns.push({
+        id: runId,
+        status: 'COMPLETED',
+        progress: 100,
+        createdAt,
+        completedAt,
+        candidateEntityCount: entityCount,
+        candidateRelationCount: relationCount,
+        pendingReviewCount: 0,
+        stage: '完成',
+        currentDocument: project.documents[0]?.name,
+        logs: [
+          `${labelStem}历史版本抽取完成`,
+          `沉淀实体 ${entityCount} 个、关系 ${relationCount} 条`,
+          `形成 ${stageLabel} 的版本快照`,
+        ],
+        warnings: [],
+        reviewItems: [],
+      })
+      newVersions.push({
+        id: versionId,
+        version: `v${versionNumber.toFixed(1)}`,
+        label: `${labelStem}${stageLabel}`,
+        createdAt: new Date(Date.parse(completedAt) + 1000 * 60 * 2).toISOString(),
+        sourceRunId: runId,
+        entityCount,
+        relationCount,
+      })
+    })
+  }
+
+  if (newRuns.length > 0) {
+    project.runs = [...project.runs, ...newRuns].sort(byIsoDesc)
+    changed = true
+  }
+
+  if (newVersions.length > 0) {
+    project.versions = [...project.versions, ...newVersions].sort(byIsoDesc)
+    changed = true
+  }
+
+  const latestAvailableVersion = [...project.versions].sort(byIsoDesc)[0]
+  if (!project.currentVersionId || !project.versions.some(version => version.id === project.currentVersionId)) {
+    if (latestAvailableVersion) {
+      project.currentVersionId = latestAvailableVersion.id
+      changed = true
+    }
+  }
+
+  const latestVersionTime = Date.parse(latestAvailableVersion?.createdAt || '') || 0
+  if (latestVersionTime > (Date.parse(project.updatedAt || '') || 0)) {
+    project.updatedAt = new Date(latestVersionTime).toISOString()
+    changed = true
+  }
+
+  return changed
+}
+
 function normalizeStore(store: ProjectStore): boolean {
   let changed = false
 
@@ -5906,6 +6037,9 @@ function normalizeStore(store: ProjectStore): boolean {
       changed = true
     }
     if (ensureLegalRegulationsSeed(project)) {
+      changed = true
+    }
+    if (ensureFeaturedProjectVersionHistory(project)) {
       changed = true
     }
     const featuredDescription = FEATURED_LIST_DESCRIPTION_OVERRIDES[project.name]
@@ -6349,6 +6483,30 @@ export const FEATURED_PROJECT_ORDER = [
   '订单履约本体',
   '组织架构与职能本体',
   '法律法规库本体',
+] as const
+
+const FEATURED_PROJECT_VERSION_TARGETS: Record<string, number> = {
+  '故障诊断本体': 6,
+  '商品补货本体': 5,
+  '客户360本体': 4,
+  '合同约束本体': 5,
+  '任务调度本体': 6,
+  '库存风险本体': 4,
+  '供应商画像本体': 4,
+  '会员画像本体': 5,
+  '全渠道库存本体': 5,
+  '品类架构本体': 3,
+}
+
+const FEATURED_VERSION_HISTORY_LABELS = [
+  '语义基线版',
+  '实体扩展版',
+  '关系补强版',
+  '规则校准版',
+  '治理增强版',
+  '业务联调版',
+  '多源融合版',
+  '稳定发布版',
 ] as const
 
 function getPinnedProjectRank(project: Pick<ProjectDetail, 'name'>): number {
