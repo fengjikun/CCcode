@@ -157,7 +157,7 @@ export const DEFAULT_AGENTS: Agent[] = [
   buildSeedAgent({
     id: 'ag-002',
     code: '2.4.18',
-    name: '店货匹配运营决策专员',
+    name: '店货匹配运营决策智能体',
     type: 'Operational',
     status: 'Active',
     version: 'v1.0.0',

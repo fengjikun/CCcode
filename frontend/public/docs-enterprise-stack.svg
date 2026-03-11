@@ -1,0 +1,48 @@
+<svg width="720" height="820" viewBox="0 0 720 820" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="panelA" x1="84" y1="76" x2="636" y2="744" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFF"/>
+      <stop offset="1" stop-color="#FFF8EE"/>
+    </linearGradient>
+    <linearGradient id="barA" x1="128" y1="140" x2="590" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+  </defs>
+  <rect x="34" y="34" width="652" height="752" rx="44" fill="url(#panelA)"/>
+  <text x="360" y="88" text-anchor="middle" fill="#1E293B" font-family="Arial, sans-serif" font-size="26" font-weight="700">企业模型资产锻造路径</text>
+
+  <g>
+    <rect x="116" y="126" width="488" height="116" rx="30" fill="#EFF6FF" stroke="#BFDBFE"/>
+    <rect x="138" y="150" width="74" height="68" rx="20" fill="#DBEAFE"/>
+    <text x="175" y="191" text-anchor="middle" fill="#1D4ED8" font-family="Arial, sans-serif" font-size="28" font-weight="700">L1</text>
+    <text x="246" y="176" fill="#111827" font-family="Arial, sans-serif" font-size="24" font-weight="700">业务数据接入层</text>
+    <text x="246" y="208" fill="#475569" font-family="Arial, sans-serif" font-size="16">连接文档、系统与真实执行数据，为模型锻造提供原料</text>
+  </g>
+
+  <g>
+    <rect x="102" y="268" width="516" height="116" rx="30" fill="#F5F3FF" stroke="#DDD6FE"/>
+    <rect x="124" y="292" width="74" height="68" rx="20" fill="#EDE9FE"/>
+    <text x="161" y="333" text-anchor="middle" fill="#6D28D9" font-family="Arial, sans-serif" font-size="28" font-weight="700">L2</text>
+    <text x="232" y="318" fill="#111827" font-family="Arial, sans-serif" font-size="24" font-weight="700">本体与知识层</text>
+    <text x="232" y="350" fill="#475569" font-family="Arial, sans-serif" font-size="16">统一对象、关系、规则与动作，建立模型可吸收的业务语义底座</text>
+  </g>
+
+  <g>
+    <rect x="88" y="410" width="544" height="126" rx="30" fill="#EEFDF7" stroke="#A7F3D0"/>
+    <rect x="110" y="438" width="74" height="70" rx="20" fill="#D1FAE5"/>
+    <text x="147" y="481" text-anchor="middle" fill="#047857" font-family="Arial, sans-serif" font-size="28" font-weight="700">L3</text>
+    <text x="218" y="468" fill="#111827" font-family="Arial, sans-serif" font-size="24" font-weight="700">Skill + Agent 能力层</text>
+    <text x="218" y="498" fill="#475569" font-family="Arial, sans-serif" font-size="16">封装专家经验，沉淀执行样本，按分析、决策、执行职责协同运行</text>
+  </g>
+
+  <g>
+    <rect x="74" y="564" width="572" height="136" rx="34" fill="url(#barA)"/>
+    <rect x="104" y="595" width="86" height="76" rx="24" fill="rgba(255,255,255,0.16)"/>
+    <text x="147" y="641" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="28" font-weight="700">L4</text>
+    <text x="222" y="622" fill="white" font-family="Arial, sans-serif" font-size="28" font-weight="700">AI员工与模型资产层</text>
+    <text x="222" y="656" fill="#D6F6F0" font-family="Arial, sans-serif" font-size="17">面向岗位交付应用，并把高频能力持续沉淀回企业模型</text>
+  </g>
+
+  <path d="M360 714C425 714 478 735 478 760C478 785 425 806 360 806C295 806 242 785 242 760C242 735 295 714 360 714Z" fill="#D1FAE5" fill-opacity="0.45"/>
+</svg>

@@ -1,0 +1,52 @@
+<svg width="860" height="620" viewBox="0 0 860 620" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="loopBg" x1="92" y1="72" x2="768" y2="556" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#ECFEFF"/>
+    </linearGradient>
+    <linearGradient id="loopStroke" x1="180" y1="138" x2="690" y2="476" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+  </defs>
+  <rect x="44" y="44" width="772" height="532" rx="46" fill="url(#loopBg)"/>
+  <text x="430" y="92" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-size="28" font-weight="700">企业模型资产进化飞轮</text>
+
+  <path d="M250 184C307 127 386 96 470 102C604 112 714 221 728 356" stroke="url(#loopStroke)" stroke-width="18" stroke-linecap="round"/>
+  <path d="M728 356C734 443 693 524 617 571C503 641 353 623 261 529" stroke="url(#loopStroke)" stroke-width="18" stroke-linecap="round"/>
+  <path d="M261 529C188 454 155 344 174 242" stroke="url(#loopStroke)" stroke-width="18" stroke-linecap="round"/>
+  <path d="M181 214L168 255L209 243" stroke="#4F46E5" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M585 560L621 575L616 536" stroke="#0F766E" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M711 325L731 358L748 325" stroke="#4F46E5" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g>
+    <rect x="100" y="124" width="202" height="96" rx="26" fill="white"/>
+    <text x="201" y="160" text-anchor="middle" fill="#1F2937" font-family="Arial, sans-serif" font-size="22" font-weight="700">业务使用数据</text>
+    <text x="201" y="191" text-anchor="middle" fill="#64748B" font-family="Arial, sans-serif" font-size="15">对话、工单、日志、反馈</text>
+  </g>
+
+  <g>
+    <rect x="560" y="140" width="202" height="96" rx="26" fill="white"/>
+    <text x="661" y="176" text-anchor="middle" fill="#1F2937" font-family="Arial, sans-serif" font-size="22" font-weight="700">语料加工治理</text>
+    <text x="661" y="207" text-anchor="middle" fill="#64748B" font-family="Arial, sans-serif" font-size="15">解析、清洗、切片、标注</text>
+  </g>
+
+  <g>
+    <rect x="578" y="396" width="202" height="96" rx="26" fill="white"/>
+    <text x="679" y="432" text-anchor="middle" fill="#1F2937" font-family="Arial, sans-serif" font-size="22" font-weight="700">模型锻造与评测</text>
+    <text x="679" y="463" text-anchor="middle" fill="#64748B" font-family="Arial, sans-serif" font-size="15">SFT、偏好对齐、能力评估</text>
+  </g>
+
+  <g>
+    <rect x="128" y="402" width="220" height="102" rx="26" fill="white"/>
+    <text x="238" y="438" text-anchor="middle" fill="#1F2937" font-family="Arial, sans-serif" font-size="22" font-weight="700">知识与能力更新</text>
+    <text x="238" y="469" text-anchor="middle" fill="#64748B" font-family="Arial, sans-serif" font-size="15">修订本体、优化 Skill、升级 Agent</text>
+  </g>
+
+  <g>
+    <circle cx="430" cy="308" r="108" fill="#13203F"/>
+    <circle cx="430" cy="308" r="86" fill="#1E2E5A"/>
+    <text x="430" y="292" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="26" font-weight="700">模型沉淀</text>
+    <text x="430" y="326" text-anchor="middle" fill="#C7D2FE" font-family="Arial, sans-serif" font-size="17">企业自己的核心智能资产</text>
+  </g>
+</svg>

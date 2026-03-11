@@ -4,6 +4,7 @@ import RequireAuth from './components/auth/RequireAuth'
 import ErrorBoundary from './components/ErrorBoundary'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
+import DocsProductPage from './pages/DocsProductPage'
 
 // L7 AI员工应用
 import DigitalHumanListPage from './pages/DigitalHumanListPage'
@@ -56,6 +57,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/docs" element={<DocsProductPage />} />
       <Route
         element={(
           <RequireAuth>
