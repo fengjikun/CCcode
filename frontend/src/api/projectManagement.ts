@@ -26,7 +26,7 @@ import type {
 import { delay, rand } from './mockConfig'
 
 /** 当默认数据结构变化时递增此值，触发内存种子迁移 */
-const DATA_VERSION = 17
+const DATA_VERSION = 20
 
 interface ProjectStore {
   projects: ProjectDetail[]
@@ -66,6 +66,16 @@ const PROJECT_ENTITY_NAME_POOLS: Record<string, Record<string, string[]>> = {
     ReplenishmentPlan: ['上海城市单品补货计划#001', '上海区域Nike Air Max 270补货计划', '门店14天覆盖补货计划'],
     PurchaseOrder: ['PO-SH-20260310-001', 'PO-SH-20260310-002', 'PO-SH-20260310-003'],
   },
+  'proj-2522': {
+    Member: ['会员ID:U100238', '会员ID:U100562', '会员ID:U100879', '会员ID:U101024', '会员ID:U101388'],
+    MembershipTier: ['黑金会员', '铂金会员', '金卡会员', '银卡会员'],
+    ChannelTouchpoint: ['小程序商城', '企业微信社群', 'APP Push', '门店导购企业微信', '短信触达'],
+    ConsumptionEvent: ['2026-03-08女鞋复购订单', '2026-03-09换季外套加购订单', '2026-03-10到店核销订单', '2026-03-10直播间成交订单'],
+    PreferenceTag: ['高频复购', '价格敏感', '偏好运动鞋', '偏好晚间推送', '关注满减活动'],
+    CouponAsset: ['春季满300减50券', 'VIP专属95折券', '门店到店礼券', '生日双倍积分券'],
+    LifeCycleSegment: ['高价值活跃会员', '沉睡待唤醒会员', '新品潜力会员', '流失预警会员'],
+    CampaignTask: ['春季新品精准推送任务', '沉睡会员唤醒任务', '生日关怀任务', '满减活动召回任务'],
+  },
   'proj-5612': {
     Regulation: ['个人信息保护法', '数据安全法', '欧盟GDPR', '网络安全法', '标准合同条款(SCC)'],
     Regulator: ['国家网信办', '欧盟数据保护委员会', '市场监管总局', '工业和信息化部'],
@@ -103,6 +113,26 @@ const PROJECT_ENTITY_NAME_POOLS: Record<string, Record<string, string[]>> = {
     ConstraintRule: ['插单优先级规则', '换型冻结窗口', '关键设备维护约束', '夜班禁排高风险工序'],
     SchedulePlan: ['排产计划#2026W11-A', '插单重排计划#20260311-1', '夜班补产计划#20260311-N', '瓶颈工位均衡计划#03'],
     DispatchTask: ['派工单#A-001', '派工单#A-018', '派工单#B-006', '派工单#N-009'],
+  },
+  'proj-1416': {
+    Supplier: ['宁波舜宇精密结构件', '苏州汇川电驱系统', '无锡先导传感科技', '深圳拓普连接器', '常州瑞安铝压铸'],
+    MaterialCategory: ['电机控制器', '线束总成', '铝合金压铸件', '高精密传感器', '滚珠丝杠模组'],
+    Plant: ['上海总装工厂', '常州动力总成工厂', '合肥焊装工厂', '武汉零部件中心'],
+    DeliveryPerformance: ['2026年2月OTD评分卡', '华东区域供应稳定性评分', 'Q1加急交付履约记录', '关键物料交付健康看板'],
+    QualityIssue: ['IQC-202603-018', '8D-来料尺寸偏差-031', 'PPM异常批次#20260309', '焊点虚焊来料升级单'],
+    FinancialRisk: ['现金流预警-2026Q1', '负债率升高-2026M02', '诉讼风险提示-2026Q1', '授信收紧风险提示'],
+    ComplianceCertificate: ['IATF 16949', 'ISO 14001', 'RoHS符合性声明', 'VDA 6.3过程审核A级'],
+    SupplierSegment: ['战略供方', '核心供方', '条件供方', '观察名单'],
+  },
+  'proj-1418': {
+    Material: ['高精密轴承6208', '伺服驱动器A12', '减速机总成R80', '工业线束W-09', '压力传感器PS-7'],
+    Warehouse: ['华东中心仓', '常州备件仓', '武汉零部件仓', '上海产线超市'],
+    PlantDemand: ['上海总装本周需求', '常州动力总成紧急需求', '武汉焊装日需求计划', '华东售后备件补货需求'],
+    InventorySnapshot: ['库存快照-2026-03-11', '在途库存快照-2026-03-11', '呆滞库存快照-2026-03-11', '超储库存快照-2026-03-11'],
+    RiskSignal: ['缺货风险预警', '超储风险预警', '单一供方断供风险', '交期拉长风险'],
+    SafetyStockPolicy: ['A类关键件安全库存策略', '进口件高波动安全库存策略', '售后备件保供策略', '瓶颈工位防断料策略'],
+    ReplenishmentRecommendation: ['补货建议单#IR-001', '调拨建议单#IR-002', '紧急采购建议单#IR-003', '降库存处置建议单#IR-004'],
+    SupplierOption: ['宁波舜宇精密结构件', '苏州汇川电驱系统', '深圳拓普连接器', '无锡先导传感科技'],
   },
 }
 
@@ -1620,6 +1650,1668 @@ const CUSTOMER_360_FUNCTIONS: FunctionDefinition[] = [
   },
 ]
 
+const TASK_SCHEDULING_PROJECT_ID = 'proj-1312'
+const TASK_SCHEDULING_PROJECT_NAME = '任务调度本体'
+const TASK_SCHEDULING_UPDATED_AT = '2026-03-11T11:20:00.000Z'
+const TASK_SCHEDULING_DESCRIPTION =
+  '制造业 · 生产执行与动态排产领域任务调度本体，覆盖工单、工序、设备资源、班次日历、人员技能、约束规则、排程计划与派工任务；支持插单重排、瓶颈设备均衡、班次匹配和派工下发。'
+
+const TASK_SCHEDULING_DOCUMENTS: ProjectDocument[] = [
+  {
+    id: 'doc-ts-001',
+    name: '任务调度本体模型说明书.docx',
+    fileType: 'docx',
+    size: 208896,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-04T09:00:00.000Z',
+  },
+  {
+    id: 'doc-ts-002',
+    name: 'APS插单重排与优先级规则说明.xlsx',
+    fileType: 'xlsx',
+    size: 236544,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-05T10:20:00.000Z',
+  },
+  {
+    id: 'doc-ts-003',
+    name: '设备产能节拍与换型窗口配置.xlsx',
+    fileType: 'xlsx',
+    size: 184320,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-06T11:10:00.000Z',
+  },
+  {
+    id: 'doc-ts-004',
+    name: '班次日历与多能工技能矩阵.md',
+    fileType: 'md',
+    size: 94208,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-07T09:40:00.000Z',
+  },
+  {
+    id: 'doc-ts-005',
+    name: 'MES工单与工序静态样本-2026W11.jsonl',
+    fileType: 'jsonl',
+    size: 76312,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-08T14:00:00.000Z',
+  },
+  {
+    id: 'doc-ts-006',
+    name: '瓶颈工位负荷与产能平衡复盘报告.docx',
+    fileType: 'docx',
+    size: 173568,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-09T16:20:00.000Z',
+  },
+  {
+    id: 'doc-ts-007',
+    name: '紧急插单调度看板字段映射说明.md',
+    fileType: 'md',
+    size: 88192,
+    status: 'READY',
+    enabled: false,
+    uploadedAt: '2026-03-10T13:15:00.000Z',
+  },
+  {
+    id: 'doc-ts-008',
+    name: '班次派工单回写与执行确认样本.jsonl',
+    fileType: 'jsonl',
+    size: 69248,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T08:35:00.000Z',
+  },
+]
+
+const TASK_SCHEDULING_DATA_SOURCES: StructuredDataSource[] = [
+  {
+    id: 'ds-ts-001',
+    name: 'MES工单与工艺路由中心',
+    type: 'POSTGRESQL',
+    host: '10.16.24.18',
+    port: 5432,
+    database: 'mes_production',
+    schema: 'schedule',
+    username: 'mes_reader',
+    password: '',
+    sslEnabled: true,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['work_order_header', 'process_route_step', 'insert_order_event'],
+    rowLimit: 180000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'updated_at',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T09:00:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-04T10:00:00.000Z',
+    updatedAt: '2026-03-11T09:00:00.000Z',
+  },
+  {
+    id: 'ds-ts-002',
+    name: '设备节拍与运行状态库',
+    type: 'CLICKHOUSE',
+    host: '10.16.24.27',
+    port: 8123,
+    database: 'equipment_runtime',
+    username: 'runtime_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['machine_capacity_snapshot', 'equipment_status_event', 'changeover_window'],
+    rowLimit: 260000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'snapshot_time',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T09:08:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-04T10:10:00.000Z',
+    updatedAt: '2026-03-11T09:08:00.000Z',
+  },
+  {
+    id: 'ds-ts-003',
+    name: '班次日历与人员技能库',
+    type: 'MYSQL',
+    host: '10.16.24.39',
+    port: 3306,
+    database: 'workforce_scheduler',
+    username: 'ops_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['shift_calendar', 'operator_skill_matrix', 'dispatch_task_feedback'],
+    rowLimit: 90000,
+    syncMode: 'FULL',
+    incrementalColumn: '',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T09:15:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-04T10:20:00.000Z',
+    updatedAt: '2026-03-11T09:15:00.000Z',
+  },
+]
+
+const TASK_SCHEDULING_ENTITY_TYPES: EntityTypeConfig[] = [
+  {
+    id: 'et-ts-001',
+    name: 'WorkOrder',
+    description: '生产工单实体，承载订单紧急度、交期、数量和重排优先级。',
+    dataSourceId: 'ds-ts-001',
+    mappedTable: 'work_order_header',
+    properties: [
+      { id: 'ep-ts-001', name: 'workOrderNo', displayName: '工单号', dataType: 'STRING', required: true, mappedColumn: 'work_order_no', searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-ts-002', name: 'productCode', displayName: '产品编码', dataType: 'STRING', required: true, mappedColumn: 'product_code', searchable: true, sortable: true, sortOrder: 2 },
+      { id: 'ep-ts-003', name: 'priorityLevel', displayName: '优先级', dataType: 'STRING', required: true, defaultValue: 'NORMAL', mappedColumn: 'priority_level', searchable: true, sortable: true, sortOrder: 3 },
+      { id: 'ep-ts-004', name: 'dueAt', displayName: '交期', dataType: 'DATETIME', required: true, mappedColumn: 'due_at', searchable: false, sortable: true, sortOrder: 4 },
+      { id: 'ep-ts-005', name: 'plannedQty', displayName: '计划数量', dataType: 'INTEGER', required: true, mappedColumn: 'planned_qty', searchable: false, sortable: true, sortOrder: 5 },
+      { id: 'ep-ts-006', name: 'insertOrderFlag', displayName: '是否插单', dataType: 'BOOLEAN', required: false, defaultValue: 'false', mappedColumn: 'insert_order_flag', searchable: true, sortable: true, sortOrder: 6 },
+    ],
+  },
+  {
+    id: 'et-ts-002',
+    name: 'ProcessStep',
+    description: '工单拆解后的工序步骤，包含节拍、前后约束和工艺要求。',
+    dataSourceId: 'ds-ts-001',
+    mappedTable: 'process_route_step',
+    properties: [
+      { id: 'ep-ts-011', name: 'stepCode', displayName: '工序编码', dataType: 'STRING', required: true, mappedColumn: 'step_code', searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-ts-012', name: 'stepName', displayName: '工序名称', dataType: 'STRING', required: true, mappedColumn: 'step_name', searchable: true, sortable: true, sortOrder: 2 },
+      { id: 'ep-ts-013', name: 'cycleSeconds', displayName: '标准节拍(秒)', dataType: 'INTEGER', required: true, mappedColumn: 'cycle_seconds', searchable: false, sortable: true, sortOrder: 3 },
+      { id: 'ep-ts-014', name: 'setupMinutes', displayName: '换型时长(分钟)', dataType: 'INTEGER', required: false, mappedColumn: 'setup_minutes', searchable: false, sortable: true, sortOrder: 4 },
+      { id: 'ep-ts-015', name: 'riskLevel', displayName: '工序风险等级', dataType: 'STRING', required: false, mappedColumn: 'risk_level', searchable: true, sortable: true, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-ts-003',
+    name: 'MachineResource',
+    description: '可执行工序的设备资源，沉淀产能、状态与换型窗口。',
+    dataSourceId: 'ds-ts-002',
+    mappedTable: 'machine_capacity_snapshot',
+    properties: [
+      { id: 'ep-ts-021', name: 'machineCode', displayName: '设备编码', dataType: 'STRING', required: true, mappedColumn: 'machine_code', searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-ts-022', name: 'machineName', displayName: '设备名称', dataType: 'STRING', required: true, mappedColumn: 'machine_name', searchable: true, sortable: true, sortOrder: 2 },
+      { id: 'ep-ts-023', name: 'lineCode', displayName: '产线编码', dataType: 'STRING', required: true, mappedColumn: 'line_code', searchable: true, sortable: true, sortOrder: 3 },
+      { id: 'ep-ts-024', name: 'hourCapacity', displayName: '小时产能', dataType: 'FLOAT', required: true, mappedColumn: 'hour_capacity', searchable: false, sortable: true, sortOrder: 4 },
+      { id: 'ep-ts-025', name: 'status', displayName: '设备状态', dataType: 'STRING', required: true, mappedColumn: 'status', searchable: true, sortable: true, sortOrder: 5 },
+      { id: 'ep-ts-026', name: 'changeoverWindow', displayName: '换型窗口', dataType: 'STRING', required: false, mappedColumn: 'changeover_window', searchable: true, sortable: true, sortOrder: 6 },
+    ],
+  },
+  {
+    id: 'et-ts-004',
+    name: 'ShiftCalendar',
+    description: '可排产班次日历，记录班次类型、可用工时和是否允许加班。',
+    dataSourceId: 'ds-ts-003',
+    mappedTable: 'shift_calendar',
+    properties: [
+      { id: 'ep-ts-031', name: 'shiftCode', displayName: '班次编码', dataType: 'STRING', required: true, mappedColumn: 'shift_code', searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-ts-032', name: 'shiftDate', displayName: '班次日期', dataType: 'DATE', required: true, mappedColumn: 'shift_date', searchable: false, sortable: true, sortOrder: 2 },
+      { id: 'ep-ts-033', name: 'shiftType', displayName: '班次类型', dataType: 'STRING', required: true, mappedColumn: 'shift_type', searchable: true, sortable: true, sortOrder: 3 },
+      { id: 'ep-ts-034', name: 'availableHours', displayName: '可用工时', dataType: 'FLOAT', required: true, mappedColumn: 'available_hours', searchable: false, sortable: true, sortOrder: 4 },
+      { id: 'ep-ts-035', name: 'overtimeAllowed', displayName: '允许加班', dataType: 'BOOLEAN', required: false, mappedColumn: 'overtime_allowed', searchable: true, sortable: true, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-ts-005',
+    name: 'OperatorSkill',
+    description: '岗位与技能资格矩阵，用于判断工序在特定班次是否可执行。',
+    dataSourceId: 'ds-ts-003',
+    mappedTable: 'operator_skill_matrix',
+    properties: [
+      { id: 'ep-ts-041', name: 'skillCode', displayName: '技能编码', dataType: 'STRING', required: true, mappedColumn: 'skill_code', searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-ts-042', name: 'skillName', displayName: '技能名称', dataType: 'STRING', required: true, mappedColumn: 'skill_name', searchable: true, sortable: true, sortOrder: 2 },
+      { id: 'ep-ts-043', name: 'skillLevel', displayName: '技能等级', dataType: 'STRING', required: false, mappedColumn: 'skill_level', searchable: true, sortable: true, sortOrder: 3 },
+      { id: 'ep-ts-044', name: 'certExpiryDate', displayName: '证书到期日', dataType: 'DATE', required: false, mappedColumn: 'cert_expiry_date', searchable: false, sortable: true, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-ts-006',
+    name: 'ConstraintRule',
+    description: '排产和重排时使用的业务约束规则，如插单优先、冻结窗口和夜班限制。',
+    properties: [
+      { id: 'ep-ts-051', name: 'ruleCode', displayName: '规则编码', dataType: 'STRING', required: true, searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-ts-052', name: 'ruleType', displayName: '规则类型', dataType: 'STRING', required: true, searchable: true, sortable: true, sortOrder: 2 },
+      { id: 'ep-ts-053', name: 'ruleWeight', displayName: '规则权重', dataType: 'FLOAT', required: true, defaultValue: '1', searchable: false, sortable: true, sortOrder: 3 },
+      { id: 'ep-ts-054', name: 'ruleExpression', displayName: '规则表达式', dataType: 'TEXT', required: true, searchable: false, sortable: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-ts-007',
+    name: 'SchedulePlan',
+    description: '排程输出结果，沉淀设备分配、班次占用、排序结果和重排原因。',
+    properties: [
+      { id: 'ep-ts-061', name: 'planNo', displayName: '计划编号', dataType: 'STRING', required: true, searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-ts-062', name: 'planVersion', displayName: '计划版本', dataType: 'STRING', required: true, defaultValue: 'v1', searchable: true, sortable: true, sortOrder: 2 },
+      { id: 'ep-ts-063', name: 'scheduleStatus', displayName: '计划状态', dataType: 'STRING', required: true, defaultValue: 'DRAFT', searchable: true, sortable: true, sortOrder: 3 },
+      { id: 'ep-ts-064', name: 'rescheduleReason', displayName: '重排原因', dataType: 'TEXT', required: false, searchable: true, sortable: false, sortOrder: 4 },
+      { id: 'ep-ts-065', name: 'objectiveScore', displayName: '目标得分', dataType: 'FLOAT', required: false, searchable: false, sortable: true, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-ts-008',
+    name: 'DispatchTask',
+    description: '下发到班组或设备的派工指令，记录开工时间、执行状态和回写结果。',
+    properties: [
+      { id: 'ep-ts-071', name: 'dispatchNo', displayName: '派工单号', dataType: 'STRING', required: true, searchable: true, sortable: true, sortOrder: 1 },
+      { id: 'ep-ts-072', name: 'plannedStartAt', displayName: '计划开工时间', dataType: 'DATETIME', required: true, searchable: false, sortable: true, sortOrder: 2 },
+      { id: 'ep-ts-073', name: 'plannedEndAt', displayName: '计划完工时间', dataType: 'DATETIME', required: true, searchable: false, sortable: true, sortOrder: 3 },
+      { id: 'ep-ts-074', name: 'dispatchStatus', displayName: '派工状态', dataType: 'STRING', required: true, defaultValue: 'PENDING', searchable: true, sortable: true, sortOrder: 4 },
+      { id: 'ep-ts-075', name: 'feedbackSummary', displayName: '执行反馈', dataType: 'TEXT', required: false, searchable: true, sortable: false, sortOrder: 5 },
+    ],
+  },
+]
+
+const TASK_SCHEDULING_RELATION_TYPES: RelationTypeConfig[] = [
+  { id: 'rt-ts-001', name: 'has_process_step', domain: 'WorkOrder', range: 'ProcessStep', description: '工单由多个工序步骤组成。', properties: [] },
+  { id: 'rt-ts-002', name: 'requires_machine', domain: 'ProcessStep', range: 'MachineResource', description: '工序可在满足条件的设备资源上执行。', properties: [] },
+  { id: 'rt-ts-003', name: 'requires_skill', domain: 'ProcessStep', range: 'OperatorSkill', description: '工序执行所需的岗位技能或资格。', properties: [] },
+  { id: 'rt-ts-004', name: 'constrained_by', domain: 'WorkOrder', range: 'ConstraintRule', description: '工单受业务约束规则限制。', properties: [] },
+  { id: 'rt-ts-005', name: 'included_in_plan', domain: 'WorkOrder', range: 'SchedulePlan', description: '工单被纳入某一版排程计划。', properties: [] },
+  { id: 'rt-ts-006', name: 'allocates_machine', domain: 'SchedulePlan', range: 'MachineResource', description: '排程计划为工单分配设备资源。', properties: [] },
+  { id: 'rt-ts-007', name: 'scheduled_on_shift', domain: 'SchedulePlan', range: 'ShiftCalendar', description: '排程计划占用具体班次日历。', properties: [] },
+  { id: 'rt-ts-008', name: 'issues_dispatch_task', domain: 'SchedulePlan', range: 'DispatchTask', description: '排程计划生成派工任务并下发执行。', properties: [] },
+  { id: 'rt-ts-009', name: 'handled_by_skill', domain: 'DispatchTask', range: 'OperatorSkill', description: '派工任务要求具备相应技能的人员执行。', properties: [] },
+  { id: 'rt-ts-010', name: 'available_in_shift', domain: 'MachineResource', range: 'ShiftCalendar', description: '设备在特定班次具备可用产能。', properties: [] },
+  { id: 'rt-ts-011', name: 'limits_machine', domain: 'ConstraintRule', range: 'MachineResource', description: '约束规则限制特定设备或设备组的可用窗口。', properties: [] },
+]
+
+const TASK_SCHEDULING_SKILLS: SkillConfig[] = [
+  { id: 'sk-ts-001', code: 'data_processing', name: '排产主数据整编', enabled: true, prompt: '统一 MES 工单、工艺路由、设备状态和班次日历，形成任务调度可用语义视图', source: 'built_in', tags: ['schedule', 'mes', 'etl'] },
+  { id: 'sk-ts-002', code: 'graph_synthesis', name: '约束排程图谱融合', enabled: true, prompt: '融合工单、工序、设备、班次、技能和约束规则，构建可重排的排产关系图谱', source: 'built_in', tags: ['schedule', 'graph', 'constraint'] },
+  { id: 'sk-ts-003', code: 'custom', name: '插单重排编排', enabled: true, prompt: '根据紧急度、交期、换型损失和班次能力执行插单重排，并生成派工单与解释原因', source: 'built_in', tags: ['schedule', 'reschedule', 'dispatch'] },
+]
+
+const TASK_SCHEDULING_AI_INSIGHT_RUN: AiInsightRun = {
+  id: 'ai-ts-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-10T09:20:00.000Z',
+  completedAt: '2026-03-10T09:28:00.000Z',
+  scannedDocumentCount: 8,
+  addedEntityCount: 8,
+  addedRelationCount: 11,
+  addedEntityNames: ['WorkOrder', 'ProcessStep', 'MachineResource', 'ShiftCalendar', 'OperatorSkill', 'ConstraintRule', 'SchedulePlan', 'DispatchTask'],
+  addedRelationNames: ['has_process_step', 'requires_machine', 'requires_skill', 'constrained_by', 'included_in_plan', 'allocates_machine', 'scheduled_on_shift', 'issues_dispatch_task', 'handled_by_skill', 'available_in_shift', 'limits_machine'],
+  warnings: [],
+  stage: '完成',
+  currentDocument: '任务调度本体模型说明书.docx',
+  logs: [
+    '扫描 8 份 APS、MES、班次规则与设备产能文档',
+    '补齐 WorkOrder、ProcessStep、MachineResource、ShiftCalendar、OperatorSkill、ConstraintRule、SchedulePlan、DispatchTask 八类专业调度实体',
+    '建立工单-工序-设备-班次-派工闭环的 11 条关键关系链路，用于动态排产和插单重排',
+  ],
+}
+
+const TASK_SCHEDULING_RUN: ExtractionRun = {
+  id: 'run-ts-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-10T10:00:00.000Z',
+  completedAt: '2026-03-10T10:14:00.000Z',
+  candidateEntityCount: 72,
+  candidateRelationCount: 60,
+  pendingReviewCount: 0,
+  stage: '完成',
+  currentDocument: 'MES工单与工序静态样本-2026W11.jsonl',
+  logs: [
+    '抽取本周工单、工序路由、设备产能和班次技能样本，生成排产图谱候选',
+    '识别插单、冻结窗口、瓶颈设备负荷和夜班限制等高频约束语义',
+    '形成任务调度候选实体 72 个、关系 60 条，支撑动态重排和派工下发',
+  ],
+  warnings: [],
+  reviewItems: [
+    { id: 'ri-ts-001', kind: 'ENTITY', title: 'MO-20260311-001 (WorkOrder)', evidence: 'MES工单与工序静态样本-2026W11.jsonl', confidence: 0.99, status: 'APPROVED' },
+    { id: 'ri-ts-002', kind: 'ENTITY', title: '焊装点焊 (ProcessStep)', evidence: 'APS插单重排与优先级规则说明.xlsx', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-ts-003', kind: 'ENTITY', title: '线体A-焊装单元01 (MachineResource)', evidence: '设备产能节拍与换型窗口配置.xlsx', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-ts-004', kind: 'ENTITY', title: '白班-2026-03-11 (ShiftCalendar)', evidence: '班次日历与多能工技能矩阵.md', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-ts-005', kind: 'ENTITY', title: '焊装高级操作证 (OperatorSkill)', evidence: '班次日历与多能工技能矩阵.md', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-ts-006', kind: 'ENTITY', title: '插单优先级规则 (ConstraintRule)', evidence: 'APS插单重排与优先级规则说明.xlsx', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-ts-007', kind: 'ENTITY', title: '插单重排计划#20260311-1 (SchedulePlan)', evidence: '瓶颈工位负荷与产能平衡复盘报告.docx', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-ts-008', kind: 'ENTITY', title: '派工单#A-001 (DispatchTask)', evidence: '班次派工单回写与执行确认样本.jsonl', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-ts-009', kind: 'RELATION', title: 'MO-20260311-001 (WorkOrder) → has_process_step → 焊装点焊 (ProcessStep)', evidence: '工单工序关系', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-ts-010', kind: 'RELATION', title: '焊装点焊 (ProcessStep) → requires_machine → 线体A-焊装单元01 (MachineResource)', evidence: '工序设备关系', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-ts-011', kind: 'RELATION', title: '焊装点焊 (ProcessStep) → requires_skill → 焊装高级操作证 (OperatorSkill)', evidence: '工序技能关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-ts-012', kind: 'RELATION', title: 'MO-20260311-001 (WorkOrder) → constrained_by → 插单优先级规则 (ConstraintRule)', evidence: '工单约束关系', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-ts-013', kind: 'RELATION', title: 'MO-20260311-001 (WorkOrder) → included_in_plan → 插单重排计划#20260311-1 (SchedulePlan)', evidence: '排程计划关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-ts-014', kind: 'RELATION', title: '插单重排计划#20260311-1 (SchedulePlan) → allocates_machine → 线体A-焊装单元01 (MachineResource)', evidence: '计划资源分配关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-ts-015', kind: 'RELATION', title: '插单重排计划#20260311-1 (SchedulePlan) → scheduled_on_shift → 白班-2026-03-11 (ShiftCalendar)', evidence: '计划班次关系', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-ts-016', kind: 'RELATION', title: '插单重排计划#20260311-1 (SchedulePlan) → issues_dispatch_task → 派工单#A-001 (DispatchTask)', evidence: '计划派工关系', confidence: 0.96, status: 'APPROVED' },
+  ],
+}
+
+const TASK_SCHEDULING_VERSION: OntologyVersion = {
+  id: 'ver-ts-001',
+  version: 'v1.1',
+  label: '动态排产与派工执行图谱',
+  createdAt: '2026-03-10T10:20:00.000Z',
+  sourceRunId: 'run-ts-001',
+  entityCount: 72,
+  relationCount: 60,
+}
+
+const TASK_SCHEDULING_ACTIONS: ActionDefinition[] = [
+  {
+    id: 'act-ts-001',
+    name: 'evaluate_work_order_priority',
+    displayName: '评估工单优先级',
+    description: '根据紧急度、交期、客户等级和插单标记计算工单优先级分。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-ts-001',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-ts-001","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"work_order.created\\",\\"includeInsertOrder\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_priority_review","notifyRole":"生产计划员"}',
+    parametersJson: '[{"name":"workOrderNo","displayName":"工单号","dataType":"STRING","required":true},{"name":"urgencyLevel","displayName":"紧急度","dataType":"STRING","required":true},{"name":"dueHours","displayName":"距交期小时数","dataType":"INTEGER","required":true},{"name":"customerLevel","displayName":"客户等级","dataType":"STRING","required":false},{"name":"insertOrderFlag","displayName":"是否插单","dataType":"BOOLEAN","required":false,"defaultValue":"false"}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"WorkOrder","conditionJson":"{\\"when\\":\\"workOrderNo_present\\"}","propertyMappingsJson":"{\\"priorityLevel\\":\\"calculated_priority\\",\\"insertOrderFlag\\":\\"$insertOrderFlag\\"}","sortOrder":1},{"ruleType":"CREATE_LINK","target":"ConstraintRule","conditionJson":"{\\"when\\":\\"insertOrderFlag == true\\"}","propertyMappingsJson":"{\\"from\\":\\"$workOrderNo\\",\\"relation\\":\\"constrained_by\\",\\"to\\":\\"insert_priority_rule\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"work_order_required","condition":"workOrderNo != \\"\\"","message":"工单号不能为空"},{"name":"urgency_required","condition":"urgencyLevel in [\\"LOW\\",\\"NORMAL\\",\\"HIGH\\",\\"CRITICAL\\"]","message":"紧急度仅支持 LOW/NORMAL/HIGH/CRITICAL"},{"name":"due_hours_non_negative","condition":"dueHours >= 0","message":"距交期小时数不能为负数"}]',
+  },
+  {
+    id: 'act-ts-002',
+    name: 'reschedule_insert_order',
+    displayName: '执行插单重排',
+    description: '当紧急插单进入产线时，综合设备产能、换型窗口与冻结区重新计算计划顺序。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-ts-007',
+    triggerType: 'MANUAL',
+    triggerConfigJson: '[{"functionId":"fn-ts-002","order":1,"triggerType":"MANUAL","triggerConfig":"{\\"entry\\":\\"workspace.button\\",\\"objective\\":\\"min_tardiness\\"}"},{"functionId":"fn-ts-003","order":2,"triggerType":"MANUAL","triggerConfig":"{\\"respectFrozenWindow\\":true,\\"allowOvertime\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":2,"fallback":"manual_schedule_board","notifyRole":"APS调度员"}',
+    parametersJson: '[{"name":"planNo","displayName":"计划编号","dataType":"STRING","required":true},{"name":"insertWorkOrderNo","displayName":"插单工单号","dataType":"STRING","required":true},{"name":"frozenWindowMinutes","displayName":"冻结窗口(分钟)","dataType":"INTEGER","required":true,"defaultValue":"120"},{"name":"allowOvertime","displayName":"允许加班","dataType":"BOOLEAN","required":false,"defaultValue":"true"}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"SchedulePlan","conditionJson":"{\\"when\\":\\"planNo_present and insertWorkOrderNo_present\\"}","propertyMappingsJson":"{\\"planVersion\\":\\"next_version\\",\\"rescheduleReason\\":\\"insert_order\\"}","sortOrder":1},{"ruleType":"CREATE_LINK","target":"WorkOrder","conditionJson":"{\\"when\\":\\"insertWorkOrderNo_present\\"}","propertyMappingsJson":"{\\"from\\":\\"$insertWorkOrderNo\\",\\"relation\\":\\"included_in_plan\\",\\"to\\":\\"$planNo\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"plan_required","condition":"planNo != \\"\\"","message":"计划编号不能为空"},{"name":"insert_order_required","condition":"insertWorkOrderNo != \\"\\"","message":"插单工单号不能为空"},{"name":"frozen_window_range","condition":"frozenWindowMinutes >= 0 and frozenWindowMinutes <= 480","message":"冻结窗口需在 0 到 480 分钟之间"}]',
+  },
+  {
+    id: 'act-ts-003',
+    name: 'allocate_machine_shift',
+    displayName: '分配设备与班次',
+    description: '为排程计划匹配可执行设备和班次，避免设备停机窗口与技能不匹配。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-ts-007',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-ts-003","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"plan.rescheduled\\",\\"preferSameLine\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":2,"fallback":"manual_capacity_balancing","notifyRole":"车间调度长"}',
+    parametersJson: '[{"name":"planNo","displayName":"计划编号","dataType":"STRING","required":true},{"name":"preferredLineCode","displayName":"优先产线","dataType":"STRING","required":false},{"name":"requiredSkill","displayName":"所需技能","dataType":"STRING","required":true},{"name":"allowNightShift","displayName":"允许夜班","dataType":"BOOLEAN","required":false,"defaultValue":"false"}]',
+    rulesJson: '[{"ruleType":"CREATE_LINK","target":"MachineResource","conditionJson":"{\\"when\\":\\"planNo_present\\"}","propertyMappingsJson":"{\\"from\\":\\"$planNo\\",\\"relation\\":\\"allocates_machine\\",\\"to\\":\\"selected_machine\\"}","sortOrder":1},{"ruleType":"CREATE_LINK","target":"ShiftCalendar","conditionJson":"{\\"when\\":\\"selected_shift != null\\"}","propertyMappingsJson":"{\\"from\\":\\"$planNo\\",\\"relation\\":\\"scheduled_on_shift\\",\\"to\\":\\"selected_shift\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"plan_required","condition":"planNo != \\"\\"","message":"计划编号不能为空"},{"name":"skill_required","condition":"requiredSkill != \\"\\"","message":"所需技能不能为空"}]',
+  },
+  {
+    id: 'act-ts-004',
+    name: 'release_dispatch_task',
+    displayName: '下发派工任务',
+    description: '将已确认的排程计划转为派工任务并回写至执行系统。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-ts-008',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-ts-004","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"plan.confirmed\\",\\"syncToMes\\":true}"}]',
+    exceptionPolicy: 'SKIP',
+    exceptionConfigJson: '{"retainDraft":true,"fallback":"manual_dispatch_release","notifyRole":"班组长"}',
+    parametersJson: '[{"name":"planNo","displayName":"计划编号","dataType":"STRING","required":true},{"name":"dispatchNo","displayName":"派工单号","dataType":"STRING","required":true},{"name":"plannedStartAt","displayName":"计划开工时间","dataType":"STRING","required":true},{"name":"plannedEndAt","displayName":"计划完工时间","dataType":"STRING","required":true}]',
+    rulesJson: '[{"ruleType":"CREATE_OBJECT","target":"DispatchTask","conditionJson":"{\\"when\\":\\"dispatchNo_present\\"}","propertyMappingsJson":"{\\"dispatchNo\\":\\"$dispatchNo\\",\\"plannedStartAt\\":\\"$plannedStartAt\\",\\"plannedEndAt\\":\\"$plannedEndAt\\",\\"dispatchStatus\\":\\"RELEASED\\"}","sortOrder":1},{"ruleType":"CREATE_LINK","target":"DispatchTask","conditionJson":"{\\"when\\":\\"planNo_present and dispatchNo_present\\"}","propertyMappingsJson":"{\\"from\\":\\"$planNo\\",\\"relation\\":\\"issues_dispatch_task\\",\\"to\\":\\"$dispatchNo\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"plan_required","condition":"planNo != \\"\\"","message":"计划编号不能为空"},{"name":"dispatch_required","condition":"dispatchNo != \\"\\"","message":"派工单号不能为空"},{"name":"start_required","condition":"plannedStartAt != \\"\\"","message":"计划开工时间不能为空"},{"name":"end_required","condition":"plannedEndAt != \\"\\"","message":"计划完工时间不能为空"}]',
+  },
+]
+
+const TASK_SCHEDULING_FUNCTIONS: FunctionDefinition[] = [
+  {
+    id: 'fn-ts-001',
+    name: '工单优先级计算',
+    description: '根据紧急度、交期压力、客户等级和插单标记输出优先级和评分。',
+    scriptContent: 'def calc_work_order_priority(urgency_level: str, due_hours: int, customer_level: str = "B", insert_order_flag: bool = False):\n    """计算工单优先级。"""\n    urgency_weights = {"LOW": 10, "NORMAL": 25, "HIGH": 40, "CRITICAL": 55}\n    customer_bonus = {"A": 15, "B": 8, "C": 3}\n    due_score = 35 if due_hours <= 8 else 25 if due_hours <= 24 else 12 if due_hours <= 48 else 5\n    score = urgency_weights.get(urgency_level, 20) + due_score + customer_bonus.get(customer_level, 5) + (20 if insert_order_flag else 0)\n    priority = "P1" if score >= 85 else "P2" if score >= 60 else "P3"\n    return {"priorityLevel": priority, "score": score}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-ts-002',
+    name: '插单重排模拟',
+    description: '模拟插单进入后对现有计划的延误、换型损失和交期影响。',
+    scriptContent: 'def simulate_insert_order(current_queue: list[dict], insert_order: dict, frozen_window_minutes: int = 120):\n    """模拟插单重排结果。"""\n    affected = []\n    tardiness_minutes = 0\n    for item in current_queue:\n        if item.get("locked_minutes", 0) >= frozen_window_minutes:\n            continue\n        shift = insert_order.get("cycle_minutes", 0)\n        tardiness_minutes += shift\n        affected.append({"workOrderNo": item.get("workOrderNo"), "delayMinutes": shift})\n    return {"affectedOrders": affected[:8], "estimatedTardinessMinutes": tardiness_minutes, "next_version": "auto-rescheduled"}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-ts-003',
+    name: '设备班次匹配',
+    description: '基于设备状态、班次可用工时、技能要求与夜班限制选择最优资源槽位。',
+    scriptContent: 'def match_machine_shift_slot(machine_candidates: list[dict], shift_candidates: list[dict], required_skill: str, allow_night_shift: bool = False):\n    """匹配设备与班次。"""\n    valid_shifts = [shift for shift in shift_candidates if allow_night_shift or shift.get("shiftType") != "NIGHT"]\n    ranked = sorted(machine_candidates, key=lambda item: (item.get("status") != "RUNNING", -item.get("hourCapacity", 0)))\n    machine = ranked[0] if ranked else None\n    shift = valid_shifts[0] if valid_shifts else None\n    return {"selected_machine": machine.get("machineCode") if machine else None, "selected_shift": shift.get("shiftCode") if shift else None, "requiredSkill": required_skill}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-ts-004',
+    name: '派工指令生成',
+    description: '将排程结果转换为派工任务负载，输出给 MES 或班组看板。',
+    scriptContent: 'def build_dispatch_payload(plan_no: str, machine_code: str, shift_code: str, work_orders: list[str], start_at: str, end_at: str):\n    """生成派工负载。"""\n    return {"planNo": plan_no, "dispatchTarget": {"machineCode": machine_code, "shiftCode": shift_code}, "workOrders": work_orders, "plannedStartAt": start_at, "plannedEndAt": end_at, "dispatchStatus": "RELEASED"}',
+    status: 'ACTIVE',
+  },
+]
+
+const MEMBER_PROFILE_PROJECT_ID = 'proj-2522'
+const MEMBER_PROFILE_PROJECT_NAME = '会员画像本体'
+const MEMBER_PROFILE_UPDATED_AT = '2026-03-11T11:45:00.000Z'
+const MEMBER_PROFILE_DESCRIPTION =
+  '零售业 · 营销与CRM领域会员画像本体，覆盖会员、会员等级、触达渠道、消费事件、偏好标签、券资产、生命周期分层与营销任务；支持精准人群圈选、权益编排、复购促进与流失预警。'
+
+const MEMBER_PROFILE_DOCUMENTS: ProjectDocument[] = [
+  {
+    id: 'doc-mp-001',
+    name: '会员画像本体模型说明书.docx',
+    fileType: 'docx',
+    size: 218112,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-03T09:10:00.000Z',
+  },
+  {
+    id: 'doc-mp-002',
+    name: 'CDP会员主数据与身份合并规则.xlsx',
+    fileType: 'xlsx',
+    size: 252928,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-04T10:20:00.000Z',
+  },
+  {
+    id: 'doc-mp-003',
+    name: '全渠道交易与行为埋点口径说明.md',
+    fileType: 'md',
+    size: 99840,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-05T11:00:00.000Z',
+  },
+  {
+    id: 'doc-mp-004',
+    name: '会员标签与生命周期分层样本.jsonl',
+    fileType: 'jsonl',
+    size: 73152,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-06T14:10:00.000Z',
+  },
+  {
+    id: 'doc-mp-005',
+    name: '优惠券权益与核销规则清单.xlsx',
+    fileType: 'xlsx',
+    size: 206848,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-07T09:35:00.000Z',
+  },
+  {
+    id: 'doc-mp-006',
+    name: '门店导购触达与回访SOP.docx',
+    fileType: 'docx',
+    size: 181248,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-08T13:20:00.000Z',
+  },
+  {
+    id: 'doc-mp-007',
+    name: '会员流失预警指标说明.md',
+    fileType: 'md',
+    size: 91520,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-09T15:10:00.000Z',
+  },
+  {
+    id: 'doc-mp-008',
+    name: '精准营销活动编排样本.jsonl',
+    fileType: 'jsonl',
+    size: 75648,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T09:05:00.000Z',
+  },
+]
+
+const MEMBER_PROFILE_DATA_SOURCES: StructuredDataSource[] = [
+  {
+    id: 'ds-mp-001',
+    name: 'CDP会员主数据中心',
+    type: 'POSTGRESQL',
+    host: '10.26.14.18',
+    port: 5432,
+    database: 'retail_member_center',
+    username: 'member_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['member_profile', 'member_identity_graph', 'member_tier_snapshot'],
+    rowLimit: 260000,
+    syncMode: 'FULL',
+    incrementalColumn: '',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:16:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-03T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:16:00.000Z',
+  },
+  {
+    id: 'ds-mp-002',
+    name: '全渠道交易与行为事件仓',
+    type: 'CLICKHOUSE',
+    host: '10.26.14.31',
+    port: 8123,
+    database: 'member_behavior_analytics',
+    username: 'behavior_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['member_order_event', 'browse_behavior_event', 'channel_touch_log'],
+    rowLimit: 420000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'event_time',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:24:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-04T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:24:00.000Z',
+  },
+  {
+    id: 'ds-mp-003',
+    name: '券权益与营销自动化库',
+    type: 'MYSQL',
+    host: '10.26.14.45',
+    port: 3306,
+    database: 'crm_marketing_automation',
+    username: 'campaign_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['coupon_asset', 'campaign_task', 'member_churn_signal'],
+    rowLimit: 180000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'updated_at',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:32:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-05T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:32:00.000Z',
+  },
+]
+
+const MEMBER_PROFILE_ENTITY_TYPES: EntityTypeConfig[] = [
+  {
+    id: 'et-mp-001',
+    name: 'Member',
+    description: '会员主体，统一线上线下身份、价值分和运营状态。',
+    properties: [
+      { id: 'ep-mp-001', name: 'memberId', displayName: '会员ID', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-mp-002', name: 'mobileMasked', displayName: '手机号脱敏', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-mp-003', name: 'registerChannel', displayName: '注册渠道', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-mp-004', name: 'city', displayName: '城市', dataType: 'STRING', required: false, sortOrder: 4 },
+      { id: 'ep-mp-005', name: 'valueScore', displayName: '会员价值分', dataType: 'FLOAT', required: false, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-mp-002',
+    name: 'MembershipTier',
+    description: '会员等级与权益包定义。',
+    properties: [
+      { id: 'ep-mp-011', name: 'tierName', displayName: '等级名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-mp-012', name: 'validUntil', displayName: '有效期至', dataType: 'DATE', required: false, sortOrder: 2 },
+      { id: 'ep-mp-013', name: 'pointsMultiplier', displayName: '积分倍数', dataType: 'FLOAT', required: false, sortOrder: 3 },
+      { id: 'ep-mp-014', name: 'rightsPack', displayName: '权益包', dataType: 'TEXT', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-mp-003',
+    name: 'ChannelTouchpoint',
+    description: '会员触达渠道与交互触点，包括门店、App、企微和短信。',
+    properties: [
+      { id: 'ep-mp-021', name: 'channelType', displayName: '渠道类型', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-mp-022', name: 'channelCode', displayName: '渠道编码', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-mp-023', name: 'reachability', displayName: '触达状态', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-mp-024', name: 'ownerTeam', displayName: '归属团队', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-mp-004',
+    name: 'ConsumptionEvent',
+    description: '会员消费或互动转化事件，沉淀购买、核销和复购信号。',
+    properties: [
+      { id: 'ep-mp-031', name: 'orderNo', displayName: '订单号', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-mp-032', name: 'occurredAt', displayName: '发生时间', dataType: 'DATETIME', required: false, sortOrder: 2 },
+      { id: 'ep-mp-033', name: 'orderAmount', displayName: '订单金额', dataType: 'FLOAT', required: false, sortOrder: 3 },
+      { id: 'ep-mp-034', name: 'purchaseCategory', displayName: '购买品类', dataType: 'STRING', required: false, sortOrder: 4 },
+      { id: 'ep-mp-035', name: 'storeName', displayName: '成交门店', dataType: 'STRING', required: false, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-mp-005',
+    name: 'PreferenceTag',
+    description: '会员偏好和行为标签，用于人群圈选与内容推荐。',
+    properties: [
+      { id: 'ep-mp-041', name: 'tagName', displayName: '标签名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-mp-042', name: 'tagGroup', displayName: '标签分组', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-mp-043', name: 'confidenceScore', displayName: '置信度', dataType: 'FLOAT', required: false, sortOrder: 3 },
+      { id: 'ep-mp-044', name: 'tagSource', displayName: '标签来源', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-mp-006',
+    name: 'CouponAsset',
+    description: '会员可领取或已领取的券、积分权益和福利资产。',
+    properties: [
+      { id: 'ep-mp-051', name: 'couponName', displayName: '券名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-mp-052', name: 'couponType', displayName: '券类型', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-mp-053', name: 'faceValue', displayName: '面额', dataType: 'FLOAT', required: false, sortOrder: 3 },
+      { id: 'ep-mp-054', name: 'expiresAt', displayName: '过期时间', dataType: 'DATETIME', required: false, sortOrder: 4 },
+      { id: 'ep-mp-055', name: 'redeemStatus', displayName: '核销状态', dataType: 'STRING', required: false, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-mp-007',
+    name: 'LifeCycleSegment',
+    description: '会员生命周期分层，用于识别活跃、沉睡、流失和潜力人群。',
+    properties: [
+      { id: 'ep-mp-061', name: 'segmentName', displayName: '分层名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-mp-062', name: 'churnRiskLevel', displayName: '流失风险', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-mp-063', name: 'nextBestAction', displayName: '下一最佳动作', dataType: 'TEXT', required: false, sortOrder: 3 },
+      { id: 'ep-mp-064', name: 'refreshCycleDays', displayName: '刷新周期(天)', dataType: 'INTEGER', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-mp-008',
+    name: 'CampaignTask',
+    description: '围绕会员画像自动编排的营销任务。',
+    properties: [
+      { id: 'ep-mp-071', name: 'campaignName', displayName: '任务名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-mp-072', name: 'channel', displayName: '执行渠道', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-mp-073', name: 'objective', displayName: '营销目标', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-mp-074', name: 'scheduledAt', displayName: '计划执行时间', dataType: 'DATETIME', required: false, sortOrder: 4 },
+      { id: 'ep-mp-075', name: 'conversionTarget', displayName: '转化目标', dataType: 'FLOAT', required: false, sortOrder: 5 },
+    ],
+  },
+]
+
+const MEMBER_PROFILE_RELATION_TYPES: RelationTypeConfig[] = [
+  { id: 'rt-mp-001', name: 'has_membership_tier', domain: 'Member', range: 'MembershipTier', description: '会员当前所属等级。', properties: [] },
+  { id: 'rt-mp-002', name: 'interacts_via', domain: 'Member', range: 'ChannelTouchpoint', description: '会员可触达或已互动的渠道触点。', properties: [] },
+  { id: 'rt-mp-003', name: 'records_consumption', domain: 'Member', range: 'ConsumptionEvent', description: '会员关联的消费或转化事件。', properties: [] },
+  { id: 'rt-mp-004', name: 'tagged_with_preference', domain: 'Member', range: 'PreferenceTag', description: '会员被标注的偏好和行为标签。', properties: [] },
+  { id: 'rt-mp-005', name: 'owns_coupon_asset', domain: 'Member', range: 'CouponAsset', description: '会员拥有的券或权益资产。', properties: [] },
+  { id: 'rt-mp-006', name: 'classified_into_lifecycle', domain: 'Member', range: 'LifeCycleSegment', description: '会员被归入的生命周期分层。', properties: [] },
+  { id: 'rt-mp-007', name: 'triggered_campaign_task', domain: 'Member', range: 'CampaignTask', description: '基于会员画像触发的营销任务。', properties: [] },
+  { id: 'rt-mp-008', name: 'campaign_targets_segment', domain: 'CampaignTask', range: 'LifeCycleSegment', description: '营销任务针对的生命周期人群。', properties: [] },
+  { id: 'rt-mp-009', name: 'campaign_uses_coupon', domain: 'CampaignTask', range: 'CouponAsset', description: '营销任务关联的权益资产。', properties: [] },
+  { id: 'rt-mp-010', name: 'consumption_strengthens_tag', domain: 'ConsumptionEvent', range: 'PreferenceTag', description: '消费行为强化或更新的偏好标签。', properties: [] },
+]
+
+const MEMBER_PROFILE_SKILLS: SkillConfig[] = [
+  { id: 'sk-mp-001', code: 'data_processing', name: '会员身份整编', enabled: true, prompt: '统一 CDP 主数据、交易行为和门店触达日志，构建会员唯一视图', source: 'built_in', tags: ['member', 'identity'] },
+  { id: 'sk-mp-002', code: 'graph_synthesis', name: '会员画像图谱融合', enabled: true, prompt: '融合会员、等级、消费、标签、券资产和生命周期分层，形成会员画像图谱', source: 'built_in', tags: ['member', 'graph'] },
+  { id: 'sk-mp-003', code: 'custom', name: '精准营销编排', enabled: true, prompt: '根据会员价值分、流失风险、偏好标签和券资产状态编排触达策略', source: 'built_in', tags: ['member', 'campaign'] },
+]
+
+const MEMBER_PROFILE_AI_INSIGHT_RUN: AiInsightRun = {
+  id: 'ai-mp-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-10T09:20:00.000Z',
+  completedAt: '2026-03-10T09:28:00.000Z',
+  scannedDocumentCount: 8,
+  addedEntityCount: 8,
+  addedRelationCount: 10,
+  addedEntityNames: ['Member', 'MembershipTier', 'ChannelTouchpoint', 'ConsumptionEvent', 'PreferenceTag', 'CouponAsset', 'LifeCycleSegment', 'CampaignTask'],
+  addedRelationNames: ['has_membership_tier', 'interacts_via', 'records_consumption', 'tagged_with_preference', 'owns_coupon_asset', 'classified_into_lifecycle', 'triggered_campaign_task', 'campaign_targets_segment', 'campaign_uses_coupon', 'consumption_strengthens_tag'],
+  warnings: [],
+  stage: '完成',
+  currentDocument: '会员画像本体模型说明书.docx',
+  logs: [
+    '解析 8 份会员主数据、交易事件、标签规则、券权益和营销编排资料',
+    '补齐 Member、MembershipTier、ChannelTouchpoint、ConsumptionEvent、PreferenceTag、CouponAsset、LifeCycleSegment、CampaignTask 八类核心实体',
+    '形成等级归属、触达互动、消费沉淀、标签强化、权益绑定和营销编排十条关键关系链路',
+  ],
+}
+
+const MEMBER_PROFILE_RUN: ExtractionRun = {
+  id: 'run-mp-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-10T10:00:00.000Z',
+  completedAt: '2026-03-10T10:14:00.000Z',
+  candidateEntityCount: 82,
+  candidateRelationCount: 64,
+  pendingReviewCount: 0,
+  stage: '完成',
+  currentDocument: '精准营销活动编排样本.jsonl',
+  logs: [
+    '抽取会员身份合并、消费行为、偏好标签、券资产和流失预警样本',
+    '识别高价值活跃、沉睡待唤醒、价格敏感和新品潜力等关键人群信号',
+    '形成会员画像候选实体 82 个、关系 64 条，支撑精准触达、权益分发和流失召回',
+  ],
+  warnings: [],
+  reviewItems: [
+    { id: 'ri-mp-001', kind: 'ENTITY', title: '会员ID:U100238 (Member)', evidence: 'CDP会员主数据与身份合并规则.xlsx', confidence: 0.99, status: 'APPROVED' },
+    { id: 'ri-mp-002', kind: 'ENTITY', title: '黑金会员 (MembershipTier)', evidence: '会员画像本体模型说明书.docx', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-mp-003', kind: 'ENTITY', title: '小程序商城 (ChannelTouchpoint)', evidence: '全渠道交易与行为埋点口径说明.md', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-mp-004', kind: 'ENTITY', title: '2026-03-08女鞋复购订单 (ConsumptionEvent)', evidence: '会员标签与生命周期分层样本.jsonl', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-mp-005', kind: 'ENTITY', title: '高频复购 (PreferenceTag)', evidence: '会员标签与生命周期分层样本.jsonl', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-mp-006', kind: 'ENTITY', title: '春季满300减50券 (CouponAsset)', evidence: '优惠券权益与核销规则清单.xlsx', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-mp-007', kind: 'ENTITY', title: '高价值活跃会员 (LifeCycleSegment)', evidence: '会员流失预警指标说明.md', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-mp-008', kind: 'ENTITY', title: '春季新品精准推送任务 (CampaignTask)', evidence: '精准营销活动编排样本.jsonl', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-mp-009', kind: 'RELATION', title: '会员ID:U100238 (Member) → has_membership_tier → 黑金会员 (MembershipTier)', evidence: '等级归属关系', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-mp-010', kind: 'RELATION', title: '会员ID:U100238 (Member) → records_consumption → 2026-03-08女鞋复购订单 (ConsumptionEvent)', evidence: '消费沉淀关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-mp-011', kind: 'RELATION', title: '会员ID:U100238 (Member) → tagged_with_preference → 高频复购 (PreferenceTag)', evidence: '标签映射关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-mp-012', kind: 'RELATION', title: '会员ID:U100238 (Member) → classified_into_lifecycle → 高价值活跃会员 (LifeCycleSegment)', evidence: '生命周期分层关系', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-mp-013', kind: 'RELATION', title: '春季新品精准推送任务 (CampaignTask) → campaign_uses_coupon → 春季满300减50券 (CouponAsset)', evidence: '营销权益关系', confidence: 0.96, status: 'APPROVED' },
+  ],
+}
+
+const MEMBER_PROFILE_VERSION: OntologyVersion = {
+  id: 'ver-mp-001',
+  version: 'v1.1',
+  label: '会员画像与精准营销图谱',
+  createdAt: '2026-03-10T10:20:00.000Z',
+  sourceRunId: 'run-mp-001',
+  entityCount: 82,
+  relationCount: 64,
+}
+
+const MEMBER_PROFILE_ACTIONS: ActionDefinition[] = [
+  {
+    id: 'act-mp-001',
+    name: 'refresh_member_value_score',
+    displayName: '刷新会员价值分',
+    description: '根据消费频次、近90天消费额和互动活跃度更新会员价值分。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-mp-001',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-mp-001","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"member.transaction.updated\\"}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_member_score_review","notifyRole":"CRM运营经理"}',
+    parametersJson: '[{"name":"memberId","displayName":"会员ID","dataType":"STRING","required":true},{"name":"purchaseFrequency","displayName":"消费频次","dataType":"INTEGER","required":true},{"name":"recentAmount","displayName":"近90天消费额","dataType":"FLOAT","required":true},{"name":"engagementScore","displayName":"互动活跃度","dataType":"FLOAT","required":true}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"Member","conditionJson":"{\\"when\\":\\"memberId_present\\"}","propertyMappingsJson":"{\\"valueScore\\":\\"member_value_score\\"}","sortOrder":1}]',
+    validationRulesJson: '[{"name":"member_required","condition":"memberId != \\"\\"","message":"会员ID不能为空"},{"name":"frequency_non_negative","condition":"purchaseFrequency >= 0","message":"消费频次不能为负数"},{"name":"amount_non_negative","condition":"recentAmount >= 0","message":"消费金额不能为负数"}]',
+  },
+  {
+    id: 'act-mp-002',
+    name: 'refresh_lifecycle_segment',
+    displayName: '刷新生命周期分层',
+    description: '根据会员价值分、流失风险和最近活跃天数重算生命周期分层。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-mp-007',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-mp-002","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"member.score.changed\\",\\"includeChurnRisk\\":true}"},{"functionId":"fn-mp-003","order":2,"triggerType":"EVENT","triggerConfig":"{\\"refreshTag\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_segment_review","notifyRole":"会员运营经理"}',
+    parametersJson: '[{"name":"memberId","displayName":"会员ID","dataType":"STRING","required":true},{"name":"valueScore","displayName":"会员价值分","dataType":"FLOAT","required":true},{"name":"daysSinceLastOrder","displayName":"距上次消费天数","dataType":"INTEGER","required":true},{"name":"couponUnusedDays","displayName":"券未使用天数","dataType":"INTEGER","required":true}]',
+    rulesJson: '[{"ruleType":"CREATE_LINK","target":"LifeCycleSegment","conditionJson":"{\\"when\\":\\"memberId_present\\"}","propertyMappingsJson":"{\\"from\\":\\"$memberId\\",\\"relation\\":\\"classified_into_lifecycle\\",\\"to\\":\\"recommended_segment\\"}","sortOrder":1}]',
+    validationRulesJson: '[{"name":"member_required","condition":"memberId != \\"\\"","message":"会员ID不能为空"},{"name":"value_range","condition":"valueScore >= 0 and valueScore <= 100","message":"会员价值分需在 0 到 100 之间"},{"name":"days_non_negative","condition":"daysSinceLastOrder >= 0 and couponUnusedDays >= 0","message":"天数指标不能为负数"}]',
+  },
+  {
+    id: 'act-mp-003',
+    name: 'launch_precision_campaign',
+    displayName: '发起精准营销任务',
+    description: '基于生命周期分层、偏好标签和券资产状态生成个性化营销任务。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-mp-008',
+    triggerType: 'MANUAL',
+    triggerConfigJson: '[{"functionId":"fn-mp-004","order":1,"triggerType":"MANUAL","triggerConfig":"{\\"entry\\":\\"workspace.button\\",\\"respectOptIn\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_campaign_approval","notifyRole":"营销经理"}',
+    parametersJson: '[{"name":"segmentName","displayName":"分层名称","dataType":"STRING","required":true},{"name":"primaryTag","displayName":"主偏好标签","dataType":"STRING","required":true},{"name":"couponName","displayName":"权益名称","dataType":"STRING","required":false},{"name":"channel","displayName":"执行渠道","dataType":"STRING","required":true}]',
+    rulesJson: '[{"ruleType":"CREATE_OBJECT","target":"CampaignTask","conditionJson":"{\\"when\\":\\"segmentName_present\\"}","propertyMappingsJson":"{\\"campaignName\\":\\"generated_campaign_name\\",\\"channel\\":\\"$channel\\",\\"objective\\":\\"precision_conversion\\"}","sortOrder":1},{"ruleType":"CREATE_LINK","target":"LifeCycleSegment","conditionJson":"{\\"when\\":\\"segmentName_present\\"}","propertyMappingsJson":"{\\"from\\":\\"generated_campaign_name\\",\\"relation\\":\\"campaign_targets_segment\\",\\"to\\":\\"$segmentName\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"segment_required","condition":"segmentName != \\"\\"","message":"分层名称不能为空"},{"name":"tag_required","condition":"primaryTag != \\"\\"","message":"主偏好标签不能为空"},{"name":"channel_required","condition":"channel != \\"\\"","message":"执行渠道不能为空"}]',
+  },
+]
+
+const MEMBER_PROFILE_FUNCTIONS: FunctionDefinition[] = [
+  {
+    id: 'fn-mp-001',
+    name: '会员价值分计算',
+    description: '根据消费频次、消费金额和互动活跃度计算会员价值分。',
+    scriptContent: 'def calc_member_value_score(purchase_frequency: int, recent_amount: float, engagement_score: float):\n    """计算会员价值分。"""\n    frequency_score = min(max(purchase_frequency, 0), 20) * 2.2\n    amount_score = min(max(recent_amount, 0.0) / 80, 35)\n    engagement_component = min(max(engagement_score, 0.0), 1.0) * 21\n    total = round(min(100, frequency_score + amount_score + engagement_component), 1)\n    return {"memberValueScore": total}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-mp-002',
+    name: '会员流失风险评估',
+    description: '综合最近消费间隔、券未使用时长和触达响应率评估流失风险。',
+    scriptContent: 'def evaluate_member_churn_risk(days_since_last_order: int, coupon_unused_days: int, response_rate: float):\n    """评估会员流失风险。"""\n    score = min(max(days_since_last_order, 0), 90) * 0.55 + min(max(coupon_unused_days, 0), 60) * 0.35 + (1 - min(max(response_rate, 0.0), 1.0)) * 25\n    risk_score = round(min(score, 100), 1)\n    risk_level = "HIGH" if risk_score >= 65 else "MEDIUM" if risk_score >= 35 else "LOW"\n    return {"riskScore": risk_score, "riskLevel": risk_level}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-mp-003',
+    name: '生命周期分层推荐',
+    description: '依据会员价值分、流失风险和最近活跃情况推荐生命周期分层。',
+    scriptContent: 'def recommend_member_segment(value_score: float, risk_level: str, days_since_last_order: int):\n    """推荐会员生命周期分层。"""\n    if value_score >= 80 and days_since_last_order <= 30:\n        segment = "高价值活跃会员"\n    elif risk_level == "HIGH" and days_since_last_order >= 45:\n        segment = "流失预警会员"\n    elif days_since_last_order >= 60:\n        segment = "沉睡待唤醒会员"\n    else:\n        segment = "新品潜力会员"\n    return {"segmentName": segment}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-mp-004',
+    name: '营销任务编排',
+    description: '根据分层、偏好标签和优惠券策略生成营销任务负载。',
+    scriptContent: 'def build_member_campaign_payload(segment_name: str, primary_tag: str, channel: str, coupon_name: str | None = None):\n    """生成会员营销任务负载。"""\n    campaign_name = f"{segment_name}-{primary_tag}-精准触达"\n    content_theme = "权益召回" if "流失" in segment_name or "沉睡" in segment_name else "新品推荐"\n    return {"campaignName": campaign_name, "channel": channel, "contentTheme": content_theme, "couponName": coupon_name or "", "priority": "P1" if "高价值" in segment_name else "P2"}',
+    status: 'ACTIVE',
+  },
+]
+
+const SUPPLIER_PROFILE_PROJECT_ID = 'proj-1416'
+const SUPPLIER_PROFILE_PROJECT_NAME = '供应商画像本体'
+const SUPPLIER_PROFILE_UPDATED_AT = '2026-03-11T11:05:00.000Z'
+const SUPPLIER_PROFILE_DESCRIPTION =
+  '制造业 · 供应链与采购协同领域供应商画像本体，覆盖供应商、供货物料、服务工厂、交付表现、质量事件、财务风险、合规资质与供应商分层；支持供应商评级、采购份额调整、风险预警与供方治理。'
+
+const SUPPLIER_PROFILE_DOCUMENTS: ProjectDocument[] = [
+  {
+    id: 'doc-sp-001',
+    name: '供应商画像本体模型说明书.docx',
+    fileType: 'docx',
+    size: 212480,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-03T09:00:00.000Z',
+  },
+  {
+    id: 'doc-sp-002',
+    name: 'SRM供应商主数据与供货范围映射.xlsx',
+    fileType: 'xlsx',
+    size: 241664,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-04T10:15:00.000Z',
+  },
+  {
+    id: 'doc-sp-003',
+    name: '准时交付率与缺料停线事件口径说明.md',
+    fileType: 'md',
+    size: 95360,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-05T11:00:00.000Z',
+  },
+  {
+    id: 'doc-sp-004',
+    name: '来料质量PPM与8D闭环样本.jsonl',
+    fileType: 'jsonl',
+    size: 73408,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-06T14:10:00.000Z',
+  },
+  {
+    id: 'doc-sp-005',
+    name: '供应商财务风险预警指标手册.docx',
+    fileType: 'docx',
+    size: 176128,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-07T09:40:00.000Z',
+  },
+  {
+    id: 'doc-sp-006',
+    name: '合规认证与审厂结论清单.xlsx',
+    fileType: 'xlsx',
+    size: 205824,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-08T10:50:00.000Z',
+  },
+  {
+    id: 'doc-sp-007',
+    name: '月度供应商绩效评分卡模板.md',
+    fileType: 'md',
+    size: 88672,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-09T15:20:00.000Z',
+  },
+  {
+    id: 'doc-sp-008',
+    name: '采购份额调整与风险复核样本.jsonl',
+    fileType: 'jsonl',
+    size: 70144,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T08:50:00.000Z',
+  },
+]
+
+const SUPPLIER_PROFILE_DATA_SOURCES: StructuredDataSource[] = [
+  {
+    id: 'ds-sp-001',
+    name: 'SRM供应商主数据中心',
+    type: 'POSTGRESQL',
+    host: '10.16.18.21',
+    port: 5432,
+    database: 'srm_vendor_center',
+    username: 'srm_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['supplier_master', 'supplier_material_scope', 'plant_supplier_binding'],
+    rowLimit: 160000,
+    syncMode: 'FULL',
+    incrementalColumn: '',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:15:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-03T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:15:00.000Z',
+  },
+  {
+    id: 'ds-sp-002',
+    name: '供应链交付事件仓',
+    type: 'CLICKHOUSE',
+    host: '10.16.18.34',
+    port: 8123,
+    database: 'supply_delivery_analytics',
+    username: 'delivery_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['otif_daily', 'shortage_incident', 'expedite_requests'],
+    rowLimit: 280000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'event_date',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:22:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-04T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:22:00.000Z',
+  },
+  {
+    id: 'ds-sp-003',
+    name: '质量与财务风控联合库',
+    type: 'SQLSERVER',
+    host: '10.16.18.46',
+    port: 1433,
+    database: 'supplier_risk_hub',
+    username: 'risk_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['incoming_quality_case', 'vendor_financial_watch', 'compliance_audit'],
+    rowLimit: 140000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'updated_at',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:30:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-05T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:30:00.000Z',
+  },
+]
+
+const SUPPLIER_PROFILE_ENTITY_TYPES: EntityTypeConfig[] = [
+  {
+    id: 'et-sp-001',
+    name: 'Supplier',
+    description: '供应商主体，记录供方基础信息、评级分和采购份额建议。',
+    properties: [
+      { id: 'ep-sp-001', name: 'supplierCode', displayName: '供应商编码', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-sp-002', name: 'supplierName', displayName: '供应商名称', dataType: 'STRING', required: true, sortOrder: 2 },
+      { id: 'ep-sp-003', name: 'supplierTier', displayName: '供方层级', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-sp-004', name: 'ownedRegion', displayName: '区域归属', dataType: 'STRING', required: false, sortOrder: 4 },
+      { id: 'ep-sp-005', name: 'ratingScore', displayName: '评级得分', dataType: 'FLOAT', required: false, sortOrder: 5 },
+      { id: 'ep-sp-006', name: 'procurementWeight', displayName: '采购份额', dataType: 'FLOAT', required: false, sortOrder: 6 },
+    ],
+  },
+  {
+    id: 'et-sp-002',
+    name: 'MaterialCategory',
+    description: '供应商供货的关键物料或品类范围。',
+    properties: [
+      { id: 'ep-sp-011', name: 'materialCode', displayName: '物料编码', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-sp-012', name: 'materialName', displayName: '物料名称', dataType: 'STRING', required: true, sortOrder: 2 },
+      { id: 'ep-sp-013', name: 'category', displayName: '物料类别', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-sp-014', name: 'criticality', displayName: '关键度', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-sp-003',
+    name: 'Plant',
+    description: '供应商服务的工厂、园区或事业部。',
+    properties: [
+      { id: 'ep-sp-021', name: 'plantCode', displayName: '工厂编码', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-sp-022', name: 'plantName', displayName: '工厂名称', dataType: 'STRING', required: true, sortOrder: 2 },
+      { id: 'ep-sp-023', name: 'businessUnit', displayName: '业务单元', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-sp-024', name: 'lineCriticality', displayName: '产线关键度', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-sp-004',
+    name: 'DeliveryPerformance',
+    description: '供应商按时交付、加急响应和缺料影响等交付表现。',
+    properties: [
+      { id: 'ep-sp-031', name: 'onTimeRate', displayName: '准时交付率', dataType: 'FLOAT', required: true, sortOrder: 1 },
+      { id: 'ep-sp-032', name: 'leadTimeDays', displayName: '平均交期(天)', dataType: 'INTEGER', required: false, sortOrder: 2 },
+      { id: 'ep-sp-033', name: 'expediteCount', displayName: '加急次数', dataType: 'INTEGER', required: false, sortOrder: 3 },
+      { id: 'ep-sp-034', name: 'supplyStabilityScore', displayName: '供货稳定分', dataType: 'FLOAT', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-sp-005',
+    name: 'QualityIssue',
+    description: '来料质量异常、PPM超限和8D闭环事件。',
+    properties: [
+      { id: 'ep-sp-041', name: 'issueNo', displayName: '异常单号', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-sp-042', name: 'ppm', displayName: '质量PPM', dataType: 'FLOAT', required: false, sortOrder: 2 },
+      { id: 'ep-sp-043', name: 'severity', displayName: '严重级别', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-sp-044', name: 'closedLoopStatus', displayName: '闭环状态', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-sp-006',
+    name: 'FinancialRisk',
+    description: '供应商财务健康、现金流预警和诉讼风险快照。',
+    properties: [
+      { id: 'ep-sp-051', name: 'riskLevel', displayName: '风险等级', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-sp-052', name: 'debtRatio', displayName: '负债率', dataType: 'FLOAT', required: false, sortOrder: 2 },
+      { id: 'ep-sp-053', name: 'cashFlowAlertCount', displayName: '现金流预警次数', dataType: 'INTEGER', required: false, sortOrder: 3 },
+      { id: 'ep-sp-054', name: 'alertSource', displayName: '预警来源', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-sp-007',
+    name: 'ComplianceCertificate',
+    description: '资质认证、审厂结论和客户强制合规要求。',
+    properties: [
+      { id: 'ep-sp-061', name: 'certificateName', displayName: '证书名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-sp-062', name: 'validUntil', displayName: '有效期', dataType: 'DATE', required: false, sortOrder: 2 },
+      { id: 'ep-sp-063', name: 'auditResult', displayName: '审核结果', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-sp-064', name: 'issuer', displayName: '发证机构', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-sp-008',
+    name: 'SupplierSegment',
+    description: '供应商经营分层，用于份额、辅导和风险管控策略。',
+    properties: [
+      { id: 'ep-sp-071', name: 'segmentName', displayName: '分层名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-sp-072', name: 'recommendedWeightBand', displayName: '建议份额区间', dataType: 'STRING', required: false, sortOrder: 2 },
+      { id: 'ep-sp-073', name: 'reviewCycleDays', displayName: '复核周期(天)', dataType: 'INTEGER', required: false, sortOrder: 3 },
+      { id: 'ep-sp-074', name: 'governanceStrategy', displayName: '治理策略', dataType: 'TEXT', required: false, sortOrder: 4 },
+    ],
+  },
+]
+
+const SUPPLIER_PROFILE_RELATION_TYPES: RelationTypeConfig[] = [
+  { id: 'rt-sp-001', name: 'supplies_material', domain: 'Supplier', range: 'MaterialCategory', description: '供应商供货的关键物料或品类。', properties: [] },
+  { id: 'rt-sp-002', name: 'serves_plant', domain: 'Supplier', range: 'Plant', description: '供应商服务的工厂或事业部。', properties: [] },
+  { id: 'rt-sp-003', name: 'measured_by_delivery', domain: 'Supplier', range: 'DeliveryPerformance', description: '供应商交付表现的评分卡和事件快照。', properties: [] },
+  { id: 'rt-sp-004', name: 'has_quality_issue', domain: 'Supplier', range: 'QualityIssue', description: '供应商关联的来料质量异常和8D事件。', properties: [] },
+  { id: 'rt-sp-005', name: 'exposed_to_financial_risk', domain: 'Supplier', range: 'FinancialRisk', description: '供应商暴露的财务预警和经营风险。', properties: [] },
+  { id: 'rt-sp-006', name: 'holds_certificate', domain: 'Supplier', range: 'ComplianceCertificate', description: '供应商持有的认证资质和审厂结论。', properties: [] },
+  { id: 'rt-sp-007', name: 'classified_into_segment', domain: 'Supplier', range: 'SupplierSegment', description: '供应商被归类到对应治理分层。', properties: [] },
+  { id: 'rt-sp-008', name: 'delivery_for_material', domain: 'DeliveryPerformance', range: 'MaterialCategory', description: '交付表现对应的物料范围。', properties: [] },
+  { id: 'rt-sp-009', name: 'quality_issue_impacts_plant', domain: 'QualityIssue', range: 'Plant', description: '来料质量问题影响到的工厂。', properties: [] },
+  { id: 'rt-sp-010', name: 'certificate_covers_material', domain: 'ComplianceCertificate', range: 'MaterialCategory', description: '认证或审核覆盖的物料范围。', properties: [] },
+]
+
+const SUPPLIER_PROFILE_SKILLS: SkillConfig[] = [
+  { id: 'sk-sp-001', code: 'data_processing', name: '供应商主数据整编', enabled: true, prompt: '统一 SRM、交付事件、质量异常和财务风控数据，构建供应商唯一视图', source: 'built_in', tags: ['supplier', 'mdm'] },
+  { id: 'sk-sp-002', code: 'graph_synthesis', name: '供应商绩效图谱融合', enabled: true, prompt: '融合供应商、物料、工厂、交付、质量和风险实体，形成供应商画像图谱', source: 'built_in', tags: ['supplier', 'graph'] },
+  { id: 'sk-sp-003', code: 'custom', name: '采购份额策略编排', enabled: true, prompt: '根据交付表现、质量PPM、财务预警和资质状态推荐采购份额调整策略', source: 'built_in', tags: ['supplier', 'allocation'] },
+]
+
+const SUPPLIER_PROFILE_AI_INSIGHT_RUN: AiInsightRun = {
+  id: 'ai-sp-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-10T09:10:00.000Z',
+  completedAt: '2026-03-10T09:18:00.000Z',
+  scannedDocumentCount: 8,
+  addedEntityCount: 8,
+  addedRelationCount: 10,
+  addedEntityNames: ['Supplier', 'MaterialCategory', 'Plant', 'DeliveryPerformance', 'QualityIssue', 'FinancialRisk', 'ComplianceCertificate', 'SupplierSegment'],
+  addedRelationNames: ['supplies_material', 'serves_plant', 'measured_by_delivery', 'has_quality_issue', 'exposed_to_financial_risk', 'holds_certificate', 'classified_into_segment', 'delivery_for_material', 'quality_issue_impacts_plant', 'certificate_covers_material'],
+  warnings: [],
+  stage: '完成',
+  currentDocument: '供应商画像本体模型说明书.docx',
+  logs: [
+    '解析 8 份供应商主数据、交付评分、质量异常、财务预警和资质审厂资料',
+    '补齐 Supplier、MaterialCategory、Plant、DeliveryPerformance、QualityIssue、FinancialRisk、ComplianceCertificate、SupplierSegment 八类核心实体',
+    '形成供货范围、交付评分、质量闭环、财务预警、资质覆盖和供方分层十条关键关系链路',
+  ],
+}
+
+const SUPPLIER_PROFILE_RUN: ExtractionRun = {
+  id: 'run-sp-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-10T10:00:00.000Z',
+  completedAt: '2026-03-10T10:12:00.000Z',
+  candidateEntityCount: 74,
+  candidateRelationCount: 56,
+  pendingReviewCount: 0,
+  stage: '完成',
+  currentDocument: '采购份额调整与风险复核样本.jsonl',
+  logs: [
+    '抽取供应商、物料、工厂绑定、OTD评分和财务预警样本，生成供应商画像候选',
+    '识别交付失稳、质量PPM超阈值、资质到期和现金流预警等高频治理信号',
+    '形成供应商画像候选实体 74 个、关系 56 条，支撑供方评级与采购份额治理',
+  ],
+  warnings: [],
+  reviewItems: [
+    { id: 'ri-sp-001', kind: 'ENTITY', title: '宁波舜宇精密结构件 (Supplier)', evidence: 'SRM供应商主数据与供货范围映射.xlsx', confidence: 0.99, status: 'APPROVED' },
+    { id: 'ri-sp-002', kind: 'ENTITY', title: '电机控制器 (MaterialCategory)', evidence: 'SRM供应商主数据与供货范围映射.xlsx', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-sp-003', kind: 'ENTITY', title: '上海总装工厂 (Plant)', evidence: '准时交付率与缺料停线事件口径说明.md', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-sp-004', kind: 'ENTITY', title: '2026年2月OTD评分卡 (DeliveryPerformance)', evidence: '月度供应商绩效评分卡模板.md', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-sp-005', kind: 'ENTITY', title: 'IQC-202603-018 (QualityIssue)', evidence: '来料质量PPM与8D闭环样本.jsonl', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-sp-006', kind: 'ENTITY', title: '现金流预警-2026Q1 (FinancialRisk)', evidence: '供应商财务风险预警指标手册.docx', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-sp-007', kind: 'ENTITY', title: 'IATF 16949 (ComplianceCertificate)', evidence: '合规认证与审厂结论清单.xlsx', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-sp-008', kind: 'ENTITY', title: '战略供方 (SupplierSegment)', evidence: '月度供应商绩效评分卡模板.md', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-sp-009', kind: 'RELATION', title: '宁波舜宇精密结构件 (Supplier) → supplies_material → 电机控制器 (MaterialCategory)', evidence: '供货范围关系', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-sp-010', kind: 'RELATION', title: '宁波舜宇精密结构件 (Supplier) → serves_plant → 上海总装工厂 (Plant)', evidence: '工厂绑定关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-sp-011', kind: 'RELATION', title: '宁波舜宇精密结构件 (Supplier) → measured_by_delivery → 2026年2月OTD评分卡 (DeliveryPerformance)', evidence: '交付评分关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-sp-012', kind: 'RELATION', title: '宁波舜宇精密结构件 (Supplier) → exposed_to_financial_risk → 现金流预警-2026Q1 (FinancialRisk)', evidence: '财务预警关系', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-sp-013', kind: 'RELATION', title: '宁波舜宇精密结构件 (Supplier) → classified_into_segment → 战略供方 (SupplierSegment)', evidence: '供方分层关系', confidence: 0.96, status: 'APPROVED' },
+  ],
+}
+
+const SUPPLIER_PROFILE_VERSION: OntologyVersion = {
+  id: 'ver-sp-001',
+  version: 'v1.1',
+  label: '供应商评级与份额治理图谱',
+  createdAt: '2026-03-10T10:20:00.000Z',
+  sourceRunId: 'run-sp-001',
+  entityCount: 74,
+  relationCount: 56,
+}
+
+const SUPPLIER_PROFILE_ACTIONS: ActionDefinition[] = [
+  {
+    id: 'act-sp-001',
+    name: 'refresh_supplier_score',
+    displayName: '刷新供应商评级',
+    description: '根据交付表现、质量PPM和财务预警重新计算供应商评级分。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-sp-001',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-sp-001","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"delivery.snapshot.ingested\\"}"},{"functionId":"fn-sp-002","order":2,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"risk.snapshot.ingested\\"}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_score_review","notifyRole":"采购绩效经理"}',
+    parametersJson: '[{"name":"supplierCode","displayName":"供应商编码","dataType":"STRING","required":true},{"name":"onTimeRate","displayName":"准时交付率","dataType":"FLOAT","required":true},{"name":"qualityPpm","displayName":"质量PPM","dataType":"FLOAT","required":true},{"name":"debtRatio","displayName":"负债率","dataType":"FLOAT","required":true}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"Supplier","conditionJson":"{\\"when\\":\\"supplierCode_present\\"}","propertyMappingsJson":"{\\"ratingScore\\":\\"supplier_rating_score\\"}","sortOrder":1}]',
+    validationRulesJson: '[{"name":"supplier_required","condition":"supplierCode != \\"\\"","message":"供应商编码不能为空"},{"name":"otd_range","condition":"onTimeRate >= 0 and onTimeRate <= 1","message":"准时交付率需在 0 到 1 之间"},{"name":"ppm_non_negative","condition":"qualityPpm >= 0","message":"质量PPM不能为负数"}]',
+  },
+  {
+    id: 'act-sp-002',
+    name: 'adjust_procurement_weight',
+    displayName: '调整采购份额',
+    description: '基于供应商分层、风险指数和备用供方状态，给出采购份额调整建议。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-sp-001',
+    triggerType: 'MANUAL',
+    triggerConfigJson: '[{"functionId":"fn-sp-003","order":1,"triggerType":"MANUAL","triggerConfig":"{\\"entry\\":\\"workspace.button\\",\\"objective\\":\\"rebalance_share\\"}"},{"functionId":"fn-sp-004","order":2,"triggerType":"MANUAL","triggerConfig":"{\\"includeBackupSupplier\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_allocation_committee","notifyRole":"采购经理"}',
+    parametersJson: '[{"name":"supplierCode","displayName":"供应商编码","dataType":"STRING","required":true},{"name":"currentWeight","displayName":"当前采购份额","dataType":"FLOAT","required":true},{"name":"segmentName","displayName":"分层名称","dataType":"STRING","required":true},{"name":"riskIndex","displayName":"风险指数","dataType":"FLOAT","required":true}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"Supplier","conditionJson":"{\\"when\\":\\"supplierCode_present\\"}","propertyMappingsJson":"{\\"procurementWeight\\":\\"recommended_weight\\"}","sortOrder":1},{"ruleType":"CREATE_LINK","target":"SupplierSegment","conditionJson":"{\\"when\\":\\"segmentName_present\\"}","propertyMappingsJson":"{\\"from\\":\\"$supplierCode\\",\\"relation\\":\\"classified_into_segment\\",\\"to\\":\\"$segmentName\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"supplier_required","condition":"supplierCode != \\"\\"","message":"供应商编码不能为空"},{"name":"weight_range","condition":"currentWeight >= 0 and currentWeight <= 1","message":"当前采购份额需在 0 到 1 之间"},{"name":"risk_range","condition":"riskIndex >= 0 and riskIndex <= 100","message":"风险指数需在 0 到 100 之间"}]',
+  },
+  {
+    id: 'act-sp-003',
+    name: 'launch_supplier_risk_review',
+    displayName: '触发供方风险复核',
+    description: '当财务风险升高、质量PPM超阈值或资质到期时，自动发起供方风险复核。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-sp-006',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-sp-002","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"supplier.risk.changed\\",\\"riskThreshold\\":65}"}]',
+    exceptionPolicy: 'SKIP',
+    exceptionConfigJson: '{"retainDraft":true,"fallback":"manual_supplier_board","notifyRole":"SQE经理"}',
+    parametersJson: '[{"name":"supplierCode","displayName":"供应商编码","dataType":"STRING","required":true},{"name":"riskIndex","displayName":"风险指数","dataType":"FLOAT","required":true},{"name":"certificateStatus","displayName":"资质状态","dataType":"STRING","required":true},{"name":"qualityPpm","displayName":"质量PPM","dataType":"FLOAT","required":true}]',
+    rulesJson: '[{"ruleType":"CREATE_OBJECT","target":"FinancialRisk","conditionJson":"{\\"when\\":\\"riskIndex >= 65\\"}","propertyMappingsJson":"{\\"riskLevel\\":\\"HIGH\\",\\"alertSource\\":\\"auto_review\\"}","sortOrder":1}]',
+    validationRulesJson: '[{"name":"supplier_required","condition":"supplierCode != \\"\\"","message":"供应商编码不能为空"},{"name":"risk_range","condition":"riskIndex >= 0 and riskIndex <= 100","message":"风险指数需在 0 到 100 之间"},{"name":"ppm_non_negative","condition":"qualityPpm >= 0","message":"质量PPM不能为负数"}]',
+  },
+]
+
+const SUPPLIER_PROFILE_FUNCTIONS: FunctionDefinition[] = [
+  {
+    id: 'fn-sp-001',
+    name: '交付评分计算',
+    description: '根据准时交付率、交期、加急次数和缺料事件计算交付得分。',
+    scriptContent: 'def calc_supplier_delivery_score(on_time_rate: float, lead_time_days: int, expedite_count: int, shortage_incidents: int = 0):\n    """计算供应商交付表现得分。"""\n    base = max(min(on_time_rate, 1.0), 0.0) * 70\n    lead_time_penalty = min(max(lead_time_days - 7, 0) * 1.8, 18)\n    expedite_penalty = min(max(expedite_count, 0) * 2.5, 10)\n    shortage_penalty = min(max(shortage_incidents, 0) * 6, 18)\n    score = round(max(0, min(100, base + 30 - lead_time_penalty - expedite_penalty - shortage_penalty)), 1)\n    band = "A" if score >= 90 else "B" if score >= 75 else "C"\n    return {"deliveryScore": score, "band": band}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-sp-002',
+    name: '风险指数计算',
+    description: '综合财务、诉讼和质量信号计算供应商风险指数。',
+    scriptContent: 'def calc_supplier_risk_index(debt_ratio: float, cash_flow_alerts: int, litigation_count: int, quality_ppm: float):\n    """计算供应商风险指数。"""\n    debt_score = min(max(debt_ratio, 0.0), 1.0) * 35\n    cash_flow_score = min(max(cash_flow_alerts, 0) * 12, 24)\n    litigation_score = min(max(litigation_count, 0) * 10, 20)\n    quality_score = min(max(quality_ppm, 0.0) / 50, 21)\n    risk_index = round(min(100, debt_score + cash_flow_score + litigation_score + quality_score), 1)\n    risk_level = "HIGH" if risk_index >= 65 else "MEDIUM" if risk_index >= 40 else "LOW"\n    return {"riskIndex": risk_index, "riskLevel": risk_level}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-sp-003',
+    name: '供应商分层推荐',
+    description: '依据交付得分、风险指数、质量PPM和资质状态推荐供应商分层。',
+    scriptContent: 'def recommend_supplier_segment(delivery_score: float, risk_index: float, quality_ppm: float, certificate_status: str = "VALID"):\n    """推荐供应商分层。"""\n    if certificate_status != "VALID" or risk_index >= 75 or quality_ppm >= 1200:\n        segment = "观察名单"\n    elif delivery_score >= 88 and risk_index < 35 and quality_ppm < 300:\n        segment = "战略供方"\n    elif delivery_score >= 75 and risk_index < 55:\n        segment = "核心供方"\n    else:\n        segment = "条件供方"\n    return {"segmentName": segment}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-sp-004',
+    name: '采购份额调整建议',
+    description: '根据分层、风险指数、当前份额和备用供方状态推荐新的采购份额。',
+    scriptContent: 'def build_procurement_weight_plan(current_weight: float, segment_name: str, risk_index: float, capacity_share: float, backup_supplier_ready: bool = False):\n    """生成采购份额调整建议。"""\n    segment_delta = {"战略供方": 0.08, "核心供方": 0.02, "条件供方": -0.05, "观察名单": -0.12}\n    delta = segment_delta.get(segment_name, 0.0)\n    if risk_index >= 70:\n        delta -= 0.08\n    elif risk_index <= 30:\n        delta += 0.03\n    if backup_supplier_ready and risk_index >= 55:\n        delta -= 0.05\n    upper_bound = max(min(capacity_share + 0.12, 0.75), 0.05)\n    recommended = round(max(0.05, min(current_weight + delta, upper_bound)), 3)\n    return {"recommendedWeight": recommended, "adjustment": round(recommended - current_weight, 3), "procurementAction": "rebalance" if recommended != current_weight else "hold"}',
+    status: 'ACTIVE',
+  },
+]
+
+const INVENTORY_RISK_PROJECT_ID = 'proj-1418'
+const INVENTORY_RISK_PROJECT_NAME = '库存风险本体'
+const INVENTORY_RISK_UPDATED_AT = '2026-03-11T11:30:00.000Z'
+const INVENTORY_RISK_DESCRIPTION =
+  '制造业 · 供应链与库存治理领域库存风险本体，覆盖物料、仓库、工厂需求、库存快照、风险信号、安全库存策略、补货建议与供应商选项；支持缺货预警、超储识别、补货建议和供方分摊决策。'
+
+const INVENTORY_RISK_DOCUMENTS: ProjectDocument[] = [
+  {
+    id: 'doc-ir-001',
+    name: '库存风险本体模型说明书.docx',
+    fileType: 'docx',
+    size: 216064,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-03T09:20:00.000Z',
+  },
+  {
+    id: 'doc-ir-002',
+    name: '物料安全库存与补货阈值策略.xlsx',
+    fileType: 'xlsx',
+    size: 248320,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-04T10:30:00.000Z',
+  },
+  {
+    id: 'doc-ir-003',
+    name: '缺料停线与库存预警口径说明.md',
+    fileType: 'md',
+    size: 97280,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-05T11:15:00.000Z',
+  },
+  {
+    id: 'doc-ir-004',
+    name: '仓库库存快照与在途样本.jsonl',
+    fileType: 'jsonl',
+    size: 74624,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-06T14:20:00.000Z',
+  },
+  {
+    id: 'doc-ir-005',
+    name: '工厂需求波动与缺料升级案例.docx',
+    fileType: 'docx',
+    size: 183296,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-07T09:50:00.000Z',
+  },
+  {
+    id: 'doc-ir-006',
+    name: '供应商交期与MOQ约束清单.xlsx',
+    fileType: 'xlsx',
+    size: 209920,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-08T11:00:00.000Z',
+  },
+  {
+    id: 'doc-ir-007',
+    name: '库存风险周报与处置SOP.md',
+    fileType: 'md',
+    size: 89600,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-09T15:35:00.000Z',
+  },
+  {
+    id: 'doc-ir-008',
+    name: '自动补货与调拨建议样本.jsonl',
+    fileType: 'jsonl',
+    size: 71296,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-03-11T09:00:00.000Z',
+  },
+]
+
+const INVENTORY_RISK_DATA_SOURCES: StructuredDataSource[] = [
+  {
+    id: 'ds-ir-001',
+    name: 'ERP库存主数据中心',
+    type: 'MYSQL',
+    host: '10.15.22.18',
+    port: 3306,
+    database: 'inventory_core',
+    username: 'inv_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['material_master', 'warehouse_stock_snapshot', 'in_transit_stock'],
+    rowLimit: 220000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'snapshot_time',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:12:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-03T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:12:00.000Z',
+  },
+  {
+    id: 'ds-ir-002',
+    name: '工厂需求与缺料事件仓',
+    type: 'CLICKHOUSE',
+    host: '10.15.22.33',
+    port: 8123,
+    database: 'plant_supply_demand',
+    username: 'demand_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['plant_demand_daily', 'shortage_event', 'consumption_history'],
+    rowLimit: 300000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'biz_date',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:20:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-04T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:20:00.000Z',
+  },
+  {
+    id: 'ds-ir-003',
+    name: '供应商交期与采购约束库',
+    type: 'POSTGRESQL',
+    host: '10.15.22.46',
+    port: 5432,
+    database: 'procurement_constraints',
+    username: 'po_reader',
+    password: '',
+    sslEnabled: false,
+    enabled: true,
+    extractMode: 'TABLE',
+    tables: ['supplier_lead_time', 'purchase_moq', 'supplier_capacity_share'],
+    rowLimit: 120000,
+    syncMode: 'INCREMENTAL',
+    incrementalColumn: 'updated_at',
+    status: 'SUCCESS',
+    lastTestAt: '2026-03-11T08:28:00.000Z',
+    lastError: '',
+    createdAt: '2026-03-05T10:00:00.000Z',
+    updatedAt: '2026-03-11T08:28:00.000Z',
+  },
+]
+
+const INVENTORY_RISK_ENTITY_TYPES: EntityTypeConfig[] = [
+  {
+    id: 'et-ir-001',
+    name: 'Material',
+    description: '被管控的关键物料或备件。',
+    properties: [
+      { id: 'ep-ir-001', name: 'materialCode', displayName: '物料编码', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-ir-002', name: 'materialName', displayName: '物料名称', dataType: 'STRING', required: true, sortOrder: 2 },
+      { id: 'ep-ir-003', name: 'abcClass', displayName: 'ABC分类', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-ir-004', name: 'criticality', displayName: '关键度', dataType: 'STRING', required: false, sortOrder: 4 },
+      { id: 'ep-ir-005', name: 'unit', displayName: '计量单位', dataType: 'STRING', required: false, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-ir-002',
+    name: 'Warehouse',
+    description: '物料库存所在仓库、线边仓或产线超市。',
+    properties: [
+      { id: 'ep-ir-011', name: 'warehouseCode', displayName: '仓库编码', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-ir-012', name: 'warehouseName', displayName: '仓库名称', dataType: 'STRING', required: true, sortOrder: 2 },
+      { id: 'ep-ir-013', name: 'warehouseType', displayName: '仓库类型', dataType: 'STRING', required: false, sortOrder: 3 },
+      { id: 'ep-ir-014', name: 'region', displayName: '所属区域', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-ir-003',
+    name: 'PlantDemand',
+    description: '工厂、产线或售后网络对物料的需求计划。',
+    properties: [
+      { id: 'ep-ir-021', name: 'demandDate', displayName: '需求日期', dataType: 'DATE', required: true, sortOrder: 1 },
+      { id: 'ep-ir-022', name: 'dailyDemandQty', displayName: '日需求量', dataType: 'FLOAT', required: true, sortOrder: 2 },
+      { id: 'ep-ir-023', name: 'demandVolatility', displayName: '需求波动系数', dataType: 'FLOAT', required: false, sortOrder: 3 },
+      { id: 'ep-ir-024', name: 'plantPriority', displayName: '工厂优先级', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-ir-004',
+    name: 'InventorySnapshot',
+    description: '库存快照，记录现存、在途、锁定和可用库存状态。',
+    properties: [
+      { id: 'ep-ir-031', name: 'snapshotTime', displayName: '快照时间', dataType: 'DATETIME', required: true, sortOrder: 1 },
+      { id: 'ep-ir-032', name: 'onHandQty', displayName: '现存数量', dataType: 'FLOAT', required: true, sortOrder: 2 },
+      { id: 'ep-ir-033', name: 'inTransitQty', displayName: '在途数量', dataType: 'FLOAT', required: false, sortOrder: 3 },
+      { id: 'ep-ir-034', name: 'availableQty', displayName: '可用数量', dataType: 'FLOAT', required: false, sortOrder: 4 },
+      { id: 'ep-ir-035', name: 'coverDays', displayName: '库存覆盖天数', dataType: 'FLOAT', required: false, sortOrder: 5 },
+    ],
+  },
+  {
+    id: 'et-ir-005',
+    name: 'RiskSignal',
+    description: '库存相关风险预警，例如缺货、超储、断供和交期拉长。',
+    properties: [
+      { id: 'ep-ir-041', name: 'riskType', displayName: '风险类型', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-ir-042', name: 'riskLevel', displayName: '风险等级', dataType: 'STRING', required: true, sortOrder: 2 },
+      { id: 'ep-ir-043', name: 'impactDays', displayName: '影响天数', dataType: 'FLOAT', required: false, sortOrder: 3 },
+      { id: 'ep-ir-044', name: 'riskScore', displayName: '风险评分', dataType: 'FLOAT', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-ir-006',
+    name: 'SafetyStockPolicy',
+    description: '针对物料和场景定义的安全库存与补货策略。',
+    properties: [
+      { id: 'ep-ir-051', name: 'safetyStockQty', displayName: '安全库存量', dataType: 'FLOAT', required: true, sortOrder: 1 },
+      { id: 'ep-ir-052', name: 'targetCoverDays', displayName: '目标覆盖天数', dataType: 'INTEGER', required: true, sortOrder: 2 },
+      { id: 'ep-ir-053', name: 'reorderPoint', displayName: '补货点', dataType: 'FLOAT', required: false, sortOrder: 3 },
+      { id: 'ep-ir-054', name: 'policyScenario', displayName: '策略场景', dataType: 'STRING', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-ir-007',
+    name: 'ReplenishmentRecommendation',
+    description: '补货、调拨或降库存处置建议。',
+    properties: [
+      { id: 'ep-ir-061', name: 'recommendedQty', displayName: '建议数量', dataType: 'FLOAT', required: true, sortOrder: 1 },
+      { id: 'ep-ir-062', name: 'recommendationType', displayName: '建议类型', dataType: 'STRING', required: true, sortOrder: 2 },
+      { id: 'ep-ir-063', name: 'expectedArrivalDays', displayName: '预计到货天数', dataType: 'INTEGER', required: false, sortOrder: 3 },
+      { id: 'ep-ir-064', name: 'reasonSummary', displayName: '建议原因', dataType: 'TEXT', required: false, sortOrder: 4 },
+    ],
+  },
+  {
+    id: 'et-ir-008',
+    name: 'SupplierOption',
+    description: '可用于补货或分摊采购的供应商候选。',
+    properties: [
+      { id: 'ep-ir-071', name: 'supplierName', displayName: '供应商名称', dataType: 'STRING', required: true, sortOrder: 1 },
+      { id: 'ep-ir-072', name: 'leadTimeDays', displayName: '交期(天)', dataType: 'INTEGER', required: false, sortOrder: 2 },
+      { id: 'ep-ir-073', name: 'moq', displayName: 'MOQ', dataType: 'FLOAT', required: false, sortOrder: 3 },
+      { id: 'ep-ir-074', name: 'capacityShare', displayName: '可供份额', dataType: 'FLOAT', required: false, sortOrder: 4 },
+    ],
+  },
+]
+
+const INVENTORY_RISK_RELATION_TYPES: RelationTypeConfig[] = [
+  { id: 'rt-ir-001', name: 'stocked_in', domain: 'Material', range: 'Warehouse', description: '物料在仓库中的库存归属。', properties: [] },
+  { id: 'rt-ir-002', name: 'faces_demand', domain: 'Material', range: 'PlantDemand', description: '物料对应的工厂或产线需求。', properties: [] },
+  { id: 'rt-ir-003', name: 'tracked_by_snapshot', domain: 'Material', range: 'InventorySnapshot', description: '物料当前库存快照。', properties: [] },
+  { id: 'rt-ir-004', name: 'constrained_by_policy', domain: 'Material', range: 'SafetyStockPolicy', description: '物料适用的安全库存策略。', properties: [] },
+  { id: 'rt-ir-005', name: 'triggers_risk_signal', domain: 'InventorySnapshot', range: 'RiskSignal', description: '库存状态触发的风险预警。', properties: [] },
+  { id: 'rt-ir-006', name: 'mitigated_by_replenishment', domain: 'RiskSignal', range: 'ReplenishmentRecommendation', description: '风险对应的补货或调拨建议。', properties: [] },
+  { id: 'rt-ir-007', name: 'recommendation_for_material', domain: 'ReplenishmentRecommendation', range: 'Material', description: '补货建议针对的物料。', properties: [] },
+  { id: 'rt-ir-008', name: 'recommendation_to_warehouse', domain: 'ReplenishmentRecommendation', range: 'Warehouse', description: '补货或调拨建议的执行仓。', properties: [] },
+  { id: 'rt-ir-009', name: 'risk_impacts_plant', domain: 'RiskSignal', range: 'PlantDemand', description: '库存风险影响的工厂需求。', properties: [] },
+  { id: 'rt-ir-010', name: 'sourced_from_supplier', domain: 'ReplenishmentRecommendation', range: 'SupplierOption', description: '建议补货来源的供应商选项。', properties: [] },
+]
+
+const INVENTORY_RISK_SKILLS: SkillConfig[] = [
+  { id: 'sk-ir-001', code: 'data_processing', name: '库存与需求整编', enabled: true, prompt: '统一 ERP 库存、工厂需求和在途库存数据，形成库存风险分析视图', source: 'built_in', tags: ['inventory', 'demand'] },
+  { id: 'sk-ir-002', code: 'graph_synthesis', name: '库存风险图谱融合', enabled: true, prompt: '融合物料、仓库、需求、库存快照、风险信号和补货建议，形成库存治理图谱', source: 'built_in', tags: ['inventory', 'graph'] },
+  { id: 'sk-ir-003', code: 'custom', name: '补货与调拨策略编排', enabled: true, prompt: '根据安全库存、交期、MOQ 和风险等级编排补货、调拨与降库存建议', source: 'built_in', tags: ['inventory', 'replenishment'] },
+]
+
+const INVENTORY_RISK_AI_INSIGHT_RUN: AiInsightRun = {
+  id: 'ai-ir-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-10T09:30:00.000Z',
+  completedAt: '2026-03-10T09:38:00.000Z',
+  scannedDocumentCount: 8,
+  addedEntityCount: 8,
+  addedRelationCount: 10,
+  addedEntityNames: ['Material', 'Warehouse', 'PlantDemand', 'InventorySnapshot', 'RiskSignal', 'SafetyStockPolicy', 'ReplenishmentRecommendation', 'SupplierOption'],
+  addedRelationNames: ['stocked_in', 'faces_demand', 'tracked_by_snapshot', 'constrained_by_policy', 'triggers_risk_signal', 'mitigated_by_replenishment', 'recommendation_for_material', 'recommendation_to_warehouse', 'risk_impacts_plant', 'sourced_from_supplier'],
+  warnings: [],
+  stage: '完成',
+  currentDocument: '库存风险本体模型说明书.docx',
+  logs: [
+    '解析 8 份库存策略、需求波动、供应商约束与补货建议资料',
+    '补齐 Material、Warehouse、PlantDemand、InventorySnapshot、RiskSignal、SafetyStockPolicy、ReplenishmentRecommendation、SupplierOption 八类核心实体',
+    '形成库存状态、需求波动、风险预警与补货建议十条关键关系链路',
+  ],
+}
+
+const INVENTORY_RISK_RUN: ExtractionRun = {
+  id: 'run-ir-001',
+  status: 'COMPLETED',
+  progress: 100,
+  createdAt: '2026-03-10T10:10:00.000Z',
+  completedAt: '2026-03-10T10:22:00.000Z',
+  candidateEntityCount: 78,
+  candidateRelationCount: 62,
+  pendingReviewCount: 0,
+  stage: '完成',
+  currentDocument: '自动补货与调拨建议样本.jsonl',
+  logs: [
+    '抽取物料库存、工厂需求、在途供给、安全库存和供应商交期约束样本',
+    '识别缺货、超储、交期拉长和单一供方依赖等高频库存风险信号',
+    '形成库存风险候选实体 78 个、关系 62 条，支撑补货、调拨和降库存处置',
+  ],
+  warnings: [],
+  reviewItems: [
+    { id: 'ri-ir-001', kind: 'ENTITY', title: '高精密轴承6208 (Material)', evidence: '物料安全库存与补货阈值策略.xlsx', confidence: 0.99, status: 'APPROVED' },
+    { id: 'ri-ir-002', kind: 'ENTITY', title: '华东中心仓 (Warehouse)', evidence: '仓库库存快照与在途样本.jsonl', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-ir-003', kind: 'ENTITY', title: '上海总装本周需求 (PlantDemand)', evidence: '工厂需求波动与缺料升级案例.docx', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-ir-004', kind: 'ENTITY', title: '库存快照-2026-03-11 (InventorySnapshot)', evidence: '仓库库存快照与在途样本.jsonl', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-ir-005', kind: 'ENTITY', title: '缺货风险预警 (RiskSignal)', evidence: '库存风险周报与处置SOP.md', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-ir-006', kind: 'ENTITY', title: 'A类关键件安全库存策略 (SafetyStockPolicy)', evidence: '物料安全库存与补货阈值策略.xlsx', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-ir-007', kind: 'ENTITY', title: '补货建议单#IR-001 (ReplenishmentRecommendation)', evidence: '自动补货与调拨建议样本.jsonl', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-ir-008', kind: 'ENTITY', title: '宁波舜宇精密结构件 (SupplierOption)', evidence: '供应商交期与MOQ约束清单.xlsx', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-ir-009', kind: 'RELATION', title: '高精密轴承6208 (Material) → stocked_in → 华东中心仓 (Warehouse)', evidence: '库存归属关系', confidence: 0.98, status: 'APPROVED' },
+    { id: 'ri-ir-010', kind: 'RELATION', title: '高精密轴承6208 (Material) → faces_demand → 上海总装本周需求 (PlantDemand)', evidence: '需求关联关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-ir-011', kind: 'RELATION', title: '库存快照-2026-03-11 (InventorySnapshot) → triggers_risk_signal → 缺货风险预警 (RiskSignal)', evidence: '风险识别关系', confidence: 0.97, status: 'APPROVED' },
+    { id: 'ri-ir-012', kind: 'RELATION', title: '缺货风险预警 (RiskSignal) → mitigated_by_replenishment → 补货建议单#IR-001 (ReplenishmentRecommendation)', evidence: '处置建议关系', confidence: 0.96, status: 'APPROVED' },
+    { id: 'ri-ir-013', kind: 'RELATION', title: '补货建议单#IR-001 (ReplenishmentRecommendation) → sourced_from_supplier → 宁波舜宇精密结构件 (SupplierOption)', evidence: '供应商建议关系', confidence: 0.96, status: 'APPROVED' },
+  ],
+}
+
+const INVENTORY_RISK_VERSION: OntologyVersion = {
+  id: 'ver-ir-001',
+  version: 'v1.1',
+  label: '库存预警与补货治理图谱',
+  createdAt: '2026-03-10T10:28:00.000Z',
+  sourceRunId: 'run-ir-001',
+  entityCount: 78,
+  relationCount: 62,
+}
+
+const INVENTORY_RISK_ACTIONS: ActionDefinition[] = [
+  {
+    id: 'act-ir-001',
+    name: 'refresh_inventory_cover',
+    displayName: '刷新库存覆盖天数',
+    description: '根据现存、在途和日需求量计算库存覆盖天数并回写快照。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-ir-004',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-ir-001","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"inventory.snapshot.ingested\\"}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_inventory_review","notifyRole":"库存计划员"}',
+    parametersJson: '[{"name":"materialCode","displayName":"物料编码","dataType":"STRING","required":true},{"name":"onHandQty","displayName":"现存数量","dataType":"FLOAT","required":true},{"name":"inTransitQty","displayName":"在途数量","dataType":"FLOAT","required":true},{"name":"dailyDemand","displayName":"日需求量","dataType":"FLOAT","required":true}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"InventorySnapshot","conditionJson":"{\\"when\\":\\"materialCode_present\\"}","propertyMappingsJson":"{\\"coverDays\\":\\"cover_days\\"}","sortOrder":1}]',
+    validationRulesJson: '[{"name":"material_required","condition":"materialCode != \\"\\"","message":"物料编码不能为空"},{"name":"qty_non_negative","condition":"onHandQty >= 0 and inTransitQty >= 0","message":"库存数量不能为负数"},{"name":"demand_positive","condition":"dailyDemand > 0","message":"日需求量必须大于 0"}]',
+  },
+  {
+    id: 'act-ir-002',
+    name: 'evaluate_shortage_risk',
+    displayName: '评估缺货风险',
+    description: '结合缺口天数、需求波动和供应商交期评估库存风险等级。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-ir-005',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-ir-002","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"inventory.cover.changed\\",\\"includeSingleSource\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_risk_board","notifyRole":"供应链经理"}',
+    parametersJson: '[{"name":"shortageDays","displayName":"缺口天数","dataType":"FLOAT","required":true},{"name":"demandVolatility","displayName":"需求波动系数","dataType":"FLOAT","required":true},{"name":"supplierLeadTime","displayName":"供应商交期","dataType":"INTEGER","required":true},{"name":"singleSource","displayName":"是否单一供方","dataType":"BOOLEAN","required":false,"defaultValue":"false"}]',
+    rulesJson: '[{"ruleType":"CREATE_OBJECT","target":"RiskSignal","conditionJson":"{\\"when\\":\\"shortageDays > 0\\"}","propertyMappingsJson":"{\\"riskLevel\\":\\"risk_level\\",\\"riskScore\\":\\"risk_score\\",\\"riskType\\":\\"shortage\\"}","sortOrder":1}]',
+    validationRulesJson: '[{"name":"shortage_non_negative","condition":"shortageDays >= 0","message":"缺口天数不能为负数"},{"name":"volatility_non_negative","condition":"demandVolatility >= 0","message":"需求波动不能为负数"},{"name":"lead_time_positive","condition":"supplierLeadTime > 0","message":"供应商交期必须大于 0"}]',
+  },
+  {
+    id: 'act-ir-003',
+    name: 'generate_replenishment_plan',
+    displayName: '生成补货建议',
+    description: '根据目标覆盖天数、库存缺口和 MOQ 生成补货或调拨建议。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-ir-007',
+    triggerType: 'MANUAL',
+    triggerConfigJson: '[{"functionId":"fn-ir-003","order":1,"triggerType":"MANUAL","triggerConfig":"{\\"entry\\":\\"workspace.button\\",\\"respectMoq\\":true}"},{"functionId":"fn-ir-004","order":2,"triggerType":"MANUAL","triggerConfig":"{\\"splitBySupplier\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"fallback":"manual_replenishment_committee","notifyRole":"采购计划员"}',
+    parametersJson: '[{"name":"targetCoverDays","displayName":"目标覆盖天数","dataType":"INTEGER","required":true},{"name":"dailyDemand","displayName":"日需求量","dataType":"FLOAT","required":true},{"name":"onHandQty","displayName":"现存数量","dataType":"FLOAT","required":true},{"name":"inTransitQty","displayName":"在途数量","dataType":"FLOAT","required":true},{"name":"moq","displayName":"MOQ","dataType":"FLOAT","required":true}]',
+    rulesJson: '[{"ruleType":"CREATE_OBJECT","target":"ReplenishmentRecommendation","conditionJson":"{\\"when\\":\\"dailyDemand > 0\\"}","propertyMappingsJson":"{\\"recommendedQty\\":\\"recommended_qty\\",\\"recommendationType\\":\\"purchase\\"}","sortOrder":1}]',
+    validationRulesJson: '[{"name":"cover_positive","condition":"targetCoverDays > 0","message":"目标覆盖天数必须大于 0"},{"name":"demand_positive","condition":"dailyDemand > 0","message":"日需求量必须大于 0"},{"name":"moq_positive","condition":"moq >= 0","message":"MOQ 不能为负数"}]',
+  },
+]
+
+const INVENTORY_RISK_FUNCTIONS: FunctionDefinition[] = [
+  {
+    id: 'fn-ir-001',
+    name: '库存覆盖天数计算',
+    description: '根据现存、在途和日需求量计算库存覆盖天数。',
+    scriptContent: 'def calc_inventory_cover_days(on_hand_qty: float, in_transit_qty: float, daily_demand: float):\n    """计算库存覆盖天数。"""\n    available = max(on_hand_qty, 0) + max(in_transit_qty, 0)\n    cover_days = round(available / daily_demand, 2) if daily_demand > 0 else 999.0\n    return {"availableQty": available, "coverDays": cover_days}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-ir-002',
+    name: '库存风险评分',
+    description: '综合缺口天数、需求波动、交期和单一供方因素计算风险等级。',
+    scriptContent: 'def evaluate_inventory_risk(shortage_days: float, demand_volatility: float, supplier_lead_time: int, single_source: bool = False):\n    """评估库存风险等级。"""\n    score = min(max(shortage_days, 0), 15) * 4 + min(max(demand_volatility, 0), 1) * 25 + min(max(supplier_lead_time, 0), 30) * 1.5 + (12 if single_source else 0)\n    risk_level = "HIGH" if score >= 65 else "MEDIUM" if score >= 35 else "LOW"\n    return {"riskScore": round(min(score, 100), 1), "riskLevel": risk_level}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-ir-003',
+    name: '补货数量建议',
+    description: '根据目标覆盖天数、库存现状和 MOQ 输出建议补货数量。',
+    scriptContent: 'def recommend_replenishment_qty(target_cover_days: int, daily_demand: float, on_hand_qty: float, in_transit_qty: float, moq: float = 0):\n    """计算建议补货数量。"""\n    target_stock = target_cover_days * daily_demand\n    current_stock = max(on_hand_qty, 0) + max(in_transit_qty, 0)\n    gap = max(target_stock - current_stock, 0)\n    recommended_qty = max(gap, moq) if gap > 0 else 0\n    return {"targetStock": round(target_stock, 1), "currentStock": round(current_stock, 1), "recommendedQty": round(recommended_qty, 1)}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-ir-004',
+    name: '供应商分摊建议',
+    description: '根据供应商可供份额、风险分和 MOQ 约束输出分摊采购方案。',
+    scriptContent: 'def allocate_supplier_split(replenishment_qty: float, supplier_options: list[dict]):\n    """生成供应商分摊方案。"""\n    ranked = sorted(supplier_options, key=lambda item: (item.get("riskScore", 100), -item.get("capacityShare", 0)))\n    remain = replenishment_qty\n    allocations = []\n    for item in ranked:\n        capacity = max(item.get("capacityShare", 0), 0)\n        qty = min(remain, replenishment_qty * capacity)\n        allocations.append({"supplierName": item.get("supplierName"), "allocatedQty": round(qty, 1)})\n        remain = max(remain - qty, 0)\n    return {"allocations": allocations, "remainQty": round(remain, 1)}',
+    status: 'ACTIVE',
+  },
+]
+
 const CONTRACT_CONSTRAINTS_PROJECT_ID = 'proj-1524'
 const CONTRACT_CONSTRAINTS_PROJECT_NAME = '合同约束本体'
 const CONTRACT_CONSTRAINTS_UPDATED_AT = '2026-03-11T10:40:00.000Z'
@@ -2505,6 +4197,534 @@ function isContractConstraintsProject(project: Pick<ProjectDetail, 'id' | 'name'
   return project.id === CONTRACT_CONSTRAINTS_PROJECT_ID || project.name === CONTRACT_CONSTRAINTS_PROJECT_NAME
 }
 
+function isTaskSchedulingProject(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
+  return project.id === TASK_SCHEDULING_PROJECT_ID || project.name === TASK_SCHEDULING_PROJECT_NAME
+}
+
+function isMemberProfileProject(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
+  return project.id === MEMBER_PROFILE_PROJECT_ID || project.name === MEMBER_PROFILE_PROJECT_NAME
+}
+
+function isSupplierProfileProject(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
+  return project.id === SUPPLIER_PROFILE_PROJECT_ID || project.name === SUPPLIER_PROFILE_PROJECT_NAME
+}
+
+function isInventoryRiskProject(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
+  return project.id === INVENTORY_RISK_PROJECT_ID || project.name === INVENTORY_RISK_PROJECT_NAME
+}
+
+function ensureTaskSchedulingSeed(project: ProjectDetail): boolean {
+  if (!isTaskSchedulingProject(project)) {
+    return false
+  }
+
+  let changed = false
+
+  if (project.name !== TASK_SCHEDULING_PROJECT_NAME) {
+    project.name = TASK_SCHEDULING_PROJECT_NAME
+    changed = true
+  }
+
+  if (project.category !== 'manufacturing') {
+    project.category = 'manufacturing'
+    changed = true
+  }
+
+  if (project.description !== TASK_SCHEDULING_DESCRIPTION) {
+    project.description = TASK_SCHEDULING_DESCRIPTION
+    changed = true
+  }
+
+  if ((Date.parse(project.updatedAt || '') || 0) < Date.parse(TASK_SCHEDULING_UPDATED_AT)) {
+    project.updatedAt = TASK_SCHEDULING_UPDATED_AT
+    changed = true
+  }
+
+  const cleanedDocuments = removeItemsById(project.documents, ['doc-1.3.12-1', 'doc-1.3.12-2'])
+  if (cleanedDocuments.changed) {
+    project.documents = cleanedDocuments.items
+    changed = true
+  }
+
+  const mergedDocuments = mergeUniqueById(project.documents, cloneProjectData(TASK_SCHEDULING_DOCUMENTS))
+  if (mergedDocuments.changed) {
+    project.documents = mergedDocuments.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedDataSources = mergeUniqueById(project.dataSources, cloneProjectData(TASK_SCHEDULING_DATA_SOURCES))
+  if (mergedDataSources.changed) {
+    project.dataSources = mergedDataSources.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const cleanedEntityTypes = removeItemsById(project.schemaConfig.entityTypes, ['et-1.3.12-s', 'et-1.3.12-o'])
+  if (cleanedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = cleanedEntityTypes.items
+    changed = true
+  }
+
+  const mergedEntityTypes = mergeUniqueById(project.schemaConfig.entityTypes, cloneProjectData(TASK_SCHEDULING_ENTITY_TYPES))
+  if (mergedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = mergedEntityTypes.items
+    changed = true
+  }
+
+  const cleanedRelationTypes = removeItemsById(project.schemaConfig.relationTypes, ['rt-1.3.12-1'])
+  if (cleanedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = cleanedRelationTypes.items
+    changed = true
+  }
+
+  const mergedRelationTypes = mergeUniqueById(project.schemaConfig.relationTypes, cloneProjectData(TASK_SCHEDULING_RELATION_TYPES))
+  if (mergedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = mergedRelationTypes.items
+    changed = true
+  }
+
+  const mergedSkills = mergeUniqueById(project.schemaConfig.skills, cloneProjectData(TASK_SCHEDULING_SKILLS))
+  if (mergedSkills.changed) {
+    project.schemaConfig.skills = mergedSkills.items
+    changed = true
+  }
+
+  if (project.schemaConfig.entityScope !== '生产执行与动态排产场景中的工单、工序、设备资源、班次日历、人员技能、约束规则、排程计划与派工任务等核心调度实体') {
+    project.schemaConfig.entityScope = '生产执行与动态排产场景中的工单、工序、设备资源、班次日历、人员技能、约束规则、排程计划与派工任务等核心调度实体'
+    changed = true
+  }
+
+  if (project.schemaConfig.relationScope !== '覆盖工单拆解、工序资源匹配、约束校验、设备班次分配、插单重排与派工下发的完整任务调度关系链路') {
+    project.schemaConfig.relationScope = '覆盖工单拆解、工序资源匹配、约束校验、设备班次分配、插单重排与派工下发的完整任务调度关系链路'
+    changed = true
+  }
+
+  if (project.schemaConfig.updatedAt !== TASK_SCHEDULING_UPDATED_AT) {
+    project.schemaConfig.updatedAt = TASK_SCHEDULING_UPDATED_AT
+    changed = true
+  }
+
+  if (!project.aiInsightRun) {
+    project.aiInsightRun = cloneProjectData(TASK_SCHEDULING_AI_INSIGHT_RUN)
+    changed = true
+  }
+
+  const mergedRuns = mergeUniqueById(project.runs, cloneProjectData([TASK_SCHEDULING_RUN]))
+  if (mergedRuns.changed) {
+    project.runs = mergedRuns.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedVersions = mergeUniqueById(project.versions, cloneProjectData([TASK_SCHEDULING_VERSION]))
+  if (mergedVersions.changed) {
+    project.versions = mergedVersions.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedActions = mergeUniqueById(project.actions, cloneProjectData(TASK_SCHEDULING_ACTIONS))
+  if (mergedActions.changed) {
+    project.actions = mergedActions.items
+    changed = true
+  }
+
+  const mergedFunctions = mergeUniqueById(project.functions, cloneProjectData(TASK_SCHEDULING_FUNCTIONS))
+  if (mergedFunctions.changed) {
+    project.functions = mergedFunctions.items
+    changed = true
+  }
+
+  const versionExists = project.versions.some(version => version.id === project.currentVersionId)
+  if (!versionExists) {
+    project.currentVersionId = TASK_SCHEDULING_VERSION.id
+    changed = true
+  }
+
+  return changed
+}
+
+function ensureMemberProfileSeed(project: ProjectDetail): boolean {
+  if (!isMemberProfileProject(project)) {
+    return false
+  }
+
+  let changed = false
+
+  if (project.name !== MEMBER_PROFILE_PROJECT_NAME) {
+    project.name = MEMBER_PROFILE_PROJECT_NAME
+    changed = true
+  }
+
+  if (project.category !== 'retail') {
+    project.category = 'retail'
+    changed = true
+  }
+
+  if (project.description !== MEMBER_PROFILE_DESCRIPTION) {
+    project.description = MEMBER_PROFILE_DESCRIPTION
+    changed = true
+  }
+
+  if ((Date.parse(project.updatedAt || '') || 0) < Date.parse(MEMBER_PROFILE_UPDATED_AT)) {
+    project.updatedAt = MEMBER_PROFILE_UPDATED_AT
+    changed = true
+  }
+
+  const cleanedDocuments = removeItemsById(project.documents, ['doc-2.5.22-1', 'doc-2.5.22-2'])
+  if (cleanedDocuments.changed) {
+    project.documents = cleanedDocuments.items
+    changed = true
+  }
+
+  const mergedDocuments = mergeUniqueById(project.documents, cloneProjectData(MEMBER_PROFILE_DOCUMENTS))
+  if (mergedDocuments.changed) {
+    project.documents = mergedDocuments.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedDataSources = mergeUniqueById(project.dataSources, cloneProjectData(MEMBER_PROFILE_DATA_SOURCES))
+  if (mergedDataSources.changed) {
+    project.dataSources = mergedDataSources.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const cleanedEntityTypes = removeItemsById(project.schemaConfig.entityTypes, ['et-2.5.22-s', 'et-2.5.22-o'])
+  if (cleanedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = cleanedEntityTypes.items
+    changed = true
+  }
+
+  const mergedEntityTypes = mergeUniqueById(project.schemaConfig.entityTypes, cloneProjectData(MEMBER_PROFILE_ENTITY_TYPES))
+  if (mergedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = mergedEntityTypes.items
+    changed = true
+  }
+
+  const cleanedRelationTypes = removeItemsById(project.schemaConfig.relationTypes, ['rt-2.5.22-1'])
+  if (cleanedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = cleanedRelationTypes.items
+    changed = true
+  }
+
+  const mergedRelationTypes = mergeUniqueById(project.schemaConfig.relationTypes, cloneProjectData(MEMBER_PROFILE_RELATION_TYPES))
+  if (mergedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = mergedRelationTypes.items
+    changed = true
+  }
+
+  const mergedSkills = mergeUniqueById(project.schemaConfig.skills, cloneProjectData(MEMBER_PROFILE_SKILLS))
+  if (mergedSkills.changed) {
+    project.schemaConfig.skills = mergedSkills.items
+    changed = true
+  }
+
+  if (project.schemaConfig.entityScope !== '零售营销与CRM场景中的会员、会员等级、触达渠道、消费事件、偏好标签、券资产、生命周期分层与营销任务等核心会员经营实体') {
+    project.schemaConfig.entityScope = '零售营销与CRM场景中的会员、会员等级、触达渠道、消费事件、偏好标签、券资产、生命周期分层与营销任务等核心会员经营实体'
+    changed = true
+  }
+
+  if (project.schemaConfig.relationScope !== '覆盖等级归属、触达互动、消费沉淀、标签强化、权益绑定、生命周期分层和精准营销编排的完整会员画像运营关系链路') {
+    project.schemaConfig.relationScope = '覆盖等级归属、触达互动、消费沉淀、标签强化、权益绑定、生命周期分层和精准营销编排的完整会员画像运营关系链路'
+    changed = true
+  }
+
+  if (project.schemaConfig.updatedAt !== MEMBER_PROFILE_UPDATED_AT) {
+    project.schemaConfig.updatedAt = MEMBER_PROFILE_UPDATED_AT
+    changed = true
+  }
+
+  if (!project.aiInsightRun) {
+    project.aiInsightRun = cloneProjectData(MEMBER_PROFILE_AI_INSIGHT_RUN)
+    changed = true
+  }
+
+  const mergedRuns = mergeUniqueById(project.runs, cloneProjectData([MEMBER_PROFILE_RUN]))
+  if (mergedRuns.changed) {
+    project.runs = mergedRuns.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedVersions = mergeUniqueById(project.versions, cloneProjectData([MEMBER_PROFILE_VERSION]))
+  if (mergedVersions.changed) {
+    project.versions = mergedVersions.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedActions = mergeUniqueById(project.actions, cloneProjectData(MEMBER_PROFILE_ACTIONS))
+  if (mergedActions.changed) {
+    project.actions = mergedActions.items
+    changed = true
+  }
+
+  const mergedFunctions = mergeUniqueById(project.functions, cloneProjectData(MEMBER_PROFILE_FUNCTIONS))
+  if (mergedFunctions.changed) {
+    project.functions = mergedFunctions.items
+    changed = true
+  }
+
+  const versionExists = project.versions.some(version => version.id === project.currentVersionId)
+  if (!versionExists) {
+    project.currentVersionId = MEMBER_PROFILE_VERSION.id
+    changed = true
+  }
+
+  return changed
+}
+
+function ensureSupplierProfileSeed(project: ProjectDetail): boolean {
+  if (!isSupplierProfileProject(project)) {
+    return false
+  }
+
+  let changed = false
+
+  if (project.name !== SUPPLIER_PROFILE_PROJECT_NAME) {
+    project.name = SUPPLIER_PROFILE_PROJECT_NAME
+    changed = true
+  }
+
+  if (project.category !== 'manufacturing') {
+    project.category = 'manufacturing'
+    changed = true
+  }
+
+  if (project.description !== SUPPLIER_PROFILE_DESCRIPTION) {
+    project.description = SUPPLIER_PROFILE_DESCRIPTION
+    changed = true
+  }
+
+  if ((Date.parse(project.updatedAt || '') || 0) < Date.parse(SUPPLIER_PROFILE_UPDATED_AT)) {
+    project.updatedAt = SUPPLIER_PROFILE_UPDATED_AT
+    changed = true
+  }
+
+  const cleanedDocuments = removeItemsById(project.documents, ['doc-1.4.16-1', 'doc-1.4.16-2'])
+  if (cleanedDocuments.changed) {
+    project.documents = cleanedDocuments.items
+    changed = true
+  }
+
+  const mergedDocuments = mergeUniqueById(project.documents, cloneProjectData(SUPPLIER_PROFILE_DOCUMENTS))
+  if (mergedDocuments.changed) {
+    project.documents = mergedDocuments.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedDataSources = mergeUniqueById(project.dataSources, cloneProjectData(SUPPLIER_PROFILE_DATA_SOURCES))
+  if (mergedDataSources.changed) {
+    project.dataSources = mergedDataSources.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const cleanedEntityTypes = removeItemsById(project.schemaConfig.entityTypes, ['et-1.4.16-s', 'et-1.4.16-o'])
+  if (cleanedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = cleanedEntityTypes.items
+    changed = true
+  }
+
+  const mergedEntityTypes = mergeUniqueById(project.schemaConfig.entityTypes, cloneProjectData(SUPPLIER_PROFILE_ENTITY_TYPES))
+  if (mergedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = mergedEntityTypes.items
+    changed = true
+  }
+
+  const cleanedRelationTypes = removeItemsById(project.schemaConfig.relationTypes, ['rt-1.4.16-1'])
+  if (cleanedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = cleanedRelationTypes.items
+    changed = true
+  }
+
+  const mergedRelationTypes = mergeUniqueById(project.schemaConfig.relationTypes, cloneProjectData(SUPPLIER_PROFILE_RELATION_TYPES))
+  if (mergedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = mergedRelationTypes.items
+    changed = true
+  }
+
+  const mergedSkills = mergeUniqueById(project.schemaConfig.skills, cloneProjectData(SUPPLIER_PROFILE_SKILLS))
+  if (mergedSkills.changed) {
+    project.schemaConfig.skills = mergedSkills.items
+    changed = true
+  }
+
+  if (project.schemaConfig.entityScope !== '供应链与采购协同场景中的供应商、供货物料、服务工厂、交付表现、质量事件、财务风险、合规资质与供应商分层等核心供方实体') {
+    project.schemaConfig.entityScope = '供应链与采购协同场景中的供应商、供货物料、服务工厂、交付表现、质量事件、财务风险、合规资质与供应商分层等核心供方实体'
+    changed = true
+  }
+
+  if (project.schemaConfig.relationScope !== '覆盖供货范围、工厂绑定、交付评分、质量异常、财务预警、资质覆盖和供应商分层的完整供应商画像治理关系链路') {
+    project.schemaConfig.relationScope = '覆盖供货范围、工厂绑定、交付评分、质量异常、财务预警、资质覆盖和供应商分层的完整供应商画像治理关系链路'
+    changed = true
+  }
+
+  if (project.schemaConfig.updatedAt !== SUPPLIER_PROFILE_UPDATED_AT) {
+    project.schemaConfig.updatedAt = SUPPLIER_PROFILE_UPDATED_AT
+    changed = true
+  }
+
+  if (!project.aiInsightRun) {
+    project.aiInsightRun = cloneProjectData(SUPPLIER_PROFILE_AI_INSIGHT_RUN)
+    changed = true
+  }
+
+  const mergedRuns = mergeUniqueById(project.runs, cloneProjectData([SUPPLIER_PROFILE_RUN]))
+  if (mergedRuns.changed) {
+    project.runs = mergedRuns.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedVersions = mergeUniqueById(project.versions, cloneProjectData([SUPPLIER_PROFILE_VERSION]))
+  if (mergedVersions.changed) {
+    project.versions = mergedVersions.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedActions = mergeUniqueById(project.actions, cloneProjectData(SUPPLIER_PROFILE_ACTIONS))
+  if (mergedActions.changed) {
+    project.actions = mergedActions.items
+    changed = true
+  }
+
+  const mergedFunctions = mergeUniqueById(project.functions, cloneProjectData(SUPPLIER_PROFILE_FUNCTIONS))
+  if (mergedFunctions.changed) {
+    project.functions = mergedFunctions.items
+    changed = true
+  }
+
+  const versionExists = project.versions.some(version => version.id === project.currentVersionId)
+  if (!versionExists) {
+    project.currentVersionId = SUPPLIER_PROFILE_VERSION.id
+    changed = true
+  }
+
+  return changed
+}
+
+function ensureInventoryRiskSeed(project: ProjectDetail): boolean {
+  if (!isInventoryRiskProject(project)) {
+    return false
+  }
+
+  let changed = false
+
+  if (project.name !== INVENTORY_RISK_PROJECT_NAME) {
+    project.name = INVENTORY_RISK_PROJECT_NAME
+    changed = true
+  }
+
+  if (project.category !== 'manufacturing') {
+    project.category = 'manufacturing'
+    changed = true
+  }
+
+  if (project.description !== INVENTORY_RISK_DESCRIPTION) {
+    project.description = INVENTORY_RISK_DESCRIPTION
+    changed = true
+  }
+
+  if ((Date.parse(project.updatedAt || '') || 0) < Date.parse(INVENTORY_RISK_UPDATED_AT)) {
+    project.updatedAt = INVENTORY_RISK_UPDATED_AT
+    changed = true
+  }
+
+  const cleanedDocuments = removeItemsById(project.documents, ['doc-1.4.18-1', 'doc-1.4.18-2'])
+  if (cleanedDocuments.changed) {
+    project.documents = cleanedDocuments.items
+    changed = true
+  }
+
+  const mergedDocuments = mergeUniqueById(project.documents, cloneProjectData(INVENTORY_RISK_DOCUMENTS))
+  if (mergedDocuments.changed) {
+    project.documents = mergedDocuments.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedDataSources = mergeUniqueById(project.dataSources, cloneProjectData(INVENTORY_RISK_DATA_SOURCES))
+  if (mergedDataSources.changed) {
+    project.dataSources = mergedDataSources.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const cleanedEntityTypes = removeItemsById(project.schemaConfig.entityTypes, ['et-1.4.18-s', 'et-1.4.18-o'])
+  if (cleanedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = cleanedEntityTypes.items
+    changed = true
+  }
+
+  const mergedEntityTypes = mergeUniqueById(project.schemaConfig.entityTypes, cloneProjectData(INVENTORY_RISK_ENTITY_TYPES))
+  if (mergedEntityTypes.changed) {
+    project.schemaConfig.entityTypes = mergedEntityTypes.items
+    changed = true
+  }
+
+  const cleanedRelationTypes = removeItemsById(project.schemaConfig.relationTypes, ['rt-1.4.18-1'])
+  if (cleanedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = cleanedRelationTypes.items
+    changed = true
+  }
+
+  const mergedRelationTypes = mergeUniqueById(project.schemaConfig.relationTypes, cloneProjectData(INVENTORY_RISK_RELATION_TYPES))
+  if (mergedRelationTypes.changed) {
+    project.schemaConfig.relationTypes = mergedRelationTypes.items
+    changed = true
+  }
+
+  const mergedSkills = mergeUniqueById(project.schemaConfig.skills, cloneProjectData(INVENTORY_RISK_SKILLS))
+  if (mergedSkills.changed) {
+    project.schemaConfig.skills = mergedSkills.items
+    changed = true
+  }
+
+  if (project.schemaConfig.entityScope !== '供应链与库存治理场景中的物料、仓库、工厂需求、库存快照、风险信号、安全库存策略、补货建议与供应商选项等核心库存实体') {
+    project.schemaConfig.entityScope = '供应链与库存治理场景中的物料、仓库、工厂需求、库存快照、风险信号、安全库存策略、补货建议与供应商选项等核心库存实体'
+    changed = true
+  }
+
+  if (project.schemaConfig.relationScope !== '覆盖库存归属、需求牵引、库存快照、风险预警、安全库存约束、补货建议和供应商分摊的完整库存风险治理关系链路') {
+    project.schemaConfig.relationScope = '覆盖库存归属、需求牵引、库存快照、风险预警、安全库存约束、补货建议和供应商分摊的完整库存风险治理关系链路'
+    changed = true
+  }
+
+  if (project.schemaConfig.updatedAt !== INVENTORY_RISK_UPDATED_AT) {
+    project.schemaConfig.updatedAt = INVENTORY_RISK_UPDATED_AT
+    changed = true
+  }
+
+  if (!project.aiInsightRun) {
+    project.aiInsightRun = cloneProjectData(INVENTORY_RISK_AI_INSIGHT_RUN)
+    changed = true
+  }
+
+  const mergedRuns = mergeUniqueById(project.runs, cloneProjectData([INVENTORY_RISK_RUN]))
+  if (mergedRuns.changed) {
+    project.runs = mergedRuns.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedVersions = mergeUniqueById(project.versions, cloneProjectData([INVENTORY_RISK_VERSION]))
+  if (mergedVersions.changed) {
+    project.versions = mergedVersions.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedActions = mergeUniqueById(project.actions, cloneProjectData(INVENTORY_RISK_ACTIONS))
+  if (mergedActions.changed) {
+    project.actions = mergedActions.items
+    changed = true
+  }
+
+  const mergedFunctions = mergeUniqueById(project.functions, cloneProjectData(INVENTORY_RISK_FUNCTIONS))
+  if (mergedFunctions.changed) {
+    project.functions = mergedFunctions.items
+    changed = true
+  }
+
+  const versionExists = project.versions.some(version => version.id === project.currentVersionId)
+  if (!versionExists) {
+    project.currentVersionId = INVENTORY_RISK_VERSION.id
+    changed = true
+  }
+
+  return changed
+}
+
 function ensureContractConstraintsSeed(project: ProjectDetail): boolean {
   if (!isContractConstraintsProject(project)) {
     return false
@@ -2925,6 +5145,18 @@ function normalizeStore(store: ProjectStore): boolean {
       changed = true
     }
     if (ensureCustomer360Seed(project)) {
+      changed = true
+    }
+    if (ensureTaskSchedulingSeed(project)) {
+      changed = true
+    }
+    if (ensureMemberProfileSeed(project)) {
+      changed = true
+    }
+    if (ensureSupplierProfileSeed(project)) {
+      changed = true
+    }
+    if (ensureInventoryRiskSeed(project)) {
       changed = true
     }
     if (ensureContractConstraintsSeed(project)) {
@@ -4164,6 +6396,57 @@ const DEFAULT_FUNCTION_RUN_INPUT: Record<string, Record<string, unknown>> = {
       { storeCode: 'SH015', allocatedQty: 12, sizeBreakdown: { '36': 2, '37': 2, '38': 4, '39': 2, '40': 2 } },
     ],
   },
+  calc_supplier_delivery_score: {
+    on_time_rate: 0.96,
+    lead_time_days: 9,
+    expedite_count: 1,
+    shortage_incidents: 0,
+  },
+  calc_supplier_risk_index: {
+    debt_ratio: 0.48,
+    cash_flow_alerts: 1,
+    litigation_count: 0,
+    quality_ppm: 220,
+  },
+  recommend_supplier_segment: {
+    delivery_score: 91.2,
+    risk_index: 28.5,
+    quality_ppm: 180,
+    certificate_status: 'VALID',
+  },
+  build_procurement_weight_plan: {
+    current_weight: 0.32,
+    segment_name: '战略供方',
+    risk_index: 28.5,
+    capacity_share: 0.38,
+    backup_supplier_ready: true,
+  },
+  calc_inventory_cover_days: {
+    on_hand_qty: 320,
+    in_transit_qty: 80,
+    daily_demand: 45,
+  },
+  evaluate_inventory_risk: {
+    shortage_days: 3,
+    demand_volatility: 0.42,
+    supplier_lead_time: 12,
+    single_source: true,
+  },
+  recommend_replenishment_qty: {
+    target_cover_days: 14,
+    daily_demand: 45,
+    on_hand_qty: 320,
+    in_transit_qty: 80,
+    moq: 200,
+  },
+  allocate_supplier_split: {
+    replenishment_qty: 240,
+    supplier_options: [
+      { supplierName: '宁波舜宇精密结构件', capacityShare: 0.5, riskScore: 22 },
+      { supplierName: '苏州汇川电驱系统', capacityShare: 0.3, riskScore: 30 },
+      { supplierName: '深圳拓普连接器', capacityShare: 0.2, riskScore: 45 },
+    ],
+  },
 }
 
 const FAULT_SYMPTOM_CANDIDATES = [
@@ -4376,6 +6659,164 @@ function executeSeededFunctionHandler(
         expectedArrivalDate: arrivalDate,
       })),
       logLines: [`生成调拨明细 ${allocations.length} 条`, `来源仓 ${sourceWarehouse || '未填写'}`],
+    }
+  }
+
+  if (functionName === 'calc_supplier_delivery_score') {
+    const onTimeRate = Number(input.on_time_rate ?? 0)
+    const leadTimeDays = Number(input.lead_time_days ?? 0)
+    const expediteCount = Number(input.expedite_count ?? 0)
+    const shortageIncidents = Number(input.shortage_incidents ?? 0)
+    const base = Math.max(0, Math.min(onTimeRate, 1)) * 70
+    const leadTimePenalty = Math.min(Math.max(leadTimeDays - 7, 0) * 1.8, 18)
+    const expeditePenalty = Math.min(Math.max(expediteCount, 0) * 2.5, 10)
+    const shortagePenalty = Math.min(Math.max(shortageIncidents, 0) * 6, 18)
+    const deliveryScore = roundNumber(Math.max(0, Math.min(100, base + 30 - leadTimePenalty - expeditePenalty - shortagePenalty)), 1)
+    const band = deliveryScore >= 90 ? 'A' : deliveryScore >= 75 ? 'B' : 'C'
+    return {
+      output: { deliveryScore, band },
+      logLines: [`准时交付率 ${roundNumber(onTimeRate * 100, 1)}%`, `平均交期 ${leadTimeDays} 天`, `加急次数 ${expediteCount}`],
+    }
+  }
+
+  if (functionName === 'calc_supplier_risk_index') {
+    const debtRatio = Number(input.debt_ratio ?? 0)
+    const cashFlowAlerts = Number(input.cash_flow_alerts ?? 0)
+    const litigationCount = Number(input.litigation_count ?? 0)
+    const qualityPpm = Number(input.quality_ppm ?? 0)
+    const riskIndex = roundNumber(Math.min(
+      100,
+      Math.max(0, Math.min(debtRatio, 1)) * 35
+      + Math.min(Math.max(cashFlowAlerts, 0) * 12, 24)
+      + Math.min(Math.max(litigationCount, 0) * 10, 20)
+      + Math.min(Math.max(qualityPpm, 0) / 50, 21),
+    ), 1)
+    const riskLevel = riskIndex >= 65 ? 'HIGH' : riskIndex >= 40 ? 'MEDIUM' : 'LOW'
+    return {
+      output: { riskIndex, riskLevel },
+      logLines: [`负债率 ${roundNumber(debtRatio * 100, 1)}%`, `现金流预警 ${cashFlowAlerts} 次`, `质量PPM ${qualityPpm}`],
+    }
+  }
+
+  if (functionName === 'recommend_supplier_segment') {
+    const deliveryScore = Number(input.delivery_score ?? 0)
+    const riskIndex = Number(input.risk_index ?? 0)
+    const qualityPpm = Number(input.quality_ppm ?? 0)
+    const certificateStatus = String(input.certificate_status ?? 'VALID').toUpperCase()
+    const segmentName = certificateStatus !== 'VALID' || riskIndex >= 75 || qualityPpm >= 1200
+      ? '观察名单'
+      : deliveryScore >= 88 && riskIndex < 35 && qualityPpm < 300
+        ? '战略供方'
+        : deliveryScore >= 75 && riskIndex < 55
+          ? '核心供方'
+          : '条件供方'
+    return {
+      output: { segmentName },
+      logLines: [`交付得分 ${deliveryScore}`, `风险指数 ${riskIndex}`, `资质状态 ${certificateStatus}`],
+    }
+  }
+
+  if (functionName === 'build_procurement_weight_plan') {
+    const currentWeight = Number(input.current_weight ?? 0)
+    const segmentName = String(input.segment_name ?? '')
+    const riskIndex = Number(input.risk_index ?? 0)
+    const capacityShare = Number(input.capacity_share ?? 0)
+    const backupSupplierReady = Boolean(input.backup_supplier_ready)
+    const segmentDeltaMap: Record<string, number> = {
+      战略供方: 0.08,
+      核心供方: 0.02,
+      条件供方: -0.05,
+      观察名单: -0.12,
+    }
+    let delta = segmentDeltaMap[segmentName] ?? 0
+    if (riskIndex >= 70) delta -= 0.08
+    else if (riskIndex <= 30) delta += 0.03
+    if (backupSupplierReady && riskIndex >= 55) delta -= 0.05
+    const upperBound = Math.max(Math.min(capacityShare + 0.12, 0.75), 0.05)
+    const recommendedWeight = roundNumber(Math.max(0.05, Math.min(currentWeight + delta, upperBound)), 3)
+    return {
+      output: {
+        recommendedWeight,
+        adjustment: roundNumber(recommendedWeight - currentWeight, 3),
+        procurementAction: recommendedWeight === currentWeight ? 'hold' : 'rebalance',
+      },
+      logLines: [`当前份额 ${roundNumber(currentWeight * 100, 1)}%`, `建议上限 ${roundNumber(upperBound * 100, 1)}%`, `备用供方 ${backupSupplierReady ? '已就绪' : '未就绪'}`],
+    }
+  }
+
+  if (functionName === 'calc_inventory_cover_days') {
+    const onHandQty = Number(input.on_hand_qty ?? 0)
+    const inTransitQty = Number(input.in_transit_qty ?? 0)
+    const dailyDemand = Number(input.daily_demand ?? 0)
+    const availableQty = Math.max(onHandQty, 0) + Math.max(inTransitQty, 0)
+    const coverDays = dailyDemand > 0 ? roundNumber(availableQty / dailyDemand, 2) : 999
+    return {
+      output: { availableQty, coverDays },
+      logLines: [`现存 ${onHandQty}`, `在途 ${inTransitQty}`, `日需求 ${dailyDemand}`],
+    }
+  }
+
+  if (functionName === 'evaluate_inventory_risk') {
+    const shortageDays = Number(input.shortage_days ?? 0)
+    const demandVolatility = Number(input.demand_volatility ?? 0)
+    const supplierLeadTime = Number(input.supplier_lead_time ?? 0)
+    const singleSource = Boolean(input.single_source)
+    const riskScore = roundNumber(Math.min(
+      100,
+      Math.min(Math.max(shortageDays, 0), 15) * 4
+      + Math.min(Math.max(demandVolatility, 0), 1) * 25
+      + Math.min(Math.max(supplierLeadTime, 0), 30) * 1.5
+      + (singleSource ? 12 : 0),
+    ), 1)
+    const riskLevel = riskScore >= 65 ? 'HIGH' : riskScore >= 35 ? 'MEDIUM' : 'LOW'
+    return {
+      output: { riskScore, riskLevel },
+      logLines: [`缺口天数 ${shortageDays}`, `波动系数 ${demandVolatility}`, `单一供方 ${singleSource ? '是' : '否'}`],
+    }
+  }
+
+  if (functionName === 'recommend_replenishment_qty') {
+    const targetCoverDays = Number(input.target_cover_days ?? 0)
+    const dailyDemand = Number(input.daily_demand ?? 0)
+    const onHandQty = Number(input.on_hand_qty ?? 0)
+    const inTransitQty = Number(input.in_transit_qty ?? 0)
+    const moq = Number(input.moq ?? 0)
+    const targetStock = targetCoverDays * dailyDemand
+    const currentStock = Math.max(onHandQty, 0) + Math.max(inTransitQty, 0)
+    const gapQty = Math.max(targetStock - currentStock, 0)
+    const recommendedQty = gapQty > 0 ? Math.max(gapQty, moq) : 0
+    return {
+      output: {
+        targetStock: roundNumber(targetStock, 1),
+        currentStock: roundNumber(currentStock, 1),
+        recommendedQty: roundNumber(recommendedQty, 1),
+      },
+      logLines: [`目标覆盖 ${targetCoverDays} 天`, `目标库存 ${roundNumber(targetStock, 1)}`, `当前库存 ${roundNumber(currentStock, 1)}`],
+    }
+  }
+
+  if (functionName === 'allocate_supplier_split') {
+    const replenishmentQty = Number(input.replenishment_qty ?? 0)
+    const supplierOptions = Array.isArray(input.supplier_options) ? input.supplier_options as Array<Record<string, unknown>> : []
+    const ranked = [...supplierOptions].sort((left, right) => {
+      const leftRisk = Number(left.riskScore ?? 100)
+      const rightRisk = Number(right.riskScore ?? 100)
+      if (leftRisk !== rightRisk) return leftRisk - rightRisk
+      return Number(right.capacityShare ?? 0) - Number(left.capacityShare ?? 0)
+    })
+    let remainQty = replenishmentQty
+    const allocations = ranked.map((item) => {
+      const capacityShare = Math.max(Number(item.capacityShare ?? 0), 0)
+      const allocatedQty = Math.min(remainQty, replenishmentQty * capacityShare)
+      remainQty = Math.max(remainQty - allocatedQty, 0)
+      return {
+        supplierName: item.supplierName,
+        allocatedQty: roundNumber(allocatedQty, 1),
+      }
+    })
+    return {
+      output: { allocations, remainQty: roundNumber(remainQty, 1) },
+      logLines: [`补货总量 ${replenishmentQty}`, `供应商候选 ${ranked.length} 个`, `剩余未分摊 ${roundNumber(remainQty, 1)}`],
     }
   }
 
