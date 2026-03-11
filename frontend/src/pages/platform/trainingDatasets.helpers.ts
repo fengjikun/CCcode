@@ -29,11 +29,12 @@ export function summarizeDatasetSample(sample: Record<string, unknown>): string 
       .map(item => (typeof item === 'object' && item && 'role' in item ? String(item.role) : null))
       .filter(Boolean)
       .join('+')
-    return `${roles} ${messages.length} turns`
+    return `${roles} ${messages.length}轮对话`
   }
 
-  if ('chosen' in sample && 'rejected' in sample) return 'preference pair'
-  if ('image' in sample && 'question' in sample) return 'vision question answering'
-  if ('image' in sample && 'ocr_text' in sample) return 'document parsing sample'
-  return 'generic sample'
+  if ('instruction' in sample && 'output' in sample) return '故障诊断指令样本'
+  if ('chosen' in sample && 'rejected' in sample) return '维修策略偏好对'
+  if ('image' in sample && 'question' in sample) return '现场视觉问答样本'
+  if ('image' in sample && 'ocr_text' in sample) return '维修文档解析样本'
+  return '训练样本'
 }

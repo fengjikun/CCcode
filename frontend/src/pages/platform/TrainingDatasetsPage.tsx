@@ -43,9 +43,9 @@ import {
 } from '../../api/trainingDataset'
 import { listProjects } from '../../api/projectManagement'
 import ModalHeader from '../../components/shared/ModalHeader'
+import PageHeader from '../../components/shared/PageHeader'
 import {
   DATASET_TYPE_LABELS,
-  MODEL_CENTER_PAGE_LABELS,
   MODEL_MODALITY_LABELS,
 } from '../../types/modelCenter'
 import type { ProjectSummary } from '../../types/projectMvp'
@@ -56,7 +56,22 @@ import {
 } from '../../types/trainingDataset'
 import { formatDatasetScale, summarizeDatasetSample } from './trainingDatasets.helpers'
 
-const { Title, Text } = Typography
+const { Text } = Typography
+
+const DATASET_STATUS_LABELS: Record<DatasetStatus, string> = {
+  Ready: '已就绪',
+  Building: '构建中',
+  Failed: '失败',
+  Archived: '已归档',
+}
+
+const BUSINESS_DATASET_TYPE_HINTS: Record<string, string> = {
+  instruction: '根因诊断 / 维修建议',
+  conversation: '专家协同 / 追问澄清',
+  preference: '维修策略优选 / 安全约束',
+  'image-caption': '维修单据 / 截图描述',
+  vqa: '热像 / 点检图视觉问答',
+}
 
 interface CreateDatasetFormValues extends Partial<TrainingDataset> {
   sourceProjectId: string
@@ -151,7 +166,7 @@ export default function TrainingDatasetsPage() {
         ...datasetValues,
         source: buildOntologyDatasetSource(sourceProject),
       })
-      message.success('训练语料已创建')
+      message.success('训练数据集已创建')
       setCreateOpen(false)
       form.resetFields()
       await reload()
@@ -163,7 +178,7 @@ export default function TrainingDatasetsPage() {
 
   const handleDelete = async (key: string) => {
     await deleteDataset(key)
-    message.success('训练语料已删除')
+    message.success('训练数据集已删除')
     await reload()
   }
 
@@ -172,7 +187,7 @@ export default function TrainingDatasetsPage() {
     if (existing) clearInterval(existing)
 
     await buildDataset(key)
-    message.success('语料构建任务已启动')
+    message.success('数据集构建任务已启动')
     await reload()
 
     let progress = 0
@@ -183,7 +198,7 @@ export default function TrainingDatasetsPage() {
         clearInterval(timer)
         buildTimersRef.current.delete(key)
         await finishBuild(key)
-        message.success('语料构建完成')
+        message.success('数据集构建完成')
       } else {
         await updateBuildProgress(key, progress)
       }
@@ -206,16 +221,16 @@ export default function TrainingDatasetsPage() {
     : 0
 
   const statItems = [
-    { title: '语料包总数', value: stats.total, icon: <DatabaseOutlined />, color: '#4f46e5', bg: '#eef2ff' },
+    { title: '数据集总数', value: stats.total, icon: <DatabaseOutlined />, color: '#4f46e5', bg: '#eef2ff' },
     { title: '已就绪', value: stats.readyCount, icon: <CheckCircleOutlined />, color: '#16a34a', bg: '#f0fdf4' },
-    { title: '多模态语料', value: multimodalCount, icon: <BarChartOutlined />, color: '#0891b2', bg: '#ecfeff' },
+    { title: '图文诊断集', value: multimodalCount, icon: <BarChartOutlined />, color: '#0891b2', bg: '#ecfeff' },
     { title: '平均质量分', value: avgQuality || '—', icon: <SyncOutlined spin={stats.buildingCount > 0} />, color: '#d97706', bg: '#fffbeb' },
     { title: '总存储', value: stats.totalSize, icon: <HddOutlined />, color: '#7c3aed', bg: '#f5f3ff' },
   ]
 
   const columns = [
     {
-      title: '语料包',
+      title: '数据集',
       key: 'name',
       render: (_: unknown, dataset: TrainingDataset) => (
         <Space direction="vertical" size={2}>
@@ -233,7 +248,7 @@ export default function TrainingDatasetsPage() {
             <Tag color="blue">{DATASET_TYPE_LABELS[dataset.datasetType]}</Tag>
             <Tag color={dataset.modality === 'image-text' ? 'gold' : 'cyan'}>{MODEL_MODALITY_LABELS[dataset.modality]}</Tag>
           </Space>
-          <Text type="secondary" style={{ fontSize: 12 }}>{dataset.format}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{BUSINESS_DATASET_TYPE_HINTS[dataset.datasetType]} · {dataset.format}</Text>
         </Space>
       ),
     },
@@ -245,7 +260,7 @@ export default function TrainingDatasetsPage() {
       ),
     },
     {
-      title: '质量与标注',
+      title: '质量与 Schema',
       key: 'quality',
       render: (_: unknown, dataset: TrainingDataset) => (
         <Space direction="vertical" size={2}>
@@ -273,7 +288,7 @@ export default function TrainingDatasetsPage() {
       width: 100,
       filters: ['Ready', 'Building', 'Failed', 'Archived'].map(status => ({ text: status, value: status })),
       onFilter: (value: unknown, dataset: TrainingDataset) => dataset.status === value,
-      render: (value: DatasetStatus) => <Tag color={DATASET_STATUS_COLORS[value]}>{value}</Tag>,
+      render: (value: DatasetStatus) => <Tag color={DATASET_STATUS_COLORS[value]}>{DATASET_STATUS_LABELS[value]}</Tag>,
     },
     { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 110 },
     {
@@ -298,10 +313,7 @@ export default function TrainingDatasetsPage() {
   return (
     <div className="page-container">
       <Card className="section-card">
-        <div className="page-header">
-          <Title level={4}>{MODEL_CENTER_PAGE_LABELS.datasets}</Title>
-          <Text type="secondary">统一管理指令数据、多轮对话、偏好对和图文问答语料，支撑 LLM / VL 训练与对齐</Text>
-        </div>
+        <PageHeader title="训练数据集" subtitle="统一管理故障诊断、维修决策、视觉点检和维修文档相关训练数据集，支撑诊断模型与多模态模型训练" />
 
         <Row gutter={[14, 14]} style={{ margin: '16px 0 20px' }}>
           {statItems.map(item => (
@@ -319,9 +331,20 @@ export default function TrainingDatasetsPage() {
           ))}
         </Row>
 
+        <Row gutter={12} style={{ marginBottom: 20 }}>
+          {Object.entries(DATASET_TYPE_LABELS).map(([value, label]) => (
+            <Col xs={24} md={12} xl={8} key={value}>
+              <Card size="small" style={{ background: '#fafafa' }} styles={{ body: { padding: '12px 16px' } }}>
+                <Tag color="blue" style={{ marginBottom: 6 }}>{label}</Tag>
+                <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.7 }}>{BUSINESS_DATASET_TYPE_HINTS[value]}</div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
           <Input
-            placeholder="搜索语料包 / 来源 / 类型"
+            placeholder="搜索数据集 / 来源 / 类型"
             value={search}
             onChange={event => setSearch(event.target.value)}
             prefix={<SearchOutlined />}
@@ -333,7 +356,7 @@ export default function TrainingDatasetsPage() {
             onClick={() => setCreateOpen(true)}
             disabled={!ontologyLoading && ontologyProjects.length === 0}
           >
-            新建语料包
+            新建数据集
           </Button>
         </div>
 
@@ -350,7 +373,7 @@ export default function TrainingDatasetsPage() {
       </Card>
 
       <Drawer
-        title={detailDataset ? detailDataset.name : '语料详情'}
+        title={detailDataset ? detailDataset.name : '数据集详情'}
         open={drawerOpen}
         width={760}
         onClose={() => {
@@ -361,7 +384,7 @@ export default function TrainingDatasetsPage() {
         {detailDataset && (
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <Descriptions bordered size="small" column={2}>
-              <Descriptions.Item label="语料类型">{DATASET_TYPE_LABELS[detailDataset.datasetType]}</Descriptions.Item>
+              <Descriptions.Item label="数据集类型">{DATASET_TYPE_LABELS[detailDataset.datasetType]}</Descriptions.Item>
               <Descriptions.Item label="模态">{MODEL_MODALITY_LABELS[detailDataset.modality]}</Descriptions.Item>
               <Descriptions.Item label="规模">{formatDatasetScale(detailDataset)}</Descriptions.Item>
               <Descriptions.Item label="样本数">{detailDataset.records.toLocaleString()}</Descriptions.Item>
@@ -402,7 +425,7 @@ export default function TrainingDatasetsPage() {
       </Drawer>
 
       <Modal
-        title={<ModalHeader icon={<DatabaseOutlined />} title="新建语料包" />}
+        title={<ModalHeader icon={<DatabaseOutlined />} title="新建训练数据集" />}
         open={createOpen}
         onCancel={() => {
           setCreateOpen(false)
@@ -420,26 +443,26 @@ export default function TrainingDatasetsPage() {
           layout="vertical"
           style={{ marginTop: 16 }}
           initialValues={{
-            datasetType: 'conversation',
+            datasetType: 'instruction',
             modality: 'text',
             format: 'JSONL',
             qualityScore: 85,
             trainSplit: 80,
             valSplit: 10,
             testSplit: 10,
-            annotationSchema: ['system', 'user', 'assistant'],
+            annotationSchema: ['instruction', 'input', 'output'],
           }}
         >
-          <Form.Item label="语料包名称" name="name" rules={[{ required: true, message: '请输入名称' }]}>
-            <Input placeholder="例如: factory_instruction_corpus_v3" />
+          <Form.Item label="数据集名称" name="name" rules={[{ required: true, message: '请输入名称' }]}>
+            <Input placeholder="例如: fault_root_cause_instruction_sft_v2" />
           </Form.Item>
           <Form.Item
-            label="语料来源"
+            label="数据集来源"
             name="sourceProjectId"
             rules={[{ required: true, message: '请选择来源本体' }]}
             extra={selectedSourceProject
               ? `将生成来源标识：${buildOntologyDatasetSource(selectedSourceProject)}`
-              : '语料来源从本体列表获取，创建后自动生成 deepology:// 来源标识'}
+              : '来源从本体列表获取，创建后自动生成 ontology:// 来源标识'}
           >
             <Select
               showSearch

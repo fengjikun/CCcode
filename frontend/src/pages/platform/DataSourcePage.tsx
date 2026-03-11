@@ -89,6 +89,58 @@ const DS_STATUS_DOT: Record<string, 'active' | 'warning' | 'error'> = {
   Active: 'active', Syncing: 'active', Inactive: 'warning', Error: 'error',
 }
 
+function getStructuredSourcePreview(dataSource: DataSource): string[] {
+  const name = dataSource.name
+  if (name.includes('工单')) {
+    return ['ods_fault_work_order', 'ods_fault_dispatch_log', 'ods_fault_repair_feedback', 'dim_fault_code']
+  }
+  if (name.includes('台账')) {
+    return ['dim_equipment_asset', 'dim_production_line', 'dim_workshop_location', 'dim_maintenance_level']
+  }
+  if (name.includes('告警')) {
+    return ['fact_alarm_event', 'fact_alarm_ack', 'fact_alarm_recover', 'dim_alarm_rule']
+  }
+  if (name.includes('PLC')) {
+    return ['plc_event_log', 'plc_state_snapshot', 'plc_error_code_log', 'plc_recipe_switch_log']
+  }
+  if (name.includes('传感器')) {
+    return ['ts_vibration_signal', 'ts_temperature_signal', 'ts_current_signal', 'ts_pressure_signal']
+  }
+  if (name.includes('维修履历')) {
+    return ['fact_maintenance_case', 'fact_root_cause', 'fact_repair_action', 'fact_downtime_loss']
+  }
+  if (name.includes('点检')) {
+    return ['fact_inspection_task', 'fact_inspection_item', 'fact_inspection_abnormal', 'fact_inspection_attachment']
+  }
+  if (name.includes('备件')) {
+    return ['dim_spare_part', 'fact_inventory_balance', 'fact_pick_ticket', 'fact_purchase_requisition']
+  }
+  if (name.includes('交接班')) {
+    return ['shift_handover_record', 'shift_exception_note', 'shift_operation_summary', 'shift_followup_item']
+  }
+  return ['source_table_01', 'source_table_02', 'source_table_03']
+}
+
+function getUnstructuredSourcePreview(dataSource: DataSource): string[] {
+  const name = dataSource.name
+  if (name.includes('日志')) {
+    return ['2026/03/11/CNC-01/error.log', '2026/03/11/SMT-07/runtime.csv', '2026/03/11/press-02/raw.zip']
+  }
+  if (name.includes('波形')) {
+    return ['bearing/A01/2026-03-11-0800.json', 'motor/M02/2026-03-11-0815.wav', 'spindle/S09/fft/2026-03-11.csv']
+  }
+  if (name.includes('热像')) {
+    return ['line-3/oven-02/thermal_001.jpg', 'line-7/motor-11/thermal_002.jpg', 'exceptions/hotspot_20260311.png']
+  }
+  if (name.includes('手册')) {
+    return ['cnc/maintenance-sop-v4.pdf', 'compressor/fault-code-manual.docx', 'inspection/checklist-standard.xlsx']
+  }
+  if (name.includes('复盘')) {
+    return ['2026/Q1/8d-report-press-02.pdf', '2026/Q1/rca-bearing-failure.pptx', 'expert-review/meeting-minutes-0310.docx']
+  }
+  return ['source/file-01', 'source/file-02', 'source/file-03']
+}
+
 /* ──────────── 主页面 ──────────── */
 export default function DataSourcePage() {
   const navigate = useNavigate()
@@ -300,7 +352,7 @@ export default function DataSourcePage() {
     <div className="page-container">
       {/* ===== Header ===== */}
       <Card className="section-card">
-        <PageHeader title="数据源管理" subtitle="统一管理结构化与非结构化数据的接入配置与展示结果" />
+        <PageHeader title="数据源管理" subtitle="围绕故障诊断统一管理源数据接入，覆盖工单、告警、日志、时序信号、维修记录与知识文档" />
         
 
 
@@ -319,7 +371,7 @@ export default function DataSourcePage() {
               <Radio.Button value="unstructured">对象存储</Radio.Button>
             </Radio.Group>
             <Input
-              placeholder="搜索数据源名称 / 类型"
+              placeholder="搜索源数据名称 / 类型"
               prefix={<SearchOutlined />}
               allowClear
               value={search}
@@ -389,7 +441,7 @@ export default function DataSourcePage() {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="name" label="数据源名称" rules={[{ required: true, message: '请输入名称' }]}>
-                <Input placeholder="例如：ds_sap_orders" maxLength={64} />
+                <Input placeholder="例如：故障工单主表 / PLC 运行日志" maxLength={64} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -424,7 +476,7 @@ export default function DataSourcePage() {
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item name="database" label="数据库名" rules={[{ required: true, message: '请输入数据库名' }]}>
-                    <Input placeholder="例如：production_db" />
+                    <Input placeholder="例如：fault_workorder_ods" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
@@ -476,12 +528,12 @@ export default function DataSourcePage() {
               <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item name="bucket" label="Bucket" rules={[{ required: true, message: '请输入 Bucket 名称' }]}>
-                    <Input placeholder="例如：ontology-manufacturing-0-0-1" />
+                    <Input placeholder="例如：fault-machine-log-raw" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item name="pathPrefix" label="路径前缀">
-                    <Input placeholder="例如：故障诊断本体/v1/" />
+                    <Input placeholder="例如：machines/raw-logs/" />
                   </Form.Item>
                 </Col>
               </Row>
@@ -525,7 +577,7 @@ export default function DataSourcePage() {
             />
           </Form.Item>
           <Form.Item name="description" label="描述">
-            <Input.TextArea rows={2} placeholder="可选，数据源用途说明" maxLength={200} />
+            <Input.TextArea rows={2} placeholder="可选，说明该源数据用于告警分析、根因诊断还是维修闭环" maxLength={200} />
           </Form.Item>
         </Form>
       </Modal>
@@ -609,30 +661,25 @@ export default function DataSourcePage() {
 
             {detailTarget.category === 'structured' && (
               <>
-                <Divider titlePlacement="left" plain style={{ fontSize: 13 }}>数据目录结构</Divider>
+                <Divider titlePlacement="left" plain style={{ fontSize: 13 }}>源表结构示意</Divider>
                 <div className="dir-tree">
-                  <div className="dir-item">{detailTarget.name}/</div>
-                  <div className="dir-item" style={{ paddingLeft: 20 }}>raw/</div>
-                  <div className="dir-item" style={{ paddingLeft: 40 }}>data_{new Date().toISOString().slice(0, 10).replace(/-/g, '_')}.parquet</div>
-                  <div className="dir-item" style={{ paddingLeft: 20 }}>clean/</div>
-                  <div className="dir-item" style={{ paddingLeft: 40 }}>cleaned_data</div>
-                  <div className="dir-item" style={{ paddingLeft: 20 }}>output/</div>
-                  <div className="dir-item" style={{ paddingLeft: 40 }}>standardized_data</div>
-                  <div className="dir-item" style={{ paddingLeft: 20 }}>analysis/</div>
-                  <div className="dir-item" style={{ paddingLeft: 20 }}>documentation/</div>
+                  <div className="dir-item">{detailTarget.connection.database || detailTarget.name}/</div>
+                  {getStructuredSourcePreview(detailTarget).map(item => (
+                    <div key={item} className="dir-item" style={{ paddingLeft: 20 }}>{item}</div>
+                  ))}
                 </div>
               </>
             )}
 
             {detailTarget.category === 'unstructured' && (
               <>
-                <Divider titlePlacement="left" plain style={{ fontSize: 13 }}>对象存储目录</Divider>
+                <Divider titlePlacement="left" plain style={{ fontSize: 13 }}>源文件目录示意</Divider>
                 <div className="dir-tree">
                   <div className="dir-item">{detailTarget.connection.bucket || detailTarget.name}/</div>
                   <div className="dir-item" style={{ paddingLeft: 20 }}>{detailTarget.connection.pathPrefix || 'root/'}</div>
-                  <div className="dir-item" style={{ paddingLeft: 40 }}>documents/</div>
-                  <div className="dir-item" style={{ paddingLeft: 40 }}>graph-assets/</div>
-                  <div className="dir-item" style={{ paddingLeft: 40 }}>extraction-output/</div>
+                  {getUnstructuredSourcePreview(detailTarget).map(item => (
+                    <div key={item} className="dir-item" style={{ paddingLeft: 40 }}>{item}</div>
+                  ))}
                 </div>
               </>
             )}

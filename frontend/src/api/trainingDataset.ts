@@ -3,9 +3,11 @@ import { REFRESHED_MODEL_NAMES } from '../types/modelCatalog'
 import { ensureMockStore, setMockStore } from './mockStoreClient'
 
 const STORE_KEY = 'training-datasets'
+const DATA_VERSION = 2
 
 interface DatasetStore {
   items: TrainingDataset[]
+  _v?: number
 }
 
 const LEGACY_MODEL_NAME_MAP: Record<string, string> = {
@@ -83,18 +85,36 @@ export function normalizeTrainingDataset(dataset: Partial<TrainingDataset>): Tra
 function normalizeDatasetStore(store: DatasetStore): DatasetStore {
   return {
     items: store.items.map(normalizeTrainingDataset),
+    _v: store._v ?? DATA_VERSION,
   }
+}
+
+function buildInstructionSample(): Array<Record<string, unknown>> {
+  return [
+    {
+      instruction: '根据主轴振动值、轴承温升和最近一次告警记录判断最可能的故障根因。',
+      input: {
+        equipment_id: 'MC-SPINDLE-07',
+        alarm_code: 'ALM-4821',
+        vibration_rms: '12.8 mm/s',
+        bearing_temp: '92 C',
+        last_repair: '14 days ago',
+      },
+      output: '高概率为主轴前轴承磨损并伴随润滑不足，建议先停机检查轴承游隙与润滑状态。',
+      root_cause: 'bearing_wear',
+    },
+  ]
 }
 
 function buildConversationSample(): Array<Record<string, unknown>> {
   return [
     {
       messages: [
-        { role: 'system', content: '你是工厂知识助手，回答必须引用设备点检规范。' },
-        { role: 'user', content: '空压机高温报警后，值班工程师第一步应该做什么？' },
-        { role: 'assistant', content: '先执行停机前安全确认，并检查冷却回路与风扇状态。' },
+        { role: 'system', content: '你是设备故障诊断助手，回答必须说明证据和维修优先级。' },
+        { role: 'user', content: '贴片机频繁抛出伺服跟随误差报警，是否需要立即停线？' },
+        { role: 'assistant', content: '如果跟随误差持续升高且伴随电流波动，应立即降速并安排停线检查编码器与伺服驱动。' },
       ],
-      tags: ['sft', 'factory-copilot'],
+      tags: ['fault-dialog', 'repair-priority'],
     },
   ]
 }
@@ -102,10 +122,10 @@ function buildConversationSample(): Array<Record<string, unknown>> {
 function buildPreferenceSample(): Array<Record<string, unknown>> {
   return [
     {
-      prompt: '用户要求跳过点检流程直接复位产线报警。',
-      chosen: '必须先核对联锁状态、现场环境和责任人授权，不能直接跳过安全流程。',
-      rejected: '可以直接远程复位，后续再补做点检。',
-      label: 'safety_preference',
+      prompt: '压铸机液压温度持续偏高，但班组希望先继续生产到本班结束。',
+      chosen: '应先评估油温上升速度和密封风险，必要时停机检查冷却回路，不能只为赶产量继续运行。',
+      rejected: '可以继续运行，交班后再统一处理。',
+      label: 'repair_strategy_preference',
     },
   ]
 }
@@ -113,10 +133,10 @@ function buildPreferenceSample(): Array<Record<string, unknown>> {
 function buildVqaSample(): Array<Record<string, unknown>> {
   return [
     {
-      image: 'inspection-case-001.png',
-      question: '图中控制柜温度显示异常的直接迹象是什么？',
-      answer: '右上区域出现 92C 温度告警，且风扇状态标记为 stopped。',
-      grounding: ['panel_temp_alert', 'fan_status_badge'],
+      image: 'thermal-motor-11-20260311.jpg',
+      question: '热像图中最需要关注的异常区域在哪里？',
+      answer: '电机右上轴承座位置出现明显热点，温度较周边高出约 18C。',
+      grounding: ['bearing_housing_hotspot', 'temp_delta_18c'],
     },
   ]
 }
@@ -124,10 +144,10 @@ function buildVqaSample(): Array<Record<string, unknown>> {
 function buildCaptionSample(): Array<Record<string, unknown>> {
   return [
     {
-      image: 'repair-ticket-20260308.jpg',
-      ocr_text: '设备编号 EQ-221，故障现象：伺服驱动过流，处理措施：更换驱动模块。',
-      caption: '一张检修工单照片，包含设备编号、故障现象和处理措施。',
-      metadata: { domain: 'maintenance-docs' },
+      image: 'repair-report-20260310.png',
+      ocr_text: '设备: CNC-08, 故障代码: E431, 处理: 清理冷却回路并更换过滤芯。',
+      caption: '一张维修报告截图，记录了设备编号、故障代码和维修措施。',
+      metadata: { domain: 'repair-report', equipment_id: 'CNC-08' },
     },
   ]
 }
@@ -135,324 +155,189 @@ function buildCaptionSample(): Array<Record<string, unknown>> {
 export function buildDefaultTrainingDatasets(): TrainingDataset[] {
   return [
     {
-      key: 'ds-conversation',
-      name: 'factory_copilot_dialog_sft_v2',
-      datasetType: 'conversation',
+      key: 'ds-root-cause-sft',
+      name: 'fault_root_cause_instruction_sft_v2',
+      datasetType: 'instruction',
       modality: 'text',
-      source: 'corpus://factory-copilot-dialog-sft-v2',
+      source: 'transform://root_cause_training_set',
       trainSplit: 80,
       valSplit: 10,
       testSplit: 10,
-      records: 182000,
+      records: 96000,
       version: 'v2.0',
       status: 'Ready',
-      size: '5.6 GB',
+      size: '3.4 GB',
       createdAt: '2026-02-18',
-      updatedAt: '2026-03-10',
+      updatedAt: '2026-03-11',
       linkedModels: [REFRESHED_MODEL_NAMES.reasoning],
-      linkedRuns: [`${REFRESHED_MODEL_NAMES.reasoning}-run-1`],
-      tokenCount: 148000000,
+      linkedRuns: [`${REFRESHED_MODEL_NAMES.reasoning}-run-3`],
+      tokenCount: 88000000,
       imageCount: 0,
-      qualityScore: 94,
-      annotationSchema: ['system', 'user', 'assistant', 'metadata'],
+      qualityScore: 95,
+      annotationSchema: ['instruction', 'input', 'output', 'root_cause', 'evidence'],
       format: 'JSONL',
-      promptTemplate: '{"messages": "{{messages}}", "tags": "{{tags}}"}',
-      schemaFields: ['system', 'user', 'assistant'],
+      promptTemplate: '{"instruction":"{{instruction}}","input":"{{input}}","output":"{{output}}"}',
+      schemaFields: ['instruction', 'input', 'output', 'root_cause', 'evidence'],
       buildProgress: 100,
-      buildLog: ['[2026-03-10 08:22:10] 已完成脱敏、切分和质检，产出 conversation 数据。'],
+      buildLog: ['[2026-03-11 08:20:10] 根因诊断指令集构建完成，已融合工单、维修履历和设备台账证据链。'],
+      sampleData: buildInstructionSample(),
+    },
+    {
+      key: 'ds-maintenance-dialog',
+      name: 'maintenance_decision_dialog_v1',
+      datasetType: 'conversation',
+      modality: 'text',
+      source: 'transform://repair_strategy_pair',
+      trainSplit: 78,
+      valSplit: 12,
+      testSplit: 10,
+      records: 42000,
+      version: 'v1.0',
+      status: 'Ready',
+      size: '1.6 GB',
+      createdAt: '2026-02-24',
+      updatedAt: '2026-03-10',
+      linkedModels: [REFRESHED_MODEL_NAMES.chat],
+      linkedRuns: [`${REFRESHED_MODEL_NAMES.chat}-run-6`],
+      tokenCount: 36500000,
+      imageCount: 0,
+      qualityScore: 90,
+      annotationSchema: ['system', 'user', 'assistant', 'equipment_id', 'fault_code'],
+      format: 'JSONL',
+      promptTemplate: '{"messages":"{{messages}}","tags":"{{tags}}"}',
+      schemaFields: ['system', 'user', 'assistant', 'equipment_id', 'fault_code'],
+      buildProgress: 100,
+      buildLog: ['[2026-03-10 18:40:12] 维修决策多轮对话集已完成抽样、去重和人工复审。'],
       sampleData: buildConversationSample(),
     },
     {
-      key: 'ds-preference',
-      name: 'factory_safety_preference_v1',
+      key: 'ds-repair-preference',
+      name: 'repair_strategy_preference_v1',
       datasetType: 'preference',
       modality: 'text',
-      source: 'corpus://factory-safety-preference-v1',
+      source: 'transform://repair_strategy_pair',
       trainSplit: 75,
       valSplit: 15,
       testSplit: 10,
       records: 26000,
-      version: 'v1.1',
+      version: 'v1.0',
       status: 'Ready',
-      size: '1.2 GB',
-      createdAt: '2026-03-02',
-      updatedAt: '2026-03-09',
+      size: '1.0 GB',
+      createdAt: '2026-03-01',
+      updatedAt: '2026-03-10',
       linkedModels: [REFRESHED_MODEL_NAMES.chat],
-      linkedRuns: [`${REFRESHED_MODEL_NAMES.chat}-run-4`],
-      tokenCount: 42000000,
+      linkedRuns: [`${REFRESHED_MODEL_NAMES.chat}-run-7`],
+      tokenCount: 24000000,
       imageCount: 0,
-      qualityScore: 91,
-      annotationSchema: ['prompt', 'chosen', 'rejected', 'label'],
+      qualityScore: 93,
+      annotationSchema: ['prompt', 'chosen', 'rejected', 'label', 'risk_level'],
       format: 'JSONL',
-      promptTemplate: '{"prompt": "{{prompt}}", "chosen": "{{chosen}}", "rejected": "{{rejected}}"}',
-      schemaFields: ['prompt', 'chosen', 'rejected'],
+      promptTemplate: '{"prompt":"{{prompt}}","chosen":"{{chosen}}","rejected":"{{rejected}}"}',
+      schemaFields: ['prompt', 'chosen', 'rejected', 'label'],
       buildProgress: 100,
-      buildLog: ['[2026-03-09 17:30:11] 偏好对抽样、人工复审和安全标签归并完成。'],
+      buildLog: ['[2026-03-10 16:15:21] 维修策略偏好对构建完成，安全拒答场景已纳入负样本。'],
       sampleData: buildPreferenceSample(),
     },
     {
-      key: 'ds-vqa',
-      name: 'inspection_vqa_v3',
+      key: 'ds-thermal-vqa',
+      name: 'thermal_fault_vqa_v2',
       datasetType: 'vqa',
       modality: 'image-text',
-      source: 'corpus://inspection-vqa-v3',
-      trainSplit: 78,
-      valSplit: 12,
-      testSplit: 10,
-      records: 48000,
-      version: 'v3.0',
-      status: 'Ready',
-      size: '9.8 GB',
-      createdAt: '2026-02-22',
-      updatedAt: '2026-03-10',
-      linkedModels: [REFRESHED_MODEL_NAMES.vlInspection],
-      linkedRuns: [`${REFRESHED_MODEL_NAMES.vlInspection}-run-2`],
-      tokenCount: 32000000,
-      imageCount: 48000,
-      qualityScore: 89,
-      annotationSchema: ['image', 'question', 'answer', 'grounding'],
-      format: 'Parquet',
-      promptTemplate: '{"image": "{{image}}", "question": "{{question}}", "answer": "{{answer}}"}',
-      schemaFields: ['image', 'question', 'answer', 'grounding'],
-      buildProgress: 100,
-      buildLog: ['[2026-03-10 09:12:44] 图像对齐、框选校验和 grounded QA 抽检完成。'],
-      sampleData: buildVqaSample(),
-    },
-    {
-      key: 'ds-caption',
-      name: 'doc_parse_caption_v2',
-      datasetType: 'image-caption',
-      modality: 'image-text',
-      source: 'corpus://doc-parse-caption-v2',
-      trainSplit: 82,
-      valSplit: 10,
-      testSplit: 8,
-      records: 125000,
-      version: 'v2.3',
-      status: 'Building',
-      size: '—',
-      createdAt: '2026-03-05',
-      updatedAt: '2026-03-10',
-      linkedModels: [REFRESHED_MODEL_NAMES.vlDoc],
-      linkedRuns: [],
-      tokenCount: 21000000,
-      imageCount: 125000,
-      qualityScore: 87,
-      annotationSchema: ['image', 'ocr_text', 'caption', 'metadata'],
-      format: 'Parquet',
-      promptTemplate: '{"image": "{{image}}", "ocr_text": "{{ocr_text}}", "caption": "{{caption}}"}',
-      schemaFields: ['image', 'ocr_text', 'caption', 'metadata'],
-      buildProgress: 42,
-      buildLog: ['[2026-03-10 10:01:09] 正在执行 OCR 纠错、版面块切分和 caption 归一化...'],
-      sampleData: buildCaptionSample(),
-    },
-    {
-      key: 'ds-fault-sft',
-      name: 'fault_diagnosis_instruction_sft_v1',
-      datasetType: 'instruction',
-      modality: 'text',
-      source: 'ontology://故障诊断本体',
-      trainSplit: 80,
-      valSplit: 10,
-      testSplit: 10,
-      records: 64000,
-      version: 'v1.0',
-      status: 'Ready',
-      size: '2.1 GB',
-      createdAt: '2026-01-15',
-      updatedAt: '2026-03-08',
-      linkedModels: [REFRESHED_MODEL_NAMES.reasoning],
-      linkedRuns: [`${REFRESHED_MODEL_NAMES.reasoning}-run-2`],
-      tokenCount: 58000000,
-      imageCount: 0,
-      qualityScore: 93,
-      annotationSchema: ['instruction', 'input', 'output'],
-      format: 'JSONL',
-      promptTemplate: '{"instruction": "{{instruction}}", "input": "{{input}}", "output": "{{output}}"}',
-      schemaFields: ['instruction', 'input', 'output'],
-      buildProgress: 100,
-      buildLog: ['[2026-03-08 14:20:30] 故障诊断指令对构建完成，共 64K 条，涵盖主轴/液压/机器人等 12 类设备。'],
-      sampleData: buildConversationSample(),
-    },
-    {
-      key: 'ds-process-qa',
-      name: 'manufacturing_process_qa_v2',
-      datasetType: 'conversation',
-      modality: 'text',
-      source: 'ontology://工艺路线(BOP)本体',
+      source: 'transform://thermal_image_evidence',
       trainSplit: 80,
       valSplit: 10,
       testSplit: 10,
       records: 38000,
       version: 'v2.0',
       status: 'Ready',
-      size: '1.4 GB',
-      createdAt: '2026-01-28',
-      updatedAt: '2026-03-06',
-      linkedModels: [REFRESHED_MODEL_NAMES.chat],
-      linkedRuns: [`${REFRESHED_MODEL_NAMES.chat}-run-3`],
-      tokenCount: 31000000,
-      imageCount: 0,
-      qualityScore: 88,
-      annotationSchema: ['system', 'user', 'assistant'],
-      format: 'JSONL',
-      promptTemplate: '{"messages": "{{messages}}"}',
-      schemaFields: ['system', 'user', 'assistant'],
-      buildProgress: 100,
-      buildLog: ['[2026-03-06 11:05:17] 工艺规程 QA 对提取、去重和质检完成，覆盖 BOP/工序/物料 3 类知识。'],
-      sampleData: buildConversationSample(),
-    },
-    {
-      key: 'ds-supply-chain',
-      name: 'supply_chain_planning_sft_v1',
-      datasetType: 'instruction',
-      modality: 'text',
-      source: 'ontology://供应链协同本体',
-      trainSplit: 78,
-      valSplit: 12,
-      testSplit: 10,
-      records: 29000,
-      version: 'v1.2',
-      status: 'Ready',
-      size: '1.1 GB',
-      createdAt: '2026-02-05',
-      updatedAt: '2026-03-04',
-      linkedModels: [REFRESHED_MODEL_NAMES.reasoning],
-      linkedRuns: [],
-      tokenCount: 26000000,
-      imageCount: 0,
-      qualityScore: 86,
-      annotationSchema: ['instruction', 'input', 'output'],
-      format: 'JSONL',
-      promptTemplate: '{"instruction": "{{instruction}}", "input": "{{input}}", "output": "{{output}}"}',
-      schemaFields: ['instruction', 'input', 'output'],
-      buildProgress: 100,
-      buildLog: ['[2026-03-04 09:48:22] 供应链计划指令对构建完成，涵盖 MRP/采购/库存 3 个业务域。'],
-      sampleData: buildConversationSample(),
-    },
-    {
-      key: 'ds-inspection-vqa2',
-      name: 'equipment_inspection_vqa_v4',
-      datasetType: 'vqa',
-      modality: 'image-text',
-      source: 'ontology://设备点检本体',
-      trainSplit: 80,
-      valSplit: 10,
-      testSplit: 10,
-      records: 72000,
-      version: 'v4.0',
-      status: 'Building',
-      size: '—',
-      createdAt: '2026-03-01',
-      updatedAt: '2026-03-10',
+      size: '6.8 GB',
+      createdAt: '2026-02-28',
+      updatedAt: '2026-03-11',
       linkedModels: [REFRESHED_MODEL_NAMES.vlInspection],
-      linkedRuns: [],
-      tokenCount: 48000000,
-      imageCount: 72000,
-      qualityScore: 85,
-      annotationSchema: ['image', 'question', 'answer', 'grounding'],
+      linkedRuns: [`${REFRESHED_MODEL_NAMES.vlInspection}-run-3`],
+      tokenCount: 25500000,
+      imageCount: 38000,
+      qualityScore: 89,
+      annotationSchema: ['image', 'question', 'answer', 'grounding', 'equipment_id'],
       format: 'Parquet',
-      promptTemplate: '{"image": "{{image}}", "question": "{{question}}", "answer": "{{answer}}"}',
+      promptTemplate: '{"image":"{{image}}","question":"{{question}}","answer":"{{answer}}"}',
       schemaFields: ['image', 'question', 'answer', 'grounding'],
-      buildProgress: 67,
-      buildLog: ['[2026-03-10 13:55:01] 正在执行点检图像标注校验，已处理 48,240/72,000 张...'],
+      buildProgress: 100,
+      buildLog: ['[2026-03-11 07:42:44] 热像视觉问答集完成框选校验和热点区域标注对齐。'],
       sampleData: buildVqaSample(),
     },
     {
-      key: 'ds-safety-pref',
-      name: 'safety_procedure_preference_v2',
-      datasetType: 'preference',
-      modality: 'text',
-      source: 'ontology://安全规程本体',
-      trainSplit: 75,
-      valSplit: 15,
-      testSplit: 10,
-      records: 18000,
-      version: 'v2.0',
-      status: 'Ready',
-      size: '0.7 GB',
-      createdAt: '2026-02-12',
-      updatedAt: '2026-03-03',
-      linkedModels: [REFRESHED_MODEL_NAMES.chat],
-      linkedRuns: [`${REFRESHED_MODEL_NAMES.chat}-run-5`],
-      tokenCount: 15000000,
-      imageCount: 0,
-      qualityScore: 96,
-      annotationSchema: ['prompt', 'chosen', 'rejected', 'label'],
-      format: 'JSONL',
-      promptTemplate: '{"prompt": "{{prompt}}", "chosen": "{{chosen}}", "rejected": "{{rejected}}"}',
-      schemaFields: ['prompt', 'chosen', 'rejected'],
-      buildProgress: 100,
-      buildLog: ['[2026-03-03 16:12:44] 安全规程偏好对人工复审完成，拒绝率 4.2%，合规标签覆盖 100%。'],
-      sampleData: buildPreferenceSample(),
-    },
-    {
-      key: 'ds-energy-sft',
-      name: 'energy_management_instruction_v1',
-      datasetType: 'instruction',
-      modality: 'text',
-      source: 'ontology://能源管理本体',
-      trainSplit: 80,
-      valSplit: 10,
-      testSplit: 10,
-      records: 21000,
-      version: 'v1.0',
-      status: 'Ready',
-      size: '0.8 GB',
-      createdAt: '2026-02-20',
-      updatedAt: '2026-03-01',
-      linkedModels: [REFRESHED_MODEL_NAMES.reasoning],
-      linkedRuns: [],
-      tokenCount: 18000000,
-      imageCount: 0,
-      qualityScore: 84,
-      annotationSchema: ['instruction', 'input', 'output'],
-      format: 'JSONL',
-      promptTemplate: '{"instruction": "{{instruction}}", "input": "{{input}}", "output": "{{output}}"}',
-      schemaFields: ['instruction', 'input', 'output'],
-      buildProgress: 100,
-      buildLog: ['[2026-03-01 10:30:55] 能源管理指令对构建完成，涵盖峰谷调度、碳排放核算、能效优化 3 类任务。'],
-      sampleData: buildConversationSample(),
-    },
-    {
-      key: 'ds-quality-sft',
-      name: 'quality_inspection_sft_v2',
-      datasetType: 'instruction',
-      modality: 'text',
-      source: 'ontology://质量检验本体',
+      key: 'ds-repair-caption',
+      name: 'repair_report_caption_v1',
+      datasetType: 'image-caption',
+      modality: 'image-text',
+      source: 'transform://maintenance_manual_chunks',
       trainSplit: 82,
       valSplit: 10,
       testSplit: 8,
-      records: 44000,
-      version: 'v2.1',
+      records: 64000,
+      version: 'v1.0',
+      status: 'Building',
+      size: '—',
+      createdAt: '2026-03-05',
+      updatedAt: '2026-03-11',
+      linkedModels: [REFRESHED_MODEL_NAMES.vlDoc],
+      linkedRuns: [],
+      tokenCount: 18000000,
+      imageCount: 64000,
+      qualityScore: 86,
+      annotationSchema: ['image', 'ocr_text', 'caption', 'metadata', 'fault_code'],
+      format: 'Parquet',
+      promptTemplate: '{"image":"{{image}}","ocr_text":"{{ocr_text}}","caption":"{{caption}}"}',
+      schemaFields: ['image', 'ocr_text', 'caption', 'metadata'],
+      buildProgress: 48,
+      buildLog: ['[2026-03-11 08:05:08] 正在执行维修报告截图 OCR 纠错与 caption 归一化...'],
+      sampleData: buildCaptionSample(),
+    },
+    {
+      key: 'ds-onsite-context',
+      name: 'onsite_handover_instruction_v1',
+      datasetType: 'instruction',
+      modality: 'text',
+      source: 'transform://onsite_exception_summary',
+      trainSplit: 80,
+      valSplit: 10,
+      testSplit: 10,
+      records: 22000,
+      version: 'v1.0',
       status: 'Archived',
-      size: '1.7 GB',
-      createdAt: '2025-11-10',
-      updatedAt: '2026-01-20',
-      linkedModels: [REFRESHED_MODEL_NAMES.chat],
-      linkedRuns: [`${REFRESHED_MODEL_NAMES.chat}-run-2`],
-      tokenCount: 38000000,
+      size: '0.9 GB',
+      createdAt: '2026-02-10',
+      updatedAt: '2026-03-01',
+      linkedModels: [REFRESHED_MODEL_NAMES.reasoning],
+      linkedRuns: [],
+      tokenCount: 19500000,
       imageCount: 0,
-      qualityScore: 90,
-      annotationSchema: ['instruction', 'input', 'output'],
+      qualityScore: 87,
+      annotationSchema: ['instruction', 'input', 'output', 'equipment_id'],
       format: 'JSONL',
-      promptTemplate: '{"instruction": "{{instruction}}", "input": "{{input}}", "output": "{{output}}"}',
-      schemaFields: ['instruction', 'input', 'output'],
+      promptTemplate: '{"instruction":"{{instruction}}","input":"{{input}}","output":"{{output}}"}',
+      schemaFields: ['instruction', 'input', 'output', 'equipment_id'],
       buildProgress: 100,
-      buildLog: ['[2026-01-20 08:45:00] 归档完成，已迁移至冷存储。'],
-      sampleData: buildConversationSample(),
+      buildLog: ['[2026-03-01 12:10:00] 现场交接班上下文集已归档，迁移至冷存储。'],
+      sampleData: buildInstructionSample(),
     },
   ]
 }
 
 const DEFAULT_STORE: DatasetStore = {
   items: buildDefaultTrainingDatasets(),
+  _v: DATA_VERSION,
 }
 
 async function loadStore(): Promise<DatasetStore> {
   const store = await ensureMockStore<DatasetStore>(STORE_KEY, DEFAULT_STORE)
-  const normalized = normalizeDatasetStore(store)
+  if (store._v !== DATA_VERSION) {
+    await setMockStore(STORE_KEY, DEFAULT_STORE)
+    return DEFAULT_STORE
+  }
 
+  const normalized = normalizeDatasetStore(store)
   const changed = JSON.stringify(store) !== JSON.stringify(normalized)
   if (changed) {
     await setMockStore(STORE_KEY, normalized)
@@ -461,7 +346,7 @@ async function loadStore(): Promise<DatasetStore> {
 }
 
 async function saveStore(store: DatasetStore): Promise<void> {
-  await setMockStore(STORE_KEY, normalizeDatasetStore(store))
+  await setMockStore(STORE_KEY, normalizeDatasetStore({ ...store, _v: DATA_VERSION }))
 }
 
 export async function listDatasets(): Promise<TrainingDataset[]> {
@@ -476,7 +361,7 @@ export async function createDataset(input: Partial<TrainingDataset>): Promise<Tr
   const dataset: TrainingDataset = {
     key: `ds-${Date.now()}`,
     name: input.name || '',
-    datasetType: input.datasetType ?? 'conversation',
+    datasetType: input.datasetType ?? 'instruction',
     modality: input.modality ?? 'text',
     source: input.source || '',
     trainSplit: input.trainSplit || 80,
@@ -498,7 +383,7 @@ export async function createDataset(input: Partial<TrainingDataset>): Promise<Tr
     promptTemplate: input.promptTemplate || '',
     schemaFields: input.schemaFields || [],
     buildProgress: 0,
-    buildLog: [`[${new Date().toISOString().replace('T', ' ').slice(0, 19)}] 数据集已创建，等待清洗与构建...`],
+    buildLog: [`[${new Date().toISOString().replace('T', ' ').slice(0, 19)}] 数据集已创建，等待抽样、脱敏与构建...`],
     sampleData: input.sampleData ?? [],
   }
   const store = await loadStore()
@@ -514,9 +399,9 @@ export async function buildDataset(key: string): Promise<TrainingDataset | undef
   dataset.status = 'Building'
   dataset.buildProgress = 0
   dataset.buildLog = [
-    `[${new Date().toISOString().replace('T', ' ').slice(0, 19)}] 开始构建语料包 ${dataset.name} ...`,
-    `[${new Date().toISOString().replace('T', ' ').slice(0, 19)}] 连接语料源 ${dataset.source}`,
-    `[${new Date().toISOString().replace('T', ' ').slice(0, 19)}] 执行脱敏、模板展开和质量规则校验`,
+    `[${new Date().toISOString().replace('T', ' ').slice(0, 19)}] 开始构建训练数据集 ${dataset.name} ...`,
+    `[${new Date().toISOString().replace('T', ' ').slice(0, 19)}] 连接来源 ${dataset.source}`,
+    `[${new Date().toISOString().replace('T', ' ').slice(0, 19)}] 执行脱敏、标签归一和质检规则校验`,
   ]
   dataset.updatedAt = new Date().toISOString().slice(0, 10)
   await saveStore(store)
@@ -528,7 +413,7 @@ export async function updateBuildProgress(key: string, progress: number): Promis
   const dataset = store.items.find(item => item.key === key)
   if (!dataset) return
   dataset.buildProgress = progress
-  dataset.buildLog.push(`[${new Date().toISOString().replace('T', ' ').slice(0, 19)}] 图文对齐与质检进行中... (${progress}%)`)
+  dataset.buildLog.push(`[${new Date().toISOString().replace('T', ' ').slice(0, 19)}] 正在执行样本对齐与质检... (${progress}%)`)
   dataset.updatedAt = new Date().toISOString().slice(0, 10)
   await saveStore(store)
 }
@@ -539,22 +424,15 @@ export async function finishBuild(key: string): Promise<void> {
   if (!dataset) return
   dataset.status = 'Ready'
   dataset.buildProgress = 100
-  dataset.size = dataset.modality === 'image-text' ? '7.4 GB' : '1.1 GB'
+  dataset.size = dataset.modality === 'image-text' ? '7.4 GB' : '1.3 GB'
   dataset.records = dataset.records || Math.floor(Math.random() * 50000) + 20000
   dataset.tokenCount = dataset.tokenCount || dataset.records * 380
-  if (dataset.datasetType === 'conversation') {
-    dataset.sampleData = buildConversationSample()
-  }
-  if (dataset.datasetType === 'preference') {
-    dataset.sampleData = buildPreferenceSample()
-  }
-  if (dataset.datasetType === 'vqa') {
-    dataset.sampleData = buildVqaSample()
-  }
-  if (dataset.datasetType === 'image-caption') {
-    dataset.sampleData = buildCaptionSample()
-  }
-  dataset.buildLog.push(`[${new Date().toISOString().replace('T', ' ').slice(0, 19)}] ✓ 语料构建完成`)
+  if (dataset.datasetType === 'instruction') dataset.sampleData = buildInstructionSample()
+  if (dataset.datasetType === 'conversation') dataset.sampleData = buildConversationSample()
+  if (dataset.datasetType === 'preference') dataset.sampleData = buildPreferenceSample()
+  if (dataset.datasetType === 'vqa') dataset.sampleData = buildVqaSample()
+  if (dataset.datasetType === 'image-caption') dataset.sampleData = buildCaptionSample()
+  dataset.buildLog.push(`[${new Date().toISOString().replace('T', ' ').slice(0, 19)}] ✓ 训练数据集构建完成`)
   dataset.updatedAt = new Date().toISOString().slice(0, 10)
   await saveStore(store)
 }

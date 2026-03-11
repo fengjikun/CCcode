@@ -68,8 +68,11 @@ export default function DataIngestionPage() {
     return [
       job.taskName,
       job.sourceName,
+      job.domainLabel,
       job.dataSourceType,
+      job.ingestionModeLabel,
       job.targetLabel,
+      job.outputLabel,
     ].some(value => value.toLowerCase().includes(normalizedKeyword))
   }), [jobs, keyword, sourceTypeFilter, statusFilter])
 
@@ -99,9 +102,9 @@ export default function DataIngestionPage() {
 
   const stats = [
     { title: '任务总数', value: jobs.length, icon: <SyncOutlined />, cls: 'stat-primary' },
-    { title: '启用中', value: jobs.filter(job => job.status === 'Active' || job.status === 'Syncing').length, icon: <CheckCircleOutlined />, cls: 'stat-success' },
-    { title: '同步中', value: jobs.filter(job => job.status === 'Syncing').length, icon: <ClockCircleOutlined />, cls: 'stat-info' },
-    { title: '异常任务', value: jobs.filter(job => job.status === 'Error').length, icon: <WarningOutlined />, cls: 'stat-warning' },
+    { title: '在线采集', value: jobs.filter(job => job.status === 'Active' || job.status === 'Syncing').length, icon: <CheckCircleOutlined />, cls: 'stat-success' },
+    { title: '实时/分钟级', value: jobs.filter(job => ['实时', '每 5 分钟', '每 15 分钟'].includes(job.scheduleLabel)).length, icon: <ClockCircleOutlined />, cls: 'stat-info' },
+    { title: '异常/停用', value: jobs.filter(job => job.status === 'Error' || job.status === 'Inactive').length, icon: <WarningOutlined />, cls: 'stat-warning' },
   ]
 
   const columns: TableProps<IngestionJobView>['columns'] = [
@@ -112,7 +115,10 @@ export default function DataIngestionPage() {
       render: (_value, record) => (
         <Space direction="vertical" size={2}>
           <Text strong>{record.taskName}</Text>
-          <Text type="secondary">{record.sourceName}</Text>
+          <Space size={6} wrap>
+            <Text type="secondary">{record.sourceName}</Text>
+            <Tag color="blue">{record.domainLabel}</Tag>
+          </Space>
         </Space>
       ),
     },
@@ -129,6 +135,12 @@ export default function DataIngestionPage() {
       key: 'dataSourceType',
       width: 120,
       render: (value: string) => <Tag>{value}</Tag>,
+    },
+    {
+      title: '接入方式',
+      dataIndex: 'ingestionModeLabel',
+      key: 'ingestionModeLabel',
+      width: 120,
     },
     {
       title: '调度策略',
@@ -156,9 +168,16 @@ export default function DataIngestionPage() {
       width: 100,
     },
     {
-      title: '接入目标',
+      title: '源端位置',
       dataIndex: 'targetLabel',
       key: 'targetLabel',
+      width: 240,
+      render: (value: string) => <Text type="secondary">{value}</Text>,
+    },
+    {
+      title: '落地区域',
+      dataIndex: 'outputLabel',
+      key: 'outputLabel',
       width: 260,
       render: (value: string) => <Text type="secondary">{value}</Text>,
     },
@@ -167,14 +186,14 @@ export default function DataIngestionPage() {
   return (
     <div className="page-container">
       <Card className="section-card">
-        <PageHeader title="数据接入任务" subtitle="统一查看采集任务、同步状态样本与最近结果" />
+        <PageHeader title="数据接入任务" subtitle="面向故障诊断查看源数据采集任务，明确采什么、怎么采、落到哪里" />
 
         <StatCards items={stats} />
 
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           <Col xs={24} xl={24}>
             <Card
-              title="接入任务列表"
+              title="源数据采集任务"
               extra={(
                 <Space>
                   <Button icon={<ReloadOutlined />} onClick={reload}>刷新状态</Button>
@@ -207,7 +226,7 @@ export default function DataIngestionPage() {
                 />
                 <Input.Search
                   allowClear
-                  placeholder="搜索任务名称 / 数据源 / 类型 / 接入目标"
+                  placeholder="搜索任务 / 业务域 / 数据源类型 / 落地区域"
                   value={keyword}
                   onChange={event => setKeyword(event.target.value)}
                   style={{ width: 320 }}
@@ -220,7 +239,7 @@ export default function DataIngestionPage() {
                 columns={columns}
                 dataSource={filteredJobs}
                 pagination={pagination}
-                locale={{ emptyText: '暂无匹配的接入任务，先到数据源管理中配置数据源' }}
+                locale={{ emptyText: '暂无匹配的采集任务，先到数据源管理中配置故障诊断源数据' }}
               />
             </Card>
           </Col>

@@ -17,7 +17,6 @@ vi.mock('./mockStoreClient', () => ({
   }),
 }))
 
-import { ONTOLOGY_DEFS } from './projectManagement'
 import {
   createDataSource,
   getDataSource,
@@ -26,38 +25,28 @@ import {
 } from './dataSource'
 import { OBJECT_STORAGE_TYPES } from '../types/dataSource'
 
-describe('dataSource ontology seeding', () => {
+describe('dataSource source-data seeding', () => {
   beforeEach(() => {
     mockStore.items = []
     mockStore._v = undefined
-  })
-
-  it('exports ontology presets for datasource generation', () => {
-    expect(Array.isArray(ONTOLOGY_DEFS)).toBe(true)
-    expect(ONTOLOGY_DEFS.length).toBeGreaterThan(100)
   })
 
   it('exposes object storage datasource types', () => {
     expect(OBJECT_STORAGE_TYPES).toEqual(['S3', 'OSS', 'MinIO'])
   })
 
-  it('generates one database datasource and one object storage datasource per ontology', async () => {
+  it('seeds fault-diagnosis oriented source datasets', async () => {
     const list = await listDataSources()
     const databaseCount = list.filter((item) => item.category === 'structured').length
     const objectStorageCount = list.filter((item) => item.category === 'unstructured').length
-    const ontologyNameToDatabaseCount = new Map<string, number>()
-
-    for (const item of list.filter((entry) => entry.category === 'structured')) {
-      const ontologyName = item.name.split('_').slice(1, -1).join('_')
-      ontologyNameToDatabaseCount.set(ontologyName, (ontologyNameToDatabaseCount.get(ontologyName) ?? 0) + 1)
-    }
 
     expect(databaseCount).toBeGreaterThan(objectStorageCount)
     expect(objectStorageCount).toBeGreaterThan(0)
-    expect(databaseCount).toBeGreaterThan(ONTOLOGY_DEFS.length)
     expect(list.some((item) => item.type === 'S3' || item.type === 'OSS' || item.type === 'MinIO')).toBe(true)
-    expect(list.some((item) => item.name.includes('制造业_故障诊断本体'))).toBe(true)
-    expect([...ontologyNameToDatabaseCount.values()].some((count) => count > 1)).toBe(true)
+    expect(list.some((item) => item.name.includes('故障工单'))).toBe(true)
+    expect(list.some((item) => item.name.includes('PLC 运行日志'))).toBe(true)
+    expect(list.some((item) => item.name.includes('机台原始日志文件库'))).toBe(true)
+    expect(list.some((item) => item.description?.includes('源数据'))).toBe(true)
   })
 
   it('migrates legacy persisted datasource stores to the seeded version', async () => {
@@ -98,7 +87,7 @@ describe('dataSource ontology seeding', () => {
     expect(list.filter((item) => item.category === 'structured').length).toBeGreaterThan(
       list.filter((item) => item.category === 'unstructured').length,
     )
-    expect(list.some((item) => item.name.includes('制造业_故障诊断本体'))).toBe(true)
+    expect(list.some((item) => item.name.includes('故障工单主表'))).toBe(true)
     expect(mockStore._v).toBeDefined()
   })
 
@@ -119,7 +108,7 @@ describe('dataSource ontology seeding', () => {
         updatedAt: '2025-03-10T08:00:00.000Z',
       },
     ]
-    mockStore._v = 5
+    mockStore._v = 6
 
     const list = await listDataSources()
 
@@ -127,7 +116,7 @@ describe('dataSource ontology seeding', () => {
     expect(list[0]?.id).toBe('ds-custom-001')
     expect(list[0]?.name).toBe('企业主数据湖')
     expect(mockStore.items).toHaveLength(1)
-    expect(mockStore._v).toBe(5)
+    expect(mockStore._v).toBe(6)
   })
 
   it('creates an object storage datasource with bucket connection fields', async () => {

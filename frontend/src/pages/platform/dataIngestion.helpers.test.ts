@@ -10,14 +10,14 @@ import {
 
 const structuredSource: DataSource = {
   id: 'ds-structured',
-  name: '企业主数据湖',
+  name: '故障工单主表',
   category: 'structured',
   type: 'PostgreSQL',
   connection: {
-    host: 'lake.company.local',
+    host: 'pg-fault-workorder.factory.local',
     port: 5432,
-    database: 'lakehouse',
-    username: 'reader',
+    database: 'fault_workorder_ods',
+    username: 'fault_reader',
   },
   syncFrequency: 'hourly',
   status: 'Active',
@@ -30,14 +30,14 @@ const structuredSource: DataSource = {
 
 const unstructuredSource: DataSource = {
   id: 'ds-unstructured',
-  name: '合同附件仓',
+  name: '机台原始日志文件库',
   category: 'unstructured',
   type: 'OSS',
   connection: {
     endpoint: 'https://oss.demo.local',
-    bucket: 'contract-archive',
+    bucket: 'fault-machine-log-raw',
     region: 'cn-east-1',
-    pathPrefix: 'contracts/v1/',
+    pathPrefix: 'machines/raw-logs/',
   },
   syncFrequency: 'daily',
   status: 'Syncing',
@@ -50,12 +50,12 @@ const unstructuredSource: DataSource = {
 
 describe('data ingestion helpers', () => {
   it('formats structured datasource targets using host and database', () => {
-    expect(getIngestionTargetLabel(structuredSource)).toBe('lake.company.local / lakehouse')
+    expect(getIngestionTargetLabel(structuredSource)).toBe('pg-fault-workorder.factory.local / fault_workorder_ods')
     expect(getIngestionCategoryLabel(structuredSource.category)).toBe('数据库')
   })
 
   it('formats object storage targets using bucket and path prefix', () => {
-    expect(getIngestionTargetLabel(unstructuredSource)).toBe('contract-archive / contracts/v1/')
+    expect(getIngestionTargetLabel(unstructuredSource)).toBe('fault-machine-log-raw / machines/raw-logs/')
     expect(getIngestionCategoryLabel(unstructuredSource.category)).toBe('对象存储')
   })
 
@@ -67,15 +67,18 @@ describe('data ingestion helpers', () => {
   it('derives ingestion task rows directly from datasource records', () => {
     expect(toIngestionJobView(structuredSource)).toMatchObject({
       id: 'ds-structured',
-      taskName: '企业主数据湖接入任务',
-      sourceName: '企业主数据湖',
+      taskName: '故障工单主表采集任务',
+      sourceName: '故障工单主表',
       categoryLabel: '数据库',
+      domainLabel: '工单域',
       dataSourceType: 'PostgreSQL',
+      ingestionModeLabel: '增量 CDC',
       scheduleLabel: '每小时',
       statusLabel: '正常',
       lastRunLabel: '1 分钟前',
       recordCountLabel: '98.8万',
-      targetLabel: 'lake.company.local / lakehouse',
+      targetLabel: 'pg-fault-workorder.factory.local / fault_workorder_ods',
+      outputLabel: '落地 ODS 工单中心 / fault_work_order',
     })
   })
 })

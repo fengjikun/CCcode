@@ -51,9 +51,18 @@ export const DATASET_FORMAT_COLORS: Record<DatasetFormat, string> = {
 }
 
 export const SCHEMA_FIELD_OPTIONS = [
+  'instruction',
+  'input',
+  'output',
   'system',
   'user',
   'assistant',
+  'equipment_id',
+  'fault_code',
+  'alarm_code',
+  'root_cause',
+  'repair_action',
+  'evidence',
   'image',
   'question',
   'answer',
