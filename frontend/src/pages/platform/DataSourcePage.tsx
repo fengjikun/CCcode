@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Button,
   Card,
@@ -26,6 +27,7 @@ import {
   EditOutlined,
   ExclamationCircleOutlined,
   EyeOutlined,
+  FolderOpenOutlined,
   LinkOutlined,
   PlusOutlined,
   ReloadOutlined,
@@ -89,6 +91,7 @@ const DS_STATUS_DOT: Record<string, 'active' | 'warning' | 'error'> = {
 
 /* ──────────── 主页面 ──────────── */
 export default function DataSourcePage() {
+  const navigate = useNavigate()
   const [list, setList] = useState<DataSource[]>([])
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState<DataSourceCategory | 'all'>('all')
@@ -260,13 +263,6 @@ export default function DataSourcePage() {
       render: (v: SyncFrequency) => SYNC_FREQUENCY_LABELS[v] || v,
     },
     {
-      title: '记录数',
-      dataIndex: 'recordCount',
-      key: 'recordCount',
-      width: 100,
-      render: (v: number) => v > 10000 ? `${(v / 10000).toFixed(1)}万` : v.toLocaleString(),
-    },
-    {
       title: '最近同步',
       dataIndex: 'lastSync',
       key: 'lastSync',
@@ -292,6 +288,7 @@ export default function DataSourcePage() {
       render: (_: unknown, record: DataSource) => (
         <ActionColumn actions={[
           { key: 'view', icon: <EyeOutlined />, tooltip: '查看详情', onClick: () => openDetail(record) },
+          ...(record.category === 'unstructured' ? [{ key: 'browse', icon: <FolderOpenOutlined />, tooltip: '浏览桶', onClick: () => navigate(`/datasource/${record.id}/browser`) }] : []),
           { key: 'edit', icon: <EditOutlined />, tooltip: '编辑', onClick: () => openEdit(record) },
           { key: 'delete', icon: <DeleteOutlined />, tooltip: '删除', danger: true, confirm: '确认删除该数据源？', onClick: () => handleDelete(record.id) },
         ]} />

@@ -241,10 +241,7 @@ export default function TrainingDatasetsPage() {
       title: '规模',
       key: 'scale',
       render: (_: unknown, dataset: TrainingDataset) => (
-        <Space direction="vertical" size={2}>
-          <Text>{formatDatasetScale(dataset)}</Text>
-          <Text type="secondary" style={{ fontSize: 12 }}>{dataset.records.toLocaleString()} samples</Text>
-        </Space>
+        <Text>{formatDatasetScale(dataset)}</Text>
       ),
     },
     {

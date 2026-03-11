@@ -12595,59 +12595,6 @@
       ],
       "_v": 5
     },
-    "training-datasets": {
-      "items": [
-        {
-          "key": "1",
-          "name": "purchase_orders_v3",
-          "datasetType": "instruction",
-          "modality": "text",
-          "source": "ontology://PurchaseOrder/output",
-          "trainSplit": 70,
-          "valSplit": 15,
-          "testSplit": 15,
-          "records": 12450,
-          "version": "v3.0",
-          "status": "Ready",
-          "size": "156 MB",
-          "createdAt": "2025-02-15",
-          "updatedAt": "2025-03-08",
-          "linkedModels": [
-            "purchase-order-classifier"
-          ],
-          "linkedRuns": [],
-          "tokenCount": 4731000,
-          "imageCount": 0,
-          "qualityScore": 80,
-          "annotationSchema": [
-            "设备编号",
-            "设备名称",
-            "运行状态",
-            "故障类型"
-          ],
-          "format": "JSONL",
-          "promptTemplate": "{\"instruction\": \"分类采购订单\", \"input\": \"{{设备名称}}\", \"output\": \"{{运行状态}}\"}",
-          "schemaFields": [
-            "设备编号",
-            "设备名称",
-            "运行状态",
-            "故障类型"
-          ],
-          "buildProgress": 100,
-          "buildLog": [
-            "[2025-03-08 10:00:01] ✓ 构建完成"
-          ],
-          "sampleData": [
-            {
-              "设备编号": "PO-20250101",
-              "设备名称": "液压泵 A-01",
-              "运行状态": "正常",
-              "故障类型": "—"
-            }
-          ]
-        }
-      ]
-    },
     "skills-market-v2": {
       "skills": [
         {

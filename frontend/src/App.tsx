@@ -36,6 +36,7 @@ import ModelEvaluationPage from './pages/platform/ModelEvaluationPage'
 
 // L1 数据源
 import DataSourcePage from './pages/platform/DataSourcePage'
+import BucketBrowserPage from './pages/platform/BucketBrowserPage'
 
 // 总览
 import DashboardPage from './pages/platform/DashboardPage'
@@ -99,6 +100,7 @@ export default function App() {
 
         {/* L1 数据源 */}
         <Route path="/datasource" element={<DataSourcePage />} />
+        <Route path="/datasource/:id/browser" element={<BucketBrowserPage />} />
 
         {/* 兼容旧路由 */}
         <Route path="/projects" element={<Navigate to="/ontology/projects" replace />} />

@@ -27,7 +27,7 @@ import { delay, rand } from './mockConfig'
 
 const STORAGE_KEY = 'deepexios_projects_v3'
 /** 当默认数据结构变化时递增此值，触发本地缓存迁移 */
-const DATA_VERSION = 11
+const DATA_VERSION = 12
 
 interface ProjectStore {
   projects: ProjectDetail[]
@@ -142,6 +142,186 @@ const FAULT_DIAGNOSIS_8D_DOCUMENTS: ProjectDocument[] = [
     status: 'READY',
     enabled: true,
     uploadedAt: '2025-05-16T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-014',
+    name: '总装输送链EP203链条断裂导致车身掉落停线-附件-2026.02.28 8D设备故障分析报告_总装输送链断链故障.docx',
+    fileType: 'docx',
+    size: 28341,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-02-28T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-015',
+    name: 'EP116推板机推板动作卡滞，导致车身歪斜无法进入工位-附件-2026.02.14 8D设备故障分析报告_推板机卡滞.docx',
+    fileType: 'docx',
+    size: 19874,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-02-14T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-016',
+    name: '焊装WD201点焊机电极帽过热粘连，焊点质量不达标导致整批返工-附件-2026.01.22 8D设备故障分析报告_点焊机电极粘连.docx',
+    fileType: 'docx',
+    size: 31256,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-01-22T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-017',
+    name: 'WD088弧焊机器人TCP漂移，焊缝偏位导致强度不合格-附件-2026.01.09 8D设备故障分析报告_弧焊机器人TCP偏移.docx',
+    fileType: 'docx',
+    size: 24680,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2026-01-09T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-018',
+    name: '涂装车间液压站HP301压力波动，喷涂雾化异常导致漆面橘皮-附件-2025.12.30 8D设备故障分析报告_液压站压力波动.docx',
+    fileType: 'docx',
+    size: 17923,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-12-30T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-019',
+    name: '总装夹具CL402定位销折断，定位失准导致车门间隙超差停线-附件-2025.12.18 8D设备故障分析报告_夹具定位销断裂.docx',
+    fileType: 'docx',
+    size: 22410,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-12-18T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-020',
+    name: '冲压CP108伺服压力机滑块下死点位置漂移导致制件尺寸超差-附件-2025.12.05 8D设备故障分析报告_伺服压力机下死点漂移.docx',
+    fileType: 'docx',
+    size: 26188,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-12-05T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-021',
+    name: '搬运机器人RB215减速机漏油导致地面污染触发安全停机-附件-2025.11.27 8D设备故障分析报告_机器人减速机漏油.docx',
+    fileType: 'docx',
+    size: 18567,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-11-27T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-022',
+    name: '总装线变频器VFD306过温保护跳闸导致输送线急停-附件-2025.11.12 8D设备故障分析报告_变频器过温跳闸.docx',
+    fileType: 'docx',
+    size: 15342,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-11-12T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-023',
+    name: '焊装门盖线GS501气缸密封圈老化内泄导致夹紧力不足焊接飞溅-附件-2025.10.29 8D设备故障分析报告_气缸内泄.docx',
+    fileType: 'docx',
+    size: 20134,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-10-29T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-024',
+    name: '总装拧紧枪TG118扭矩传感器漂移，拧紧结果虚报OK导致质量逃脱-附件-2025.10.16 8D设备故障分析报告_拧紧枪扭矩漂移.docx',
+    fileType: 'docx',
+    size: 23891,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-10-16T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-025',
+    name: '涂装输调漆系统PB209回路堵塞导致颜色切换失败大量废漆-附件-2025.10.03 8D设备故障分析报告_调漆系统堵塞.docx',
+    fileType: 'docx',
+    size: 29405,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-10-03T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-026',
+    name: '冲压自动化线机械手MC304腕关节轴承磨损导致取件抖动废品率升高-附件-2025.09.19 8D设备故障分析报告_机械手轴承磨损.docx',
+    fileType: 'docx',
+    size: 24775,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-09-19T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-027',
+    name: 'AGV小车AG117导航激光雷达污染导致路径偏移碰撞防护栏-附件-2025.09.05 8D设备故障分析报告_AGV激光雷达污染.docx',
+    fileType: 'docx',
+    size: 17689,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-09-05T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-028',
+    name: '焊装主线PLC控制柜电源模块失效，控制系统掉电整线停产2小时-附件-2025.08.22 8D设备故障分析报告_PLC电源模块失效.docx',
+    fileType: 'docx',
+    size: 32014,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-08-22T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-029',
+    name: '总装线螺柱焊SD205焊接能量失控，螺柱拉拔力不达标批量返工-附件-2025.08.12 8D设备故障分析报告_螺柱焊能量失控.docx',
+    fileType: 'docx',
+    size: 19233,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-08-12T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-030',
+    name: '冲压CP203双动压力机液压锁止阀内泄导致滑块自行下落安全事件-附件-2025.07.28 8D设备故障分析报告_压力机液压锁止阀内泄.docx',
+    fileType: 'docx',
+    size: 27556,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-07-28T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-031',
+    name: '涂装烘干炉HF401循环风机轴承失效，炉温均匀性超差导致大批漆膜不良-附件-2025.07.14 8D设备故障分析报告_烘干炉风机轴承失效.docx',
+    fileType: 'docx',
+    size: 25120,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-07-14T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-032',
+    name: '总装线视觉检测相机VC309镜头污染，漏检率突增触发质量门拦截停线-附件-2025.06.30 8D设备故障分析报告_视觉检测漏检.docx',
+    fileType: 'docx',
+    size: 21887,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-06-30T09:00:00.000Z',
+  },
+  {
+    id: 'doc-fd-033',
+    name: '内饰线滑板SC114滑鞍磨损导致车身倾斜，触发安全光幕急停-附件-2025.06.06 8D设备故障分析报告_滑板滑鞍磨损.docx',
+    fileType: 'docx',
+    size: 18442,
+    status: 'READY',
+    enabled: true,
+    uploadedAt: '2025-06-06T09:00:00.000Z',
   },
 ]
 
@@ -2760,6 +2940,7 @@ export async function runProjectFunction(
 
   try {
     await delay(rand(700, 1400))
+
     const handled = functionNameFromScript
       ? executeSeededFunctionHandler(functionNameFromScript, input)
       : null
