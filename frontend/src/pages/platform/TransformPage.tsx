@@ -67,7 +67,7 @@ const BUSINESS_TRANSFORM_TYPE_DESCRIPTIONS: Record<TransformType, string> = {
   LayoutRecovery: '把工单、销售订单、库存快照和调拨单恢复成稳定结构，便于后续关联计算。',
   MultimodalExtraction: '联合日志、波形、热像、规则文件和执行样本等多源输入抽取业务特征。',
   ChunkAnnotation: '对手册、复盘报告和补货规则做切片、标签化和问答样本构建。',
-  DatasetPackaging: '将多源结果封装为故障诊断、补货测算和调拨执行可用的数据集。',
+  DatasetPackaging: '将多源转换结果封装为标准化数据集，供模型训练、智能体分析与下游业务应用消费。',
 }
 
 function formatRecordCount(value: number): string {
@@ -404,7 +404,7 @@ export default function TransformPage() {
   return (
     <div className="page-container">
       <Card className="section-card">
-        <PageHeader title="数据转换" subtitle="围绕故障诊断与商品补货，把工单、告警、销售订单、库存快照、波形、规则文档等转换成可训练、可分析的数据集" />
+        <PageHeader title="数据转换" subtitle="对接入的多源数据进行清洗、关联与规范化，构建跨业务域的数据集，为模型训练与智能体分析提供高质量数据基础" />
 
         <StatCards items={[
           { title: '转换任务', value: projects.length, icon: <ThunderboltOutlined />, cls: 'stat-primary' },
@@ -460,7 +460,7 @@ export default function TransformPage() {
         )}
       >
         <div style={{ marginBottom: 12, color: '#64748b', fontSize: 12 }}>
-          累计处理记录 {formatRecordCount(totalRecords)}，覆盖故障诊断与商品补货场景下结构化源表和对象存储文件的混合转换。
+          累计处理记录 {formatRecordCount(totalRecords)}，支持结构化源表与对象存储文件的混合转换，覆盖多业务域数据处理场景。
         </div>
         <Table dataSource={filtered} columns={columns} pagination={false} size="middle" rowKey="id" />
       </Card>

@@ -380,7 +380,7 @@ export default function DataSourcePage() {
     <div className="page-container">
       {/* ===== Header ===== */}
       <Card className="section-card">
-        <PageHeader title="数据源管理" subtitle="统一管理故障诊断与商品补货源数据接入，覆盖工单、告警、时序信号、销售订单、库存快照、尺码规则与业务文档" />
+        <PageHeader title="数据源管理" subtitle="统一管理企业各业务域的外部数据源接入，支持数据库、对象存储、消息队列、API 等多种连接类型，是平台数据流水线的起点" />
         
 
 
