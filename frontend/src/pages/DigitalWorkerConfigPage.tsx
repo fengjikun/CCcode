@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  Alert,
   Button,
   Card,
   Col,
@@ -24,7 +23,6 @@ import {
   BranchesOutlined,
   DeploymentUnitOutlined,
   RobotOutlined,
-  SafetyCertificateOutlined,
   SaveOutlined,
   SendOutlined,
   ThunderboltOutlined,
@@ -258,6 +256,7 @@ export default function DigitalWorkerConfigPage() {
 
   const publishStatus = worker.publishStatus ?? 'draft'
   const publishMeta = STATUS_META[publishStatus]
+  const chatPath = `/chat/${worker.id}`
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -322,7 +321,11 @@ export default function DigitalWorkerConfigPage() {
               title="基础配置"
               extra={(
                 <Text type="secondary" style={{ fontSize: 12 }}>
-                  当前管理地址：<Text code>{`/digital-worker/business/${worker.id}`}</Text>
+                  当前管理地址：
+                  {' '}
+                  <a href={chatPath} style={{ textDecoration: 'underline' }}>
+                    <Text code>{chatPath}</Text>
+                  </a>
                 </Text>
               )}
             >
@@ -430,7 +433,7 @@ export default function DigitalWorkerConfigPage() {
                 </Col>
                 <Col xs={24} md={12}>
                   <Form.Item label="外部承接端" name="handoffTarget">
-                    <Input placeholder="例如：统一门户 Chat 端（待接入）" />
+                    <Input placeholder="例如：统一门户 Chat 端" />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
@@ -525,7 +528,9 @@ export default function DigitalWorkerConfigPage() {
               <div style={{ padding: 12, borderRadius: 12, background: '#fafafa' }}>
                 <Space direction="vertical" size={4}>
                   <Text strong>管理入口</Text>
-                  <Text code>{`/digital-worker/business/${worker.id}`}</Text>
+                  <a href={chatPath} style={{ textDecoration: 'underline' }}>
+                    <Text code>{chatPath}</Text>
+                  </a>
                 </Space>
               </div>
               <Descriptions column={1} size="small" labelStyle={{ width: 92 }}>
@@ -544,13 +549,6 @@ export default function DigitalWorkerConfigPage() {
                 </Descriptions.Item>
               </Descriptions>
 
-              <Alert
-                type="warning"
-                showIcon
-                icon={<SafetyCertificateOutlined />}
-                message="chat 不再放在管理平台"
-                description="建议本页只保留配置、知识、编排和发布治理。真正对外的问答/会话入口由业务端承接。"
-              />
             </Space>
           </Card>
 

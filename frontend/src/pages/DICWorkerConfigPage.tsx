@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  Alert,
   Button,
   Card,
   Col,
@@ -23,7 +22,6 @@ import {
   CheckCircleOutlined,
   DashboardOutlined,
   SaveOutlined,
-  SafetyCertificateOutlined,
   SendOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons'
@@ -242,6 +240,7 @@ export default function DICWorkerConfigPage() {
   const category = (currentCategory ?? worker.category) as DICWorker['category']
   const status = (form.getFieldValue('status') ?? worker.status) as DICWorker['status']
   const workspacePath = form.getFieldValue('workspacePath') || worker.workspacePath || DIC_CATEGORY_WORKSPACE_PATHS[category]
+  const chatPath = `/chat/${worker.id}`
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -303,7 +302,11 @@ export default function DICWorkerConfigPage() {
               title="基础配置"
               extra={(
                 <Text type="secondary" style={{ fontSize: 12 }}>
-                  当前管理地址：<Text code>{`/digital-worker/dic/${worker.id}`}</Text>
+                  当前管理地址：
+                  {' '}
+                  <a href={chatPath} style={{ textDecoration: 'underline' }}>
+                    <Text code>{chatPath}</Text>
+                  </a>
                 </Text>
               )}
             >
@@ -472,7 +475,9 @@ export default function DICWorkerConfigPage() {
               <div style={{ padding: 12, borderRadius: 12, background: '#fafafa' }}>
                 <Space direction="vertical" size={4}>
                   <Text strong>管理入口</Text>
-                  <Text code>{`/digital-worker/dic/${worker.id}`}</Text>
+                  <a href={chatPath} style={{ textDecoration: 'underline' }}>
+                    <Text code>{chatPath}</Text>
+                  </a>
                 </Space>
               </div>
               <Descriptions column={1} size="small" labelStyle={{ width: 92 }}>
@@ -491,13 +496,6 @@ export default function DICWorkerConfigPage() {
                 </Descriptions.Item>
               </Descriptions>
 
-              <Alert
-                type="warning"
-                showIcon
-                icon={<SafetyCertificateOutlined />}
-                message="高风险动作保持人工确认"
-                description="本页只承接配置、编排与治理；涉及生产变更、批量修复或高风险运维操作时，仍应通过人工审批或专用控制台执行。"
-              />
             </Space>
           </Card>
 
