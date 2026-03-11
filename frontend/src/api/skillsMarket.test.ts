@@ -20,10 +20,11 @@ describe('skillsMarket defaults', () => {
 
   it('loads a generated mixed market and preserves ontology metadata', async () => {
     const { listSkills } = await import('./skillsMarket')
+    const { ONTOLOGY_CATALOG } = await import('../mocks/skills/ontologyCatalog')
 
     const skills = await listSkills()
 
-    expect(skills.length).toBeGreaterThan(100)
+    expect(skills.length).toBeGreaterThanOrEqual(ONTOLOGY_CATALOG.length * 2)
     expect(skills[0]).toHaveProperty('marketType')
     expect(skills.some((skill) => skill.sourceOntologyCodes.length > 0)).toBe(true)
   })
@@ -36,6 +37,8 @@ describe('skillsMarket defaults', () => {
 
     expect(stats.businessSkills).toBeGreaterThan(0)
     expect(stats.generalSkills).toBeGreaterThan(0)
+    expect(stats.businessSkills).toBe(260)
+    expect(stats.businessSkills).toBeGreaterThan(stats.generalSkills)
     expect(mappings.length).toBeGreaterThan(100)
   })
 
@@ -72,7 +75,7 @@ describe('skillsMarket defaults', () => {
     expect(legacySkill?.recommendedFor).toEqual([])
     expect(legacySkill?.capabilities).toEqual([])
     expect(legacySkill?.marketType).toBe('general')
-    expect(stats.totalSkills).toBeGreaterThan(100)
+    expect(stats.totalSkills).toBeGreaterThan(200)
   })
 
   it('upgrades legacy persisted market store to generated defaults when ontology mappings are missing', async () => {
@@ -102,7 +105,8 @@ describe('skillsMarket defaults', () => {
 
     const skills = await listSkills()
 
-    expect(skills.length).toBeGreaterThan(100)
+    expect(skills.length).toBeGreaterThan(200)
     expect(skills.some((skill) => skill.marketType === 'business')).toBe(true)
+    expect(skills.some((skill) => skill.id.startsWith('skill-biz-plus-'))).toBe(true)
   })
 })

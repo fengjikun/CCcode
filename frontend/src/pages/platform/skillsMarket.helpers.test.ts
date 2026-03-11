@@ -10,6 +10,7 @@ describe('skillsMarket helpers', () => {
     const featured = getFeaturedSkills(store.skills, 6)
 
     expect(featured).toHaveLength(6)
+    expect(featured[0]?.displayName).toBe('故障诊断本体专家技能')
     expect(featured[0].recommendedScore).toBeGreaterThanOrEqual(featured[1].recommendedScore)
   })
 

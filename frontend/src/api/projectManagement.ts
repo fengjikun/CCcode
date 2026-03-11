@@ -25,15 +25,16 @@ import type {
 } from '../types/projectMvp'
 import { delay, rand } from './mockConfig'
 
-const STORAGE_KEY = 'deepexios_projects_v3'
-/** 当默认数据结构变化时递增此值，触发本地缓存迁移 */
-const DATA_VERSION = 12
+/** 当默认数据结构变化时递增此值，触发内存种子迁移 */
+const DATA_VERSION = 13
 
 interface ProjectStore {
   projects: ProjectDetail[]
   idSeq: number
   _v?: number
 }
+
+let inMemoryProjectStore: ProjectStore | null = null
 
 interface MockEntityDescriptor {
   type: string
@@ -916,6 +917,120 @@ const PRODUCT_REPLENISHMENT_FUNCTIONS: FunctionDefinition[] = [
   },
 ]
 
+const FAULT_DIAGNOSIS_SKILLS: SkillConfig[] = [
+  { id: 'sk-fd-001', code: 'fault_graph_loading', name: '图谱加载', enabled: true, prompt: '从 graph.jsonl 加载设备故障诊断本体的节点与关系数据', source: 'built_in', tags: ['graph', 'loading'] },
+  { id: 'sk-fd-002', code: 'symptom_matching', name: '现象匹配', enabled: true, prompt: '根据报警码、趋势信号和描述匹配最可能的故障现象与细分特征', source: 'built_in', tags: ['diagnosis', 'matching'] },
+  { id: 'sk-fd-003', code: 'root_cause_analysis', name: '根因追溯', enabled: true, prompt: '沿故障链路追溯根因并输出标准排查与处置建议', source: 'built_in', tags: ['diagnosis', 'analysis'] },
+]
+
+const FAULT_DIAGNOSIS_ACTIONS: ActionDefinition[] = [
+  {
+    id: 'act-fd-001',
+    name: 'auto_fault_triage',
+    displayName: '自动告警分诊',
+    description: '接收报警码、趋势信号和设备履历，自动识别候选故障现象并给出首轮分诊建议。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-fd-002',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-fd-001","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"condition.alarm\\",\\"source\\":\\"edge-gateway\\",\\"window\\":\\"10m\\"}"},{"functionId":"fn-fd-002","order":2,"triggerType":"EVENT","triggerConfig":"{\\"stage\\":\\"triage\\",\\"candidateLimit\\":3,\\"includeHistory\\":true}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":2,"fallback":"create_manual_triage_task","notifyRole":"设备工程师"}',
+    parametersJson: '[{"name":"equipmentId","displayName":"设备ID","dataType":"STRING","required":true},{"name":"alarmCode","displayName":"报警码","dataType":"STRING","required":true},{"name":"symptomSummary","displayName":"现象摘要","dataType":"STRING","required":true},{"name":"trendSnapshot","displayName":"趋势快照","dataType":"JSON","required":true},{"name":"severity","displayName":"风险等级","dataType":"STRING","required":true,"defaultValue":"HIGH"}]',
+    rulesJson: '[{"ruleType":"CREATE_OBJECT","target":"Checkpoint","conditionJson":"{\\"when\\":\\"alarmCode_present\\"}","propertyMappingsJson":"{\\"source\\":\\"$equipmentId\\",\\"alarmCode\\":\\"$alarmCode\\",\\"summary\\":\\"$symptomSummary\\"}","sortOrder":1},{"ruleType":"UPDATE_OBJECT","target":"Equipment","conditionJson":"{\\"when\\":\\"severity in [\\\\\\"HIGH\\\\\\",\\\\\\"CRITICAL\\\\\\"]\\"}","propertyMappingsJson":"{\\"latestAlarmCode\\":\\"$alarmCode\\",\\"diagnosticSeverity\\":\\"$severity\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"equipment_id_required","condition":"equipmentId != \\"\\"","message":"设备ID不能为空"},{"name":"alarm_code_format","condition":"alarmCode matches ^ALM-[A-Z0-9-]+$","message":"报警码需满足 ALM-* 编码规范"},{"name":"severity_range","condition":"severity in [\\"LOW\\",\\"MEDIUM\\",\\"HIGH\\",\\"CRITICAL\\"]","message":"风险等级仅支持 LOW/MEDIUM/HIGH/CRITICAL"}]',
+  },
+  {
+    id: 'act-fd-002',
+    name: 'generate_diagnostic_work_order',
+    displayName: '生成标准排查工单',
+    description: '基于故障现象、停机影响和安全要求，生成带优先级、检查项和备件建议的标准排查工单。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-fd-004',
+    triggerType: 'MANUAL',
+    triggerConfigJson: '[{"functionId":"fn-fd-003","order":1,"triggerType":"MANUAL","triggerConfig":"{\\"entry\\":\\"workspace.button\\",\\"template\\":\\"fault-inspection-standard\\"}"},{"functionId":"fn-fd-004","order":2,"triggerType":"MANUAL","triggerConfig":"{\\"rule\\":\\"priority_score\\",\\"includeSpareAdvice\\":true}"}]',
+    exceptionPolicy: 'SKIP',
+    exceptionConfigJson: '{"retainDraft":true,"fallback":"manual_dispatch","notifyRole":"维修班长"}',
+    parametersJson: '[{"name":"triageRecordId","displayName":"分诊记录ID","dataType":"STRING","required":true},{"name":"phenomenonId","displayName":"故障现象ID","dataType":"STRING","required":true},{"name":"downtimeImpact","displayName":"停机影响系数","dataType":"FLOAT","required":true,"defaultValue":"0.7"},{"name":"lineCode","displayName":"产线编码","dataType":"STRING","required":true},{"name":"plannedStart","displayName":"计划开工时间","dataType":"STRING","required":false}]',
+    rulesJson: '[{"ruleType":"CREATE_OBJECT","target":"Checkpoint","conditionJson":"{\\"when\\":\\"phenomenonId_present\\"}","propertyMappingsJson":"{\\"phenomenonId\\":\\"$phenomenonId\\",\\"lineCode\\":\\"$lineCode\\",\\"plannedStart\\":\\"$plannedStart\\"}","sortOrder":1},{"ruleType":"UPDATE_OBJECT","target":"Solution","conditionJson":"{\\"when\\":\\"downtimeImpact >= 0.7\\"}","propertyMappingsJson":"{\\"dispatchPriority\\":\\"P1\\",\\"dispatchSource\\":\\"standard_work_order\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"triage_record_required","condition":"triageRecordId != \\"\\"","message":"分诊记录ID不能为空"},{"name":"impact_range","condition":"downtimeImpact >= 0 and downtimeImpact <= 1","message":"停机影响系数需在 0 到 1 之间"},{"name":"line_code_required","condition":"lineCode != \\"\\"","message":"产线编码不能为空"}]',
+  },
+  {
+    id: 'act-fd-003',
+    name: 'escalate_shutdown_response',
+    displayName: '升级停机处置',
+    description: '当故障影响产能或存在安全风险时，自动升级停机处置流程并同步应急协同角色。',
+    status: 'ACTIVE',
+    targetObjectTypeId: 'et-fd-006',
+    triggerType: 'EVENT',
+    triggerConfigJson: '[{"functionId":"fn-fd-002","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"triage.escalated\\",\\"requireRootCause\\":true}"},{"functionId":"fn-fd-004","order":2,"triggerType":"EVENT","triggerConfig":"{\\"scoreThreshold\\":0.82,\\"output\\":\\"P1\\"}"}]',
+    exceptionPolicy: 'RETRY',
+    exceptionConfigJson: '{"maxRetries":1,"notifyChannels":["andon","sms"],"escalationRole":"产线主管"}',
+    parametersJson: '[{"name":"equipmentId","displayName":"设备ID","dataType":"STRING","required":true},{"name":"rootCauseId","displayName":"根因ID","dataType":"STRING","required":true},{"name":"productionLossMinutes","displayName":"影响时长(分钟)","dataType":"INTEGER","required":true},{"name":"safetyRiskLevel","displayName":"安全风险等级","dataType":"STRING","required":true,"defaultValue":"HIGH"}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"Solution","conditionJson":"{\\"when\\":\\"productionLossMinutes >= 30\\"}","propertyMappingsJson":"{\\"responseLevel\\":\\"shutdown\\",\\"ownerRole\\":\\"maintenance_supervisor\\"}","sortOrder":1},{"ruleType":"CREATE_LINK","target":"Cause","conditionJson":"{\\"when\\":\\"rootCauseId_present\\"}","propertyMappingsJson":"{\\"from\\":\\"$rootCauseId\\",\\"relation\\":\\"solved_by\\",\\"to\\":\\"shutdown_response\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"loss_minutes_positive","condition":"productionLossMinutes >= 0","message":"影响时长不能为负数"},{"name":"safety_risk_range","condition":"safetyRiskLevel in [\\"MEDIUM\\",\\"HIGH\\",\\"CRITICAL\\"]","message":"安全风险等级仅支持 MEDIUM/HIGH/CRITICAL"},{"name":"root_cause_required","condition":"rootCauseId != \\"\\"","message":"升级停机处置前必须明确根因"}]',
+  },
+  {
+    id: 'act-fd-004',
+    name: 'recovery_verification_loop',
+    displayName: '复机验证闭环',
+    description: '维修完成后对温升、振动和试切结果进行复机判定，未达标时自动回退到排查流程。',
+    status: 'DRAFT',
+    targetObjectTypeId: 'et-fd-006',
+    triggerType: 'MANUAL',
+    triggerConfigJson: '[{"functionId":"fn-fd-005","order":1,"triggerType":"MANUAL","triggerConfig":"{\\"entry\\":\\"work_order.finish\\",\\"requireSupervisorSignoff\\":true}"}]',
+    exceptionPolicy: 'IGNORE',
+    exceptionConfigJson: '{"rollbackAction":"reopen_work_order","notifyRole":"工艺工程师"}',
+    parametersJson: '[{"name":"workOrderId","displayName":"工单ID","dataType":"STRING","required":true},{"name":"repairResult","displayName":"维修结论","dataType":"STRING","required":true},{"name":"vibrationRms","displayName":"振动RMS","dataType":"FLOAT","required":true},{"name":"spindleTempRise","displayName":"主轴温升","dataType":"FLOAT","required":true}]',
+    rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"Solution","conditionJson":"{\\"when\\":\\"repairResult == \\\\\\"PASS\\\\\\"\\"}","propertyMappingsJson":"{\\"recoveryStatus\\":\\"verified\\",\\"verificationSource\\":\\"restart_loop\\"}","sortOrder":1},{"ruleType":"UPDATE_OBJECT","target":"Checkpoint","conditionJson":"{\\"when\\":\\"repairResult != \\\\\\"PASS\\\\\\"\\"}","propertyMappingsJson":"{\\"reopenFlag\\":true,\\"reason\\":\\"restart_verification_failed\\"}","sortOrder":2}]',
+    validationRulesJson: '[{"name":"work_order_required","condition":"workOrderId != \\"\\"","message":"工单ID不能为空"},{"name":"repair_result_range","condition":"repairResult in [\\"PASS\\",\\"FAIL\\",\\"RECHECK\\"]","message":"维修结论仅支持 PASS/FAIL/RECHECK"},{"name":"measurement_positive","condition":"vibrationRms >= 0 and spindleTempRise >= 0","message":"测量值不能为负数"}]',
+  },
+]
+
+const FAULT_DIAGNOSIS_FUNCTIONS: FunctionDefinition[] = [
+  {
+    id: 'fn-fd-006',
+    name: '故障诊断',
+    description: '汇总候选根因、优先级和处置建议，输出可直接展示在诊断页和工单页的结论摘要。',
+    scriptContent: 'def assemble_diagnosis_report(equipment_id: str, phenomenon_label: str, suspected_causes: list[dict], priority: str, recommended_actions: list[str], next_checkpoints: list[str]):\n    """汇总诊断结论，生成标准化诊断摘要。"""\n    top_cause = suspected_causes[0]["cause"] if suspected_causes else "待人工确认"\n    confidence = suspected_causes[0].get("confidence", 0.0) if suspected_causes else 0.0\n    summary = f"{phenomenon_label}，建议优先排查 {top_cause}"\n    return {\n        "equipmentId": equipment_id,\n        "summary": summary,\n        "priority": priority,\n        "confidence": round(confidence, 2),\n        "recommendedActions": recommended_actions[:3],\n        "nextCheckpoints": next_checkpoints[:3],\n    }',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-fd-001',
+    name: '故障现象检索',
+    description: '根据报警码、现象描述和趋势特征召回候选故障现象与细分异常。',
+    scriptContent: 'def retrieve_fault_symptoms(alarm_code: str, symptom_summary: str, trend_snapshot: dict):\n    """检索候选故障现象并输出相似度排序结果。"""\n    candidates = []\n    for node in nodes.values():\n        if node["entity"] not in ("Phenomenon", "SubPhenomenon"):\n            continue\n        text = f"{node.get(\\"label\\", \\"\\")} {node.get(\\"properties\\", {}).get(\\"description\\", \\"\\")}"\n        score = 0.0\n        if alarm_code and alarm_code in text:\n            score += 0.45\n        if symptom_summary and symptom_summary in text:\n            score += 0.35\n        if trend_snapshot:\n            score += 0.20\n        if score > 0:\n            candidates.append({"id": node["id"], "label": node["label"], "score": round(score, 2)})\n    return sorted(candidates, key=lambda item: item["score"], reverse=True)[:5]',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-fd-002',
+    name: '根因链路追溯',
+    description: '沿故障现象到根因再到处置方案的链路回溯标准诊断路径。',
+    scriptContent: 'def trace_root_cause_chain(sub_phenomenon_id: str):\n    """返回根因、处置方案和关键验证证据。"""\n    causes = [r["to"] for r in relations if r["from"] == sub_phenomenon_id and r["relation"] == "caused_by"]\n    solutions = [r["to"] for r in relations if r["from"] in causes and r["relation"] == "solved_by"]\n    checkpoints = [r["to"] for r in relations if r["from"] == sub_phenomenon_id and r["relation"] == "needs_check"]\n    return {"causes": causes, "solutions": solutions, "checkpoints": checkpoints}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-fd-003',
+    name: '排查清单生成',
+    description: '基于故障现象自动输出按优先级排序的检查点、安全动作和备件建议。',
+    scriptContent: 'def build_checkpoint_list(phenomenon_id: str):\n    """输出标准排查清单。"""\n    checkpoint_ids = [r["to"] for r in relations if r["from"] == phenomenon_id and r["relation"] == "needs_check"]\n    items = []\n    for index, checkpoint_id in enumerate(checkpoint_ids, start=1):\n        checkpoint = nodes.get(checkpoint_id, {})\n        props = checkpoint.get("properties", {})\n        items.append({\n            "step": index,\n            "checkpointId": checkpoint_id,\n            "name": checkpoint.get("label"),\n            "method": props.get("method"),\n            "safetyNote": props.get("safetyNote"),\n            "priority": props.get("priority", index),\n        })\n    return sorted(items, key=lambda item: item["priority"])',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-fd-004',
+    name: '维修优先级评估',
+    description: '综合故障等级、设备关键性、停机影响和安全风险，输出维修优先级。',
+    scriptContent: 'def evaluate_maintenance_priority(severity: str, equipment_criticality: float, downtime_impact: float, safety_risk: float):\n    """输出 P1/P2/P3 优先级和评分。"""\n    weights = {"CRITICAL": 1.0, "HIGH": 0.85, "MEDIUM": 0.6, "LOW": 0.3}\n    severity_score = weights.get(severity, 0.5)\n    score = severity_score * 0.4 + equipment_criticality * 0.25 + downtime_impact * 0.2 + safety_risk * 0.15\n    level = "P1" if score >= 0.8 else "P2" if score >= 0.6 else "P3"\n    return {"priority": level, "score": round(score, 3)}',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'fn-fd-005',
+    name: '复机验证判定',
+    description: '结合振动、温升和试切结果判断是否满足复机条件，并给出回退建议。',
+    scriptContent: 'def decide_recovery_readiness(vibration_rms: float, spindle_temp_rise: float, test_cut_passed: bool):\n    """输出复机判定结论。"""\n    passed = vibration_rms <= 2.8 and spindle_temp_rise <= 18 and test_cut_passed\n    return {\n        "ready": passed,\n        "decision": "PASS" if passed else "RECHECK",\n        "nextAction": "close_work_order" if passed else "reopen_diagnostic_flow",\n    }',
+    status: 'DRAFT',
+  },
+]
+
 function isFaultDiagnosisProject(project: Pick<ProjectDetail, 'id' | 'name'>): boolean {
   return project.id === FAULT_DIAGNOSIS_PROJECT_ID || project.name === FAULT_DIAGNOSIS_PROJECT_NAME
 }
@@ -966,6 +1081,12 @@ function ensureFaultDiagnosisSeed(project: ProjectDetail): boolean {
     changed = true
   }
 
+  const mergedSkills = mergeUniqueById(project.schemaConfig.skills, cloneProjectData(FAULT_DIAGNOSIS_SKILLS))
+  if (mergedSkills.changed) {
+    project.schemaConfig.skills = mergedSkills.items
+    changed = true
+  }
+
   if (!project.schemaConfig.entityScope.includes('8D')) {
     project.schemaConfig.entityScope = `${project.schemaConfig.entityScope}，并补充 EightDReport、ProductionLine、CorrectiveAction、PreventiveAction 等 8D 闭环改进实体`
     changed = true
@@ -990,6 +1111,18 @@ function ensureFaultDiagnosisSeed(project: ProjectDetail): boolean {
   const mergedVersions = mergeUniqueById(project.versions, cloneProjectData([FAULT_DIAGNOSIS_8D_VERSION]))
   if (mergedVersions.changed) {
     project.versions = mergedVersions.items.sort(byIsoDesc)
+    changed = true
+  }
+
+  const mergedActions = mergeUniqueById(project.actions, cloneProjectData(FAULT_DIAGNOSIS_ACTIONS))
+  if (mergedActions.changed) {
+    project.actions = mergedActions.items
+    changed = true
+  }
+
+  const mergedFunctions = mergeUniqueById(project.functions, cloneProjectData(FAULT_DIAGNOSIS_FUNCTIONS))
+  if (mergedFunctions.changed) {
+    project.functions = mergedFunctions.items
     changed = true
   }
 
@@ -1645,11 +1778,7 @@ function defaultProjects(): ProjectDetail[] {
     ],
     entityScope: '离散制造设备故障诊断领域的设备、故障现象、细分信号、检查点、根因、处置方案、部件和参数实体',
     relationScope: 'Equipment→Phenomenon→SubPhenomenon→Cause→Solution 的标准诊断链路，并补充 Checkpoint、Component、Parameter 三类支撑关系',
-    skills: [
-      { id: 'sk-fd-001', code: 'fault_graph_loading', name: '图谱加载', enabled: true, prompt: '从 graph.jsonl 加载设备故障诊断本体的节点与关系数据', source: 'built_in', tags: ['graph', 'loading'] },
-      { id: 'sk-fd-002', code: 'symptom_matching', name: '现象匹配', enabled: true, prompt: '根据报警码、趋势信号和描述匹配最可能的故障现象与细分特征', source: 'built_in', tags: ['diagnosis', 'matching'] },
-      { id: 'sk-fd-003', code: 'root_cause_analysis', name: '根因追溯', enabled: true, prompt: '沿故障链路追溯根因并输出标准排查与处置建议', source: 'built_in', tags: ['diagnosis', 'analysis'] },
-    ],
+    skills: cloneProjectData(FAULT_DIAGNOSIS_SKILLS),
     updatedAt: '2025-03-09T10:00:00.000Z',
   }
   first.runs = [{
@@ -1671,105 +1800,8 @@ function defaultProjects(): ProjectDetail[] {
   first.versions = [
     { id: 'ver-fd-001', version: 'v1.2', label: '标准化设备故障诊断图谱', createdAt: '2025-03-01T10:10:00.000Z', sourceRunId: 'run-fd-001', entityCount: 52, relationCount: 64 },
   ]
-  first.actions = [
-    {
-      id: 'act-fd-001',
-      name: 'auto_fault_triage',
-      displayName: '自动告警分诊',
-      description: '接收报警码、趋势信号和设备履历，自动识别候选故障现象并给出首轮分诊建议。',
-      status: 'ACTIVE',
-      targetObjectTypeId: 'et-fd-002',
-      triggerType: 'EVENT',
-      triggerConfigJson: '[{"functionId":"fn-fd-001","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"condition.alarm\\",\\"source\\":\\"edge-gateway\\",\\"window\\":\\"10m\\"}"},{"functionId":"fn-fd-002","order":2,"triggerType":"EVENT","triggerConfig":"{\\"stage\\":\\"triage\\",\\"candidateLimit\\":3,\\"includeHistory\\":true}"}]',
-      exceptionPolicy: 'RETRY',
-      exceptionConfigJson: '{"maxRetries":2,"fallback":"create_manual_triage_task","notifyRole":"设备工程师"}',
-      parametersJson: '[{"name":"equipmentId","displayName":"设备ID","dataType":"STRING","required":true},{"name":"alarmCode","displayName":"报警码","dataType":"STRING","required":true},{"name":"symptomSummary","displayName":"现象摘要","dataType":"STRING","required":true},{"name":"trendSnapshot","displayName":"趋势快照","dataType":"JSON","required":true},{"name":"severity","displayName":"风险等级","dataType":"STRING","required":true,"defaultValue":"HIGH"}]',
-      rulesJson: '[{"ruleType":"CREATE_OBJECT","target":"Checkpoint","conditionJson":"{\\"when\\":\\"alarmCode_present\\"}","propertyMappingsJson":"{\\"source\\":\\"$equipmentId\\",\\"alarmCode\\":\\"$alarmCode\\",\\"summary\\":\\"$symptomSummary\\"}","sortOrder":1},{"ruleType":"UPDATE_OBJECT","target":"Equipment","conditionJson":"{\\"when\\":\\"severity in [\\\\\\"HIGH\\\\\\",\\\\\\"CRITICAL\\\\\\"]\\"}","propertyMappingsJson":"{\\"latestAlarmCode\\":\\"$alarmCode\\",\\"diagnosticSeverity\\":\\"$severity\\"}","sortOrder":2}]',
-      validationRulesJson: '[{"name":"equipment_id_required","condition":"equipmentId != \\"\\"","message":"设备ID不能为空"},{"name":"alarm_code_format","condition":"alarmCode matches ^ALM-[A-Z0-9-]+$","message":"报警码需满足 ALM-* 编码规范"},{"name":"severity_range","condition":"severity in [\\"LOW\\",\\"MEDIUM\\",\\"HIGH\\",\\"CRITICAL\\"]","message":"风险等级仅支持 LOW/MEDIUM/HIGH/CRITICAL"}]',
-    },
-    {
-      id: 'act-fd-002',
-      name: 'generate_diagnostic_work_order',
-      displayName: '生成标准排查工单',
-      description: '基于故障现象、停机影响和安全要求，生成带优先级、检查项和备件建议的标准排查工单。',
-      status: 'ACTIVE',
-      targetObjectTypeId: 'et-fd-004',
-      triggerType: 'MANUAL',
-      triggerConfigJson: '[{"functionId":"fn-fd-003","order":1,"triggerType":"MANUAL","triggerConfig":"{\\"entry\\":\\"workspace.button\\",\\"template\\":\\"fault-inspection-standard\\"}"},{"functionId":"fn-fd-004","order":2,"triggerType":"MANUAL","triggerConfig":"{\\"rule\\":\\"priority_score\\",\\"includeSpareAdvice\\":true}"}]',
-      exceptionPolicy: 'SKIP',
-      exceptionConfigJson: '{"retainDraft":true,"fallback":"manual_dispatch","notifyRole":"维修班长"}',
-      parametersJson: '[{"name":"triageRecordId","displayName":"分诊记录ID","dataType":"STRING","required":true},{"name":"phenomenonId","displayName":"故障现象ID","dataType":"STRING","required":true},{"name":"downtimeImpact","displayName":"停机影响系数","dataType":"FLOAT","required":true,"defaultValue":"0.7"},{"name":"lineCode","displayName":"产线编码","dataType":"STRING","required":true},{"name":"plannedStart","displayName":"计划开工时间","dataType":"STRING","required":false}]',
-      rulesJson: '[{"ruleType":"CREATE_OBJECT","target":"Checkpoint","conditionJson":"{\\"when\\":\\"phenomenonId_present\\"}","propertyMappingsJson":"{\\"phenomenonId\\":\\"$phenomenonId\\",\\"lineCode\\":\\"$lineCode\\",\\"plannedStart\\":\\"$plannedStart\\"}","sortOrder":1},{"ruleType":"UPDATE_OBJECT","target":"Solution","conditionJson":"{\\"when\\":\\"downtimeImpact >= 0.7\\"}","propertyMappingsJson":"{\\"dispatchPriority\\":\\"P1\\",\\"dispatchSource\\":\\"standard_work_order\\"}","sortOrder":2}]',
-      validationRulesJson: '[{"name":"triage_record_required","condition":"triageRecordId != \\"\\"","message":"分诊记录ID不能为空"},{"name":"impact_range","condition":"downtimeImpact >= 0 and downtimeImpact <= 1","message":"停机影响系数需在 0 到 1 之间"},{"name":"line_code_required","condition":"lineCode != \\"\\"","message":"产线编码不能为空"}]',
-    },
-    {
-      id: 'act-fd-003',
-      name: 'escalate_shutdown_response',
-      displayName: '升级停机处置',
-      description: '当故障影响产能或存在安全风险时，自动升级停机处置流程并同步应急协同角色。',
-      status: 'ACTIVE',
-      targetObjectTypeId: 'et-fd-006',
-      triggerType: 'EVENT',
-      triggerConfigJson: '[{"functionId":"fn-fd-002","order":1,"triggerType":"EVENT","triggerConfig":"{\\"event\\":\\"triage.escalated\\",\\"requireRootCause\\":true}"},{"functionId":"fn-fd-004","order":2,"triggerType":"EVENT","triggerConfig":"{\\"scoreThreshold\\":0.82,\\"output\\":\\"P1\\"}"}]',
-      exceptionPolicy: 'RETRY',
-      exceptionConfigJson: '{"maxRetries":1,"notifyChannels":["andon","sms"],"escalationRole":"产线主管"}',
-      parametersJson: '[{"name":"equipmentId","displayName":"设备ID","dataType":"STRING","required":true},{"name":"rootCauseId","displayName":"根因ID","dataType":"STRING","required":true},{"name":"productionLossMinutes","displayName":"影响时长(分钟)","dataType":"INTEGER","required":true},{"name":"safetyRiskLevel","displayName":"安全风险等级","dataType":"STRING","required":true,"defaultValue":"HIGH"}]',
-      rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"Solution","conditionJson":"{\\"when\\":\\"productionLossMinutes >= 30\\"}","propertyMappingsJson":"{\\"responseLevel\\":\\"shutdown\\",\\"ownerRole\\":\\"maintenance_supervisor\\"}","sortOrder":1},{"ruleType":"CREATE_LINK","target":"Cause","conditionJson":"{\\"when\\":\\"rootCauseId_present\\"}","propertyMappingsJson":"{\\"from\\":\\"$rootCauseId\\",\\"relation\\":\\"solved_by\\",\\"to\\":\\"shutdown_response\\"}","sortOrder":2}]',
-      validationRulesJson: '[{"name":"loss_minutes_positive","condition":"productionLossMinutes >= 0","message":"影响时长不能为负数"},{"name":"safety_risk_range","condition":"safetyRiskLevel in [\\"MEDIUM\\",\\"HIGH\\",\\"CRITICAL\\"]","message":"安全风险等级仅支持 MEDIUM/HIGH/CRITICAL"},{"name":"root_cause_required","condition":"rootCauseId != \\"\\"","message":"升级停机处置前必须明确根因"}]',
-    },
-    {
-      id: 'act-fd-004',
-      name: 'recovery_verification_loop',
-      displayName: '复机验证闭环',
-      description: '维修完成后对温升、振动和试切结果进行复机判定，未达标时自动回退到排查流程。',
-      status: 'DRAFT',
-      targetObjectTypeId: 'et-fd-006',
-      triggerType: 'MANUAL',
-      triggerConfigJson: '[{"functionId":"fn-fd-005","order":1,"triggerType":"MANUAL","triggerConfig":"{\\"entry\\":\\"work_order.finish\\",\\"requireSupervisorSignoff\\":true}"}]',
-      exceptionPolicy: 'IGNORE',
-      exceptionConfigJson: '{"rollbackAction":"reopen_work_order","notifyRole":"工艺工程师"}',
-      parametersJson: '[{"name":"workOrderId","displayName":"工单ID","dataType":"STRING","required":true},{"name":"repairResult","displayName":"维修结论","dataType":"STRING","required":true},{"name":"vibrationRms","displayName":"振动RMS","dataType":"FLOAT","required":true},{"name":"spindleTempRise","displayName":"主轴温升","dataType":"FLOAT","required":true}]',
-      rulesJson: '[{"ruleType":"UPDATE_OBJECT","target":"Solution","conditionJson":"{\\"when\\":\\"repairResult == \\\\\\"PASS\\\\\\"\\"}","propertyMappingsJson":"{\\"recoveryStatus\\":\\"verified\\",\\"verificationSource\\":\\"restart_loop\\"}","sortOrder":1},{"ruleType":"UPDATE_OBJECT","target":"Checkpoint","conditionJson":"{\\"when\\":\\"repairResult != \\\\\\"PASS\\\\\\"\\"}","propertyMappingsJson":"{\\"reopenFlag\\":true,\\"reason\\":\\"restart_verification_failed\\"}","sortOrder":2}]',
-      validationRulesJson: '[{"name":"work_order_required","condition":"workOrderId != \\"\\"","message":"工单ID不能为空"},{"name":"repair_result_range","condition":"repairResult in [\\"PASS\\",\\"FAIL\\",\\"RECHECK\\"]","message":"维修结论仅支持 PASS/FAIL/RECHECK"},{"name":"measurement_positive","condition":"vibrationRms >= 0 and spindleTempRise >= 0","message":"测量值不能为负数"}]',
-    },
-  ]
-  first.functions = [
-    {
-      id: 'fn-fd-001',
-      name: '故障现象检索',
-      description: '根据报警码、现象描述和趋势特征召回候选故障现象与细分异常。',
-      scriptContent: 'def retrieve_fault_symptoms(alarm_code: str, symptom_summary: str, trend_snapshot: dict):\n    """检索候选故障现象并输出相似度排序结果。"""\n    candidates = []\n    for node in nodes.values():\n        if node["entity"] not in ("Phenomenon", "SubPhenomenon"):\n            continue\n        text = f"{node.get(\\"label\\", \\"\\")} {node.get(\\"properties\\", {}).get(\\"description\\", \\"\\")}"\n        score = 0.0\n        if alarm_code and alarm_code in text:\n            score += 0.45\n        if symptom_summary and symptom_summary in text:\n            score += 0.35\n        if trend_snapshot:\n            score += 0.20\n        if score > 0:\n            candidates.append({"id": node["id"], "label": node["label"], "score": round(score, 2)})\n    return sorted(candidates, key=lambda item: item["score"], reverse=True)[:5]',
-      status: 'ACTIVE',
-    },
-    {
-      id: 'fn-fd-002',
-      name: '根因链路追溯',
-      description: '沿故障现象到根因再到处置方案的链路回溯标准诊断路径。',
-      scriptContent: 'def trace_root_cause_chain(sub_phenomenon_id: str):\n    """返回根因、处置方案和关键验证证据。"""\n    causes = [r["to"] for r in relations if r["from"] == sub_phenomenon_id and r["relation"] == "caused_by"]\n    solutions = [r["to"] for r in relations if r["from"] in causes and r["relation"] == "solved_by"]\n    checkpoints = [r["to"] for r in relations if r["from"] == sub_phenomenon_id and r["relation"] == "needs_check"]\n    return {"causes": causes, "solutions": solutions, "checkpoints": checkpoints}',
-      status: 'ACTIVE',
-    },
-    {
-      id: 'fn-fd-003',
-      name: '排查清单生成',
-      description: '基于故障现象自动输出按优先级排序的检查点、安全动作和备件建议。',
-      scriptContent: 'def build_checkpoint_list(phenomenon_id: str):\n    """输出标准排查清单。"""\n    checkpoint_ids = [r["to"] for r in relations if r["from"] == phenomenon_id and r["relation"] == "needs_check"]\n    items = []\n    for index, checkpoint_id in enumerate(checkpoint_ids, start=1):\n        checkpoint = nodes.get(checkpoint_id, {})\n        props = checkpoint.get("properties", {})\n        items.append({\n            "step": index,\n            "checkpointId": checkpoint_id,\n            "name": checkpoint.get("label"),\n            "method": props.get("method"),\n            "safetyNote": props.get("safetyNote"),\n            "priority": props.get("priority", index),\n        })\n    return sorted(items, key=lambda item: item["priority"])',
-      status: 'ACTIVE',
-    },
-    {
-      id: 'fn-fd-004',
-      name: '维修优先级评估',
-      description: '综合故障等级、设备关键性、停机影响和安全风险，输出维修优先级。',
-      scriptContent: 'def evaluate_maintenance_priority(severity: str, equipment_criticality: float, downtime_impact: float, safety_risk: float):\n    """输出 P1/P2/P3 优先级和评分。"""\n    weights = {"CRITICAL": 1.0, "HIGH": 0.85, "MEDIUM": 0.6, "LOW": 0.3}\n    severity_score = weights.get(severity, 0.5)\n    score = severity_score * 0.4 + equipment_criticality * 0.25 + downtime_impact * 0.2 + safety_risk * 0.15\n    level = "P1" if score >= 0.8 else "P2" if score >= 0.6 else "P3"\n    return {"priority": level, "score": round(score, 3)}',
-      status: 'ACTIVE',
-    },
-    {
-      id: 'fn-fd-005',
-      name: '复机验证判定',
-      description: '结合振动、温升和试切结果判断是否满足复机条件，并给出回退建议。',
-      scriptContent: 'def decide_recovery_readiness(vibration_rms: float, spindle_temp_rise: float, test_cut_passed: bool):\n    """输出复机判定结论。"""\n    passed = vibration_rms <= 2.8 and spindle_temp_rise <= 18 and test_cut_passed\n    return {\n        "ready": passed,\n        "decision": "PASS" if passed else "RECHECK",\n        "nextAction": "close_work_order" if passed else "reopen_diagnostic_flow",\n    }',
-      status: 'DRAFT',
-    },
-  ]
+  first.actions = cloneProjectData(FAULT_DIAGNOSIS_ACTIONS)
+  first.functions = cloneProjectData(FAULT_DIAGNOSIS_FUNCTIONS)
   ensureFaultDiagnosisSeed(first)
 
   const productReplenishment = projects.find(project => project.id === PRODUCT_REPLENISHMENT_PROJECT_ID)
@@ -1782,23 +1814,17 @@ function defaultProjects(): ProjectDetail[] {
 }
 
 function loadStore(): ProjectStore {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw) as ProjectStore
-      if (normalizeStore(parsed)) {
-        saveStore(parsed)
-      }
-      return parsed
-    }
-  } catch { /* ignore */ }
-  const s: ProjectStore = { projects: defaultProjects(), idSeq: 5000, _v: DATA_VERSION }
-  saveStore(s)
-  return s
+  if (!inMemoryProjectStore) {
+    inMemoryProjectStore = { projects: defaultProjects(), idSeq: 5000, _v: DATA_VERSION }
+  }
+  if (normalizeStore(inMemoryProjectStore)) {
+    saveStore(inMemoryProjectStore)
+  }
+  return inMemoryProjectStore
 }
 
 function saveStore(store: ProjectStore) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+  inMemoryProjectStore = store
 }
 
 function nextId(): string {
@@ -1815,7 +1841,11 @@ function findProject(projectId: string): { store: ProjectStore; project: Project
   return { store, project: store.projects[index], index }
 }
 
-export const __PROJECT_STORE_LEGACY_HELPERS = { nextId, findProject }
+function resetProjectStoreForTests() {
+  inMemoryProjectStore = null
+}
+
+export const __PROJECT_STORE_LEGACY_HELPERS = { nextId, findProject, resetProjectStoreForTests }
 
 function cloneProjectData<T>(value: T): T {
   if (typeof structuredClone === 'function') {
@@ -2588,6 +2618,17 @@ const DEFAULT_FUNCTION_RUN_INPUT: Record<string, Record<string, unknown>> = {
     spindle_temp_rise: 16.8,
     test_cut_passed: true,
   },
+  assemble_diagnosis_report: {
+    equipment_id: 'equip-vm850',
+    phenomenon_label: '主轴温升异常',
+    suspected_causes: [
+      { cause: '主轴轴承早期剥落', confidence: 0.91 },
+      { cause: '润滑油路局部堵塞', confidence: 0.72 },
+    ],
+    priority: 'P1',
+    recommended_actions: ['检查主轴润滑回路', '测量轴承预紧力', '安排低速空转复测'],
+    next_checkpoints: ['确认振动频谱 BPFO 峰值', '校验主轴端跳', '复核温升趋势'],
+  },
   calc_daily_sales_velocity: {
     order_rows: [
       { sales_qty: 22 },
@@ -2911,6 +2952,30 @@ function executeSeededFunctionHandler(
         nextAction: ready ? 'close_work_order' : 'reopen_diagnostic_flow',
       },
       logLines: [`振动 ${vibrationRms}`, `温升 ${spindleTempRise}`, `试切结果 ${testCutPassed ? '通过' : '失败'}`],
+    }
+  }
+
+  if (functionName === 'assemble_diagnosis_report') {
+    const equipmentId = String(input.equipment_id ?? '')
+    const phenomenonLabel = String(input.phenomenon_label ?? '未识别现象')
+    const suspectedCauses = Array.isArray(input.suspected_causes) ? input.suspected_causes as Array<Record<string, unknown>> : []
+    const recommendedActions = Array.isArray(input.recommended_actions) ? input.recommended_actions.map(item => String(item)) : []
+    const nextCheckpoints = Array.isArray(input.next_checkpoints) ? input.next_checkpoints.map(item => String(item)) : []
+    const priority = String(input.priority ?? 'P2')
+    const topCause = suspectedCauses[0]
+    const topCauseName = String(topCause?.cause ?? '待人工确认')
+    const confidence = roundNumber(Number(topCause?.confidence ?? 0))
+
+    return {
+      output: {
+        equipmentId,
+        summary: `${phenomenonLabel}，建议优先排查 ${topCauseName}`,
+        priority,
+        confidence,
+        recommendedActions: recommendedActions.slice(0, 3),
+        nextCheckpoints: nextCheckpoints.slice(0, 3),
+      },
+      logLines: [`设备 ${equipmentId || '未填写'}`, `最高优先根因 ${topCauseName}`, `输出优先级 ${priority}`],
     }
   }
 

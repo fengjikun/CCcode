@@ -9,6 +9,7 @@ import {
   type SkillStatus,
   type SkillTemplateFile,
 } from '../types/skill'
+import { ONTOLOGY_CATALOG } from '../mocks/skills/ontologyCatalog'
 import { buildDefaultSkillsMarketStore } from '../mocks/skills/skillGenerator'
 import { ensureMockStore, setMockStore } from './mockStoreClient'
 
@@ -78,10 +79,27 @@ function normalizeStoreShape(store: Partial<SkillsMarketStore>): SkillsMarketSto
   })
 }
 
+function isGeneratedDefaultSkill(skill: Skill): boolean {
+  if (skill.author !== 'DeepexiOS') return false
+  return skill.id.startsWith('skill-biz-') || skill.id.startsWith('skill-biz-plus-') || skill.id.startsWith('skill-gen-') || skill.id.startsWith('g-')
+}
+
 function needsLegacyUpgrade(store: Partial<SkillsMarketStore>): boolean {
-  const skills = store.skills || []
+  const skills = (store.skills || []).map((skill) => normalizeSkill(skill))
+  const businessSkillCount = skills.filter((skill) => skill.marketType === 'business').length
   const hasBusinessSkills = skills.some((skill) => skill.marketType === 'business')
-  return !store.ontologySkillMappings?.length || !hasBusinessSkills
+  const hasBusinessVariantSkills = skills.some((skill) => skill.id.startsWith('skill-biz-plus-'))
+  const ontologyCoverage = new Set(skills.flatMap((skill) => skill.sourceOntologyCodes)).size
+  const faultDiagnosisSkill = skills.find((skill) => skill.id === 'skill-biz-0-0-1')
+  const faultDiagnosisNeedsRefresh = !faultDiagnosisSkill
+    || faultDiagnosisSkill.recommendedScore < 100
+    || !faultDiagnosisSkill.instructions.includes('根因候选生成')
+  return !store.ontologySkillMappings?.length
+    || !hasBusinessSkills
+    || !hasBusinessVariantSkills
+    || businessSkillCount < DEFAULT_STORE.insightStats.businessSkills
+    || ontologyCoverage < ONTOLOGY_CATALOG.length
+    || faultDiagnosisNeedsRefresh
 }
 
 function mergeLegacyStoreIntoDefaults(store: Partial<SkillsMarketStore>): SkillsMarketStore {
@@ -92,6 +110,7 @@ function mergeLegacyStoreIntoDefaults(store: Partial<SkillsMarketStore>): Skills
 
   const legacySkills = (store.skills || [])
     .map((skill) => normalizeSkill(skill))
+    .filter((skill) => !isGeneratedDefaultSkill(skill))
     .filter((skill) => {
       const keys = [normalizeSkillName(skill.id), normalizeSkillName(skill.name), normalizeSkillName(skill.displayName)]
       return !keys.some((key) => defaultSkillKeys.has(key))

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import {
+  __PROJECT_STORE_LEGACY_HELPERS,
   batchUpdateRunReviewItems,
   createProject,
   createProjectFunction,
@@ -41,6 +42,7 @@ function createLocalStorageMock() {
 
 describe('projectManagement local mock store', () => {
   beforeEach(() => {
+    __PROJECT_STORE_LEGACY_HELPERS.resetProjectStoreForTests()
     Object.defineProperty(globalThis, 'localStorage', {
       value: createLocalStorageMock(),
       configurable: true,
@@ -63,19 +65,22 @@ describe('projectManagement local mock store', () => {
 
     expect(detail.documents.some((item) => item.name.includes('最终线入口EL402升降机带车在高位不下降'))).toBe(true)
     expect(detail.documents.some((item) => item.name.includes('07EL360升降机失速故障导致配重导向轴轮损坏'))).toBe(true)
-    expect(detail.documents).toHaveLength(13)
+    expect(detail.documents).toHaveLength(33)
     expect(detail.aiInsightRun?.id).toBe('ai-fd-001')
     expect(detail.runs.some((run) => run.id === 'run-fd-002')).toBe(true)
     expect(detail.currentVersionId).toBe('ver-fd-002')
     expect(detail.schemaConfig.entityTypes.some((item) => item.name === 'EightDReport')).toBe(true)
     expect(detail.schemaConfig.relationTypes.some((item) => item.name === 'implements_prevention')).toBe(true)
+    expect(detail.schemaConfig.skills.some((item) => item.id === 'sk-fd-003')).toBe(true)
+    expect(detail.actions.some((item) => item.id === 'act-fd-003')).toBe(true)
+    expect(detail.functions.some((item) => item.id === 'fn-fd-006')).toBe(true)
   })
 
   it('seeds product replenishment demo data into the second pinned project', async () => {
     const detail = await getProjectDetail('proj-2418')
 
     expect(detail.name).toBe('商品补货本体')
-    expect(detail.documents.some((item) => item.name.includes('百丽城市单品补货业务本体模型数据说明示例'))).toBe(true)
+    expect(detail.documents.some((item) => item.name.includes('百丽城市单品补货业务本体模型数据说明文档'))).toBe(true)
     expect(detail.documents).toHaveLength(10)
     expect(detail.dataSources).toHaveLength(3)
     expect(detail.aiInsightRun?.id).toBe('ai-rp-001')
@@ -207,6 +212,44 @@ describe('projectManagement local mock store', () => {
       targetStock: 46,
       currentStock: 27,
       gapQty: 19,
+    })
+  })
+
+  it('ignores localStorage and always reseeds project data from memory on reset', async () => {
+    localStorage.setItem('deepexios_projects_v3', JSON.stringify({
+      projects: [],
+      idSeq: 1,
+      _v: 1,
+    }))
+
+    const detail = await getProjectDetail('proj-001')
+
+    expect(detail.schemaConfig.skills.some((item) => item.id === 'sk-fd-001')).toBe(true)
+    expect(detail.actions.some((item) => item.id === 'act-fd-001')).toBe(true)
+    expect(detail.functions.some((item) => item.id === 'fn-fd-006')).toBe(true)
+  })
+
+  it('runs the seeded fault diagnosis summary function with a dedicated handler', async () => {
+    const detail = await getProjectDetail('proj-001')
+    const fn = detail.functions.find((item) => item.id === 'fn-fd-006')
+
+    expect(fn).toBeTruthy()
+    if (!fn) {
+      return
+    }
+
+    const result = await runProjectFunction('proj-001', fn.id, {
+      input: getProjectFunctionInputTemplate(fn),
+      scriptContent: fn.scriptContent,
+      name: fn.name,
+    })
+
+    expect(result.status).toBe('SUCCESS')
+    expect(result.mode).toBe('HANDLER')
+    expect(result.output).toMatchObject({
+      equipmentId: 'equip-vm850',
+      priority: 'P1',
+      summary: '主轴温升异常，建议优先排查 主轴轴承早期剥落',
     })
   })
 
