@@ -83,13 +83,6 @@ const ONTO_CAPABILITIES = [
 
 /* ═══ Helpers ═══ */
 
-function runStatusTag(status?: ProjectSummary['latestRunStatus']) {
-  if (!status) return <Tag>无任务</Tag>
-  if (status === 'RUNNING') return <Tag color="processing">运行中</Tag>
-  if (status === 'FAILED') return <Tag color="error">失败</Tag>
-  return <Tag color="success">已完成</Tag>
-}
-
 interface ProjectForm {
   name: string
   category: string
@@ -283,7 +276,7 @@ export default function ProjectsPage() {
         >
           <Space direction="vertical" size={10} style={{ width: '100%' }}>
             {/* Header row */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
                 <div style={{
                   width: 38, height: 38, borderRadius: 10,
@@ -305,7 +298,6 @@ export default function ProjectsPage() {
                   )}
                 </div>
               </div>
-              {runStatusTag(project.latestRunStatus)}
             </div>
 
             {/* Description */}

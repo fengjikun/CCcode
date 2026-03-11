@@ -211,6 +211,22 @@ export interface FunctionDefinition {
   status: FunctionStatus
 }
 
+export type ProjectFunctionRunStatus = 'SUCCESS' | 'FAILED'
+export type ProjectFunctionRunMode = 'HANDLER' | 'PREVIEW'
+
+export interface ProjectFunctionRunResult {
+  functionId: string
+  functionName: string
+  status: ProjectFunctionRunStatus
+  mode: ProjectFunctionRunMode
+  input: Record<string, unknown>
+  output?: unknown
+  logLines: string[]
+  errorMessage?: string
+  executedAt: string
+  durationMs: number
+}
+
 export interface ProjectDetail {
   id: string
   name: string

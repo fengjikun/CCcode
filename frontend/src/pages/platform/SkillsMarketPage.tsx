@@ -570,7 +570,7 @@ export default function SkillsMarketPage() {
       key: 'status',
       width: 100,
       render: (value: SkillStatus) => (
-        <span>
+        <span className="skills-market-status-tag">
           <span className={`status-dot ${value === 'Active' ? 'active' : value === 'Draft' ? 'warning' : 'error'}`} />
           <Tag color={SKILL_STATUS_COLORS[value]}>{value}</Tag>
         </span>
@@ -650,7 +650,7 @@ export default function SkillsMarketPage() {
   ]
 
   return (
-    <div className="page-container">
+    <div className="page-container skills-market-page">
       <Card className="section-card">
         <div className="page-header">
           <Title level={4}>Skills Hub</Title>

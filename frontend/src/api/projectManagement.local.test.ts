@@ -3,14 +3,18 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   batchUpdateRunReviewItems,
   createProject,
+  createProjectFunction,
   getVersionItems,
   deleteProject,
+  getProjectFunctionInputTemplate,
   getProjectDetail,
   listProjects,
   publishRunVersion,
+  runProjectFunction,
   runAiSchemaInsight,
   runProjectExtraction,
   setProjectDocumentEnabled,
+  updateProjectFunction,
   updateRunReviewItem,
   updateProject,
   uploadCustomSkill,
@@ -159,5 +163,72 @@ describe('projectManagement local mock store', () => {
     const detail = await getProjectDetail(created.id)
     expect(detail.currentVersionId).toBe(version.id)
     expect(detail.schemaConfig.skills.some(item => item.id === skill.id)).toBe(true)
+  })
+
+  it('supports local function save and run flows', async () => {
+    const created = await createProject('函数测试本体', '验证函数管理能力', 'general')
+
+    const fn = await createProjectFunction(created.id, {
+      name: '目标库存缺口计算',
+      description: '用于验证保存与运行',
+      scriptContent: 'def calc_target_stock_gap(daily_sales_velocity: float, coverage_days: int, on_hand_qty: int, in_transit_qty: int = 0):\n    return {"targetStock": round(daily_sales_velocity * coverage_days), "currentStock": on_hand_qty + in_transit_qty, "gapQty": max(round(daily_sales_velocity * coverage_days) - (on_hand_qty + in_transit_qty), 0)}',
+      status: 'ACTIVE',
+    })
+
+    const updated = await updateProjectFunction(created.id, fn.id, {
+      name: '目标库存缺口计算-已保存',
+      description: '保存后的描述',
+      scriptContent: fn.scriptContent,
+    })
+    expect(updated.name).toBe('目标库存缺口计算-已保存')
+    expect(updated.description).toBe('保存后的描述')
+
+    const template = getProjectFunctionInputTemplate(updated)
+    expect(template).toMatchObject({
+      daily_sales_velocity: 3.8,
+      coverage_days: 12,
+      on_hand_qty: 21,
+    })
+
+    const result = await runProjectFunction(created.id, fn.id, {
+      input: {
+        daily_sales_velocity: 3.8,
+        coverage_days: 12,
+        on_hand_qty: 21,
+        in_transit_qty: 6,
+      },
+      scriptContent: updated.scriptContent,
+      name: updated.name,
+    })
+
+    expect(result.status).toBe('SUCCESS')
+    expect(result.mode).toBe('HANDLER')
+    expect(result.output).toMatchObject({
+      targetStock: 46,
+      currentStock: 27,
+      gapQty: 19,
+    })
+  })
+
+  it('returns preview output for functions without dedicated handlers', async () => {
+    const created = await createProject('预览函数本体', '验证预览执行', 'general')
+    const fn = await createProjectFunction(created.id, {
+      name: '自定义试验函数',
+      description: '没有专用 handler',
+      scriptContent: 'def custom_preview(foo: str, bar: int = 0):\n    return {"foo": foo, "bar": bar}',
+      status: 'DRAFT',
+    })
+
+    const result = await runProjectFunction(created.id, fn.id, {
+      input: { foo: 'demo' },
+      scriptContent: fn.scriptContent,
+      name: fn.name,
+    })
+
+    expect(result.status).toBe('SUCCESS')
+    expect(result.mode).toBe('PREVIEW')
+    expect(result.output).toMatchObject({
+      missingParams: ['bar'],
+    })
   })
 })

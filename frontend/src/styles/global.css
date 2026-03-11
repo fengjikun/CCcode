@@ -874,6 +874,25 @@ body {
 .status-dot.warning { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15); }
 .status-dot.error { background: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
 
+.skills-market-status-tag {
+  display: inline-flex;
+  align-items: center;
+}
+
+.skills-market-page .ant-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.skills-market-page .ant-tag .anticon {
+  display: inline-flex;
+  align-items: center;
+}
+
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }

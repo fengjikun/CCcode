@@ -92,6 +92,19 @@
   gap: 6px;
 }
 
+.cell-metadata {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) 1fr;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.cell-name-input .ant-input {
+  font-weight: 600;
+}
+
 /* 代码编辑区 */
 .cell-editor {
   background: #1e1e2e;
@@ -122,13 +135,74 @@
   border: none !important;
 }
 
+.cell-runner {
+  padding: 12px 16px;
+  background: #fcfcff;
+  border-top: 1px solid #f0f0f0;
+}
+
+.runner-label {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4f5d75;
+}
+
+.runner-textarea {
+  font-family: 'Fira Code', 'Cascadia Code', Consolas, 'Courier New', monospace;
+}
+
 /* 输出区 */
 .cell-output {
-  padding: 8px 16px;
+  padding: 12px 16px;
   font-size: 12px;
-  color: #aaa;
+  color: #475467;
   background: #fafafa;
   border-top: 1px solid #e8e8e8;
   font-family: 'Fira Code', Consolas, monospace;
-  min-height: 32px;
+  min-height: 56px;
+}
+
+.cell-output-empty {
+  color: #98a2b3;
+}
+
+.cell-output-error {
+  background: #fff5f5;
+}
+
+.cell-output-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.cell-output-pre {
+  margin: 0;
+  padding: 12px;
+  border-radius: 6px;
+  background: #101828;
+  color: #d1f7c4;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cell-output-logs {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #f2f4f7;
+  color: #344054;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+@media (max-width: 900px) {
+  .cell-metadata {
+    grid-template-columns: 1fr;
+  }
 }

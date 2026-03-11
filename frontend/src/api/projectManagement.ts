@@ -7,6 +7,7 @@ import type {
   ExtractionRun,
   FunctionDefinition,
   FunctionStatus,
+  ProjectFunctionRunResult,
   OntologyVersion,
   ProjectDetail,
   ProjectDocument,
@@ -2376,6 +2377,445 @@ export async function updateProjectAction(
     touchProject(project)
     return cloneProjectData(action)
   })
+}
+
+interface ParsedFunctionSignature {
+  functionName: string | null
+  params: string[]
+}
+
+const DEFAULT_FUNCTION_RUN_INPUT: Record<string, Record<string, unknown>> = {
+  retrieve_fault_symptoms: {
+    alarm_code: 'ALM-SPINDLE-TEMP',
+    symptom_summary: '主轴温升异常并伴随轻微振动',
+    trend_snapshot: { spindleTempRise: 21.6, vibrationRms: 2.9 },
+  },
+  trace_root_cause_chain: {
+    sub_phenomenon_id: 'sub-spindle-bearing-wear',
+  },
+  build_checkpoint_list: {
+    phenomenon_id: 'phen-spindle-temp-rise',
+  },
+  evaluate_maintenance_priority: {
+    severity: 'HIGH',
+    equipment_criticality: 0.86,
+    downtime_impact: 0.72,
+    safety_risk: 0.41,
+  },
+  decide_recovery_readiness: {
+    vibration_rms: 2.4,
+    spindle_temp_rise: 16.8,
+    test_cut_passed: true,
+  },
+  calc_daily_sales_velocity: {
+    order_rows: [
+      { sales_qty: 22 },
+      { sales_qty: 18 },
+      { sales_qty: 16 },
+    ],
+    history_window_days: 14,
+  },
+  calc_target_stock_gap: {
+    daily_sales_velocity: 3.8,
+    coverage_days: 12,
+    on_hand_qty: 21,
+    in_transit_qty: 6,
+  },
+  split_qty_by_size_curve: {
+    total_qty: 48,
+    size_curve: { '36': 0.15, '37': 0.2, '38': 0.25, '39': 0.25, '40': 0.15 },
+  },
+  allocate_limited_inventory: {
+    allocatable_qty: 30,
+    store_demands: [
+      { storeCode: 'SH001', gapQty: 16, priorityScore: 98, dailySalesVelocity: 5.6 },
+      { storeCode: 'SH015', gapQty: 12, priorityScore: 90, dailySalesVelocity: 4.2 },
+      { storeCode: 'SH023', gapQty: 10, priorityScore: 72, dailySalesVelocity: 2.8 },
+    ],
+  },
+  build_transfer_order_payload: {
+    plan_no: 'RP-20260311-001',
+    source_warehouse: '华东上海闵行中心仓',
+    arrival_date: '2026-03-14',
+    allocations: [
+      { storeCode: 'SH001', allocatedQty: 16, sizeBreakdown: { '37': 3, '38': 5, '39': 5, '40': 3 } },
+      { storeCode: 'SH015', allocatedQty: 12, sizeBreakdown: { '36': 2, '37': 2, '38': 4, '39': 2, '40': 2 } },
+    ],
+  },
+}
+
+const FAULT_SYMPTOM_CANDIDATES = [
+  {
+    id: 'phen-spindle-temp-rise',
+    label: '主轴温升异常',
+    description: '主轴箱外壳温升超 18℃，伴随温漂补偿触发',
+    keywords: ['spindle', 'temp', '温升', '主轴', '热漂移'],
+  },
+  {
+    id: 'sub-spindle-bearing-wear',
+    label: '振动频谱出现 BPFO 峰值',
+    description: '前轴承外圈疑似早期剥落，频谱异常增强',
+    keywords: ['bpfo', '振动', '轴承', '频谱'],
+  },
+  {
+    id: 'phen-z-axis-position-error',
+    label: 'Z轴重复定位偏差增大',
+    description: '丝杠预紧衰减后出现定位波动',
+    keywords: ['z轴', '定位', '丝杠', '背隙'],
+  },
+  {
+    id: 'phen-hydraulic-pressure-fluctuation',
+    label: '液压压力波动',
+    description: '液压回路压差增大，伴随周期性抖动',
+    keywords: ['液压', '压力', '波动', '滤芯'],
+  },
+]
+
+const ROOT_CAUSE_CHAIN_FIXTURES: Record<string, { causes: string[]; solutions: string[]; checkpoints: string[] }> = {
+  'sub-spindle-bearing-wear': {
+    causes: ['主轴前轴承组早期剥落', '润滑油路局部堵塞'],
+    solutions: ['更换主轴轴承并跑合验证', '清洗润滑回路并更换滤芯'],
+    checkpoints: ['检查主轴润滑回路', '测量轴承预紧力'],
+  },
+}
+
+const CHECKPOINT_LIST_FIXTURES: Record<string, Array<Record<string, unknown>>> = {
+  'phen-spindle-temp-rise': [
+    { step: 1, checkpointId: 'cp-lube-loop', name: '检查主轴润滑回路', method: '观察油窗、测压', safetyNote: '先执行停机挂牌', priority: 1 },
+    { step: 2, checkpointId: 'cp-bearing-preload', name: '测量轴承预紧力', method: '使用振动与温升联动复测', safetyNote: '确认主轴完全停稳', priority: 2 },
+    { step: 3, checkpointId: 'cp-runout', name: '复测主轴端面跳动', method: '千分表检测', safetyNote: '拆装刀具前确认防护罩关闭', priority: 3 },
+  ],
+}
+
+function parseFunctionSignature(scriptContent: string): ParsedFunctionSignature {
+  const match = scriptContent.match(/def\s+([A-Za-z_]\w*)\s*\(([\s\S]*?)\)\s*:/)
+  if (!match) {
+    return { functionName: null, params: [] }
+  }
+
+  const [, functionName, rawParams] = match
+  const parts: string[] = []
+  let current = ''
+  let bracketDepth = 0
+
+  for (const char of rawParams) {
+    if (char === '[' || char === '(' || char === '{') bracketDepth += 1
+    if (char === ']' || char === ')' || char === '}') bracketDepth = Math.max(bracketDepth - 1, 0)
+    if (char === ',' && bracketDepth === 0) {
+      parts.push(current)
+      current = ''
+      continue
+    }
+    current += char
+  }
+  if (current.trim()) {
+    parts.push(current)
+  }
+
+  const params = parts
+    .map(item => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const beforeDefault = item.split('=')[0]?.trim() ?? item
+      const beforeType = beforeDefault.split(':')[0]?.trim() ?? beforeDefault
+      return beforeType.replace(/^\*+/, '')
+    })
+    .filter(param => param && param !== 'self')
+
+  return { functionName, params }
+}
+
+function normalizeFunctionInput(value: unknown): Record<string, unknown> {
+  if (!value) return {}
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('运行入参必须是 JSON 对象，例如 {"key":"value"}')
+  }
+  return value as Record<string, unknown>
+}
+
+function getFunctionRunErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as { message: unknown }).message) || fallback
+  }
+  return fallback
+}
+
+function roundNumber(value: number, digits: number = 2): number {
+  return Number(value.toFixed(digits))
+}
+
+function buildProjectFunctionContext(project: ProjectDetail) {
+  return {
+    projectName: project.name,
+    documentCount: project.documents.length,
+    dataSourceCount: project.dataSources.length,
+    entityTypeCount: project.schemaConfig.entityTypes.length,
+    relationTypeCount: project.schemaConfig.relationTypes.length,
+  }
+}
+
+function buildFunctionPreviewInput(fn: Pick<FunctionDefinition, 'name' | 'scriptContent'>): Record<string, unknown> {
+  const { functionName, params } = parseFunctionSignature(fn.scriptContent)
+  if (functionName && DEFAULT_FUNCTION_RUN_INPUT[functionName]) {
+    return cloneProjectData(DEFAULT_FUNCTION_RUN_INPUT[functionName])
+  }
+  if (DEFAULT_FUNCTION_RUN_INPUT[fn.name]) {
+    return cloneProjectData(DEFAULT_FUNCTION_RUN_INPUT[fn.name])
+  }
+  return Object.fromEntries(params.map(param => [param, '']))
+}
+
+function executeSeededFunctionHandler(
+  functionName: string,
+  input: Record<string, unknown>,
+): { output: unknown; logLines: string[] } | null {
+  if (functionName === 'calc_daily_sales_velocity') {
+    const orderRows = Array.isArray(input.order_rows) ? input.order_rows as Array<Record<string, unknown>> : []
+    const historyWindowDays = Number(input.history_window_days ?? 14) || 14
+    const totalQty = orderRows.reduce((sum, row) => sum + Number(row.sales_qty ?? 0), 0)
+    const velocity = roundNumber(totalQty / Math.max(historyWindowDays, 1))
+    const level = velocity >= 4 ? 'high' : velocity >= 1 ? 'base' : 'pause'
+    return {
+      output: { dailySalesVelocity: velocity, storeLevel: level, historyWindowDays },
+      logLines: [`汇总订单行 ${orderRows.length} 条`, `销量合计 ${totalQty}`, `店铺分层 ${level}`],
+    }
+  }
+
+  if (functionName === 'calc_target_stock_gap') {
+    const dailySalesVelocity = Number(input.daily_sales_velocity ?? 0)
+    const coverageDays = Number(input.coverage_days ?? 0)
+    const onHandQty = Number(input.on_hand_qty ?? 0)
+    const inTransitQty = Number(input.in_transit_qty ?? 0)
+    const targetStock = Math.round(dailySalesVelocity * coverageDays)
+    const currentStock = Math.max(onHandQty, 0) + Math.max(inTransitQty, 0)
+    return {
+      output: { targetStock, currentStock, gapQty: Math.max(targetStock - currentStock, 0) },
+      logLines: [`目标覆盖天数 ${coverageDays}`, `当前可用库存 ${currentStock}`],
+    }
+  }
+
+  if (functionName === 'split_qty_by_size_curve') {
+    const totalQty = Number(input.total_qty ?? 0)
+    const sizeCurve = typeof input.size_curve === 'object' && input.size_curve && !Array.isArray(input.size_curve)
+      ? input.size_curve as Record<string, number>
+      : {}
+    const result: Record<string, unknown> = {}
+    let allocated = 0
+    Object.entries(sizeCurve).forEach(([size, ratio]) => {
+      const qty = Math.floor(totalQty * Number(ratio ?? 0))
+      result[size] = qty
+      allocated += qty
+    })
+    result._allocated = allocated
+    result._remain = Math.max(totalQty - allocated, 0)
+    return {
+      output: result,
+      logLines: [`总补货量 ${totalQty}`, `拆分尺码 ${Object.keys(sizeCurve).length} 个`],
+    }
+  }
+
+  if (functionName === 'allocate_limited_inventory') {
+    const storeDemands = Array.isArray(input.store_demands) ? input.store_demands as Array<Record<string, unknown>> : []
+    let remain = Math.max(Number(input.allocatable_qty ?? 0), 0)
+    const ordered = [...storeDemands].sort((left, right) => {
+      const leftScore = Number(left.priorityScore ?? 0) * 100 + Number(left.dailySalesVelocity ?? 0)
+      const rightScore = Number(right.priorityScore ?? 0) * 100 + Number(right.dailySalesVelocity ?? 0)
+      return rightScore - leftScore
+    })
+    const allocations = ordered.map((item) => {
+      const demand = Math.max(Number(item.gapQty ?? 0), 0)
+      const allocatedQty = Math.min(demand, remain)
+      remain -= allocatedQty
+      return {
+        ...item,
+        allocatedQty,
+        fillRate: demand > 0 ? roundNumber(allocatedQty / demand) : 1,
+      }
+    })
+    return {
+      output: { allocations, remainQty: remain },
+      logLines: [`待分配门店 ${ordered.length} 家`, `剩余库存 ${remain}`],
+    }
+  }
+
+  if (functionName === 'build_transfer_order_payload') {
+    const allocations = Array.isArray(input.allocations) ? input.allocations as Array<Record<string, unknown>> : []
+    const planNo = String(input.plan_no ?? '')
+    const sourceWarehouse = String(input.source_warehouse ?? '')
+    const arrivalDate = String(input.arrival_date ?? '')
+    return {
+      output: allocations.map((item, index) => ({
+        poNo: `PO-${planNo}-${String(index + 1).padStart(3, '0')}`,
+        planNo,
+        sourceWarehouse,
+        targetStore: item.storeCode,
+        allocatedQty: Number(item.allocatedQty ?? 0),
+        sizeBreakdown: item.sizeBreakdown ?? {},
+        expectedArrivalDate: arrivalDate,
+      })),
+      logLines: [`生成调拨明细 ${allocations.length} 条`, `来源仓 ${sourceWarehouse || '未填写'}`],
+    }
+  }
+
+  if (functionName === 'retrieve_fault_symptoms') {
+    const alarmCode = String(input.alarm_code ?? '').toLowerCase()
+    const symptomSummary = String(input.symptom_summary ?? '').toLowerCase()
+    const trendSnapshot = typeof input.trend_snapshot === 'object' && input.trend_snapshot && !Array.isArray(input.trend_snapshot)
+      ? input.trend_snapshot as Record<string, unknown>
+      : {}
+    const scored = FAULT_SYMPTOM_CANDIDATES
+      .map((candidate) => {
+        let score = 0
+        const haystack = `${candidate.label} ${candidate.description} ${candidate.keywords.join(' ')}`.toLowerCase()
+        if (alarmCode && haystack.includes(alarmCode)) score += 0.45
+        if (symptomSummary && candidate.keywords.some(keyword => symptomSummary.includes(keyword.toLowerCase()))) score += 0.35
+        if (Object.keys(trendSnapshot).length > 0) score += 0.2
+        return { id: candidate.id, label: candidate.label, score: roundNumber(score) }
+      })
+      .filter(item => item.score > 0)
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 5)
+    return {
+      output: scored,
+      logLines: [`候选现象 ${scored.length} 条`, `趋势特征字段 ${Object.keys(trendSnapshot).length} 个`],
+    }
+  }
+
+  if (functionName === 'trace_root_cause_chain') {
+    const subPhenomenonId = String(input.sub_phenomenon_id ?? '')
+    const fixture = ROOT_CAUSE_CHAIN_FIXTURES[subPhenomenonId] ?? {
+      causes: ['未命中预置根因链路'],
+      solutions: ['建议补充关系映射后重试'],
+      checkpoints: ['核查 caused_by / solved_by / needs_check 关系'],
+    }
+    return {
+      output: fixture,
+      logLines: [`子现象 ID: ${subPhenomenonId || '未填写'}`, `返回根因 ${fixture.causes.length} 个`],
+    }
+  }
+
+  if (functionName === 'build_checkpoint_list') {
+    const phenomenonId = String(input.phenomenon_id ?? '')
+    const items = CHECKPOINT_LIST_FIXTURES[phenomenonId] ?? []
+    return {
+      output: items,
+      logLines: [`现象 ID: ${phenomenonId || '未填写'}`, `检查项 ${items.length} 个`],
+    }
+  }
+
+  if (functionName === 'evaluate_maintenance_priority') {
+    const weights: Record<string, number> = { CRITICAL: 1, HIGH: 0.85, MEDIUM: 0.6, LOW: 0.3 }
+    const severity = String(input.severity ?? 'MEDIUM').toUpperCase()
+    const severityScore = weights[severity] ?? 0.5
+    const equipmentCriticality = Number(input.equipment_criticality ?? 0)
+    const downtimeImpact = Number(input.downtime_impact ?? 0)
+    const safetyRisk = Number(input.safety_risk ?? 0)
+    const score = severityScore * 0.4 + equipmentCriticality * 0.25 + downtimeImpact * 0.2 + safetyRisk * 0.15
+    const priority = score >= 0.8 ? 'P1' : score >= 0.6 ? 'P2' : 'P3'
+    return {
+      output: { priority, score: roundNumber(score, 3) },
+      logLines: [`严重度 ${severity}`, `综合评分 ${roundNumber(score, 3)}`],
+    }
+  }
+
+  if (functionName === 'decide_recovery_readiness') {
+    const vibrationRms = Number(input.vibration_rms ?? 0)
+    const spindleTempRise = Number(input.spindle_temp_rise ?? 0)
+    const testCutPassed = Boolean(input.test_cut_passed)
+    const ready = vibrationRms <= 2.8 && spindleTempRise <= 18 && testCutPassed
+    return {
+      output: {
+        ready,
+        decision: ready ? 'PASS' : 'RECHECK',
+        nextAction: ready ? 'close_work_order' : 'reopen_diagnostic_flow',
+      },
+      logLines: [`振动 ${vibrationRms}`, `温升 ${spindleTempRise}`, `试切结果 ${testCutPassed ? '通过' : '失败'}`],
+    }
+  }
+
+  return null
+}
+
+export function getProjectFunctionInputTemplate(
+  fn: Pick<FunctionDefinition, 'name' | 'scriptContent'>,
+): Record<string, unknown> {
+  return buildFunctionPreviewInput(fn)
+}
+
+export async function runProjectFunction(
+  projectId: string,
+  functionId: string,
+  payload?: { input?: Record<string, unknown>; scriptContent?: string; name?: string },
+): Promise<ProjectFunctionRunResult> {
+  const { project } = findProject(projectId)
+  const storedFunction = project.functions.find(item => item.id === functionId)
+  if (!storedFunction) throw new Error(`函数不存在：${functionId}`)
+
+  const functionNameFromScript = parseFunctionSignature(payload?.scriptContent ?? storedFunction.scriptContent).functionName
+  const effectiveFunctionName = functionNameFromScript || payload?.name || storedFunction.name
+  const input = normalizeFunctionInput(payload?.input)
+  const executedAt = new Date().toISOString()
+  const startMs = Date.now()
+
+  try {
+    const handled = functionNameFromScript
+      ? executeSeededFunctionHandler(functionNameFromScript, input)
+      : null
+    const durationMs = Date.now() - startMs
+
+    if (handled) {
+      return {
+        functionId,
+        functionName: effectiveFunctionName,
+        status: 'SUCCESS',
+        mode: 'HANDLER',
+        input: cloneProjectData(input),
+        output: cloneProjectData(handled.output),
+        logLines: handled.logLines,
+        executedAt,
+        durationMs,
+      }
+    }
+
+    const signature = parseFunctionSignature(payload?.scriptContent ?? storedFunction.scriptContent)
+    if (!signature.functionName) {
+      throw new Error('当前脚本未识别到 Python def 定义，无法生成运行预览')
+    }
+
+    const missingParams = signature.params.filter(param => !(param in input))
+    return {
+      functionId,
+      functionName: effectiveFunctionName,
+      status: 'SUCCESS',
+      mode: 'PREVIEW',
+      input: cloneProjectData(input),
+      output: {
+        note: '当前函数尚未配置专用 mock 执行器，已返回静态预览结果。',
+        receivedInput: cloneProjectData(input),
+        missingParams,
+        projectContext: buildProjectFunctionContext(project),
+      },
+      logLines: [
+        `解析函数 ${signature.functionName}(${signature.params.join(', ')})`,
+        missingParams.length > 0 ? `缺少参数: ${missingParams.join(', ')}` : '入参完整',
+        '执行模式: 预览',
+      ],
+      executedAt,
+      durationMs: Date.now() - startMs,
+    }
+  } catch (error: unknown) {
+    return {
+      functionId,
+      functionName: effectiveFunctionName,
+      status: 'FAILED',
+      mode: 'PREVIEW',
+      input: cloneProjectData(input),
+      logLines: ['执行失败'],
+      errorMessage: getFunctionRunErrorMessage(error, '运行失败'),
+      executedAt,
+      durationMs: Date.now() - startMs,
+    }
+  }
 }
 
 export async function createProjectFunction(
