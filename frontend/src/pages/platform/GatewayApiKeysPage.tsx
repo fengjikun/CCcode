@@ -200,7 +200,7 @@ export default function GatewayApiKeysPage() {
     <div className="page-container">
       <PageHeader
         title={MODEL_GATEWAY_PAGE_LABELS.apiKeys}
-        subtitle={`${MODEL_CENTER_PAGE_LABELS.gateway}的静态访问凭证、权限范围、配额与轮换管理。`}
+        subtitle={`${MODEL_CENTER_PAGE_LABELS.gateway}的访问凭证、权限范围、配额与轮换管理。`}
       />
 
       <Space direction="vertical" size={16} style={{ width: '100%' }}>
