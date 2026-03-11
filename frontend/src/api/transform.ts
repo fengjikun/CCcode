@@ -3,7 +3,7 @@ import type { TransformProject, TransformType } from '../types/transform'
 import { ensureMockStore, setMockStore } from './mockStoreClient'
 
 const STORE_KEY = 'transforms'
-const DATA_VERSION = 4
+const DATA_VERSION = 5
 
 interface TFStore {
   items: TransformProject[]
@@ -107,6 +107,70 @@ function buildDefaultItems(): TransformProject[] {
       schedule: '每日',
       createdAt: '2026-03-03T09:30:00.000Z',
       updatedAt: '2026-03-11T05:12:00.000Z',
+    },
+    {
+      id: 'tf-007',
+      name: 'retail_sales_inventory_alignment',
+      description: '对销售订单事实和库存快照进行门店-SKU-尺码粒度对齐，形成商品补货缺口测算基础宽表。',
+      type: 'LayoutRecovery',
+      inputSources: ['ds-retail-sales-orders', 'ds-wms-stock-snapshot'],
+      inputSourceNames: ['零售 ERP 销售订单事实库', 'WMS 仓库库存与在途快照库'],
+      outputDatasets: ['store_sku_sales_inventory_base', 'sku_daily_velocity_snapshot', 'store_stock_gap_base'],
+      status: 'Success',
+      records: 428600,
+      duration: '5m 18s',
+      lastRun: '18 分钟前',
+      schedule: '每小时',
+      createdAt: '2026-03-04T08:20:00.000Z',
+      updatedAt: '2026-03-11T08:16:00.000Z',
+    },
+    {
+      id: 'tf-008',
+      name: 'replenishment_rule_chunking',
+      description: '对商品补货说明、尺码曲线和优先分配规则文档做切片、标签化和规则字段抽取。',
+      type: 'ChunkAnnotation',
+      inputSources: ['ds-replenishment-docs', 'ds-size-rules'],
+      inputSourceNames: ['商品补货业务说明文档库', '尺码规则与优先分配文件库'],
+      outputDatasets: ['replenishment_rule_chunks', 'size_curve_rule_labels', 'allocation_policy_qa_pairs'],
+      status: 'Success',
+      records: 19420,
+      duration: '2m 56s',
+      lastRun: '今天 06:40',
+      schedule: '每日',
+      createdAt: '2026-03-05T09:00:00.000Z',
+      updatedAt: '2026-03-11T06:40:00.000Z',
+    },
+    {
+      id: 'tf-009',
+      name: 'replenishment_plan_packaging',
+      description: '融合销售、库存、商品主数据和调拨执行样本，封装补货计划训练集、尺码分配样本和调拨执行数据集。',
+      type: 'DatasetPackaging',
+      inputSources: ['ds-retail-sales-orders', 'ds-wms-stock-snapshot', 'ds-product-size-master', 'ds-transfer-order-samples'],
+      inputSourceNames: ['零售 ERP 销售订单事实库', 'WMS 仓库库存与在途快照库', '商品主数据与尺码曲线中心', '门店调拨单执行样本库'],
+      outputDatasets: ['replenishment_plan_dataset', 'size_allocation_training_set', 'transfer_execution_payload_set'],
+      status: 'Running',
+      records: 286300,
+      duration: '4m 37s',
+      lastRun: '进行中',
+      schedule: '事件触发',
+      createdAt: '2026-03-06T10:10:00.000Z',
+      updatedAt: '2026-03-11T08:34:00.000Z',
+    },
+    {
+      id: 'tf-010',
+      name: 'weekly_replenishment_review_parsing',
+      description: '抽取补货复盘报告中的断码原因、满足率偏差、优先级调整建议和城市级例外策略。',
+      type: 'DocumentParsing',
+      inputSources: ['ds-replenishment-reviews'],
+      inputSourceNames: ['补货复盘报告与运营周报'],
+      outputDatasets: ['replenishment_review_event', 'size_fill_rate_exception', 'weekly_strategy_adjustment_note'],
+      status: 'Idle',
+      records: 0,
+      duration: '-',
+      lastRun: null,
+      schedule: '手动触发',
+      createdAt: '2026-03-07T08:40:00.000Z',
+      updatedAt: '2026-03-10T19:20:00.000Z',
     },
   ]
 }

@@ -4,7 +4,10 @@ import type { DataSource } from '../../types/dataSource'
 import {
   formatIngestionRecordCount,
   getIngestionCategoryLabel,
+  getIngestionDomainLabel,
+  getIngestionOutputLabel,
   getIngestionTargetLabel,
+  getIngestionModeLabel,
   toIngestionJobView,
 } from './dataIngestion.helpers'
 
@@ -48,6 +51,26 @@ const unstructuredSource: DataSource = {
   updatedAt: '2025-03-10T08:00:00.000Z',
 }
 
+const replenishmentSource: DataSource = {
+  id: 'ds-replenishment',
+  name: 'WMS 仓库库存与在途快照库',
+  category: 'structured',
+  type: 'MySQL',
+  connection: {
+    host: 'mysql-wms-stock.ops.local',
+    port: 3306,
+    database: 'wms_supply_snapshot',
+    username: 'wms_reader',
+  },
+  syncFrequency: '5min',
+  status: 'Syncing',
+  lastSync: '同步中',
+  recordCount: 1260842,
+  description: 'replenishment source',
+  createdAt: '2025-01-01T08:00:00.000Z',
+  updatedAt: '2025-03-10T08:00:00.000Z',
+}
+
 describe('data ingestion helpers', () => {
   it('formats structured datasource targets using host and database', () => {
     expect(getIngestionTargetLabel(structuredSource)).toBe('pg-fault-workorder.factory.local / fault_workorder_ods')
@@ -80,5 +103,11 @@ describe('data ingestion helpers', () => {
       targetLabel: 'pg-fault-workorder.factory.local / fault_workorder_ods',
       outputLabel: '落地 ODS 工单中心 / fault_work_order',
     })
+  })
+
+  it('classifies replenishment datasource rows with replenishment-specific labels', () => {
+    expect(getIngestionDomainLabel(replenishmentSource)).toBe('库存供给域')
+    expect(getIngestionModeLabel(replenishmentSource)).toBe('分钟批采')
+    expect(getIngestionOutputLabel(replenishmentSource)).toBe('落地库存供给主题 / inventory_supply_snapshot')
   })
 })

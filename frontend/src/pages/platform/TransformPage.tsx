@@ -56,18 +56,18 @@ const { TextArea } = Input
 
 const BUSINESS_TRANSFORM_TYPE_LABELS: Record<TransformType, string> = {
   DocumentParsing: '现场文本解析',
-  LayoutRecovery: '工单结构恢复',
+  LayoutRecovery: '结构恢复',
   MultimodalExtraction: '多源特征抽取',
   ChunkAnnotation: '知识切片标注',
-  DatasetPackaging: '诊断样本封装',
+  DatasetPackaging: '数据集封装',
 }
 
 const BUSINESS_TRANSFORM_TYPE_DESCRIPTIONS: Record<TransformType, string> = {
-  DocumentParsing: '解析交接班记录、维修说明和现场文本，补齐故障上下文。',
-  LayoutRecovery: '把工单、点检和维修反馈恢复成稳定结构，便于后续关联计算。',
-  MultimodalExtraction: '联合日志、波形、热像等多源输入，抽取诊断特征。',
-  ChunkAnnotation: '对手册和 RCA 报告做切片、标签化和问答样本构建。',
-  DatasetPackaging: '将多源结果封装为根因诊断和处置推荐可用的数据集。',
+  DocumentParsing: '解析交接班记录、补货说明和策略文档，补齐业务上下文。',
+  LayoutRecovery: '把工单、销售订单、库存快照和调拨单恢复成稳定结构，便于后续关联计算。',
+  MultimodalExtraction: '联合日志、波形、热像、规则文件和执行样本等多源输入抽取业务特征。',
+  ChunkAnnotation: '对手册、复盘报告和补货规则做切片、标签化和问答样本构建。',
+  DatasetPackaging: '将多源结果封装为故障诊断、补货测算和调拨执行可用的数据集。',
 }
 
 function formatRecordCount(value: number): string {
@@ -123,7 +123,7 @@ function OutputEditor({ value = [], onChange }: { value?: string[]; onChange?: (
         <Space key={index} style={{ display: 'flex', marginBottom: 8 }}>
           <Input
             value={item}
-            placeholder="输出数据集名称，如 root_cause_training_set"
+            placeholder="输出数据集名称，如 root_cause_training_set / replenishment_plan_dataset"
             onChange={event => update(index, event.target.value)}
             style={{ width: 280 }}
           />
@@ -240,7 +240,7 @@ export default function TransformPage() {
 
   const handleRun = async (id: string) => {
     setRunningIds(prev => new Set(prev).add(id))
-    message.loading({ content: '故障诊断数据转换任务运行中...', key: id, duration: 0 })
+    message.loading({ content: '数据转换任务运行中...', key: id, duration: 0 })
     await runTransform(id)
     message.success({ content: '数据转换完成', key: id })
     setRunningIds(prev => {
@@ -367,7 +367,7 @@ export default function TransformPage() {
   const formFields = (
     <>
       <Form.Item name="name" label="任务名称" rules={[{ required: true, message: '请输入任务名称' }]}>
-        <Input placeholder="如 root_cause_training_packaging" />
+        <Input placeholder="如 root_cause_training_packaging / replenishment_plan_packaging" />
       </Form.Item>
       <Form.Item name="type" label="转换类型" rules={[{ required: true, message: '请选择转换类型' }]}>
         <Select
@@ -396,7 +396,7 @@ export default function TransformPage() {
         />
       </Form.Item>
       <Form.Item name="description" label="描述">
-        <TextArea rows={3} placeholder="描述字段清洗、事件对齐、特征提取或训练样本封装逻辑" />
+        <TextArea rows={3} placeholder="描述字段清洗、事件对齐、补货测算特征提取或训练样本封装逻辑" />
       </Form.Item>
     </>
   )
@@ -404,7 +404,7 @@ export default function TransformPage() {
   return (
     <div className="page-container">
       <Card className="section-card">
-        <PageHeader title="数据转换" subtitle="围绕故障诊断把工单、告警、日志、波形、热像和知识文档转换成可训练、可分析的数据集" />
+        <PageHeader title="数据转换" subtitle="围绕故障诊断与商品补货，把工单、告警、销售订单、库存快照、波形、规则文档等转换成可训练、可分析的数据集" />
 
         <StatCards items={[
           { title: '转换任务', value: projects.length, icon: <ThunderboltOutlined />, cls: 'stat-primary' },
@@ -429,9 +429,13 @@ export default function TransformPage() {
           <Tag color="cyan">设备告警</Tag>
           <Tag color="geekblue">PLC 日志</Tag>
           <Tag color="purple">传感器时序</Tag>
+          <Tag color="magenta">销售订单</Tag>
+          <Tag color="volcano">库存快照</Tag>
+          <Tag color="lime">尺码规则</Tag>
+          <Tag color="gold">调拨单样本</Tag>
           <Tag color="orange">振动波形</Tag>
           <Tag color="gold">红外热像</Tag>
-          <Tag color="green">RCA / 手册 / 训练样本</Tag>
+          <Tag color="green">RCA / 手册 / 补货说明 / 训练样本</Tag>
         </Space>
 
         <PipelineFlow />
@@ -439,7 +443,7 @@ export default function TransformPage() {
 
       <Card
         className="section-card"
-        title={<Text><ThunderboltOutlined style={{ color: '#1677ff', marginRight: 8 }} />故障诊断数据转换任务</Text>}
+        title={<Text><ThunderboltOutlined style={{ color: '#1677ff', marginRight: 8 }} />业务数据转换任务</Text>}
         extra={(
           <Space>
             <Input.Search
@@ -456,7 +460,7 @@ export default function TransformPage() {
         )}
       >
         <div style={{ marginBottom: 12, color: '#64748b', fontSize: 12 }}>
-          累计处理记录 {formatRecordCount(totalRecords)}，覆盖结构化源表和对象存储文件的混合转换。
+          累计处理记录 {formatRecordCount(totalRecords)}，覆盖故障诊断与商品补货场景下结构化源表和对象存储文件的混合转换。
         </div>
         <Table dataSource={filtered} columns={columns} pagination={false} size="middle" rowKey="id" />
       </Card>

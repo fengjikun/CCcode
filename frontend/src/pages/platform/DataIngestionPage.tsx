@@ -186,7 +186,7 @@ export default function DataIngestionPage() {
   return (
     <div className="page-container">
       <Card className="section-card">
-        <PageHeader title="数据接入任务" subtitle="面向故障诊断查看源数据采集任务，明确采什么、怎么采、落到哪里" />
+        <PageHeader title="数据接入任务" subtitle="面向故障诊断与商品补货查看源数据采集任务，明确采什么、怎么采、落到哪里" />
 
         <StatCards items={stats} />
 
@@ -239,7 +239,7 @@ export default function DataIngestionPage() {
                 columns={columns}
                 dataSource={filteredJobs}
                 pagination={pagination}
-                locale={{ emptyText: '暂无匹配的采集任务，先到数据源管理中配置故障诊断源数据' }}
+                locale={{ emptyText: '暂无匹配的采集任务，先到数据源管理中配置故障诊断或商品补货源数据' }}
               />
             </Card>
           </Col>

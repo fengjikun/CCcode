@@ -30,7 +30,7 @@ describe('transform fault-diagnosis mock store', () => {
     mockStore._v = undefined
   })
 
-  it('seeds fault-diagnosis oriented transform defaults', async () => {
+  it('seeds fault-diagnosis and replenishment transform defaults', async () => {
     const { listTransforms } = await import('./transform')
 
     const list = await listTransforms()
@@ -39,6 +39,8 @@ describe('transform fault-diagnosis mock store', () => {
     expect(list.some((item) => item.type === 'MultimodalExtraction')).toBe(true)
     expect(list.some((item) => item.description.includes('故障')) || list.some((item) => item.description.includes('维修'))).toBe(true)
     expect(list.some((item) => item.outputDatasets.some((dataset: string) => dataset.includes('root_cause')))).toBe(true)
+    expect(list.some((item) => item.name.includes('replenishment'))).toBe(true)
+    expect(list.some((item) => item.outputDatasets.some((dataset: string) => dataset.includes('replenishment_plan')))).toBe(true)
     expect(mockStore._v).toBeDefined()
   })
 
