@@ -22,6 +22,7 @@ import {
   ArrowLeftOutlined,
   BranchesOutlined,
   DeploymentUnitOutlined,
+  ExportOutlined,
   RobotOutlined,
   SaveOutlined,
   SendOutlined,
@@ -320,13 +321,16 @@ export default function DigitalWorkerConfigPage() {
             <Card
               title="基础配置"
               extra={(
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  当前管理地址：
-                  {' '}
-                  <a href={chatPath} style={{ textDecoration: 'underline' }}>
-                    <Text code>{chatPath}</Text>
-                  </a>
-                </Text>
+                <a
+                  className="config-entry-pill"
+                  href={chatPath}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span className="config-entry-pill__label">管理入口</span>
+                  <span className="config-entry-pill__path">{chatPath}</span>
+                  <ExportOutlined />
+                </a>
               )}
             >
               <Row gutter={16}>
@@ -525,14 +529,24 @@ export default function DigitalWorkerConfigPage() {
 
           <Card title="发布与治理" style={{ marginTop: 16 }}>
             <Space direction="vertical" size={12} style={{ width: '100%' }}>
-              <div style={{ padding: 12, borderRadius: 12, background: '#fafafa' }}>
-                <Space direction="vertical" size={4}>
-                  <Text strong>管理入口</Text>
-                  <a href={chatPath} style={{ textDecoration: 'underline' }}>
-                    <Text code>{chatPath}</Text>
-                  </a>
-                </Space>
-              </div>
+              <a
+                className="config-entry-card"
+                href={chatPath}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span className="config-entry-card__icon">
+                  <SendOutlined />
+                </span>
+                <span className="config-entry-card__body">
+                  <span className="config-entry-card__eyebrow">管理入口</span>
+                  <span className="config-entry-card__title">新窗口打开业务 AI 员工管理台</span>
+                  <span className="config-entry-card__path">
+                    <code>{chatPath}</code>
+                    <ExportOutlined />
+                  </span>
+                </span>
+              </a>
               <Descriptions column={1} size="small" labelStyle={{ width: 92 }}>
                 <Descriptions.Item label="当前状态">
                   <Tag color={publishMeta.color}>{publishMeta.label}</Tag>
