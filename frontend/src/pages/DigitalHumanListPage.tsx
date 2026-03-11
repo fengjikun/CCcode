@@ -500,7 +500,7 @@ export default function DigitalHumanListPage() {
             title={(
               <Space>
                 <TeamOutlined />
-                <span>数字员工入口列表</span>
+                <span>AI员工入口列表</span>
               </Space>
             )}
           >
