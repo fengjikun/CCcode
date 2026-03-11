@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   Col,
+  Pagination,
   Row,
   Select,
   Tag,
@@ -25,11 +26,13 @@ import type { DICWorker } from '../../types/dicWorker'
 import { DIC_STATUS_COLORS, DIC_CATEGORY_LABELS, DIC_CATEGORY_COLORS } from '../../types/dicWorker'
 
 const { Title, Text, Paragraph } = Typography
+const PAGE_SIZE = 6
 
 export default function DICWorkerPage() {
   const [workers, setWorkers] = useState<DICWorker[]>([])
   const [stats, setStats] = useState<DICStats>({ total: 0, online: 0, busy: 0, totalTasksToday: 0, totalTasksCompleted: '' })
   const [filterCategory, setFilterCategory] = useState<string | undefined>()
+  const [currentPage, setCurrentPage] = useState(1)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -37,9 +40,14 @@ export default function DICWorkerPage() {
     getDICStats().then(setStats)
   }, [])
 
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filterCategory])
+
   const filtered = workers.filter(w =>
     !filterCategory || w.category === filterCategory
   )
+  const paginatedWorkers = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   const statItems = [
     { title: 'AI员工总数', value: stats.total, icon: <TeamOutlined />, color: '#4f46e5', bg: '#eef2ff' },
@@ -91,7 +99,7 @@ export default function DICWorkerPage() {
 
         {/* Worker 卡片网格 */}
         <Row gutter={[16, 16]}>
-          {filtered.map(w => (
+          {paginatedWorkers.map(w => (
             <Col span={8} key={w.key}>
               <Badge.Ribbon
                 text={w.status}
@@ -142,6 +150,19 @@ export default function DICWorkerPage() {
             </Col>
           ))}
         </Row>
+
+        {filtered.length > PAGE_SIZE && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+            <Pagination
+              current={currentPage}
+              pageSize={PAGE_SIZE}
+              total={filtered.length}
+              showSizeChanger={false}
+              showTotal={(total) => `共 ${total} 个技术AI员工`}
+              onChange={setCurrentPage}
+            />
+          </div>
+        )}
       </Card>
     </div>
   )
