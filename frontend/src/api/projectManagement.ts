@@ -23,6 +23,7 @@ import type {
   DataSourceExtractMode,
   DataSourceSyncMode,
 } from '../types/projectMvp'
+import { delay, rand } from './mockConfig'
 
 const STORAGE_KEY = 'deepexios_projects_v3'
 /** 当默认数据结构变化时递增此值，触发本地缓存迁移 */
@@ -2758,6 +2759,7 @@ export async function runProjectFunction(
   const startMs = Date.now()
 
   try {
+    await delay(rand(700, 1400))
     const handled = functionNameFromScript
       ? executeSeededFunctionHandler(functionNameFromScript, input)
       : null
