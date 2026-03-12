@@ -42,7 +42,7 @@ describe('digitalHuman defaults', () => {
     ])
 
     expect(items[1]?.id).toBe('dh-default-replenishment')
-    expect(items[1]?.name).toBe('店货匹配运营决策专员')
+    expect(items[1]?.name).toBe('品牌分区主管')
     expect(items[1]?.ontologyCode).toBe('2.4.18')
     expect(items[1]?.linkedAgentIds).toEqual(['ag-002', 'ag-009', 'ag-007'])
     expect(items[1]?.linkedSkillIds).toEqual([
@@ -119,7 +119,7 @@ describe('digitalHuman defaults', () => {
     expect(items[0]?.systemPrompt).toContain('故障运维工程师')
     expect(items[0]?.linkedAgentIds).toEqual(['ag-001', 'ag-006', 'ag-003'])
 
-    expect(items[1]?.name).toBe('店货匹配运营决策专员')
+    expect(items[1]?.name).toBe('品牌分区主管')
     expect(items[1]?.type).toBe('store-matching')
     expect(items[1]?.projectId).toBe('proj-2418')
     expect(items[1]?.ontologyCode).toBe('2.4.18')
