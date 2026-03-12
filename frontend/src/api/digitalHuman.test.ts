@@ -25,7 +25,7 @@ describe('digitalHuman defaults', () => {
     const items = await listDigitalHumans()
 
     expect(items[0]?.id).toBe('dh-default-device-fault')
-    expect(items[0]?.name).toBe('设备运维诊断专员')
+    expect(items[0]?.name).toBe('故障运维工程师')
     expect(items[0]?.linkedAgentIds).toEqual(['ag-001', 'ag-006', 'ag-003'])
     expect(items[0]?.linkedSkillIds).toEqual([
       'skill-biz-0-0-1',
@@ -87,7 +87,7 @@ describe('digitalHuman defaults', () => {
       items: [
         {
           id: 'dh-default-device-fault',
-          name: '设备运维诊断专员',
+          name: '故障运维工程师',
           type: 'fault-repair',
           description: '旧版设备诊断入口',
           createdAt: '2024-01-01T00:00:00.000Z',
@@ -115,8 +115,8 @@ describe('digitalHuman defaults', () => {
 
     const items = await listDigitalHumans()
 
-    expect(items[0]?.name).toBe('设备运维诊断专员')
-    expect(items[0]?.systemPrompt).toContain('设备运维诊断专员')
+    expect(items[0]?.name).toBe('故障运维工程师')
+    expect(items[0]?.systemPrompt).toContain('故障运维工程师')
     expect(items[0]?.linkedAgentIds).toEqual(['ag-001', 'ag-006', 'ag-003'])
 
     expect(items[1]?.name).toBe('店货匹配运营决策专员')
