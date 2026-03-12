@@ -18,7 +18,7 @@ npm run dev
 默认 mock 登录账号：
 
 - 用户名：`admin`
-- 密码：`admin20260312`
+- 密码：`admin0312changhong`
 
 ## 切换到真实后端
 
